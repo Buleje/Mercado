@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ---------- tipos ----------
 
@@ -188,7 +189,7 @@ export default function SupplierDashboard({
     try {
       const res = await fetch(`/api/wholesale/catalog/${product.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ isActive: !product.isActive }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
@@ -207,7 +208,7 @@ export default function SupplierDashboard({
     try {
       const res = await fetch(`/api/wholesale/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);

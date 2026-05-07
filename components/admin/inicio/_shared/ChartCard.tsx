@@ -151,7 +151,7 @@ export function ChartTooltip({
             ? formatter
               ? formatter(p.value)
               : prefix === "S/"
-                ? `S/ ${p.value.toFixed(2)}`
+                ? `S/ ${Number(p.value).toFixed(2)}`
                 : `${prefix}${p.value.toLocaleString("es-PE")}`
             : `${p.value}`;
         return (

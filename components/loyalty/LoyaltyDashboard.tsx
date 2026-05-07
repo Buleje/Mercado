@@ -252,7 +252,7 @@ function BalanceCard({ data, level }: BalanceCardProps) {
               Crédito
             </p>
             <p className="text-sm font-bold text-[color:var(--color-primary)]">
-              S/ {data.creditBalance.toFixed(2)}
+              S/ {Number(data.creditBalance).toFixed(2)}
             </p>
           </div>
         ) : (

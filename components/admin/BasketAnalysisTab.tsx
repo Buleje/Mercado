@@ -74,7 +74,7 @@ export default function BasketAnalysisTab() {
           <button onClick={load} disabled={loading} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface text-[var(--text-tertiary)]">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
-          <button onClick={() => exportToCSV(sorted.map(a => ({ producto_a: a.productA, producto_b: a.productB, categoria: a.category, soporte: (a.support * 100).toFixed(1) + "%", confianza: (a.confidence * 100).toFixed(1) + "%", lift: a.lift.toFixed(1), transacciones: a.count })), "analisis-cesta")}
+          <button onClick={() => exportToCSV(sorted.map(a => ({ producto_a: a.productA, producto_b: a.productB, categoria: a.category, soporte: (a.support * 100).toFixed(1) + "%", confianza: (a.confidence * 100).toFixed(1) + "%", lift: Number(a.lift).toFixed(1), transacciones: a.count })), "analisis-cesta")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
@@ -112,7 +112,7 @@ export default function BasketAnalysisTab() {
             {crossSell.map((a, i) => (
               <div key={i} className="bg-white dark:bg-card rounded-xl p-3 flex items-center gap-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/20">
                 <div className="h-8 w-8 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{a.lift.toFixed(1)}x</span>
+                  <span className="text-xs font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{Number(a.lift).toFixed(1)}x</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">
@@ -227,7 +227,7 @@ export default function BasketAnalysisTab() {
                       </div>
                     </td>
                     <td className="px-4 py-2.5 text-right">
-                      <span className={cn("text-xs font-bold", a.lift >= 2 ? "text-[var(--text-secondary)]" : a.lift >= 1.5 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>{a.lift.toFixed(1)}x</span>
+                      <span className={cn("text-xs font-bold", a.lift >= 2 ? "text-[var(--text-secondary)]" : a.lift >= 1.5 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>{Number(a.lift).toFixed(1)}x</span>
                     </td>
                     <td className="px-4 py-2.5 text-right text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{a.count}</td>
                   </tr>

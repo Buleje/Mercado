@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { callLLM } from "@/lib/llm-router";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Fuzzy match local fallback ───────────────────────────────────────────
 function fuzzyMatchProducts(
@@ -70,6 +71,7 @@ function fuzzyMatchProducts(
 
 // ── POST handler ─────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "pos-voice-interpret"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

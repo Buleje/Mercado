@@ -136,7 +136,7 @@ export default function QuickReorder() {
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white text-sm font-bold transition-all shadow-lg shadow-[var(--accent)]/20 active:scale-[0.98]"
               >
                 <ShoppingCart className="h-5 w-5" />
-                Repetir pedido · S/ {lastOrder.total.toFixed(2)}
+                Repetir pedido · S/ {Number(lastOrder.total).toFixed(2)}
               </button>
             </div>
           </div>

@@ -76,7 +76,7 @@ function BubblePoint({ product }: { product: BCGProduct }) {
       {hover && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 dark:bg-gray-700 text-white rounded-lg px-2 py-1.5 text-[length:var(--ts-2xs)] whitespace-nowrap z-30 pointer-events-none min-w-[120px]">
           <p className="font-semibold">{product.name}</p>
-          <p>Participacion: {product.share.toFixed(1)}%</p>
+          <p>Participacion: {Number(product.share).toFixed(1)}%</p>
           <p>Crecimiento: {fmtPct(product.growth)}</p>
           <p>Revenue: {fmt(product.revenue)}</p>
           <p className="mt-0.5 font-medium" style={{ color: meta.color }}>
@@ -258,7 +258,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
                   style={{ backgroundColor: QUADRANT_META[activeQuadrant].color }}
                 />
                 <span className="flex-1 truncate text-[var(--text-primary)] dark:text-foreground">{p.name}</span>
-                <span className="text-[var(--text-tertiary)]">{p.share.toFixed(1)}%</span>
+                <span className="text-[var(--text-tertiary)]">{Number(p.share).toFixed(1)}%</span>
                 <span
                   className={cn(
                     "font-medium",

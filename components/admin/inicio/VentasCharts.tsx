@@ -100,7 +100,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
           kpis={[
             { label: "Ventas periodo", value: fmtS(data.ventasNetas), tone: "primary" },
             { label: "Utilidad bruta", value: fmtS(data.utilidadBruta), tone: "success" },
-            { label: "Margen", value: `${data.margen.toFixed(1)}%`, tone: data.margen >= 25 ? "success" : data.margen >= 15 ? "neutral" : "warning" },
+            { label: "Margen", value: `${Number(data.margen).toFixed(1)}%`, tone: data.margen >= 25 ? "success" : data.margen >= 15 ? "neutral" : "warning" },
             { label: "Tickets", value: String(data.tickets), tone: "neutral" },
           ]}
         >

@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/compliance/data-export
@@ -44,6 +45,7 @@ function checkRateLimit(tenantId: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "compliance-data-export"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

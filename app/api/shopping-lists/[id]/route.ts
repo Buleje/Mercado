@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ShoppingListsDB } from "@/lib/jsondb";
 import { toErrorPayload } from "@/lib/api-error";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "shopping-lists-X"); if (_rl) return _rl;
   try {
     const body = await req.json();
     const { customerPhone, name, items } = body;

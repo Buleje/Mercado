@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { readData, writeData } from "@/lib/file-store";
 import { randomUUID } from "crypto";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const KEY = "tasks";
 
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "tasks"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const body = await req.json();

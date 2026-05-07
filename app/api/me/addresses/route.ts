@@ -18,6 +18,7 @@ import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Next 16 con cacheComponents: force-dynamic es incompatible. La route es
 // dinamica implicitamente porque usa cookies/headers via requireCustomer.
@@ -111,6 +112,7 @@ export async function GET(req: NextRequest) {
 // ── POST: add address ───────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "me-addresses"); if (_rl) return _rl;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 
@@ -173,6 +175,7 @@ export async function POST(req: NextRequest) {
 // ── DELETE: remove address ──────────────────────────────────────────
 
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "me-addresses"); if (_rl) return _rl;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 

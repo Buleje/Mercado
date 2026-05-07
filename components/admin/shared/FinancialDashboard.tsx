@@ -343,7 +343,7 @@ function TopProductsTable({ productos }: { productos: TopProduct[] }) {
                   {formatCurrency(p.revenue)}
                 </span>
                 <span className="text-sm text-[var(--text-tertiary)] w-10 text-right">
-                  {p.pct.toFixed(1)}%
+                  {Number(p.pct).toFixed(1)}%
                 </span>
               </div>
             </div>

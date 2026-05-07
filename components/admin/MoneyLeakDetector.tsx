@@ -207,17 +207,17 @@ export default function MoneyLeakDetector() {
                       {cat.isLeak && (
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--data-error-500)] dark:text-[var(--data-error-500)] bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 px-2 py-0.5 rounded-full">
                           <TrendingUp className="w-3 h-3" />
-                          +{cat.pctChange.toFixed(0)}%
+                          +{Number(cat.pctChange).toFixed(0)}%
                         </span>
                       )}
                       {!cat.isLeak && cat.pctChange > 0 && (
                         <span className="text-xs text-[var(--text-tertiary)]">
-                          +{cat.pctChange.toFixed(0)}%
+                          +{Number(cat.pctChange).toFixed(0)}%
                         </span>
                       )}
                       {cat.pctChange <= 0 && (
                         <span className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                          {cat.pctChange.toFixed(0)}%
+                          {Number(cat.pctChange).toFixed(0)}%
                         </span>
                       )}
                     </div>

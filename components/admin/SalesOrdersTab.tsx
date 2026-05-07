@@ -224,7 +224,7 @@ export default function SalesOrdersTab() {
     const person = deliveryPeople.find(p => p.nombre === deliveryName);
     if (!person) return "";
     const items = (order.items ?? []).map(i => `${i.name} x${i.qty}`).join(", ");
-    const msg = `Hola ${person.nombre}! Tienes un delivery:\n\nPara: ${order.customerName ?? "Cliente"}\nProductos: ${items}\nTotal: S/${order.total.toFixed(2)} - Metodo: ${order.paymentMethod ?? "efectivo"}\n\nGracias!`;
+    const msg = `Hola ${person.nombre}! Tienes un delivery:\n\nPara: ${order.customerName ?? "Cliente"}\nProductos: ${items}\nTotal: S/${Number(order.total).toFixed(2)} - Metodo: ${order.paymentMethod ?? "efectivo"}\n\nGracias!`;
     const phone = person.teléfono.replace(/\D/g, "");
     const fullPhone = phone.startsWith("51") ? phone : "51" + phone;
     return `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`;
@@ -356,7 +356,7 @@ export default function SalesOrdersTab() {
     const rows = filtered.map(o => [
       o.id,
       o.customerName ?? "",
-      o.total.toFixed(2),
+      Number(o.total).toFixed(2),
       STATUS_CONFIG[o.status]?.label ?? o.status,
       new Date(o.createdAt).toLocaleDateString("es-PE"),
       o.paymentMethod ?? "efectivo",
@@ -1418,7 +1418,7 @@ function DashTooltip({ active, payload, label }: any) {
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {payload.map((p: any, i: number) => (
         <p key={i} className="text-xs" style={{ color: p.color }}>
-          {p.name}: {typeof p.value === 'number' && p.name?.includes('S/') ? `S/${p.value.toFixed(2)}` : p.value}
+          {p.name}: {typeof p.value === 'number' && p.name?.includes('S/') ? `S/${Number(p.value).toFixed(2)}` : p.value}
         </p>
       ))}
     </div>
@@ -1608,8 +1608,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 1: 8 KPIs con iconos === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-primary" sparkColor="var(--color-primary)" sparkVal={kpis.pedidosHoy} />
-        <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-emerald-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
-        <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
+        <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" label="Monto hoy" value={`S/${Number(kpis.totalMonto).toFixed(2)}`} border="border-l-emerald-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
+        <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" label="Ticket promedio" value={`S/${Number(kpis.ticketProm).toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
         <DashKpi icon={<Clock className="h-4 w-4" />} iconBg="bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400" label="Pendientes" value={kpis.pendientes} border="border-l-amber-500" pulse={kpis.pendientes > 5} />
         <DashKpi icon={<Truck className="h-4 w-4" />} iconBg="bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400" label="En camino" value={kpis.enCamino} border="border-l-cyan-500" />
         <DashKpi icon={<CheckCircle className="h-4 w-4" />} iconBg="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" label="Entregados hoy" value={kpis.entregadosHoy} border="border-l-green-500" />
@@ -1754,7 +1754,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{c.name}</p>
-                        <span className="text-xs font-mono text-[var(--text-tertiary)] ml-2 shrink-0">S/{c.total.toFixed(2)}</span>
+                        <span className="text-xs font-mono text-[var(--text-tertiary)] ml-2 shrink-0">S/{Number(c.total).toFixed(2)}</span>
                       </div>
                       <div className="mt-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                         <div

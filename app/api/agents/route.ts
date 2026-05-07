@@ -12,6 +12,7 @@ import {
   ensureAgentsRegistered,
 } from "@/lib/agents";
 import type { AgentDomain, TaskPriority } from "@/lib/agents/types";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Validation schemas ──────────────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ const listQuerySchema = z.object({
 // ── POST — Submit a task ────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "agents"); if (_rl) return _rl;
   const traceId = newTraceId();
   try {
     const admin = await requireAdmin(req, ["owner", "admin", "manager"]);

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Star, Loader2, Plus, Check, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Supplier } from "@/types/erp";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Evaluation = { id: string; supplierId: string; purchaseId?: string; punctuality: number; quality: number; price: number; notes?: string; createdAt: string };
 type EvalAverages = { evaluations: Evaluation[]; averages: { punctuality: number; quality: number; price: number; overall: number } | null };
@@ -39,7 +40,7 @@ export default function SupplierEvaluationsTab() {
 
   const handleCreate = async () => {
     if (!selected) return;
-    await fetch("/api/supplier-evaluations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ supplierId: selected, ...form, notes: form.notes || undefined }) });
+    await fetch("/api/supplier-evaluations", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ supplierId: selected, ...form, notes: form.notes || undefined }) });
     setShowForm(false);
     setForm({ punctuality: 3, quality: 3, price: 3, notes: "" });
     setEvalTick(t => t + 1);
@@ -76,7 +77,7 @@ export default function SupplierEvaluationsTab() {
               {[{ label: "Puntualidad", val: data.averages.punctuality }, { label: "Calidad", val: data.averages.quality }, { label: "Precio", val: data.averages.price }, { label: "General", val: data.averages.overall }].map(m => (
                 <div key={m.label}>
                   <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{m.label}</p>
-                  <p className="text-xl sm:text-2xl font-extrabold text-primary">{m.val.toFixed(1)}</p>
+                  <p className="text-xl sm:text-2xl font-extrabold text-primary">{Number(m.val).toFixed(1)}</p>
                   <StarRating value={Math.round(m.val)} />
                 </div>
               ))}

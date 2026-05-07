@@ -185,7 +185,7 @@ export default function RecipeOfTheWeek() {
               {/* Price + actions */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-6">
                 <span className="text-2xl font-extrabold text-[var(--accent)] dark:text-[#2dd4bf]">
-                  S/ {receta.totalIngredientes.toFixed(2)}
+                  S/ {Number(receta.totalIngredientes).toFixed(2)}
                 </span>
                 <div className="flex gap-2">
                   <Link

@@ -112,7 +112,7 @@ export default function LastOrderBanner() {
                 {order.items.length > 3 && ` y ${order.items.length - 3} más`}
               </p>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
-                <span className="text-xs font-bold text-primary">S/{order.total.toFixed(2)}</span>
+                <span className="text-xs font-bold text-primary">S/{Number(order.total).toFixed(2)}</span>
                 <a
                   href={`/pedido/${order.id}`}
                   className="text-xs text-muted hover:text-primary transition-colors flex items-center gap-0.5"

@@ -3,6 +3,7 @@ import { ABTestDB } from "@/lib/ab-testing";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // GET: list all tests (admin) or get active tests (public with ?active=1)
 export async function GET(req: NextRequest) {
@@ -25,6 +26,7 @@ export async function GET(req: NextRequest) {
 
 // POST: create a new A/B test (admin)
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "ab-tests"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE: delete a test (admin)
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "ab-tests"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -71,6 +74,7 @@ export async function DELETE(req: NextRequest) {
 
 // PATCH: toggle active state (admin)
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "ab-tests"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

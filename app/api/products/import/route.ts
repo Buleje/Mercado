@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -126,6 +127,7 @@ function workbookToJson(workbook: ExcelJS.Workbook): Record<string, unknown>[] {
 // ── Handler ────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "products-import"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

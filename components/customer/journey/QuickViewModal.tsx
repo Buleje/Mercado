@@ -188,7 +188,7 @@ export function QuickViewModal({
                       {/* Price */}
                       <div className="flex items-baseline gap-3">
                         <span className="text-3xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                          S/ {product.price.toFixed(2)}
+                          S/ {Number(product.price).toFixed(2)}
                         </span>
                         {product.unit && (
                           <span className="text-xs text-[var(--text-tertiary)] font-bold uppercase tracking-[var(--ls-wider)]">

@@ -113,7 +113,7 @@ export default function TiendasDestacadas() {
                       strokeWidth={1.75}
                       aria-hidden
                     />
-                    {store.rating.toFixed(1)}
+                    {Number(store.rating).toFixed(1)}
                   </span>
                 )}
               </div>

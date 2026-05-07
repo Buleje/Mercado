@@ -19,6 +19,7 @@ const ValidateSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "cupones-validate"); if (_rl) return _rl;
   const ip = getClientIp(req);
   const { allowed } = rateLimit(`cupon:validate:${ip}`, 15, 300);
   if (!allowed) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * PATCH /api/notification-center/read-all
@@ -8,6 +9,7 @@ import { requireAdmin } from "@/lib/require-admin";
  * Marca todas las notificaciones del tenant como leídas.
  */
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "notification-center-read-all"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const tenantId = auth.tenantId;

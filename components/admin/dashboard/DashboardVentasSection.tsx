@@ -77,8 +77,8 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
   const topList = topTab==="revenue"?st.topRev:topTab==="profit"?st.topProfit:st.topUnits;
   const _topMax = topList.length>0?Math.max(...topList.map((p: any)=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
   const exportVentas = useCallback(() => {
-    const orderRows = orders.filter((o: any) => o.status !== "cancelado").map((o: any) => ({ Tipo: "Delivery", Fecha: o.createdAt.slice(0,10), ID: o.id.slice(-8), Cliente: o.customer.name, "Total S/": o.total.toFixed(2), Pago: o.paymentMethod ?? "", Estado: o.status }));
-    const saleRows = sales.map((s: any) => ({ Tipo: "POS", Fecha: s.createdAt.slice(0,10), ID: s.id.slice(-8), Cliente: "POS", "Total S/": s.total.toFixed(2), Pago: s.payment, Estado: "entregado" }));
+    const orderRows = orders.filter((o: any) => o.status !== "cancelado").map((o: any) => ({ Tipo: "Delivery", Fecha: o.createdAt.slice(0,10), ID: o.id.slice(-8), Cliente: o.customer.name, "Total S/": Number(o.total).toFixed(2), Pago: o.paymentMethod ?? "", Estado: o.status }));
+    const saleRows = sales.map((s: any) => ({ Tipo: "POS", Fecha: s.createdAt.slice(0,10), ID: s.id.slice(-8), Cliente: "POS", "Total S/": Number(s.total).toFixed(2), Pago: s.payment, Estado: "entregado" }));
     exportToCSV([...orderRows, ...saleRows], `ventas_${period}_${new Date().toISOString().slice(0, 10)}`);
   }, [orders, sales, period]);
 
@@ -391,7 +391,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                       <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Conversión Total</span>
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                      {st.overallConversionRate.toFixed(1)}%
+                      {Number(st.overallConversionRate).toFixed(1)}%
                     </div>
                     <div className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]/70 dark:text-[var(--data-success-500)]/70 mt-0.5">
                       Pedidos / Visitas
@@ -404,7 +404,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                       <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Abandono Carrito</span>
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
-                      {st.basketAbandonmentRate.toFixed(1)}%
+                      {Number(st.basketAbandonmentRate).toFixed(1)}%
                     </div>
                     <div className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)]/70 dark:text-[var(--data-warning-500)]/70 mt-0.5">
                       Carritos no finalizados
@@ -417,7 +417,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                       <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Checkout</span>
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                      {st.checkoutCompletionRate.toFixed(1)}%
+                      {Number(st.checkoutCompletionRate).toFixed(1)}%
                     </div>
                     <div className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]/70 dark:text-[var(--data-success-500)]/70 mt-0.5">
                       Tasa de finalización
@@ -433,16 +433,16 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   </div>
                   <div className="space-y-1 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)]">
                     {st.basketAbandonmentRate > 40 && (
-                      <div>• <strong>Alta tasa de abandono de carrito ({st.basketAbandonmentRate.toFixed(0)}%)</strong> - Considera revisar el proceso de checkout y ofrecer descuentos o envío gratis.</div>
+                      <div>• <strong>Alta tasa de abandono de carrito ({Number(st.basketAbandonmentRate).toFixed(0)}%)</strong> - Considera revisar el proceso de checkout y ofrecer descuentos o envío gratis.</div>
                     )}
                     {st.checkoutCompletionRate < 70 && (
-                      <div>• <strong>Baja tasa de finalización de checkout ({st.checkoutCompletionRate.toFixed(0)}%)</strong> - Simplifica el formulario o agrega más métodos de pago.</div>
+                      <div>• <strong>Baja tasa de finalización de checkout ({Number(st.checkoutCompletionRate).toFixed(0)}%)</strong> - Simplifica el formulario o agrega más métodos de pago.</div>
                     )}
                     {st.overallConversionRate > 15 && (
                       <div>• <strong>¡Excelente tasa de conversión!</strong> - Mantén la estrategia actual y considera escalar el tráfico.</div>
                     )}
                     {st.overallConversionRate < 10 && st.overallConversionRate > 0 && (
-                      <div>• <strong>Conversión baja ({st.overallConversionRate.toFixed(1)}%)</strong> - Optimiza landing pages, mejora fotos de productos y clarifica propuesta de valor.</div>
+                      <div>• <strong>Conversión baja ({Number(st.overallConversionRate).toFixed(1)}%)</strong> - Optimiza landing pages, mejora fotos de productos y clarifica propuesta de valor.</div>
                     )}
                     <div className="pt-1 mt-1 border-t border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]\">
                       Nota: Datos del funnel son estimaciones basadas en pedidos completados. Implementa analytics real para métricas precisas.

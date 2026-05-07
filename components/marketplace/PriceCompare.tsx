@@ -171,7 +171,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                           {sp.storeRating && (
                             <span className="flex items-center gap-0.5 text-xs text-[var(--data-warning-500)]">
                               <Star className="h-3 w-3 fill-amber-400" />
-                              {sp.storeRating.toFixed(1)}
+                              {Number(sp.storeRating).toFixed(1)}
                             </span>
                           )}
                           {!sp.inStock && (
@@ -189,7 +189,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                           "text-base font-extrabold",
                           isCheapest ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-gray-800 dark:text-foreground"
                         )}>
-                          S/ {sp.price.toFixed(2)}
+                          S/ {Number(sp.price).toFixed(2)}
                         </p>
                         {discount > 0 && (
                           <p className="text-xs text-gray-400 line-through">

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /**
  * /t/[slug]/admin — punto de entrada al panel admin de un tenant.
@@ -29,7 +30,7 @@ export default function TenantAdminGateway() {
     // Intentar impersonación SuperAdmin (fire once)
     fetch("/api/superadmin/impersonate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ slug }),
     })
       .then((r) => {

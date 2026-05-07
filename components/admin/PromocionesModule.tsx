@@ -1,5 +1,6 @@
 "use client";
 import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useCallback, useEffect } from "react";
 import {
   Tag, Plus, Trash2, ToggleLeft, ToggleRight, X, Loader2, RefreshCw,
@@ -220,7 +221,7 @@ export default function PromocionesModule() {
     try {
       const res = await fetch(`/api/discount-rules/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ activa: !promo.activa }),
       });
       if (res.ok) {
@@ -264,7 +265,7 @@ export default function PromocionesModule() {
     try {
       const res = await fetch("/api/discount-rules", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           nombre:      form.nombre.trim(),
           tipo:        form.tipo,

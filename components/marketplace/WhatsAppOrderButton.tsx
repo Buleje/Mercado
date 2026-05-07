@@ -2,6 +2,7 @@
 
 import { MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /* ── tipos ── */
 
@@ -93,7 +94,7 @@ export default function WhatsAppOrderButton({
     // Fire-and-forget analytics — pérdida del evento no afecta UX (user ya abrió WhatsApp)
     fetch("/api/marketplace/analytics/whatsapp-click", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ storeSlug: _storeSlug, itemCount: items.length }),
     }).catch(() => {
       // Silent by design — analytics best-effort

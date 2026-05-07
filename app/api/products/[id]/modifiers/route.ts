@@ -11,6 +11,7 @@ import { requireAdmin, tryAdmin } from "@/lib/require-admin";
 import { resolveTenantSlug, resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
@@ -104,6 +105,7 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
  * transaction. Strict tenant scoping.
  */
 export async function PUT(req: NextRequest, ctx: RouteCtx) {
+  const _rl = await applyRateLimit(req, "MODERATE", "products-X-modifiers"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

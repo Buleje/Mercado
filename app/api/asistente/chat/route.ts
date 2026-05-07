@@ -4,6 +4,7 @@ import { generateText } from "ai";
 import { chatModel, getActiveProvider } from "@/lib/ai/provider";
 import { searchProductsCrossTenant } from "@/lib/whatsapp/concierge/cross-tenant-search";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Next 16 con cacheComponents: true prohíbe `export const dynamic`. El handler
 // es dinámico por naturaleza (lee req.json), no necesita la flag.
@@ -59,6 +60,7 @@ function detectProductIntent(text: string): string | null {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "asistente-chat"); if (_rl) return _rl;
   let body: unknown;
   try {
     body = await req.json();

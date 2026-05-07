@@ -5,6 +5,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { createSessionToken, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const ImpersonateSchema = z.object({
   slug: z.string().min(1).max(64),
@@ -24,6 +25,7 @@ async function requirePlatform(req: NextRequest) {
  * idéntico al que produce /api/auth/login y lo escribe en la cookie de sesión.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-impersonate"); if (_rl) return _rl;
   // 1. Verificar sesión SuperAdmin (cookie buleje-platform-sess)
   const platformSession = await requirePlatform(req);
   if (!platformSession) {

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const Schema = z.object({
   phones: z.array(z.string().min(1)).min(1).max(5000),
@@ -16,6 +17,7 @@ const Schema = z.object({
  * Used when sending bulk WhatsApp campaigns to also create bell notifications.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "campaigns-notify"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

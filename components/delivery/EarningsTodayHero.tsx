@@ -148,7 +148,7 @@ export default function EarningsTodayHero({
               {totals.deliveries} {totals.deliveries === 1 ? "viaje completado" : "viajes completados"}
               {totals.tips > 0 && (
                 <>
-                  {" · "}<span className="text-yellow-200">S/ {totals.tips.toFixed(2)} en propinas</span>
+                  {" · "}<span className="text-yellow-200">S/ {Number(totals.tips).toFixed(2)} en propinas</span>
                 </>
               )}
             </p>

@@ -236,7 +236,7 @@ export default function BulkWeightCalculator() {
                     {e.product}
                   </p>
                   <p className="text-xs text-[var(--text-tertiary)]">
-                    {e.weight.toFixed(3)} kg x {fmt(e.pricePerKg)}/kg —{" "}
+                    {Number(e.weight).toFixed(3)} kg x {fmt(e.pricePerKg)}/kg —{" "}
                     {new Date(e.time).toLocaleTimeString("es-PE", {
                       hour: "2-digit",
                       minute: "2-digit",

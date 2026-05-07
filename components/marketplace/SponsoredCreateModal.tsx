@@ -11,6 +11,7 @@ import { X, Loader2, AlertCircle } from "@buleje/design-system/icons";
 import { z } from "zod";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Schema Zod ────────────────────────────────────────────────────────────────
 
@@ -129,7 +130,7 @@ export default function SponsoredCreateModal({
     try {
       const res = await fetch("/api/marketplace/sponsored", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           storeId,
           productId: parsed.data.productId,

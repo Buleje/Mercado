@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { MessageCircleQuestion, X, Send, ChevronDown, Loader2, CheckCircle, Circle, MessageSquare } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ export default function SupportWidget() {
       try {
         const res = await fetch("/api/support/tickets", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ subject: subject.trim(), message: message.trim(), priority }),
         });
         if (!res.ok) {

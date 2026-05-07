@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const UpsertSchema = z.object({
   productId: z.number().int().positive(),
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "store-page-overrides"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

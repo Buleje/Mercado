@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -148,7 +149,7 @@ export default function HomepageEditorTab() {
     try {
       await fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ homepageContent: content }),
       });
       setOriginalJson(JSON.stringify(content));

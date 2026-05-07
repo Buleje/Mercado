@@ -16,6 +16,7 @@ import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { voidInvoice } from "@/lib/sunat/nubefact-client";
 import { buildBaja } from "@/lib/sunat/invoice-builder";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Validación ────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ const VoidSchema = z.object({
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "sunat-void"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;

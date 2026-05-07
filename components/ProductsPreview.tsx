@@ -182,7 +182,7 @@ export default function ProductsPreview() {
                 <div className="flex items-center gap-1 mt-1.5">
                   <span className="text-[length:var(--ts-2xs)] text-muted">desde</span>
                   <span className="text-sm sm:text-base font-extrabold text-primary">
-                    S/{product.price.toFixed(2)}
+                    S/{Number(product.price).toFixed(2)}
                   </span>
                   <span className="text-[length:var(--ts-2xs)] text-muted">/{product.unit}</span>
                 </div>

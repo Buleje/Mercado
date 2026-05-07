@@ -510,7 +510,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
             spark={data.sparkTickets}
             secondary={[
               { icon: DollarSign, label: "Prom.", value: fmtSoles(data.ticketPromedio) },
-              { icon: TrendingUp, label: "Margen", value: `${data.margenHoy.toFixed(0)}%` },
+              { icon: TrendingUp, label: "Margen", value: `${Number(data.margenHoy).toFixed(0)}%` },
             ]}
           />
         </div>
@@ -543,7 +543,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
               "font-display text-3xl sm:text-4xl font-semibold tabular-nums leading-none mt-1",
               data.margenHoy >= 30 ? "text-[var(--data-success-500)]" : data.margenHoy >= 15 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"
             )}>
-              {data.margenHoy.toFixed(1)}%
+              {Number(data.margenHoy).toFixed(1)}%
             </p>
           </div>
           <span className={cn(

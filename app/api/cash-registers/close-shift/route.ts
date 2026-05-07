@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/cash-registers/close-shift
@@ -9,6 +10,7 @@ import { logger } from "@/lib/logger";
  * Called from POSCajaModule.tsx when the user confirms shift close.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "cash-registers-close-shift"); if (_rl) return _rl;
   // SECURITY 2026-05-06 (pentest H5): solo admin/owner pueden cerrar turno.
   // Antes el cajero auto-cerraba con `closingAmount` calculado desde
   // movements (sin arqueo físico) → encubría robos del cajero al saltarse

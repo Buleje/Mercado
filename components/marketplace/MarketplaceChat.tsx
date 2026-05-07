@@ -6,6 +6,7 @@ import {
   useRef,
   useCallback,
 } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import * as Sentry from "@sentry/nextjs";
 import Image from "next/image";
 import { m as motion, AnimatePresence } from "framer-motion";
@@ -166,7 +167,7 @@ export default function MarketplaceChat({
     try {
       const res = await fetch("/api/chat/marketplace", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           storeId,
           storePhone: storePhone ?? undefined,

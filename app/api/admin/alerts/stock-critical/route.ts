@@ -4,6 +4,7 @@ import { ProductsDB } from "@/lib/db/products.db";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
   /** fuerza recorrer todos los productos aunque no estén críticos */
@@ -25,6 +26,7 @@ const bodySchema = z.object({
  * Autorización: admin. Puede ser triggereado desde UI o cron diario.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-alerts-stock-critical"); if (_rl) return _rl;
   try {
     const admin = await requireAdmin(req, ["owner", "admin", "manager"]);
     if (admin instanceof NextResponse) return admin;

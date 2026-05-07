@@ -159,7 +159,7 @@ export default function DynamicReorderTab() {
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{p.sku} · {p.category}</p>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-[var(--text-primary)] dark:text-foreground">{p.currentStock}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-foreground">{p.avgDailySales.toFixed(1)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-foreground">{Number(p.avgDailySales).toFixed(1)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-primary">{p.dynamicROP}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-[var(--text-primary)] dark:text-foreground">{p.eoq}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
@@ -197,7 +197,7 @@ export default function DynamicReorderTab() {
                 <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">SKU</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.sku}</p></div>
                 <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Categoría</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.category}</p></div>
                 <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock actual</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.currentStock} u</p></div>
-                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Venta diaria promedio</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.avgDailySales.toFixed(1)} u/día</p></div>
+                <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Venta diaria promedio</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{Number(detail.avgDailySales).toFixed(1)} u/día</p></div>
                 <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Lead time proveedor</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.leadTimeDays} días</p></div>
                 <div><p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock seguridad</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.safetyStock} u</p></div>
               </div>

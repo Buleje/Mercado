@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 import { useState, useMemo, useEffect } from "react";
 import {
@@ -219,7 +220,7 @@ export default function BatchesTab() {
     try {
       const res = await fetch("/api/batches", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           lote: form.lote.trim(),
           productName: form.productName.trim(),
@@ -252,7 +253,7 @@ export default function BatchesTab() {
     try {
       const res = await fetch(`/api/batches?id=${editingId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           lote: form.lote.trim(),
           productName: form.productName.trim(),

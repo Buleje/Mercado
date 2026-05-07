@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -87,6 +88,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/superadmin/recetario — create a new recipe
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-recetario"); if (_rl) return _rl;
   try {
     const session = await requirePlatform(req);
     if (!session) {

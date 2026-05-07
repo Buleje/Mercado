@@ -231,7 +231,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       {store.rating > 0 && (
         <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
           <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
-          {store.rating.toFixed(1)}
+          {Number(store.rating).toFixed(1)}
         </span>
       )}
       {/* Pediste hoy — historial reciente */}
@@ -347,7 +347,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     </div>
   );
 
-  const ratingText = store.rating > 0 ? `, ${store.rating.toFixed(1)} estrellas` : "";
+  const ratingText = store.rating > 0 ? `, ${Number(store.rating).toFixed(1)} estrellas` : "";
   const zoneText = store.zone ? `, ${store.zone}` : "";
   const ariaLabel = `${store.name}${zoneText}${ratingText}${store.vacationMode ? " — de vacaciones" : ""}`;
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Save, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import CategoryImageUploader from "@/components/admin/marketplace/CategoryImageUploader";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /** Categorías default propuestas — cubren ~90% de marketplace bodega/marketplace. */
 const SUGGESTED_CATEGORIES = [
@@ -97,7 +98,7 @@ export default function CategoryImagesClient() {
       const res = await fetch("/api/superadmin/marketplace/category-images", {
         method: "PUT",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ images: diff }),
       });
       if (!res.ok) {

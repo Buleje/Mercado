@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ReviewsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "reviews-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -18,6 +20,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "reviews-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

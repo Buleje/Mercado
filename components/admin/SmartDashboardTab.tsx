@@ -1098,7 +1098,7 @@ function SmartDashboardTab({ adminName = "Administrador" }: SmartDashboardTabPro
                 <TrendingUp className="w-4 h-4 text-[var(--data-success-500)]" />
                 <span className="text-sm font-semibold text-[var(--text-primary)]">Categoria en crecimiento</span>
               </div>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.top.pct.toFixed(0)}% esta semana</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">{growingCategory.top.cat} crecio {growingCategory.Number(top.pct).toFixed(0)}% esta semana</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">De {fmtR(growingCategory.top.lastWeek)} a {fmtR(growingCategory.top.thisWeek)}</p>
               {growingCategory.bottom && <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1.5 font-medium">{growingCategory.bottom.cat} bajo {Math.abs(growingCategory.bottom.pct).toFixed(0)}%</p>}
             </div>

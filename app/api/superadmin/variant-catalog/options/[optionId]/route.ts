@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { VariantCatalogDb } from "@/lib/db/variant-catalog.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // SSRF guard: HTTPS público, o paths relativos same-origin (/uploads/, /brand/).
 const isSafeImageUrl = (s: string): boolean => {
@@ -31,6 +32,7 @@ const PatchSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ optionId: string }> }) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-variant-catalog-options-X"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -59,6 +61,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ optionId:
 }
 
 export async function DELETE(req: NextRequest, ctx: { params: Promise<{ optionId: string }> }) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-variant-catalog-options-X"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 

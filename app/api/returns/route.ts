@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ReturnsDB, InventoryMovementsDB, CustomersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -10,6 +11,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "returns"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const body = await req.json();

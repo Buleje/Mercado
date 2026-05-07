@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Bell,
   Send,
@@ -134,7 +135,7 @@ export default function PushNotificationManager() {
     try {
       const res = await fetch("/api/notifications", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
 

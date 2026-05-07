@@ -144,7 +144,7 @@ export default function DailyDeal() {
               {/* Price */}
               <div className="flex items-center gap-3 justify-center sm:justify-start mb-4">
                 <span className="text-3xl sm:text-4xl font-extrabold text-primary">
-                  S/{product.price.toFixed(2)}
+                  S/{Number(product.price).toFixed(2)}
                 </span>
                 <span className="text-sm text-muted">/{product.unit}</span>
               </div>

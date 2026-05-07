@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useState } from "react";
 import {
   Plus,
@@ -84,7 +85,7 @@ export default function PromotionsTab() {
       };
       const res = await fetch("/api/store-page/promotions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -103,7 +104,7 @@ export default function PromotionsTab() {
   async function toggleActive(p: Promotion) {
     await fetch(`/api/store-page/promotions/${p.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ active: !p.active }),
     });
     await load();

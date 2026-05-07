@@ -137,9 +137,9 @@ function HealthSemaphore() {
   const bgRing = score.total > 70 ? "ring-[var(--data-success-500)]/40" : score.total >= 40 ? "ring-amber-200" : "ring-red-200";
 
   const factors = [
-    { label: "Margen", pts: score.margenPts, max: 33, detail: `${score.margen.toFixed(1)}%` },
-    { label: "Liquidez", pts: score.liquidezPts, max: 33, detail: `${score.liquidez.toFixed(1)}x` },
-    { label: "Deudas", pts: score.deudaPts, max: 34, detail: `${score.deudaRatio.toFixed(1)}%` },
+    { label: "Margen", pts: score.margenPts, max: 33, detail: `${Number(score.margen).toFixed(1)}%` },
+    { label: "Liquidez", pts: score.liquidezPts, max: 33, detail: `${Number(score.liquidez).toFixed(1)}x` },
+    { label: "Deudas", pts: score.deudaPts, max: 34, detail: `${Number(score.deudaRatio).toFixed(1)}%` },
   ];
 
   return (
@@ -1628,8 +1628,8 @@ function FinanzasDashboard() {
               {/* Breakdown */}
               <div className="flex-1 w-full space-y-3">
                 {[
-                  { label: "Margen bruto", pts: healthScore.margenPts, max: 33, detail: `${healthScore.margen.toFixed(1)}%`, desc: "Cuanto ganas por cada sol vendido" },
-                  { label: "Liquidez", pts: healthScore.liquidezPts, max: 33, detail: `${healthScore.liquidez.toFixed(1)}x`, desc: "Efectivo vs gastos mensuales" },
+                  { label: "Margen bruto", pts: healthScore.margenPts, max: 33, detail: `${Number(healthScore.margen).toFixed(1)}%`, desc: "Cuanto ganas por cada sol vendido" },
+                  { label: "Liquidez", pts: healthScore.liquidezPts, max: 33, detail: `${Number(healthScore.liquidez).toFixed(1)}x`, desc: "Efectivo vs gastos mensuales" },
                   { label: "Rotacion inv.", pts: 17, max: 25, detail: "Est.", desc: "Que tan rápido vendes tu stock" },
                   { label: "Crecimiento", pts: Math.min(25, Math.max(5, monthlyData.length >= 2 && monthlyData[monthlyData.length - 2].ingresos > 0 ? Math.round(((monthlyData[monthlyData.length - 1].ingresos - monthlyData[monthlyData.length - 2].ingresos) / monthlyData[monthlyData.length - 2].ingresos) * 25 + 12.5) : 12)), max: 25, detail: monthlyData.length >= 2 ? `${Math.round(((monthlyData[monthlyData.length - 1].ingresos - monthlyData[monthlyData.length - 2].ingresos) / Math.max(monthlyData[monthlyData.length - 2].ingresos, 1)) * 100)}%` : "N/A", desc: "Ventas vs mes anterior" },
                 ].map(f => (
@@ -1776,7 +1776,7 @@ function IntelligenceKPIStrip() {
   if (!kpis) return null;
 
   const cards = [
-    { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: "text-primary" },
+    { label: "Margen", value: `${Number(kpis.margen).toFixed(1)}%`, color: "text-primary" },
     { label: "Ventas/mes", value: formatCurrency(kpis.ventasMes, { decimals: 0 }), color: "text-primary" },
     { label: "Ticket prom.", value: formatCurrency(kpis.ticketPromedio, { decimals: 0 }), color: "text-secondary" },
     { label: "Productos", value: String(kpis.productos), color: "text-[var(--text-primary)]" },

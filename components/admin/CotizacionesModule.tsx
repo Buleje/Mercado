@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
@@ -398,7 +399,7 @@ export default function CotizacionesModule() {
     try {
       const res = await fetch(`/api/cotizaciones/${selected.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error("Error al actualizar");
@@ -450,7 +451,7 @@ export default function CotizacionesModule() {
     try {
       const res = await fetch("/api/cotizaciones", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           clienteNombre: clienteNombre.trim(),
           clienteRuc: clienteRuc.trim() || undefined,
@@ -501,7 +502,7 @@ export default function CotizacionesModule() {
       await Promise.all(vencidas.map(c =>
         fetch(`/api/cotizaciones/${c.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ status: "VENCIDA" }),
         })
       ));
@@ -779,7 +780,7 @@ export default function CotizacionesModule() {
                                 newDate.setDate(newDate.getDate() + 15);
                                 await fetch("/api/cotizaciones", {
                                   method: "POST",
-                                  headers: { "Content-Type": "application/json" },
+                                  headers: csrfHeaders({ "Content-Type": "application/json" }),
                                   body: JSON.stringify({
                                     clienteNombre: c.clienteNombre,
                                     clienteRuc: c.clienteRuc,
@@ -1309,7 +1310,7 @@ export default function CotizacionesModule() {
                     }
                     if (diasEnviada > 3) {
                       const _phone = selected.customerId || "";
-                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${String(selected.número).padStart(4, "0")} por S/${selected.total.toFixed(2)}. ¿Te interesa?`;
+                      const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${String(selected.número).padStart(4, "0")} por S/${Number(selected.total).toFixed(2)}. ¿Te interesa?`;
                       return (
                         <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3 space-y-2">
                           <p className="text-xs font-bold text-[var(--data-warning-500)]">Sin respuesta hace {diasEnviada} días — ¿Enviar recordatorio?</p>
@@ -1361,7 +1362,7 @@ export default function CotizacionesModule() {
                     onClick={() => {
                       const c = selected;
                       const itemsText = (c.items ?? []).map((it, i) =>
-                        `${i + 1}. ${it.descripcion} x ${it.cantidad} — S/ ${it.subtotal.toFixed(2)}`
+                        `${i + 1}. ${it.descripcion} x ${it.cantidad} — S/ ${Number(it.subtotal).toFixed(2)}`
                       ).join("\n");
                       const texto = [
                         `*Cotizacion #${String(c.número).padStart(4, "0")} — Buleje*`,
@@ -1371,9 +1372,9 @@ export default function CotizacionesModule() {
                         `─────────`,
                         itemsText,
                         `─────────`,
-                        `Subtotal: S/ ${c.subtotal.toFixed(2)}`,
-                        `IGV (18%): S/ ${c.igv.toFixed(2)}`,
-                        `*Total: S/ ${c.total.toFixed(2)}*`,
+                        `Subtotal: S/ ${Number(c.subtotal).toFixed(2)}`,
+                        `IGV (18%): S/ ${Number(c.igv).toFixed(2)}`,
+                        `*Total: S/ ${Number(c.total).toFixed(2)}*`,
                         `─────────`,
                         `Te interesa? Responde a este mensaje.`,
                         `Buleje — Pucallpa`,

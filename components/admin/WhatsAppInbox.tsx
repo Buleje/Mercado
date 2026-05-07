@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MessageSquare,
@@ -111,7 +112,7 @@ export default function WhatsAppInbox() {
       // Marcar como leídos
       fetch("/api/chat/admin", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ phone }),
       }).catch(() => {});
       // Actualizar badge en lista
@@ -166,7 +167,7 @@ export default function WhatsAppInbox() {
     try {
       const res = await fetch("/api/chat/admin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           phone: selectedPhone,
           customerName: selectedName,

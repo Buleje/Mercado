@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Redis } from "@upstash/redis";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET / PUT /api/admin/content-calendar
@@ -68,6 +69,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-content-calendar"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["owner", "admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { MessageSquare, X, Star, Send, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const STORAGE_KEY = "buleje_beta_feedback_done";
 
@@ -45,7 +46,7 @@ export default function BetaFeedbackWidget() {
     try {
       await fetch("/api/beta-feedback", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ rating, comment: comment.trim() }),
       });
     } catch { /* silent — don't block the user if the request fails */ }

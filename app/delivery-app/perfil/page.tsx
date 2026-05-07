@@ -141,7 +141,7 @@ export default function PerfilPage() {
       <section className="grid grid-cols-3 gap-3 lg:gap-4">
         <Stat
           icon={<StarBadge className="h-6 w-6 text-[var(--brand-secondary)]" />}
-          value={me.rating.toFixed(1)}
+          value={Number(me.rating).toFixed(1)}
           label="Rating"
           tone="amber"
         />

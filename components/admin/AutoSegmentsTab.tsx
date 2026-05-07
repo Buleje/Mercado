@@ -221,7 +221,7 @@ export default function AutoSegmentsTab() {
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">ticket prom.</p>
                   </div>
                   <div className="text-center bg-gray-50 dark:bg-surface rounded-lg py-2">
-                    <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{sg.avgFrequency.toFixed(1)}x</p>
+                    <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{Number(sg.avgFrequency).toFixed(1)}x</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">pedidos prom.</p>
                   </div>
                 </div>
@@ -259,7 +259,7 @@ export default function AutoSegmentsTab() {
                         </div>
                         <div className="flex items-center gap-2 text-[var(--text-secondary)] dark:text-muted">
                           <span>{c.orderCount} pedidos</span>
-                          <span className="font-semibold">S/{c.totalSpent.toFixed(0)}</span>
+                          <span className="font-semibold">S/{Number(c.totalSpent).toFixed(0)}</span>
                           {c.daysSinceLast !== null && (
                             <span className={cn("text-[length:var(--ts-2xs)] font-bold", c.daysSinceLast > 60 ? "text-[var(--data-error-500)]" : c.daysSinceLast > 30 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")}>
                               {c.daysSinceLast}d

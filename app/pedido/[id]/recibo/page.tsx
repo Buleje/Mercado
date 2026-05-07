@@ -188,7 +188,7 @@ export default function ReciboPage() {
                     {item.quantity} {item.unit}
                   </td>
                   <td className="py-1.5 text-right text-gray-600">
-                    S/{item.price.toFixed(2)}
+                    S/{Number(item.price).toFixed(2)}
                   </td>
                   <td className="py-1.5 text-right font-medium text-gray-800">
                     S/{(item.price * item.quantity).toFixed(2)}
@@ -202,7 +202,7 @@ export default function ReciboPage() {
           <div className="border-t border-dashed border-gray-300 pt-3 flex justify-between items-center">
             <span className="text-sm font-bold text-gray-900">TOTAL</span>
             <span className="text-lg font-bold text-gray-900">
-              S/{order.total.toFixed(2)}
+              S/{Number(order.total).toFixed(2)}
             </span>
           </div>
 

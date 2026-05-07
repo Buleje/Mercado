@@ -257,7 +257,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
         <StatCard label="Stock Crítico" value={String(data.stockCritico)} icon={AlertTriangle} emphasis={data.stockCritico > 0 ? "error" : "success"} />
         <StatCard label="Agotados" value={String(data.agotados)} icon={Package} emphasis={data.agotados > 0 ? "error" : "success"} />
         <StatCard label="Sin Movimiento" value={String(data.sinMovimiento)} icon={Timer} emphasis={data.sinMovimiento > 5 ? "warning" : "neutral"} />
-        <StatCard label="Rotación" value={data.rotacionGeneral.toFixed(2)} icon={TrendingUp} delta={data.dValor} />
+        <StatCard label="Rotación" value={Number(data.rotacionGeneral).toFixed(2)} icon={TrendingUp} delta={data.dValor} />
       </div>
 
       {/* ── Alert bar (critical) ── */}

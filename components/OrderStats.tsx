@@ -129,7 +129,7 @@ export function OrderStats({
                   )}>
                     {hasIncrease && <TrendingUp className="h-3 w-3" />}
                     {hasDecrease && <TrendingDown className="h-3 w-3" />}
-                    <span>{hasIncrease && "+"}{stat.change.toFixed(1)}%</span>
+                    <span>{hasIncrease && "+"}{Number(stat.change).toFixed(1)}%</span>
                   </div>
                 )}
               </div>

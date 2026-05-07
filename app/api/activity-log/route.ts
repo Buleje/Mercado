@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const PostSchema = z.object({
   action: z.string().min(1).max(100),
@@ -63,6 +64,7 @@ export async function GET(req: NextRequest) {
 
 // POST – add a new entry
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "activity-log"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -101,7 +103,8 @@ export async function POST(req: NextRequest) {
 // (conservación 5 años) + ruptura del hash chain de evidencia. Si en el futuro
 // se necesita reset (demos / staging), agregar nuevo endpoint protegido por
 // rol "superadmin" con audit trail propio del DELETE.
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "activity-log"); if (_rl) return _rl;
   return NextResponse.json(
     { error: "endpoint deshabilitado por compliance — Art. 11 Ley 29733" },
     { status: 410 },

@@ -70,7 +70,7 @@ function buildPrintHtml(products: Product[], config: LabelConfig): string {
           ${config.showCategory ? `<div style="font-size:${s.font};color:#666;text-transform:uppercase;letter-spacing:0.5px;line-height:1;">${p.category}</div>` : ""}
           <div style="font-size:${s.font};font-weight:bold;color:#111;line-height:1.2;flex:1;display:flex;align-items:center;word-break:break-word;">${p.name}</div>
           <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-            <div style="font-size:${s.priceFt};font-weight:900;color:#111;">S/ ${p.price.toFixed(2)}</div>
+            <div style="font-size:${s.priceFt};font-weight:900;color:#111;">S/ ${Number(p.price).toFixed(2)}</div>
             ${config.showUnit ? `<div style="font-size:${s.font};color:#555;">/${p.unit}</div>` : ""}
             ${config.showStock && p.stock != null ? `<div style="font-size:${s.font};color:#888;">Stock: ${p.stock}</div>` : ""}
           </div>
@@ -257,7 +257,7 @@ export default function EtiquetasTab() {
                     {config.showCategory && <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] uppercase">{p.category}</span>}
                     <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-foreground leading-tight">{p.name}</span>
                     <div className="flex items-end justify-between">
-                      <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">S/ {p.price.toFixed(2)}</span>
+                      <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">S/ {Number(p.price).toFixed(2)}</span>
                       {config.showUnit && <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">/{p.unit}</span>}
                     </div>
                     {config.showBarcode && p.barcode && <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-secondary)] truncate">{p.barcode}</span>}
@@ -321,7 +321,7 @@ export default function EtiquetasTab() {
                       {sel ? <CheckSquare className="h-4 w-4 text-primary shrink-0" /> : <Square className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />}
                     </div>
                     <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground leading-tight mb-1 line-clamp-2">{p.name}</p>
-                    <p className="text-base font-extrabold text-primary">S/ {p.price.toFixed(2)}</p>
+                    <p className="text-base font-extrabold text-primary">S/ {Number(p.price).toFixed(2)}</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">{p.unit} {p.stock != null ? `· Stock: ${p.stock}` : ""}</p>
                     {p.barcode && <p className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate mt-0.5">{p.barcode}</p>}
                   </button>
@@ -345,7 +345,7 @@ export default function EtiquetasTab() {
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{p.category} · {p.unit}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="font-extrabold text-primary text-sm">S/ {p.price.toFixed(2)}</p>
+                      <p className="font-extrabold text-primary text-sm">S/ {Number(p.price).toFixed(2)}</p>
                       {p.barcode && <p className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)]">{p.barcode}</p>}
                     </div>
                   </div>

@@ -182,7 +182,7 @@ export default function QuickAddDrawer() {
 
               <div className="mt-4 flex items-baseline gap-2">
                 <span className="text-xl font-bold text-[var(--text-primary)]">
-                  S/ {product.price.toFixed(2)}
+                  S/ {Number(product.price).toFixed(2)}
                 </span>
                 {product.unit && (
                   <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">

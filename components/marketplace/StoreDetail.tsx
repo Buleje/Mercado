@@ -9,6 +9,7 @@ import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceChat from "@/components/marketplace/MarketplaceChat";
 import MarketplaceMiniCart from "@/components/marketplace/MarketplaceMiniCart";
 import StoreWhatsAppButton from "@/components/marketplace/StoreWhatsAppButton";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ---------- constantes de categorías sugeridas ----------
 
@@ -333,7 +334,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
     try {
       const res = await fetch(`/api/marketplace/stores/${storeSlug}/reviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           reviewerName: formName.trim(),
           rating: formRating,
@@ -791,7 +792,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
       }
       fetch(`/api/marketplace/stores/${slug}/live-viewers`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ sessionId }),
       }).catch(() => {
         // Fire-and-forget: pérdida del registro no afecta UX. Silent por diseño.

@@ -4,6 +4,7 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { ListChecks, Plus, X, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Priority = "baja" | "media" | "alta" | "urgente";
 type TaskStatus = "pendiente" | "en_progreso" | "completada" | "cancelada";
@@ -76,9 +77,9 @@ export default function TasksTab() {
     const body = { title: form.title.trim(), description: form.description || undefined, priority: form.priority, assignedTo: form.assignedTo || undefined, dueDate: form.dueDate || undefined, module: form.module || undefined };
     try {
       if (editId) {
-        await fetch(`/api/tasks/${editId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        await fetch(`/api/tasks/${editId}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
       } else {
-        await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        await fetch("/api/tasks", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
       }
       setShowForm(false);
       await load();
@@ -87,7 +88,7 @@ export default function TasksTab() {
   };
 
   const changeStatus = async (id: string, status: TaskStatus) => {
-    await fetch(`/api/tasks/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status, ...(status === "completada" ? { completedAt: new Date().toISOString() } : {}) }) });
+    await fetch(`/api/tasks/${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status, ...(status === "completada" ? { completedAt: new Date().toISOString() } : {}) }) });
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
   };
 

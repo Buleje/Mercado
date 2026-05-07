@@ -17,6 +17,7 @@ const ApplySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "cupones-apply"); if (_rl) return _rl;
   const ip = getClientIp(req);
   const { allowed } = rateLimit(`cupon:apply:${ip}`, 10, 300);
   if (!allowed) {

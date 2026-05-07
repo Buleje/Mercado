@@ -11,6 +11,7 @@ import { prismaForTenant } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { autoEarnLoyaltyPoints } from "@/lib/loyalty/auto-earn";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const NOTIFIABLE_STATUSES = new Set(["confirmado", "en_camino", "entregado", "cancelado"]);
 
@@ -58,6 +59,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "orders-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -342,6 +344,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "orders-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

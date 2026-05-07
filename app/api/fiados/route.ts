@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateFiadoSchema = z.object({
   customerId: z.string().min(1).max(100),
@@ -99,6 +100,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/fiados — create new fiado
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "fiados"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

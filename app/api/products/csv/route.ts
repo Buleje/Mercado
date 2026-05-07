@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { invalidate } from "@/lib/cache";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // GET /api/products/csv — Export products as CSV download
 export async function GET(req: NextRequest) {
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/products/csv — Import products from CSV file
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "products-csv"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

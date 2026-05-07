@@ -228,7 +228,7 @@ export function TenantProductsModal({
                       {/* Price + Stock */}
                       <div className="text-right shrink-0">
                         <div className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
-                          S/{p.price.toFixed(2)}
+                          S/{Number(p.price).toFixed(2)}
                         </div>
                         <div
                           className={`text-[length:var(--ts-xs)] font-semibold tabular-nums ${

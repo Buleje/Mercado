@@ -4,6 +4,7 @@ import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const LocationSchema = z.object({
   id: z.string().min(1),
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "customers-X-ai-analysis"); if (_rl) return _rl;
   // SECURITY/CRITICAL 2026-05-06 (audit AI #2): requireAdmin obligatorio +
   // tenantId del JWT. Antes endpoint anónimo permitía PII injection
   // cross-tenant via header spoofeable.

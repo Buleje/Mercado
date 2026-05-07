@@ -2,6 +2,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface NotifConfig {
   notifyWhatsApp: boolean;
@@ -53,7 +54,7 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
     try {
       const res = await fetch(`/api/delivery/partners`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ id: partner.id, notes: JSON.stringify(config) }),
       });
       if (!res.ok) {

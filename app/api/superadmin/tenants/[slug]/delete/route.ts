@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -64,6 +65,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-tenants-X-delete"); if (_rl) return _rl;
   const session = await requirePlatform(req);
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

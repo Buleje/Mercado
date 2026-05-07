@@ -178,7 +178,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
                 className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-[var(--surface-sunken)] transition-colors text-left"
               >
                 <span className="text-sm text-[var(--text-primary)] truncate">{p.name}</span>
-                <span className="text-sm text-[var(--text-tertiary)] shrink-0 ml-2">S/ {p.price.toFixed(2)}</span>
+                <span className="text-sm text-[var(--text-tertiary)] shrink-0 ml-2">S/ {Number(p.price).toFixed(2)}</span>
               </button>
             ))}
           </div>
@@ -193,7 +193,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
             <span className="text-sm text-[var(--text-secondary)]">S/</span>
             <input
               readOnly
-              value={selected ? selected.price.toFixed(2) : ""}
+              value={selected ? Number(selected.price).toFixed(2) : ""}
               placeholder="—"
               className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] focus:outline-none"
             />
@@ -370,9 +370,9 @@ export default function ScheduledPriceChange() {
 
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     <span className="text-xs text-[var(--text-tertiary)]">
-                      <span className="line-through">S/ {event.currentPrice.toFixed(2)}</span>
+                      <span className="line-through">S/ {Number(event.currentPrice).toFixed(2)}</span>
                       <span className="mx-1 text-[var(--text-tertiary)]">→</span>
-                      <span className="font-semibold text-[var(--text-primary)]">S/ {event.newPrice.toFixed(2)}</span>
+                      <span className="font-semibold text-[var(--text-primary)]">S/ {Number(event.newPrice).toFixed(2)}</span>
                     </span>
                     <span className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
                       <Clock size={11} />
@@ -431,7 +431,7 @@ export default function ScheduledPriceChange() {
                       </span>
                       <span className="text-sm text-[var(--text-secondary)] truncate">{event.productName}</span>
                       <span className="text-xs text-[var(--text-tertiary)]">
-                        S/ {event.currentPrice.toFixed(2)} → S/ {event.newPrice.toFixed(2)}
+                        S/ {Number(event.currentPrice).toFixed(2)} → S/ {Number(event.newPrice).toFixed(2)}
                       </span>
                     </div>
                   </div>

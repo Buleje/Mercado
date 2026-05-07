@@ -496,7 +496,7 @@ export default function SugerenciasCompraTab() {
                             <span className="text-[var(--data-warning-500)] font-semibold">⚠ Sin proveedor anterior</span>
                           )}
                           {s.lastPrice != null && (
-                            <span className="text-[var(--text-tertiary)] tabular-nums">Último S/{s.lastPrice.toFixed(2)}</span>
+                            <span className="text-[var(--text-tertiary)] tabular-nums">Último S/{Number(s.lastPrice).toFixed(2)}</span>
                           )}
                         </div>
                       </div>

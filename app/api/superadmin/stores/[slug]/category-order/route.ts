@@ -5,6 +5,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { invalidateByPrefix } from "@/lib/cache";
 import { getCategoryOrder, setCategoryOrder } from "@/lib/store-category-order";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET/PUT /api/superadmin/stores/[slug]/category-order
@@ -46,6 +47,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-stores-X-category-order"); if (_rl) return _rl;
   const denied = await authGuard(req);
   if (denied) return denied;
 

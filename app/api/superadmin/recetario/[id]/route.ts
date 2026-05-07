@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -97,6 +98,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-recetario-X"); if (_rl) return _rl;
   try {
     const session = await requirePlatform(req);
     if (!session) {
@@ -163,6 +165,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-recetario-X"); if (_rl) return _rl;
   try {
     const session = await requirePlatform(req);
     if (!session) {

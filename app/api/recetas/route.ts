@@ -4,6 +4,7 @@ import { RecetasDB } from "@/lib/db/recetas.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const IngredienteSchema = z.object({
   productoId: z.number().int().positive(),
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/recetas — create receta with ingredientes
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "recetas"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

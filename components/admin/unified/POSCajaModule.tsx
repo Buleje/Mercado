@@ -392,7 +392,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
               <div key={i} className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center shrink-0">{p.name.charAt(0)}</div>
                 <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{p.name}</span>
-                <span className="text-sm font-bold font-mono text-[var(--text-primary)]">S/ {p.total.toFixed(0)}</span>
+                <span className="text-sm font-bold font-mono text-[var(--text-primary)]">S/ {Number(p.total).toFixed(0)}</span>
               </div>
             ))}
           </div>

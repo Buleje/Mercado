@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Tags se persisten en Settings.featureFlagsJson bajo la clave "custom_tags" ──
 // featureFlagsJson es un campo JSON libre por tenant, ideal para extensiones sin migración.
@@ -72,6 +73,7 @@ const PostSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "tags"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -102,6 +104,7 @@ export async function POST(req: NextRequest) {
 // ── DELETE /api/tags?name=...&entity=... ─────────────────────────────────────
 
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "tags"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

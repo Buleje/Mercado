@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import type { StoreRow } from "./types";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface UseStoreActionsParams {
   setSaving: (id: string | null) => void;
@@ -24,7 +25,7 @@ export function useStoreActions({
       try {
         const res = await fetch("/api/superadmin/stores", {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           credentials: "include",
           body: JSON.stringify({ storeId: store.id, isPublished: !store.isPublished }),
         });
@@ -52,7 +53,7 @@ export function useStoreActions({
       try {
         const res = await fetch("/api/superadmin/stores", {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           credentials: "include",
           body: JSON.stringify({ storeId, commission: val }),
         });

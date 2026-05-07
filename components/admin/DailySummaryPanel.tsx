@@ -118,7 +118,7 @@ export default function DailySummaryPanel() {
         <KpiCard
           icon={DollarSign}
           label="Ventas hoy"
-          value={`S/${data.totalSales.toFixed(2)}`}
+          value={`S/${Number(data.totalSales).toFixed(2)}`}
           color="text-[var(--data-success-500)]"
           bg="bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]"
         />
@@ -132,14 +132,14 @@ export default function DailySummaryPanel() {
         <KpiCard
           icon={TrendingUp}
           label="Ticket promedio"
-          value={`S/${data.averageTicket.toFixed(2)}`}
+          value={`S/${Number(data.averageTicket).toFixed(2)}`}
           color="text-[var(--text-secondary)]"
           bg="bg-[var(--surface-sunken)] dark:bg-[var(--text-primary)]/10"
         />
         <KpiCard
           icon={Wallet}
           label="En caja"
-          value={`S/${data.cashBalance.toFixed(2)}`}
+          value={`S/${Number(data.cashBalance).toFixed(2)}`}
           color="text-[var(--data-warning-500)]"
           bg="bg-amber-50 dark:bg-[var(--data-warning-500)]/10"
         />
@@ -239,7 +239,7 @@ export default function DailySummaryPanel() {
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs text-[var(--text-tertiary)]">{p.quantity}u</span>
                     <span className="text-xs font-medium text-[var(--text-secondary)]">
-                      S/{p.revenue.toFixed(2)}
+                      S/{Number(p.revenue).toFixed(2)}
                     </span>
                   </div>
                 </div>

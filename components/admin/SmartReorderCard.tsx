@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { ShoppingBag, Loader2, CheckSquare, Square, AlertTriangle } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 import { calculateReorderSuggestions, type ReorderSuggestion } from "@/lib/smart-reorder";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface Props {
   className?: string;
@@ -102,7 +103,7 @@ export default function SmartReorderCard({ className }: Props) {
 
       const res = await fetch("/api/purchases", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
 

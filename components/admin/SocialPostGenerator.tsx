@@ -63,7 +63,7 @@ function generateText(
   switch (type) {
     case "oferta":
       return (
-        `OFERTA DEL DIA — ${product.name} a solo S/ ${product.price.toFixed(2)}!` +
+        `OFERTA DEL DIA — ${product.name} a solo S/ ${Number(product.price).toFixed(2)}!` +
         (prev > 0 ? ` Antes S/ ${prev.toFixed(2)}.` : "") +
         ` Solo en Buleje. Pide por WhatsApp!`
       );
@@ -255,7 +255,7 @@ export default function SocialPostGenerator() {
               {selectedProduct && (
                 <p className="mt-1 text-xs text-primary">
                   Seleccionado: {selectedProduct.name} — S/{" "}
-                  {selectedProduct.price.toFixed(2)}
+                  {Number(selectedProduct.price).toFixed(2)}
                 </p>
               )}
             </div>

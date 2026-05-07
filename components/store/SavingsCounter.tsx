@@ -54,7 +54,7 @@ export default function SavingsCounter() {
           {hasSavings ? (
             <>
               <p className="text-3xl font-extrabold text-[var(--data-warning-700)] dark:text-amber-300 mt-1">
-                S/ {savings.monthTotal.toFixed(2)}
+                S/ {Number(savings.monthTotal).toFixed(2)}
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1 flex items-center gap-1">
                 <Sparkles className="h-3 w-3 text-[var(--data-warning-500)]" />
@@ -63,7 +63,7 @@ export default function SavingsCounter() {
               {savings.allTimeTotal > savings.monthTotal && (
                 <p className="text-xs text-[var(--text-tertiary)] mt-2 flex items-center gap-1">
                   <TrendingUp className="h-3 w-3" />
-                  Total acumulado: S/ {savings.allTimeTotal.toFixed(2)}
+                  Total acumulado: S/ {Number(savings.allTimeTotal).toFixed(2)}
                 </p>
               )}
             </>

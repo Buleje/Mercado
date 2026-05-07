@@ -5,10 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@/lib/generated/prisma/client";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, ctx: RouteContext) {
+  const _rl = await applyRateLimit(req, "MODERATE", "cotizaciones-X-convertir"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
   const { id } = await ctx.params;

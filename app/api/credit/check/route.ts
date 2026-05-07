@@ -7,6 +7,7 @@ import { getAvailableCredit } from "@/lib/credit/installment-manager";
 import { updateCreditProfile } from "@/lib/credit/scoring-engine";
 import { INTEREST_RATES, ALLOWED_INSTALLMENTS } from "@/lib/credit/installment-manager";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,7 @@ const CheckSchema = z.object({
 // ── POST /api/credit/check ────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "credit-check"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

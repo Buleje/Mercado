@@ -156,7 +156,7 @@ export default function CostCenterTab() {
                 </div>
                 <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", c.pct > 100 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" : c.pct > 85 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]")}>
                   {c.pct > 100 ? <AlertTriangle className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
-                  {c.pct.toFixed(0)}%
+                  {Number(c.pct).toFixed(0)}%
                 </span>
               </div>
               <div className="space-y-2">

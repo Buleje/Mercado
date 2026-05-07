@@ -5,6 +5,7 @@ import { HelpCircle, Plus, Loader2, ChevronDown } from "@buleje/design-system/ic
 import type { MockQuestion } from "@/lib/mocks/product-qa.mock";
 import QuestionCard from "./QuestionCard";
 import AskQuestionModal from "./AskQuestionModal";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface ProductQAProps {
   productId: number;
@@ -42,7 +43,7 @@ export default function ProductQA({ productId, storeName }: ProductQAProps) {
     async (answerId: string) => {
       await fetch(`/api/marketplace/qa/${productId}/answer`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           questionId: "helpful-vote",
           userName: "voter",

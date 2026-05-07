@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useMemo, useState, useEffect } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Loader2, Store } from "@buleje/design-system/icons";
 import { Check, ShieldCheck, Zap, BadgeCheck, MessageCircle, Sparkles } from "lucide-react";
@@ -205,7 +206,7 @@ export default function RegistroClient() {
     try {
       const res = await fetch("/api/vendor/registration", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(full.data),
       });
       if (!res.ok) {

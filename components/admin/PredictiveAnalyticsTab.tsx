@@ -182,7 +182,7 @@ export default function PredictiveAnalyticsTab() {
       {/* Card 1: Ventas próxima semana */}
       <PredCard icon={data.trendPct >= 0 ? TrendingUp : TrendingDown} title="Ventas próxima semana" iconBg={data.trendPct >= 0 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]"}>
         <div className="flex items-end gap-3">
-          <p className="text-4xl font-extrabold text-[var(--text-primary)]">S/{data.salesForecast.toFixed(2)}</p>
+          <p className="text-4xl font-extrabold text-[var(--text-primary)]">S/{Number(data.salesForecast).toFixed(2)}</p>
           <span className={cn(
             "text-sm font-bold px-2 py-0.5 rounded-full mb-1",
             data.trendPct >= 0

@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
 import {
   CreditCard, Plus, X, RefreshCw, Download, AlertTriangle,
@@ -157,7 +158,7 @@ export default function AccountsReceivableTab() {
       // Crear fiado REAL en la base de datos
       const res = await fetch("/api/fiados", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           customerId: form.customerPhone.trim() || form.customerName.trim(),
           total: parseFloat(form.totalAmount),
@@ -220,7 +221,7 @@ export default function AccountsReceivableTab() {
       try {
         await fetch(`/api/fiados/${selected.id}/pagar`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ monto: amount }),
         });
         // Recargar datos reales

@@ -5,6 +5,7 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const ReturnItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -25,6 +26,7 @@ const DevolucionSchema = z.object({
  * applies credit to the customer's account.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "sales-devolucion"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

@@ -210,7 +210,7 @@ export function OrdersClient() {
         />
         <KpiCard
           label="GMV total"
-          value={`S/${kpis.totalRev.toFixed(0)}`}
+          value={`S/${Number(kpis.totalRev).toFixed(0)}`}
           tone="var(--accent)"
           icon={CreditCard}
         />
@@ -425,7 +425,7 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
         <div>
           <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
           <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">
-            S/{order.total.toFixed(2)}
+            S/{Number(order.total).toFixed(2)}
           </p>
         </div>
         <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">
@@ -492,7 +492,7 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
             </div>
             <div className="ml-auto text-right">
               <p className="text-xs uppercase tracking-wider opacity-80">Total</p>
-              <p className="text-lg font-extrabold tabular-nums">S/{order.total.toFixed(2)}</p>
+              <p className="text-lg font-extrabold tabular-nums">S/{Number(order.total).toFixed(2)}</p>
             </div>
           </div>
 
@@ -556,7 +556,7 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
                       {it.name}
                     </p>
                     <p className="text-xs text-[var(--text-tertiary)]">
-                      {it.quantity} × S/{it.price.toFixed(2)}
+                      {it.quantity} × S/{Number(it.price).toFixed(2)}
                       {it.unit ? ` · ${it.unit}` : ""}
                     </p>
                   </div>

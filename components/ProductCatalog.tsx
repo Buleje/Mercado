@@ -762,7 +762,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                     className={cn("flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-foreground transition-colors text-left", i === suggestionIdx ? "bg-primary/10" : "hover:bg-gray-50 dark:hover:bg-surface")}>
                     {p.image && <Image src={p.image} alt="" width={28} height={28} className="w-7 h-7 rounded-md object-cover shrink-0" unoptimized />}
                     <span className="flex-1 truncate">{p.name}</span>
-                    <span className="text-xs text-muted shrink-0">S/{p.price.toFixed(2)}</span>
+                    <span className="text-xs text-muted shrink-0">S/{Number(p.price).toFixed(2)}</span>
                   </button>
                 ))}
               </div>

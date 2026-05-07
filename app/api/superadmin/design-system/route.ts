@@ -25,6 +25,7 @@ import {
   validateTokens,
   type DesignTokens,
 } from "@/lib/design-presets";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 async function requirePlatformSession(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -170,6 +171,7 @@ const ActivateSchema = z.union([
 ]);
 
 export async function PUT(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-design-system"); if (_rl) return _rl;
   const session = await requirePlatformSession(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -290,6 +292,7 @@ const PostSchema = z.discriminatedUnion("mode", [
 ]);
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-design-system"); if (_rl) return _rl;
   const session = await requirePlatformSession(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -413,6 +416,7 @@ export async function POST(req: NextRequest) {
 // ── DELETE: remover override per-tenant (vuelve a heredar global) ────────────
 
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-design-system"); if (_rl) return _rl;
   const session = await requirePlatformSession(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

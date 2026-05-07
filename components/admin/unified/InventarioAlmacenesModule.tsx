@@ -488,7 +488,7 @@ function InventoryAnalyticsDashboard() {
                   <div className="bg-white border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
                     <p className="font-bold text-[var(--text-primary)]">{d.fullName}</p>
                     <p className="text-primary font-bold">{formatCurrency(d.value, { decimals: 0 })}</p>
-                    <p className="text-[var(--text-secondary)]">{d.units} unid x S/ {d.unitCost.toFixed(2)}</p>
+                    <p className="text-[var(--text-secondary)]">{d.units} unid x S/ {Number(d.unitCost).toFixed(2)}</p>
                   </div>
                 );
               }}
@@ -716,7 +716,7 @@ export default function InventarioAlmacenesModule() {
     const labelsHtml = selected.map(p => `
       <div class="label">
         <div class="label-name">${p.name}</div>
-        <div class="label-price">S/ ${p.price.toFixed(2)}</div>
+        <div class="label-price">S/ ${Number(p.price).toFixed(2)}</div>
         ${p.barcode ? `<div class="label-barcode">${p.barcode}</div>` : ""}
       </div>
     `).join("");
@@ -920,7 +920,7 @@ export default function InventarioAlmacenesModule() {
                         className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                       />
                       <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{p.name}</span>
-                      <span className="text-sm font-bold text-[var(--color-primary)]" style={{ color: "var(--color-primary)" }}>S/{p.price.toFixed(2)}</span>
+                      <span className="text-sm font-bold text-[var(--color-primary)]" style={{ color: "var(--color-primary)" }}>S/{Number(p.price).toFixed(2)}</span>
                     </label>
                   ))}
                 </div>

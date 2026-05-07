@@ -126,7 +126,7 @@ function WishlistProductCard({
         </Link>
 
         <span className="text-base font-extrabold text-[var(--text-primary)] tabular-nums">
-          S/{product.price.toFixed(2)}
+          S/{Number(product.price).toFixed(2)}
           <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)] ml-1">/{product.unit}</span>
         </span>
 
@@ -165,7 +165,7 @@ function SuggestionCard({ product }: { product: WishlistProduct }) {
           {product.name}
         </p>
         <span className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
-          S/{product.price.toFixed(2)}
+          S/{Number(product.price).toFixed(2)}
         </span>
         <button className="flex items-center justify-center gap-1.5 w-full min-h-[34px] rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/20 transition-colors">
           <Heart className="h-3 w-3" />

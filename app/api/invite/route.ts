@@ -3,11 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { tryAdmin } from "@/lib/require-admin";
 import { createInvite, verifyInvite, acceptInvite } from "@/lib/invite";
 import type { InviteRole } from "@/lib/invite";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─── POST /api/invite ─────────────────────────────────────────────────────────
 // Create a new invitation link. Requires admin session.
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "invite"); if (_rl) return _rl;
   // SECURITY 2026-05-06: tenantId del JWT, no del header. Antes un admin de
   // tenant A podía generar un invite para tenant B forzando x-tenant-id=B.
   const session = await tryAdmin(req);
@@ -75,6 +77,7 @@ export async function GET(req: NextRequest) {
 // Accept an invitation (called after the user logs in / registers).
 
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "invite"); if (_rl) return _rl;
   let body: { token?: unknown };
   try {
     body = (await req.json()) as { token?: unknown };

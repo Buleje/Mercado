@@ -263,7 +263,7 @@ export default function FiadoAnalyticsPanel() {
     { label: "Total pendiente", value: formatCurrency(totales.pendiente), icon: DollarSign, accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
     { label: "Vencido hoy", value: formatCurrency(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
     { label: "Cobrado este mes", value: formatCurrency(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
-    { label: "Tasa recuperacion", value: `${totales.tasaRecuperacion.toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+    { label: "Tasa recuperacion", value: `${Number(totales.tasaRecuperacion).toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
   ];
 
   const donutData = (distribucion ?? []).filter((d) => d.monto > 0);

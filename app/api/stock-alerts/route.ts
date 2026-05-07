@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastPush } from "@/lib/push-sender";
 import { sendStockAlertEmail } from "@/lib/mailer-stock";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/stock-alerts — Check products below stockMin and fire alerts.
@@ -139,6 +140,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "stock-alerts"); if (_rl) return _rl;
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

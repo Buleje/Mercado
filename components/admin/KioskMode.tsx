@@ -2,6 +2,7 @@
  
 
 import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search, Plus, Minus, X, ShoppingCart, Maximize, Minimize,
@@ -147,7 +148,7 @@ export default function KioskMode() {
     try {
       const res = await fetch("/api/sales", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           items: cart.map((i) => ({
             productId: i.product.id,

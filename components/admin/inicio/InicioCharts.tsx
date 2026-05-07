@@ -30,7 +30,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
   const top5 = data.topProductos.slice(0, 5).map((p) => ({
     name: p.nombre,
     value: p.ingresos,
-    label: `S/ ${p.ingresos >= 1000 ? `${(p.ingresos / 1000).toFixed(1)}k` : p.ingresos.toFixed(0)}`,
+    label: `S/ ${p.ingresos >= 1000 ? `${(p.ingresos / 1000).toFixed(1)}k` : Number(p.ingresos).toFixed(0)}`,
     sublabel: `${p.unidades} uds`,
   }));
 
@@ -155,7 +155,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
           title="Meta del periodo"
           Icon={Target}
           height={220}
-          subtitle={`S/ ${data.ventasHoy.toFixed(0)} / S/ ${metaPeriodo.toFixed(0)}`}
+          subtitle={`S/ ${Number(data.ventasHoy).toFixed(0)} / S/ ${metaPeriodo.toFixed(0)}`}
         >
           <MicroGauge
             value={pctMeta}

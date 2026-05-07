@@ -22,6 +22,7 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Loader2,
   Search,
@@ -279,7 +280,7 @@ export default function RepartidoresModule() {
       const res = await fetch("/api/superadmin/repartidores", {
         method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ partnerId, action, reviewNotes }),
       });
       if (!res.ok) {
@@ -302,7 +303,7 @@ export default function RepartidoresModule() {
       const res = await fetch("/api/superadmin/repartidores/impersonate", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ partnerId }),
       });
       if (!res.ok) {
@@ -1033,7 +1034,7 @@ function MetricasTab({ partner }: { partner: PartnerRow }) {
         <MetricCard
           icon={<StarBadge className="h-4 w-4 text-[var(--brand-secondary)]" />}
           label="Rating"
-          value={partner.rating.toFixed(1)}
+          value={Number(partner.rating).toFixed(1)}
         />
         <MetricCard
           icon={<TrendIcon className="h-4 w-4 text-[var(--data-success-500)]" />}

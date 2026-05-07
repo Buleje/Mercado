@@ -498,11 +498,11 @@ export default function ExcelProductImporter() {
                       {p.precio < 0 ? (
                         <span className="text-[var(--data-error-500)]">{p.precio}</span>
                       ) : (
-                        `S/ ${p.precio.toFixed(2)}`
+                        `S/ ${Number(p.precio).toFixed(2)}`
                       )}
                     </td>
                     <td className="px-3 py-2 text-[var(--text-secondary)]">
-                      {p.precioCosto != null ? `S/ ${p.precioCosto.toFixed(2)}` : "—"}
+                      {p.precioCosto != null ? `S/ ${Number(p.precioCosto).toFixed(2)}` : "—"}
                     </td>
                     <td className="px-3 py-2 text-[var(--text-secondary)]">{p.stock}</td>
                     <td className="px-3 py-2 text-[var(--text-secondary)]">{p.stockMinimo ?? "—"}</td>

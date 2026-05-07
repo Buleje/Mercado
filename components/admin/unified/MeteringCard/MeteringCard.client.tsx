@@ -248,7 +248,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
           <div className="text-right">
             <p className="text-xs text-[var(--text-tertiary)]">Costo estimado</p>
             <p className="text-lg font-bold text-[var(--text-primary)]">
-              USD {snapshot.estimatedCostUsd.toFixed(2)}
+              USD {Number(snapshot.estimatedCostUsd).toFixed(2)}
             </p>
           </div>
           {(snapshot.plan === "free" || snapshot.plan === "starter") && (

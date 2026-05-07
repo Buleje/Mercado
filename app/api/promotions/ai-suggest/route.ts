@@ -6,6 +6,7 @@ import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { callLLM } from "@/lib/llm-router";
 import { safeParseJSON } from "@/lib/ai-json-parser";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ADR-009: schema estructurado para el output del LLM. El LLM devuelve
 // JSON con un campo `markdown` renderizable (mantiene compat con el
@@ -27,6 +28,7 @@ const PromoSuggestionSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "promotions-ai-suggest"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

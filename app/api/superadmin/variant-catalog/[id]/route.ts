@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { VariantCatalogDb } from "@/lib/db/variant-catalog.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const PatchSchema = z
   .object({
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
 }
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-variant-catalog-X"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -65,6 +67,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 }
 
 export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-variant-catalog-X"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 

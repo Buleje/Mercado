@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { readData, writeData } from "@/lib/file-store";
 import { randomUUID } from "crypto";
 import { toErrorPayload } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const GOALS_KEY = "goals";
 
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "goals"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

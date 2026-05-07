@@ -1,6 +1,7 @@
 "use client";
 
 import { MessageCircle } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ export default function StoreWhatsAppButton({
   const handleClick = () => {
     fetch("/api/analytics/event", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         event: "whatsapp.store.chat.opened",
         storeName,

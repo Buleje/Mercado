@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { readData, writeData } from "@/lib/file-store";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const KEY = "tasks";
 
@@ -26,6 +27,7 @@ async function saveTasks(tasks: Task[]): Promise<void> {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "MODERATE", "tasks-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const { id } = await params;
@@ -39,6 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "MODERATE", "tasks-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const { id } = await params;

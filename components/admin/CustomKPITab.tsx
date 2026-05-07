@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Target, Plus, Pencil, Trash2, Check, Download, RefreshCw, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { CustomKpi, KpiTrendPoint } from "@/app/api/custom-kpis/route";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 function fmt(v: number, unit: string) {
   if (unit === "S/") return `S/ ${v.toFixed(2)}`;
@@ -79,14 +80,14 @@ export default function CustomKPITab() {
       if (editKpi) {
         await fetch("/api/custom-kpis", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ id: editKpi.id, name: form.name, description: form.desc, formula: form.formula, target: Number(form.target) || 0, unit: form.unit, category: form.category, color: form.color }),
         });
         setKpis(prev => prev.map(k => k.id === editKpi.id ? { ...k, name: form.name, description: form.desc, formula: form.formula, target: Number(form.target) || 0, unit: form.unit, category: form.category, color: form.color } : k));
       } else {
         const res = await fetch("/api/custom-kpis", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ name: form.name, description: form.desc, formula: form.formula, target: Number(form.target) || 0, unit: form.unit, category: form.category, color: form.color }),
         });
         const data = await res.json();

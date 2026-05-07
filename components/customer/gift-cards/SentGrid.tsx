@@ -59,7 +59,7 @@ export default function SentGrid({ cards }: Props) {
                     {designLabel(card.design)} · {fmtDate(card.createdAt)}
                   </div>
                   <div className="mt-0.5 text-lg font-bold text-gray-900 dark:text-white">
-                    S/ {card.amount.toFixed(2)}
+                    S/ {Number(card.amount).toFixed(2)}
                   </div>
                 </div>
                 {isPending ? (

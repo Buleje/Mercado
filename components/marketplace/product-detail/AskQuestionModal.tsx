@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Send, CheckCircle2, MessageCircle } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface AskQuestionModalProps {
   open: boolean;
@@ -62,7 +63,7 @@ export default function AskQuestionModal({
     try {
       const res = await fetch(`/api/marketplace/qa/${productId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           userName: name.trim(),
           question: question.trim(),

@@ -212,7 +212,7 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData, branding
     <div style="padding:28px;">
       <p style="margin:0 0 16px;font-size:15px;color:#222;">Hola <strong>${order.customerName}</strong>,</p>
       <p style="margin:0 0 16px;font-size:14px;color:#555;line-height:1.7;">
-        Tu pedido de <strong>${itemsSummary}${extraItems}</strong> por <strong>S/${order.total.toFixed(2)}</strong>
+        Tu pedido de <strong>${itemsSummary}${extraItems}</strong> por <strong>S/${Number(order.total).toFixed(2)}</strong>
         fue entregado exitosamente. Esperamos que estes satisfecho con tu compra.
       </p>
 

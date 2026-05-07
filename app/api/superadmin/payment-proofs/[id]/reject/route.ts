@@ -4,6 +4,7 @@ import { z } from "zod";
 import { PaymentProofsDB } from "@/lib/db/payment-proofs.db";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/superadmin/payment-proofs/[id]/reject
@@ -20,6 +21,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-payment-proofs-X-reject"); if (_rl) return _rl;
   const platformUser = req.headers.get("x-platform-user") ?? "superadmin";
   const { id } = await params;
 

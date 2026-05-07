@@ -19,6 +19,7 @@
  */
 
 import { useEffect } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import type { ZodType } from "zod";
 import { RecentlyViewedArraySchema } from "@/lib/validations/recently-viewed.schema";
 import {
@@ -80,7 +81,7 @@ function reportOutcomes(outcomes: Record<string, HealOutcome>): void {
   try {
     fetch("/api/health/storage", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ outcomes: Object.fromEntries(acted) }),
       keepalive: true,
     }).catch(() => { /* fire-and-forget — endpoint puede no existir */ });

@@ -48,7 +48,7 @@ export default function ParetoAnalysisTab() {
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Identifica el 20% de productos que generan el 80% de resultados</p>
         </div>
-        <button onClick={() => exportToCSV(sorted.map(p => ({ Producto: p.name, Categoría: p.category, Valor: p.value, Porcentaje: `${p.pct.toFixed(1)}%`, Acumulado: `${p.cumPct.toFixed(1)}%`, Top80: p.isTop ? "Sí" : "No" })), "pareto")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+        <button onClick={() => exportToCSV(sorted.map(p => ({ Producto: p.name, Categoría: p.category, Valor: p.value, Porcentaje: `${Number(p.pct).toFixed(1)}%`, Acumulado: `${Number(p.cumPct).toFixed(1)}%`, Top80: p.isTop ? "Sí" : "No" })), "pareto")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -101,14 +101,14 @@ export default function ParetoAnalysisTab() {
                 <div className="flex-1 h-6 bg-gray-100 dark:bg-surface rounded-full overflow-hidden relative">
                   <div className={cn("h-full rounded-full transition-all", p.isTop ? "bg-[var(--text-primary)]" : "bg-gray-300 dark:bg-gray-600")} style={{ width: `${(p.value / maxValue) * 100}%` }} />
                 </div>
-                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-14 text-right">{p.pct.toFixed(1)}%</span>
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-14 text-right">{Number(p.pct).toFixed(1)}%</span>
               </div>
               {/* Cumulative line marker */}
               <div className="w-20 flex items-center gap-1">
                 <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                   <div className={cn("h-full rounded-full", p.cumPct <= 80 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} style={{ width: `${p.cumPct}%` }} />
                 </div>
-                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] w-10 text-right">{p.cumPct.toFixed(0)}%</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] w-10 text-right">{Number(p.cumPct).toFixed(0)}%</span>
               </div>
               <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", p.isTop ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]")}>{p.isTop ? "TOP" : "—"}</span>
             </div>

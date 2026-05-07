@@ -128,7 +128,7 @@ export default function CartUpsellSection({
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-600)] dark:text-emerald-400 font-medium">
-                    S/{p.price.toFixed(2)} — ¡alcanzas delivery gratis!
+                    S/{Number(p.price).toFixed(2)} — ¡alcanzas delivery gratis!
                   </p>
                 </div>
                 <div className="h-7 w-7 rounded-lg bg-[var(--data-success-500)] text-white flex items-center justify-center shrink-0 group-hover:bg-[var(--data-success-600)] transition-colors">
@@ -162,7 +162,7 @@ export default function CartUpsellSection({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">{combo.product.name}</p>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-600)] font-bold">S/{combo.product.price.toFixed(2)}/{combo.product.unit}</p>
+              <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-600)] font-bold">S/{combo.Number(product.price).toFixed(2)}/{combo.product.unit}</p>
             </div>
             <div className="h-7 w-7 rounded-lg bg-[var(--data-warning-500)] text-white flex items-center justify-center shrink-0 group-hover:bg-[var(--data-warning-600)] transition-colors">
               <Plus className="h-3.5 w-3.5" />
@@ -206,7 +206,7 @@ export default function CartUpsellSection({
                       <p className="text-[length:var(--ts-2xs)] font-semibold text-foreground line-clamp-1">{s.name}</p>
                     )}
                     <div className="flex items-center justify-between mt-1.5">
-                      <span className="text-xs font-extrabold text-primary">S/{s.price.toFixed(2)}</span>
+                      <span className="text-xs font-extrabold text-primary">S/{Number(s.price).toFixed(2)}</span>
                       <button
                         onClick={() => onAddItem(resolveProduct(s))}
                         className="h-6 w-6 rounded-md bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-90 transition-all"

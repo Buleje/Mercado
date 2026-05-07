@@ -4,6 +4,7 @@ import { FiadosDB } from "@/lib/db/fiados.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const PatchFiadoSchema = z.object({
   status: z.enum(["ACTIVO", "PAGADO", "VENCIDO", "CANCELADO"]),
@@ -36,6 +37,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "fiados-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

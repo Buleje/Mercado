@@ -169,7 +169,7 @@ export default function WeeklyPurchasePlanner() {
     const header = "Producto,Stock actual,Venta diaria,Dias restantes,Cantidad a comprar,Costo estimado,Urgencia";
     const rows = plan.map(
       (i) =>
-        `"${i.product.name}",${i.currentStock},${i.dailySales},${i.daysLeft},${i.suggestedQty},${i.estimatedCost.toFixed(2)},${URGENCY_STYLES[i.urgency].label}`
+        `"${i.product.name}",${i.currentStock},${i.dailySales},${i.daysLeft},${i.suggestedQty},${Number(i.estimatedCost).toFixed(2)},${URGENCY_STYLES[i.urgency].label}`
     );
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

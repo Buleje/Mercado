@@ -10,6 +10,7 @@ import {
   orchestrator,
   ensureAgentsRegistered,
 } from "@/lib/agents";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Route context typing ────────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ export async function PATCH(
   req: NextRequest,
   context: RouteParams,
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "agents-X"); if (_rl) return _rl;
   const traceId = newTraceId();
   try {
     const admin = await requireAdmin(req, ["owner", "admin"]);

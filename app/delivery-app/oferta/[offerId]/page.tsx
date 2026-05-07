@@ -218,7 +218,7 @@ export default function OfferPage() {
               Oferta nueva · Intento #{offer.attempt}
             </span>
             <h1 className="mt-3 text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] tabular-nums">
-              S/ {offer.feeOffered.toFixed(2)}
+              S/ {Number(offer.feeOffered).toFixed(2)}
               <span className="ml-3 text-base lg:text-lg font-bold text-[var(--text-tertiary)] align-middle">
                 tu pago
               </span>
@@ -226,7 +226,7 @@ export default function OfferPage() {
             <p className="mt-2 text-base lg:text-lg text-[var(--text-secondary)] flex items-center gap-2">
               <PinIcon className="h-5 w-5 text-[var(--accent)]" />
               <span className="font-bold text-[var(--text-primary)]">
-                {offer.distanceKm.toFixed(1)} km
+                {Number(offer.distanceKm).toFixed(1)} km
               </span>
               <span className="text-[var(--text-tertiary)]">de distancia</span>
             </p>
@@ -256,7 +256,7 @@ export default function OfferPage() {
             <Block
               icon={<CashIcon className="h-6 w-6" />}
               title="Total del pedido"
-              big={`S/ ${offer.order.total.toFixed(2)}`}
+              big={`S/ ${offer.Number(order.total).toFixed(2)}`}
               extras={[
                 offer.order.notes ? { icon: null, text: offer.order.notes } : null,
               ]}
@@ -275,7 +275,7 @@ export default function OfferPage() {
           <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-gradient-to-br from-[var(--accent-soft)] to-transparent p-8 text-center text-[var(--accent)]">
             <HeroDeliveryIllustration className="h-48 w-auto mx-auto" />
             <p className="mt-4 text-base font-bold text-[var(--text-primary)]">
-              {offer.distanceKm.toFixed(1)} km hasta {offer.order.customerName}
+              {Number(offer.distanceKm).toFixed(1)} km hasta {offer.order.customerName}
             </p>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               Tu base + propina llegan al instante a tu cuenta.

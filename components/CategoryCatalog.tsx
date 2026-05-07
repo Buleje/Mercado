@@ -139,7 +139,7 @@ function ListProductRow({
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <span className="text-base font-extrabold text-primary">
-          S/{product.price.toFixed(2)}
+          S/{Number(product.price).toFixed(2)}
         </span>
         {isOutOfStock ? (
           <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-red-50 dark:bg-[var(--data-error-500)]/10 px-2 py-1 rounded-full">
@@ -286,7 +286,7 @@ function QuickViewModal({
             </div>
             <div className="text-right shrink-0">
               <span className="text-2xl font-extrabold text-primary">
-                S/{product.price.toFixed(2)}
+                S/{Number(product.price).toFixed(2)}
               </span>
               <span className="block text-sm text-muted">
                 por {product.unit}

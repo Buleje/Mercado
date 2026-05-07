@@ -151,7 +151,7 @@ export default function FavoritosClient() {
                   </Link>
                   <div className="mt-2 flex items-baseline justify-between">
                     <span className="text-base font-extrabold text-gray-900 dark:text-white">
-                      S/{item.price.toFixed(2)}
+                      S/{Number(item.price).toFixed(2)}
                     </span>
                   </div>
                   <button

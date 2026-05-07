@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useState } from "react";
 import {
   Boxes,
@@ -145,10 +146,10 @@ export default function CombosTab() {
                 </p>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="text-lg font-bold text-[var(--text-primary)]">
-                    S/ {combo.comboPrice.toFixed(2)}
+                    S/ {Number(combo.comboPrice).toFixed(2)}
                   </span>
                   <span className="text-sm text-[var(--text-tertiary)] line-through">
-                    S/ {combo.originalPrice.toFixed(2)}
+                    S/ {Number(combo.originalPrice).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -266,7 +267,7 @@ export default function CombosTab() {
                   </option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} — S/ {p.price.toFixed(2)}
+                      {p.name} — S/ {Number(p.price).toFixed(2)}
                     </option>
                   ))}
                 </select>
@@ -287,7 +288,7 @@ export default function CombosTab() {
                     try {
                       await fetch("/api/store-page/combos", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: csrfHeaders({ "Content-Type": "application/json" }),
                         body: JSON.stringify(form),
                       });
                     } catch {

@@ -2,9 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ChatDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // POST /api/chat/admin — admin envía mensaje a un cliente
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "chat-admin"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -42,6 +44,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/chat/admin — marcar conversación como leída
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "chat-admin"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

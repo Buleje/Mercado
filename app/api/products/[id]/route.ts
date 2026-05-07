@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const ProductUpdateSchema = z.object({
   name: z.string().min(1).max(150).optional(),
@@ -104,6 +105,7 @@ export const PUT = handleUpdate;
 export const PATCH = handleUpdate;
 
 export async function DELETE(req: NextRequest, ctx: RouteCtx) {
+  const _rl = await applyRateLimit(req, "MODERATE", "products-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

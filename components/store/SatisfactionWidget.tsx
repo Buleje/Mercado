@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Star, X } from "@buleje/design-system/icons";
 import { usePathname } from "next/navigation";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Rating = "bien" | "regular" | "mal";
 
@@ -34,7 +35,7 @@ export default function SatisfactionWidget() {
     try {
       await fetch("/api/surveys", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ rating, page: pathname }),
       });
     } catch { /* ignore */ }

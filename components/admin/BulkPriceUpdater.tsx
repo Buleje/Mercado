@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback, useEffect, DragEvent, ChangeEvent } from "react";
 import { Upload, Percent, CheckCircle, AlertTriangle, Loader2, X } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -137,7 +138,7 @@ export default function BulkPriceUpdater() {
       try {
         await fetch(`/api/products/${c.product.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ price: c.newPrice }),
         });
         count++;

@@ -3,9 +3,11 @@ import { SurveyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // POST — submit a survey response (public, from customer)
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "surveys"); if (_rl) return _rl;
   try {
     const body = await req.json();
     const { orderId, phone, rating, comment, type } = body as {

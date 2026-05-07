@@ -164,7 +164,7 @@ export default function ProductQRGenerator() {
         <body>
           <img src="${imgSrc}" width="${SIZE_PX[size]}" />
           <div class="label">${selected.name}</div>
-          <div class="price">S/ ${selected.price.toFixed(2)}</div>
+          <div class="price">S/ ${Number(selected.price).toFixed(2)}</div>
           ${selected.barcode ? `<div class="barcode">${selected.barcode}</div>` : ""}
           <script>window.onload = () => { window.print(); window.close(); }<\/script>
         </body>
@@ -326,7 +326,7 @@ export default function ProductQRGenerator() {
                   <>
                     <canvas ref={canvasRef} className="block" />
                     <p className="mt-2 text-center text-sm font-bold text-[#1a3d2e]">{selected.name}</p>
-                    <p className="text-center text-base font-bold text-primary">S/ {selected.price.toFixed(2)}</p>
+                    <p className="text-center text-base font-bold text-primary">S/ {Number(selected.price).toFixed(2)}</p>
                   </>
                 )}
               </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Package, Truck } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Mejora 13: Vista simplificada para el repartidor ────────────────────────
 
@@ -88,7 +89,7 @@ export default function DeliveryPage() {
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: "entregado" }),
       });
       if (res.ok) {
@@ -251,7 +252,7 @@ export default function DeliveryPage() {
                   {/* Items summary */}
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500 dark:text-gray-400">
-                      {itemCount > 0 ? `${itemCount} producto${itemCount > 1 ? "s" : ""}` : `${order.items?.length ?? 0} items`} · <span className="font-bold text-gray-900 dark:text-gray-100">S/ {order.total.toFixed(2)}</span>
+                      {itemCount > 0 ? `${itemCount} producto${itemCount > 1 ? "s" : ""}` : `${order.items?.length ?? 0} items`} · <span className="font-bold text-gray-900 dark:text-gray-100">S/ {Number(order.total).toFixed(2)}</span>
                     </span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                       order.paymentMethod === "yape" || order.paymentMethod === "Yape"

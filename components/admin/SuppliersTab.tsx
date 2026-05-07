@@ -13,6 +13,7 @@ import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import WhatsAppButton from "./WhatsAppButton";
 import SupplierScorecard from "./compras/SupplierScorecard";
 import ProveedorFormModal from "./proveedores/ProveedorFormModal";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Payable = {
   id: string;
@@ -74,7 +75,7 @@ export default function SuppliersTab() {
     setSaving(true);
     await fetch(`/api/suppliers/${editingId}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(editForm),
     });
     setSaving(false);
@@ -97,7 +98,7 @@ export default function SuppliersTab() {
     setSaving(true);
     await fetch("/api/suppliers", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(addForm),
     });
     setSaving(false);
@@ -524,7 +525,7 @@ export default function SuppliersTab() {
                         return (
                           <span className="flex items-center gap-1 font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                             <DollarSign className="h-3.5 w-3.5" />
-                            Deuda: S/ {debt.totalDebt.toFixed(2)} ({debt.count} {debt.count === 1 ? 'factura' : 'facturas'})
+                            Deuda: S/ {Number(debt.totalDebt).toFixed(2)} ({debt.count} {debt.count === 1 ? 'factura' : 'facturas'})
                           </span>
                         );
                       })()}
@@ -544,7 +545,7 @@ export default function SuppliersTab() {
                                 <div
                                   className="w-full bg-primary/60 hover:bg-primary rounded-sm transition-all"
                                   style={{ height: h.total > 0 ? `${Math.max((h.total / maxVal) * 28, 3)}px` : "3px", opacity: h.total > 0 ? 1 : 0.2 }}
-                                  title={`S/ ${h.total.toFixed(0)}`}
+                                  title={`S/ ${Number(h.total).toFixed(0)}`}
                                 />
                                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted leading-none">{h.label}</p>
                               </div>

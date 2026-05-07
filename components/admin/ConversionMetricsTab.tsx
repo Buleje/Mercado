@@ -272,7 +272,7 @@ export default function ConversionMetricsTab() {
                             ) : (
                               <ArrowDownRight className="w-3 h-3" />
                             )}
-                            {m.marginPercent.toFixed(1)}%
+                            {Number(m.marginPercent).toFixed(1)}%
                           </span>
                         </td>
                       </tr>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   RefreshCw,
   Trash2,
@@ -93,7 +94,7 @@ export default function CronDeadLettersPage() {
     try {
       const res = await fetch("/api/admin/cron-dead-letters", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ jobName }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -110,7 +111,7 @@ export default function CronDeadLettersPage() {
     try {
       const res = await fetch("/api/admin/cron-dead-letters", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids: [id] }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

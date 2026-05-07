@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
   ChevronLeft,
@@ -265,7 +266,7 @@ export default function MarketplaceCheckoutModal({
       try {
         const res = await fetch("/api/marketplace/coupons/validate", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ code, storeSlug, cartTotal: storeTotal }),
         });
         const data = await res.json();
@@ -296,7 +297,7 @@ export default function MarketplaceCheckoutModal({
     try {
       const res = await fetch("/api/marketplace/referral/apply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ phone: phone.trim(), code }),
       });
       const data = await res.json();
@@ -374,7 +375,7 @@ export default function MarketplaceCheckoutModal({
       const group = byStore[storeId];
       fetch("/api/marketplace/cart/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           storeSlug: group.storeSlug,
           customerName: name.trim(),
@@ -406,7 +407,7 @@ export default function MarketplaceCheckoutModal({
         }));
         return fetch("/api/marketplace/orders", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             storeSlug: group.storeSlug,
             customerName: name.trim(),
@@ -457,7 +458,7 @@ export default function MarketplaceCheckoutModal({
         const group = byStore[storeIds.find((id) => byStore[id]?.storeSlug === firstSuccess.storeSlug)!];
         const mpRes = await fetch("/api/marketplace/payment/mercadopago/create-preference", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             storeSlug: firstSuccess.storeSlug,
             storeName: firstSuccess.storeName,

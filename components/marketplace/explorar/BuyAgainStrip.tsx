@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Package } from "@buleje/design-system/icons";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import ExplorarSectionHeader from "./ExplorarSectionHeader";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ export default function BuyAgainStrip() {
       try {
         const res = await fetch("/api/marketplace/reorder/last", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ phone }),
         });
         if (!res.ok) throw new Error("fetch error");

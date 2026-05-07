@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { createBillingPortalSession } from "@/lib/stripe";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // POST /api/billing/portal
 // Opens the Stripe Customer Portal for managing subscription / payment method
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "billing-portal"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

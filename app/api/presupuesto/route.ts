@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const TENANT_ID = "main";
 const NOTE_TITLE = "__PRESUPUESTO_MENSUAL__";
@@ -76,6 +77,7 @@ export async function GET() {
 
 // ── POST: guardar/actualizar presupuesto ───────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "presupuesto"); if (_rl) return _rl;
   try {
     const body = await req.json();
     const parsed = PostSchema.safeParse(body);

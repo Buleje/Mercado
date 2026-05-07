@@ -120,7 +120,7 @@ export function OrdersArchive({
                             {STATUS_LABELS[o.status]}
                           </span>
                         </td>
-                        <td className="px-4 py-3 font-semibold text-primary">S/{o.total.toFixed(2)}</td>
+                        <td className="px-4 py-3 font-semibold text-primary">S/{Number(o.total).toFixed(2)}</td>
                         <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted">{formatDate(o.createdAt)}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
@@ -169,7 +169,7 @@ export function OrdersArchive({
                         <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
                           {STATUS_LABELS[o.status]}
                         </span>
-                        <p className="text-sm font-bold text-primary mt-1">S/{o.total.toFixed(2)}</p>
+                        <p className="text-sm font-bold text-primary mt-1">S/{Number(o.total).toFixed(2)}</p>
                       </div>
                     </div>
                     <div className="flex gap-2 mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border" onClick={e => e.stopPropagation()}>

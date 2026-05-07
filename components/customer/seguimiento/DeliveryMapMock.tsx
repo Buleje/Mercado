@@ -79,7 +79,7 @@ export function DeliveryMapMock({
       const [x, y] = ROUTE_POINTS[i];
       parts.push(`${i === 0 ? "M" : "L"} ${x} ${y}`);
     }
-    parts.push(`L ${driver.x.toFixed(1)} ${driver.y.toFixed(1)}`);
+    parts.push(`L ${Number(driver.x).toFixed(1)} ${Number(driver.y).toFixed(1)}`);
     return parts.join(" ");
   })();
 
@@ -215,7 +215,7 @@ export function DeliveryMapMock({
           </g>
 
           {/* Repartidor (interpolado) */}
-          <g transform={`translate(${driver.x.toFixed(1)}, ${driver.y.toFixed(1)})`}>
+          <g transform={`translate(${Number(driver.x).toFixed(1)}, ${Number(driver.y).toFixed(1)})`}>
             {/* Pulso */}
             <circle r="14" className="fill-primary opacity-25 animate-ping" />
             <circle r="11" className="fill-primary" />

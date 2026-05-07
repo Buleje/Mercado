@@ -163,7 +163,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span className="text-[var(--text-secondary)]">{dateStr} · <span className="capitalize font-medium">{h.metodo}</span></span>
                   <span className={cn("font-bold", Math.abs(h.diferencia) <= 5 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")}>
-                    {h.diferencia >= 0 ? "+" : ""}S/{h.diferencia.toFixed(2)}
+                    {h.diferencia >= 0 ? "+" : ""}S/{Number(h.diferencia).toFixed(2)}
                   </span>
                 </div>
               );
@@ -713,7 +713,7 @@ export default function CashRegisterTab() {
 <p class="center">Fecha: ${fecha}</p>
 <div class="sep"></div>
 <p class="bold">APERTURA</p>
-<p>Efectivo inicial: S/ ${currentRegister.openingAmount.toFixed(2)}</p>
+<p>Efectivo inicial: S/ ${Number(currentRegister.openingAmount).toFixed(2)}</p>
 <p>Hora: ${hora}</p>
 <div class="sep"></div>
 <p class="bold">VENTAS DEL DIA</p>

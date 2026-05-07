@@ -105,7 +105,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
           </div>
         )}
         <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-100 text-center leading-tight line-clamp-2 w-full px-0.5">{product.name}</span>
-        <span className="text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success-500)]">S/{product.price.toFixed(2)}</span>
+        <span className="text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success-500)]">S/{Number(product.price).toFixed(2)}</span>
       </button>
 
       {/* Long press modal — cantidad */}
@@ -186,7 +186,7 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
     >
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-gray-200 truncate">{item.product.name}</p>
-        <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">S/{item.product.price.toFixed(2)} c/u</p>
+        <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">S/{item.Number(product.price).toFixed(2)} c/u</p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <button

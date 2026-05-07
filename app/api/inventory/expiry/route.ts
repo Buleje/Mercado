@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // GET — Returns batches grouped by expiry urgency: expired, 7d, 30d
 export async function GET(req: NextRequest) {
@@ -116,6 +117,7 @@ export async function GET(req: NextRequest) {
 
 // PATCH — Batch actions: liquidar (mark for discount) or dar de baja (mark as loss)
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "inventory-expiry"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

@@ -4,6 +4,7 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Clock, MapPin, Save, Plus, Trash2, CheckCircle } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type DaySchedule = { day: string; open: string; close: string; enabled: boolean };
 type Zone = { name: string; radius: number; price: number; enabled: boolean };
@@ -54,7 +55,7 @@ export default function DeliveryScheduleTab() {
     try {
       await fetch("/api/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ deliveryConfig: config }),
       });
       setSaved(true);

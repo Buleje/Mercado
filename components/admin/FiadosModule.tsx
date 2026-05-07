@@ -896,7 +896,7 @@ export default function FiadosModule() {
       const diasPasados = Math.floor((Date.now() - new Date(f.createdAt).getTime()) / 86400000);
       const phone = f.customerId || "";
       const displayPhone = phone.length > 3 ? phone.slice(0, 3) + "XXXXXX" : phone;
-      return `${i + 1}. ${f.customerName || f.customerId} · ${displayPhone} · S/ ${f.saldo.toFixed(2)} · ${diasPasados} dias [ ]`;
+      return `${i + 1}. ${f.customerName || f.customerId} · ${displayPhone} · S/ ${Number(f.saldo).toFixed(2)} · ${diasPasados} dias [ ]`;
     });
 
     const content = [
@@ -1156,7 +1156,7 @@ export default function FiadosModule() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const nombre = f.customerName || f.customerId;
-                                const saldo = f.saldo.toFixed(2);
+                                const saldo = Number(f.saldo).toFixed(2);
                                 const fecha = f.fechaVence ? formatDate(f.fechaVence) : "";
                                 const msg = f.status === "VENCIDO"
                                   ? `Hola ${nombre}, tienes un pendiente de S/${saldo}${fecha ? ` vencido desde el ${fecha}` : ""} en Buleje. Cuando puedas pasa a regularizarlo?`
@@ -1359,7 +1359,7 @@ export default function FiadosModule() {
                         <button
                           onClick={() => {
                             setShowCompromiso(true);
-                            setCompromisoMonto(selected.saldo.toFixed(2));
+                            setCompromisoMonto(Number(selected.saldo).toFixed(2));
                             const d = new Date(); d.setDate(d.getDate() + 7);
                             setCompromisoFecha(d.toISOString().slice(0, 10));
                           }}
@@ -1369,7 +1369,7 @@ export default function FiadosModule() {
                           Compromiso de Pago
                         </button>
                         <a
-                          href={`https://wa.me/${selected.customerId.replace(/\D/g, "").startsWith("51") ? selected.customerId.replace(/\D/g, "") : "51" + selected.customerId.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${selected.customerName || selected.customerId}, te recordamos que tienes un pendiente de S/${selected.saldo.toFixed(2)} en Buleje.`)}`}
+                          href={`https://wa.me/${selected.customerId.replace(/\D/g, "").startsWith("51") ? selected.customerId.replace(/\D/g, "") : "51" + selected.customerId.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${selected.customerName || selected.customerId}, te recordamos que tienes un pendiente de S/${Number(selected.saldo).toFixed(2)} en Buleje.`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"

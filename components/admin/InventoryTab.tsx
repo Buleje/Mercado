@@ -1332,7 +1332,7 @@ export default function InventoryTab() {
                 : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
               )}
             >
-              {cm.cat}: {cm.margin.toFixed(0)}%
+              {cm.cat}: {Number(cm.margin).toFixed(0)}%
             </span>
           ))}
         </div>
@@ -1552,7 +1552,7 @@ export default function InventoryTab() {
           <ul className="space-y-0.5 mb-2">
             {inconsistentes.slice(0, 5).map(p => (
               <li key={p.id} className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                {p.name}: costo S/{p.costPrice!.toFixed(2)} &gt; precio S/{p.price.toFixed(2)} (perdida S/{(p.costPrice! - p.price).toFixed(2)}/unid)
+                {p.name}: costo S/{p.costPrice!.toFixed(2)} &gt; precio S/{Number(p.price).toFixed(2)} (perdida S/{(p.costPrice! - p.price).toFixed(2)}/unid)
               </li>
             ))}
             {inconsistentes.length > 5 && <li className="text-xs text-[var(--data-error-500)]">...y {inconsistentes.length - 5} mas</li>}
@@ -1613,8 +1613,8 @@ export default function InventoryTab() {
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{cat?.label ?? p.category} · {p.unit}</p>
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className="font-extrabold text-primary text-base">S/{p.price.toFixed(2)}</span>
-                        {p.costPrice && <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">costo S/{p.costPrice.toFixed(2)}</span>}
+                        <span className="font-extrabold text-primary text-base">S/{Number(p.price).toFixed(2)}</span>
+                        {p.costPrice && <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">costo S/{Number(p.costPrice).toFixed(2)}</span>}
                         {p.badge && <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">{p.badge}</span>}
                       </div>
                     </div>
@@ -1752,7 +1752,7 @@ export default function InventoryTab() {
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">
                           {categories.find(c => c.id === p.category)?.label ?? p.category}
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-primary">S/{p.price.toFixed(2)}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-primary">S/{Number(p.price).toFixed(2)}</td>
                         <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
                           <PriceSparkline productId={p.id} />
                         </td>
@@ -1783,7 +1783,7 @@ export default function InventoryTab() {
                         {/* Mejora 6R2: Costo promedio ponderado */}
                         <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
                           {p.costPrice != null && p.costPrice > 0
-                            ? <span className="font-mono text-xs text-[var(--text-primary)] dark:text-foreground" title="Basado en las ultimas compras">S/{p.costPrice.toFixed(2)}</span>
+                            ? <span className="font-mono text-xs text-[var(--text-primary)] dark:text-foreground" title="Basado en las ultimas compras">S/{Number(p.costPrice).toFixed(2)}</span>
                             : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>
                           }
                         </td>
@@ -2900,14 +2900,14 @@ export default function InventoryTab() {
                 height={200}
               />
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{showQRProduct.name}</p>
-              <p className="text-lg font-extrabold text-primary">S/{showQRProduct.price.toFixed(2)}</p>
+              <p className="text-lg font-extrabold text-primary">S/{Number(showQRProduct.price).toFixed(2)}</p>
               {showQRProduct.barcode && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">SKU: {showQRProduct.barcode}</p>}
               <div className="flex gap-2">
                 <button
                   onClick={() => {
                     const w = window.open("", "_blank");
                     if (w) {
-                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:var(--color-primary)">S/${showQRProduct.price.toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
+                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:var(--color-primary)">S/${Number(showQRProduct.price).toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
                       w.document.close();
                     }
                   }}

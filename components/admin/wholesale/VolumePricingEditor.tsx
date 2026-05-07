@@ -4,6 +4,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Save, RefreshCw, Info } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -92,7 +93,7 @@ export default function VolumePricingEditor({
     try {
       const res  = await fetch("/api/wholesale/pricing", {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body:    JSON.stringify({ productId, tiers }),
       });
       const json = await res.json();

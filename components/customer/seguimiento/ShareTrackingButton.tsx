@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { Share2, Check, Loader2, MessageCircle, Copy } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface Props {
   orderId: string;
@@ -36,7 +37,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
     try {
       const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/tracking/share`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({}),
       });
       if (!res.ok) {

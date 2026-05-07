@@ -4,6 +4,7 @@ import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { X, Loader2, Search, CheckCircle, XCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -161,7 +162,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
     try {
       const res = await fetch(`/api/marketplace/products/${productId}/seo`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error("Error al guardar");

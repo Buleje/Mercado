@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { handleIncomingMessage } from "@/lib/whatsapp/concierge/concierge-router";
 import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Next 16 con cacheComponents:true rechaza `export const dynamic`. El handler
 // es dinámico por naturaleza (req.text/headers/etc), no necesita la flag.
@@ -198,6 +199,7 @@ export async function GET(req: NextRequest) {
  *  - All real processing is fire-and-forget (CLAUDE.md rule #7)
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "whatsapp-concierge"); if (_rl) return _rl;
   const rawBody = await req.text();
 
   // Signature verification (ADR-046 security requirement).

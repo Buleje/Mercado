@@ -191,7 +191,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
                 <div className="border-t border-[var(--rule-soft)] pt-2" />
                 <FlowRow
                   label="Margen bruto"
-                  value={`${st.margen.toFixed(1)}%`}
+                  value={`${Number(st.margen).toFixed(1)}%`}
                   tone={st.margen >= 25 ? "success" : st.margen >= 15 ? "warning" : "danger"}
                 />
               </div>

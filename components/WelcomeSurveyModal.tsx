@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Smartphone, Tablet, Monitor, X, ChevronRight, Sparkles, FlaskConical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const STORAGE_KEY = "buleje_welcome_done";
 
@@ -49,7 +50,7 @@ export default function WelcomeSurveyModal() {
     try {
       const res = await fetch("/api/visitor-welcome", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ name: name.trim(), devices }),
       });
       if (!res.ok) throw new Error("Error al guardar");

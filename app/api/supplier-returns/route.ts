@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const TENANT = "main";
 
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "supplier-returns"); if (_rl) return _rl;
   try {
     const auth = await requireAdmin(req, ["admin", "almacenero"]);
     if (auth instanceof NextResponse) return auth;

@@ -60,7 +60,7 @@ function ChartTooltip({ active, payload, label }: LocalChartTooltipProps) {
         <p key={i} className="text-xs flex justify-between gap-4">
           <span className="text-[var(--text-secondary)]">{String(p.name ?? (typeof p.dataKey === "string" || typeof p.dataKey === "number" ? p.dataKey : ""))}</span>
           <span className="font-mono font-medium" style={{ color: p.color }}>
-            {typeof p.value === 'number' ? (p.value > 100 ? `S/ ${p.value.toLocaleString()}` : p.value.toFixed(1)) : String(p.value ?? "")}
+            {typeof p.value === 'number' ? (p.value > 100 ? `S/ ${p.value.toLocaleString()}` : Number(p.value).toFixed(1)) : String(p.value ?? "")}
           </span>
         </p>
       ))}
@@ -243,8 +243,8 @@ function ProductsDashboard() {
     { label: "Total SKUs", value: kpis.total, icon: Package, color: "var(--color-primary)", alert: false },
     { label: "Con stock", value: kpis.conStock, icon: PackageCheck, color: "#457b9d", alert: false },
     { label: "Sin stock", value: kpis.sinStock, icon: PackageX, color: "#e63946", alert: kpis.sinStock > 0 },
-    { label: "Precio prom.", value: `S/ ${kpis.precioAvg.toFixed(1)}`, icon: DollarSign, color: "#9b5de5", alert: false },
-    { label: "Margen prom.", value: `${kpis.margenAvg.toFixed(1)}%`, icon: TrendingUp, color: "#f97316", alert: kpis.margenAvg < 15 },
+    { label: "Precio prom.", value: `S/ ${Number(kpis.precioAvg).toFixed(1)}`, icon: DollarSign, color: "#9b5de5", alert: false },
+    { label: "Margen prom.", value: `${Number(kpis.margenAvg).toFixed(1)}%`, icon: TrendingUp, color: "#f97316", alert: kpis.margenAvg < 15 },
     { label: "Categorias", value: kpis.cats, icon: Layers, color: "#2dd4bf", alert: false },
     { label: "Sin imagen", value: kpis.sinImagen, icon: ImageOff, color: "#e63946", alert: kpis.sinImagen > 0 },
     { label: "Sin costo", value: kpis.sinCosto, icon: Calculator, color: "#6b705c", alert: kpis.sinCosto > 0 },

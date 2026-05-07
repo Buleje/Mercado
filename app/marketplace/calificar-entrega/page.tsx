@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Star, Send, CheckCircle, Truck } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export default function CalificarEntregaPage() {
   const searchParams = useSearchParams();
@@ -22,7 +23,7 @@ export default function CalificarEntregaPage() {
     try {
       const res = await fetch("/api/delivery/rate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ assignmentId, stars, comment: comment.trim() || undefined }),
       });
 

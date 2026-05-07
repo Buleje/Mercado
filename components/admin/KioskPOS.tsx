@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 /**
  * KioskPOS — Modo caja para tablets (1024x768+)
  * Layout 70/30: productos | carrito
@@ -251,7 +252,7 @@ export default function KioskPOS() {
     try {
       const res = await fetch("/api/sales", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           items: cart.map((i) => ({
             productId: i.product.id,

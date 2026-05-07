@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Truck, Plus, Download, Search, Trash2, Info, Loader2 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Product } from "@/types/erp";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type TransferStatus = "pendiente" | "en-transito" | "recibido" | "cancelado";
 
@@ -101,7 +102,7 @@ export default function WarehouseTransferTab() {
       const product = products.find((item) => item.id === Number(form.productId));
       const res = await fetch("/api/transfers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           fromWarehouseId: form.fromWarehouseId,
           toWarehouseId: form.toWarehouseId,
@@ -125,7 +126,7 @@ export default function WarehouseTransferTab() {
   async function updateStatus(id: string, status: TransferStatus) {
     const res = await fetch("/api/transfers", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ id, status }),
     });
     const updated = await res.json();

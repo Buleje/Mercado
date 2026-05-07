@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const TENANT = "main";
 
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "discount-rules"); if (_rl) return _rl;
   try {
     const auth = await requireAdmin(req, ["admin"]);
     if (auth instanceof NextResponse) return auth;

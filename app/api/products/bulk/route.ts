@@ -7,6 +7,7 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const BulkDeleteSchema = z.object({
   ids: z.array(z.number().int().positive()).min(1).max(500),
@@ -33,6 +34,7 @@ const BulkUpdateSchema = z.object({
 
 // POST /api/products/bulk — bulk update products (admin only)
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "products-bulk"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -105,6 +107,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE /api/products/bulk — bulk soft-delete products (admin only)
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "products-bulk"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

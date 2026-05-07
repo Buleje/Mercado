@@ -4,6 +4,7 @@ import { CancelBodySchema } from "@/lib/validators/socio-buleje";
 import { SocioBulejeDB } from "@/lib/db/socio-buleje.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/socio-buleje/cancel
@@ -14,6 +15,7 @@ import { logger } from "@/lib/logger";
  *   - immediate=true: status=`cancelled` inmediatamente.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "socio-buleje-cancel"); if (_rl) return _rl;
   const traceId = newTraceId();
   try {
     const body = await req.json().catch(() => ({}));

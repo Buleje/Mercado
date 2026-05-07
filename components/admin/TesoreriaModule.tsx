@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, AlertTriangle,
@@ -498,7 +499,7 @@ export default function TesoreriaModule() {
 
       const res = await fetch("/api/treasury/cuentas", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -542,7 +543,7 @@ export default function TesoreriaModule() {
 
       const res = await fetch("/api/treasury/cuentas", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Error al actualizar");
@@ -577,7 +578,7 @@ export default function TesoreriaModule() {
 
       const res = await fetch("/api/treasury/movimientos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -617,7 +618,7 @@ export default function TesoreriaModule() {
 
       const res = await fetch("/api/treasury/transferencias", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -692,8 +693,8 @@ export default function TesoreriaModule() {
       m.categoria ?? "",
       m.descripcion ?? "",
       m.referencia ?? "",
-      m.monto.toFixed(2),
-      m.saldoPosterior.toFixed(2),
+      Number(m.monto).toFixed(2),
+      Number(m.saldoPosterior).toFixed(2),
     ]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -713,7 +714,7 @@ export default function TesoreriaModule() {
     try {
       const res = await fetch(`/api/treasury/cuentas/${deactivateTarget.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ activa: !deactivateTarget.activa }),
       });
       if (!res.ok) {

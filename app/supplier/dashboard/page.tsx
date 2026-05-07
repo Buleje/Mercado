@@ -217,7 +217,7 @@ export default function SupplierDashboardPage() {
         />
         <KpiCard
           label="Fill rate"
-          value={stats.fillRate != null ? `${stats.fillRate.toFixed(1)}%` : "—"}
+          value={stats.fillRate != null ? `${Number(stats.fillRate).toFixed(1)}%` : "—"}
           sub="items entregados vs pedidos"
         />
         <KpiCard

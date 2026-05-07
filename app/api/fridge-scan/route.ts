@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateObject } from "ai";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/fridge-scan — Analiza foto de refri/despensa con IA vision.
@@ -90,6 +91,7 @@ async function fileToDataUrl(file: File): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "fridge-scan"); if (_rl) return _rl;
   let form: FormData;
   try {
     form = await req.formData();

@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── GET — data export ─────────────────────────────────────────────────────────
 
@@ -112,6 +113,7 @@ const DeleteSchema = z.object({
 });
 
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "customer-data"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * app/api/admin/preferences/route.ts
@@ -69,6 +70,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-preferences"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero", "manager"]);
   if (auth instanceof NextResponse) return auth;
 

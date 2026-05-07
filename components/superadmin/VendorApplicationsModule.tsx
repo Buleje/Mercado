@@ -9,6 +9,7 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Building2,
   Clock,
@@ -176,7 +177,7 @@ async function postReview(
 ): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch(`/api/superadmin/vendor-applications/${id}/review`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: csrfHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ action, note }),
   });
   if (!res.ok) {

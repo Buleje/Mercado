@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   AlertTriangle,
@@ -108,7 +109,7 @@ export default function ExpiryDashboardTab() {
     try {
       const res = await fetch("/api/inventory/expiry", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ batchId, action }),
       });
       if (!res.ok) {

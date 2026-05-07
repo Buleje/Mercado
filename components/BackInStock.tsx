@@ -104,7 +104,7 @@ export default function BackInStock() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground line-clamp-1">{product.name}</p>
             <p className="text-xs text-muted">{product.unit}</p>
-            <p className="text-sm font-extrabold text-primary mt-0.5">S/{product.price.toFixed(2)}</p>
+            <p className="text-sm font-extrabold text-primary mt-0.5">S/{Number(product.price).toFixed(2)}</p>
           </div>
           <button
             type="button"

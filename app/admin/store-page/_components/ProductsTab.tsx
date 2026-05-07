@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
@@ -90,7 +91,7 @@ export default function ProductsTab() {
   }) {
     const res = await fetch("/api/store-page/overrides", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(partial),
     });
     if (res.ok) await load();
@@ -186,7 +187,7 @@ export default function ProductsTab() {
                     {p.name}
                   </p>
                   <p className={ADMIN_TOKENS.hint}>
-                    S/ {p.price.toFixed(2)} · {p.category}
+                    S/ {Number(p.price).toFixed(2)} · {p.category}
                   </p>
                 </div>
                 <Plus
@@ -268,7 +269,7 @@ function OverrideRow({
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-sm truncate">{override.productName}</p>
         <p className="text-xs text-[var(--text-secondary)]">
-          Precio base: <span className="font-mono">S/{override.productBasePrice.toFixed(2)}</span>
+          Precio base: <span className="font-mono">S/{Number(override.productBasePrice).toFixed(2)}</span>
           {override.savingsPercent != null && override.savingsPercent > 0 && (
             <span className="ml-2 inline-block px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">
               -{override.savingsPercent}%

@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Loader2, Save, Check, Plus, Trash2, Package, Percent, ChevronDown, ChevronUp,
@@ -59,7 +60,7 @@ export default function CombosEditorTab() {
     try {
       await fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ comboTemplates: combos }),
       });
       setOriginalJson(JSON.stringify(combos));

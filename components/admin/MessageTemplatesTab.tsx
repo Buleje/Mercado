@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { MessageSquare, Plus, Copy, Check, Trash2, X, Search, Star, StarOff } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /* ── types ──────────────────────────────────────────────────── */
 type TemplateChannel = "whatsapp" | "email" | "sms";
@@ -81,7 +82,7 @@ export default function MessageTemplatesTab() {
       setCopiedId(t.id);
       setTemplates(prev => prev.map(tp => tp.id === t.id ? { ...tp, usageCount: tp.usageCount + 1 } : tp));
       setTimeout(() => setCopiedId(null), 2000);
-      fetch(`/api/message-templates?id=${t.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ usageCount: t.usageCount + 1 }) });
+      fetch(`/api/message-templates?id=${t.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ usageCount: t.usageCount + 1 }) });
     } catch {
       // clipboard not available
     }
@@ -91,7 +92,7 @@ export default function MessageTemplatesTab() {
     const t = templates.find(tp => tp.id === id);
     if (!t) return;
     setTemplates(prev => prev.map(tp => tp.id === id ? { ...tp, starred: !tp.starred } : tp));
-    fetch(`/api/message-templates?id=${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ starred: !t.starred }) });
+    fetch(`/api/message-templates?id=${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ starred: !t.starred }) });
   };
 
   const handleDelete = async (id: string) => {
@@ -109,7 +110,7 @@ export default function MessageTemplatesTab() {
     try {
       const res = await fetch("/api/message-templates", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           name: newName.trim(),
           channel: newChannel,

@@ -25,7 +25,7 @@ export default function ProductSchema({ products }: ProductSchemaProps) {
           "@type": "Offer",
           url: "https://www.buleje.pe/tienda",
           priceCurrency: "PEN",
-          price: product.price.toFixed(2),
+          price: Number(product.price).toFixed(2),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Product type may have stock field from API
           availability: (product as any).stock > 0
             ? "https://schema.org/InStock"

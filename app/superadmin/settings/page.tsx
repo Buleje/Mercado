@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   DollarSign,
   BarChart3,
@@ -132,7 +133,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/superadmin/settings", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
       if (!res.ok) {

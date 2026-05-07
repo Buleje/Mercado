@@ -61,7 +61,7 @@ function WaterfallTooltip({ active, payload }: { active?: boolean; payload?: Arr
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.name}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
-        <span className="font-mono font-medium" style={{ color: d.fill }}>S/ {d.displayValue.toFixed(2)}</span>
+        <span className="font-mono font-medium" style={{ color: d.fill }}>S/ {Number(d.displayValue).toFixed(2)}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>% del total</span>
@@ -283,7 +283,7 @@ export default function MarginWaterfallChart() {
                         className={cn("text-xs font-mono font-bold shrink-0", product.marginPct > 20 ? "text-primary" : product.marginPct > 10 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}
                         style={{ fontVariantNumeric: "tabular-nums" }}
                       >
-                        {product.marginPct.toFixed(1)}%
+                        {Number(product.marginPct).toFixed(1)}%
                       </span>
                     </div>
                     <div className="w-full h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">

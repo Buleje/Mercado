@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/referrals/stores
@@ -66,6 +67,7 @@ export async function GET(req: NextRequest) {
  * Formato: BLJ-{tenantSlug}-{random4}
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "referrals-stores"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

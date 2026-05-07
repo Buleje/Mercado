@@ -12,6 +12,7 @@
  */
 
 import { useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   ClipboardCheck,
@@ -311,7 +312,7 @@ function ExportDialog({
     try {
       const res = await fetch("/api/superadmin/compliance/data-export", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({ tenantSlug: tenantSlug.trim(), dni: dni.trim() }),
       });

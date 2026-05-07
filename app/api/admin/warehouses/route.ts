@@ -3,6 +3,7 @@ import { z } from "zod";
 import { WarehousesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateSchema = z.object({
   name: z.string().min(1).max(80),
@@ -32,6 +33,7 @@ export async function GET(req: NextRequest) {
 
 /** POST /api/admin/warehouses — create a new warehouse */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-warehouses"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -51,6 +53,7 @@ export async function POST(req: NextRequest) {
 
 /** PATCH /api/admin/warehouses — update a warehouse (pass id in body) */
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-warehouses"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -75,6 +78,7 @@ export async function PATCH(req: NextRequest) {
 
 /** DELETE /api/admin/warehouses?id=xxx — delete a warehouse */
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-warehouses"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

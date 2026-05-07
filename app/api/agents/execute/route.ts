@@ -19,6 +19,7 @@ import {
   ensureAgentsRegistered,
 } from "@/lib/agents";
 import type { AgentDomain, TaskPriority } from "@/lib/agents/types";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ const executeSchema = z.object({
 // ── POST — Execute task synchronously ───────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "agents-execute"); if (_rl) return _rl;
   const traceId = newTraceId();
   try {
     const admin = await requireAdmin(req, ["owner", "admin", "manager"]);

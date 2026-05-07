@@ -6,6 +6,7 @@ import { createMPSubscription } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import type { PlanId } from "@/lib/plans";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/mp-subscribe
@@ -23,6 +24,7 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "billing-mp-subscribe"); if (_rl) return _rl;
   // ── Auth ─────────────────────────────────────────────────
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

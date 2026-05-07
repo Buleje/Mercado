@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo } from "react";
 import {
   Truck, Wrench, Fuel, AlertTriangle, ChevronDown, ChevronUp,
@@ -95,7 +96,7 @@ export default function FleetManagementTab() {
   }, [vehicles, maintLog]);
 
   const changeStatus = async (vehicleId: string, status: VehicleStatus) => {
-    await fetch(`/api/fleet/${vehicleId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    await fetch(`/api/fleet/${vehicleId}`, { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status }) });
     setVehicles(prev => prev.map(v => v.id === vehicleId ? { ...v, status } : v));
     setShowStatusModal(null);
   };
@@ -103,7 +104,7 @@ export default function FleetManagementTab() {
   const saveMaintenance = async () => {
     if (!maintForm.vehicleId || !maintForm.type) return;
     const res = await fetch("/api/fleet/maintenance", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(maintForm),
+      method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(maintForm),
     });
     if (res.ok) {
       const created: MaintenanceLog = await res.json();

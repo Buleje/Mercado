@@ -122,7 +122,7 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
       <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
         <div className="flex flex-col items-center gap-1">
           <span className="text-5xl font-black text-gray-900 dark:text-white">
-            {summary.avgRating.toFixed(1)}
+            {Number(summary.avgRating).toFixed(1)}
           </span>
           <StarDisplay rating={summary.avgRating} size="lg" />
           <span className="text-xs text-[var(--text-tertiary)] mt-1">

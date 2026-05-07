@@ -4,6 +4,7 @@ import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { Bell, Loader2, Send, ExternalLink, CheckCircle2, Clock, Search, MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type NotifLog = { id: string; type: string; recipient: string; message: string; status: string; orderId: string | null; createdAt: string };
 type Order = { id: string; customerName: string; customerPhone: string; total: number; status: string; createdAt: string };
@@ -51,7 +52,7 @@ export default function NotificationsTab() {
     setSending(true);
     const res = await fetch("/api/notifications", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ phone: selectedOrder.customerPhone, orderId: selectedOrder.id }),
     });
     if (res.ok) {

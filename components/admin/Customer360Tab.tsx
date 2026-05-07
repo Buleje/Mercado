@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   User, Users, Phone, MapPin, Calendar, ShoppingCart, TrendingUp,
@@ -209,7 +210,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
               <div className="flex items-center justify-between gap-2 mb-0.5">
                 <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</span>
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted shrink-0">
-                  {p.totalQty} veces · S/{p.totalSpent.toFixed(0)} · {formatFreq(p.freqPerMonth)}
+                  {p.totalQty} veces · S/{Number(p.totalSpent).toFixed(0)} · {formatFreq(p.freqPerMonth)}
                 </span>
               </div>
               <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
@@ -421,7 +422,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
       const newObs = cleanedObs ? `${cleanedObs}\n${familyJson}` : familyJson;
       await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ observaciones: newObs }),
       });
     } catch { /* ignore */ }
@@ -589,7 +590,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
     try {
       await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ tags: JSON.stringify(updated) }),
       });
     } finally {
@@ -605,7 +606,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
     try {
       await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ tags: JSON.stringify(updated) }),
       });
     } finally {
@@ -621,7 +622,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
     try {
       await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ creditLimit: limit }),
       });
       setCustomer(prev => prev ? { ...prev, creditLimit: limit } : prev);
@@ -642,7 +643,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       try {
         await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ observaciones: value }),
         });
         setObsSaved(true);
@@ -658,7 +659,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
     try {
       await fetch(`/api/customers/${encodeURIComponent(phone)}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ privateNotes: notes }),
       });
       setNotesSaved(true);
@@ -979,7 +980,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     )}>
                       {pct <= 0
                         ? "Sin crédito disponible"
-                        : `S/ ${disponible.toFixed(2)} disponible de S/ ${customer.creditLimit.toFixed(2)}`}
+                        : `S/ ${disponible.toFixed(2)} disponible de S/ ${Number(customer.creditLimit).toFixed(2)}`}
                     </span>
                     <button
                       onClick={() => { setEditingCreditLimit(true); setCreditLimitInput(String(customer.creditLimit ?? 0)); }}
@@ -1211,7 +1212,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             id: o.id,
             type: "earn" as const,
             points: Math.round(o.total * TASA_PUNTOS),
-            description: `Compra S/${o.total.toFixed(0)}`,
+            description: `Compra S/${Number(o.total).toFixed(0)}`,
             date: o.createdAt,
           }));
           const totalPoints = pointsHistory.reduce((s, p) => s + p.points, 0);

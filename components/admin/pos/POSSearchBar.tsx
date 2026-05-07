@@ -206,11 +206,11 @@ export default function POSSearchBar({
                     </p>
                     <div className="flex items-center gap-1.5">
                       <p className="text-xs font-bold text-primary">
-                        S/ {p.price.toFixed(2)}
+                        S/ {Number(p.price).toFixed(2)}
                       </p>
                       {p.previousPrice && p.previousPrice !== p.price && (
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] line-through">
-                          S/{p.previousPrice.toFixed(2)}
+                          S/{Number(p.previousPrice).toFixed(2)}
                         </span>
                       )}
                       {p.updatedAt && (nowTs - new Date(p.updatedAt).getTime()) < 7 * 86400000 && p.previousPrice && p.previousPrice !== p.price && (

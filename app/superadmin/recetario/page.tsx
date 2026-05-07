@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import Image from "next/image";
 import {
   ChefHat, Search, Plus, Pencil, Trash2, Image as ImageIcon,
@@ -228,7 +229,7 @@ export default function SuperAdminRecetarioPage() {
         res = await fetch(`/api/superadmin/recetario/${editingId}`, {
           method: "PUT",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(payload),
         });
       } else {
@@ -236,7 +237,7 @@ export default function SuperAdminRecetarioPage() {
         res = await fetch("/api/superadmin/recetario", {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(payload),
         });
       }
@@ -264,7 +265,7 @@ export default function SuperAdminRecetarioPage() {
       const res = await fetch(`/api/superadmin/recetario/${r.id}`, {
         method: "PUT",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ activa: !r.activa }),
       });
       if (res.ok) {

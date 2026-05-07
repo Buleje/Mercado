@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId, NotFoundError, ForbiddenError } from "@/lib/api-error";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Máquina de estados de transiciones válidas
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -69,6 +70,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "wholesale-orders-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

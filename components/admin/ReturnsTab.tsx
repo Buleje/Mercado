@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { RotateCcw, Plus, Loader2, Check, X, Package, Camera, CreditCard, Image as ImageIcon } from "@buleje/design-system/icons";
 import type { Sale } from "@/types/erp";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type ReturnItem = { id?: string; productId: number; productName: string; quantity: number; price: number; unit: string };
 type Return = { id: string; saleId?: string; orderId?: string; reason: string; total: number; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: ReturnItem[]; createdAt: string };
@@ -63,7 +64,7 @@ export default function ReturnsTab() {
       applyCredit: applyCredit && !!customerPhone.trim(),
     };
     if (selectedSale) body.saleId = selectedSale.id;
-    const res = await fetch("/api/returns", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const res = await fetch("/api/returns", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
     if (res.ok) {
       const data = await res.json();
       setCreditSuccess(data.creditApplied === true);
@@ -105,7 +106,7 @@ export default function ReturnsTab() {
                   <button key={s.id} onClick={() => selectSale(s)} className="w-full text-left p-3 border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-gray-50 dark:hover:bg-surface transition">
                     <div className="flex justify-between text-sm">
                       <span className="font-bold">Venta #{String(s.id).slice(-6)}</span>
-                      <span className="text-[var(--data-success-500)] font-bold">S/{s.total.toFixed(2)}</span>
+                      <span className="text-[var(--data-success-500)] font-bold">S/{Number(s.total).toFixed(2)}</span>
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)]">{new Date(s.createdAt).toLocaleString()} • {s.items?.length ?? 0} productos</p>
                   </button>
@@ -193,7 +194,7 @@ export default function ReturnsTab() {
                 <Image src={r.photoUrl} alt="Evidencia" width={64} height={64} className="object-cover rounded-lg border border-[var(--rule-base)] dark:border-card-border shrink-0 cursor-pointer" onClick={() => window.open(r.photoUrl)} />
               )}
               <div className="text-right shrink-0">
-                <p className="font-extrabold text-[var(--data-error-500)]">-S/{r.total.toFixed(2)}</p>
+                <p className="font-extrabold text-[var(--data-error-500)]">-S/{Number(r.total).toFixed(2)}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{new Date(r.createdAt).toLocaleString()}</p>
               </div>
             </div>

@@ -18,12 +18,14 @@ import {
   createPartnerToken,
   setPartnerCookie,
 } from "@/lib/delivery/partner-session";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const ImpersonateSchema = z.object({
   partnerId: z.string().min(1).max(64),
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-repartidores-impersonate"); if (_rl) return _rl;
   // 1. Verify superadmin session.
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "No autorizado" }, { status: 401 });

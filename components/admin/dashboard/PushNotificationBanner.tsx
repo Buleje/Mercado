@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Bell, BellOff, X, Loader2, CheckCircle2 } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type BannerState = "checking" | "unsupported" | "subscribed" | "unsubscribed" | "loading" | "error" | "success";
 
@@ -54,7 +55,7 @@ export default function PushNotificationBanner() {
 
       const res = await fetch("/api/notifications/subscribe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ subscription }),
       });
 

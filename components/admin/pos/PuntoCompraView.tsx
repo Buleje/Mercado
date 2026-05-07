@@ -1008,7 +1008,7 @@ export default function PuntoCompraView() {
                           </div>
                         </td>
                         <td className="p-3 text-right font-mono text-[var(--text-primary)]">
-                          <span title={`Costo: S/${(p.costPrice || p.price).toFixed(2)} | Venta: S/${p.price.toFixed(2)} | Margen: ${p.costPrice ? ((1 - p.costPrice / p.price) * 100).toFixed(0) : "—"}%`}>
+                          <span title={`Costo: S/${(p.costPrice || p.price).toFixed(2)} | Venta: S/${Number(p.price).toFixed(2)} | Margen: ${p.costPrice ? ((1 - p.costPrice / p.price) * 100).toFixed(0) : "—"}%`}>
                             S/{(p.costPrice ?? p.price).toFixed(2)}
                           </span>
                         </td>
@@ -1201,7 +1201,7 @@ export default function PuntoCompraView() {
                   {supplierHistory.map(h => (
                     <div key={h.id} className="flex items-center justify-between text-xs">
                       <span className="text-[var(--text-secondary)] truncate">{h.id.slice(0, 15)}...</span>
-                      <span className="font-mono font-medium text-[var(--text-primary)]">S/{h.total.toFixed(2)}</span>
+                      <span className="font-mono font-medium text-[var(--text-primary)]">S/{Number(h.total).toFixed(2)}</span>
                       <span className="text-[var(--text-tertiary)]">{h.date ? new Date(h.date).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) : ""}</span>
                     </div>
                   ))}
@@ -1452,7 +1452,7 @@ export default function PuntoCompraView() {
                   <div className="bg-[var(--accent-soft)] rounded-xl p-3 space-y-2">
                     <p className="text-xs font-bold text-[var(--data-success-500)]">✓ OC Creada</p>
                     <p className="text-xs text-[var(--data-success-500)]">ID: {lastOC.id}</p>
-                    <p className="text-xs text-[var(--data-success-500)]">{lastOC.items} productos — S/{lastOC.total.toFixed(2)}</p>
+                    <p className="text-xs text-[var(--data-success-500)]">{lastOC.items} productos — S/{Number(lastOC.total).toFixed(2)}</p>
                     <button
                       type="button"
                       onClick={() => {

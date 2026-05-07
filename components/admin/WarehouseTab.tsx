@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 import { useState, useMemo, useEffect, startTransition } from "react";
 import {
@@ -198,7 +199,7 @@ export default function WarehouseTab() {
     });
     fetch("/api/inventory-movements", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "adjust", productId: Number(s.productId), newStock: newQty }),
     }).catch(() => {});
   };
@@ -208,7 +209,7 @@ export default function WarehouseTab() {
     setCreatingWh(true);
     fetch("/api/admin/warehouses", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         name: newWhForm.name.trim(),
         code: newWhForm.code.trim().toUpperCase(),
@@ -288,7 +289,7 @@ export default function WarehouseTab() {
     try {
       const res = await fetch("/api/admin/warehouse-transfers", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ id, status }),
       });
       if (res.ok) {
@@ -347,7 +348,7 @@ export default function WarehouseTab() {
     // Persist transfer to DB
     fetch("/api/admin/warehouse-transfers", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         fromWarehouseId: from.id,
         toWarehouseId: to.id,
@@ -360,7 +361,7 @@ export default function WarehouseTab() {
     // Also record as inventory movement
     fetch("/api/inventory-movements", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ productId: Number(srcLine.productId), type: "transferencia", quantity: qty, notes: noteText }),
     }).catch(() => {});
   }

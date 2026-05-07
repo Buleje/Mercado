@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useLocalStorageDraft } from "@/hooks/use-local-storage-draft";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Esquema de validación (safeParse, nunca .parse()) ─────────────────────────
 
@@ -248,7 +249,7 @@ export default function SignupPage() {
     try {
       const res = await fetch("/api/onboarding", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           type: form.type,
           storeName: form.storeName,

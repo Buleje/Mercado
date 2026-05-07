@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const AddProductBody = z.object({
   productId: z.number().int().min(1),
@@ -20,6 +21,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-lives-X-products"); if (_rl) return _rl;
   const auth = await requireAdmin(req, [
     "admin",
     "tienda_owner",
@@ -65,6 +67,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-lives-X-products"); if (_rl) return _rl;
   const auth = await requireAdmin(req, [
     "admin",
     "tienda_owner",

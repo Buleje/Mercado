@@ -3,6 +3,7 @@
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Send, CheckCircle, XCircle, Loader2, Webhook } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ export function WebhooksConfigTab() {
     try {
       const res = await fetch("/api/webhooks/config", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ url: url.trim(), events: selectedEvents, active: true }),
       });
 
@@ -118,7 +119,7 @@ export function WebhooksConfigTab() {
     try {
       const res = await fetch("/api/webhooks/config", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ id }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -133,7 +134,7 @@ export function WebhooksConfigTab() {
     try {
       const res = await fetch(webhook.url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           event: "ping",
           timestamp: new Date().toISOString(),

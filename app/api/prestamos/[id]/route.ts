@@ -4,6 +4,7 @@ import { PrestamosDB, type PrestamoUpdateInput } from "@/lib/db/prestamos.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const PatchPrestamoSchema = z.object({
   status: z.enum(["ACTIVO", "PAGADO", "VENCIDO", "CANCELADO"]),
@@ -68,6 +69,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "prestamos-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -110,6 +112,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "prestamos-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

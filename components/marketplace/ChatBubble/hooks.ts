@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
+import { csrfHeaders } from "@/lib/csrf-client";
   ChatBubbleSession,
   PublicMessageView,
   PublicThreadView,
@@ -117,7 +118,7 @@ export function usePublicChat(storeSlug: string) {
       try {
         const res = await fetch("/api/chat/public?action=open", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             storeSlug,
             customerPhone: args.customerPhone,
@@ -164,7 +165,7 @@ export function usePublicChat(storeSlug: string) {
       try {
         const res = await fetch("/api/chat/public?action=send", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             threadId: session.threadId,
             storeSlug,

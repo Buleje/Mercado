@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -81,6 +82,7 @@ export async function GET(req: NextRequest) {
  * Create a new conversation or save a message to an existing one.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "ai-assistant-history"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
 

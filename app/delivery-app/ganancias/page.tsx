@@ -140,7 +140,7 @@ export default function GananciasPage() {
                     Total ganado · {periodLabel}
                   </p>
                   <p className="mt-2 text-5xl lg:text-6xl font-extrabold text-[var(--accent)] tabular-nums">
-                    S/ {data.totals.total.toFixed(2)}
+                    S/ {data.Number(totals.total).toFixed(2)}
                   </p>
                   <p className="mt-2 text-base font-semibold text-[var(--text-secondary)]">
                     {data.totals.deliveries} {data.totals.deliveries === 1 ? "entrega" : "entregas"}

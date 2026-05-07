@@ -10,6 +10,7 @@ import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Package, RefreshCw, CheckCircle2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -97,7 +98,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
     try {
       await fetch("/api/marketplace/predictions/compute", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ storeSlug }),
       });
       await fetchPredictions();

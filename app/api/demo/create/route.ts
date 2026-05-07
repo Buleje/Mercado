@@ -50,6 +50,7 @@ function randomDemoSlug(): string {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "demo-create"); if (_rl) return _rl;
   const traceId = newTraceId();
 
   // ── Rate limit: 1 demo / IP / 30 min ─────────────────────

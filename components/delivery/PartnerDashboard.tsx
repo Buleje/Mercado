@@ -357,7 +357,7 @@ function OfferCard({ offer }: { offer: Offer }) {
             Pago al repartidor
           </p>
           <p className="mt-1 text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)] tabular-nums">
-            S/ {offer.feeOffered.toFixed(2)}
+            S/ {Number(offer.feeOffered).toFixed(2)}
           </p>
         </div>
         <span
@@ -381,7 +381,7 @@ function OfferCard({ offer }: { offer: Offer }) {
         </div>
         <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
           <MotoIcon className="h-4 w-4 shrink-0" />
-          <span className="font-semibold">{offer.distanceKm.toFixed(1)} km</span>
+          <span className="font-semibold">{Number(offer.distanceKm).toFixed(1)} km</span>
           <span className="text-[var(--text-tertiary)]">·</span>
           <span className="font-semibold">{offer.order.customerName}</span>
         </div>
@@ -389,7 +389,7 @@ function OfferCard({ offer }: { offer: Offer }) {
 
       <div className="flex items-center justify-between pt-3 border-t border-[var(--rule-base)]">
         <span className="text-sm font-bold text-[var(--text-secondary)]">
-          Total cliente: S/ {offer.order.total.toFixed(2)}
+          Total cliente: S/ {offer.Number(order.total).toFixed(2)}
         </span>
         <span className="inline-flex items-center gap-1 text-sm font-extrabold text-[var(--accent)] group-hover:translate-x-1 transition-transform">
           Aceptar

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/admin/plan/checkout/confirm
@@ -29,6 +30,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-plan-checkout-confirm"); if (_rl) return _rl;
   // 1. Auth obligatoria — solo el admin del tenant puede solicitar upgrade.
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

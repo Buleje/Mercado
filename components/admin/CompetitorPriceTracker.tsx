@@ -194,7 +194,7 @@ export default function CompetitorPriceTracker() {
           {insights.bestOpportunity && (
             <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-3">
               <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
-                Oportunidad: puedes subir &quot;{insights.bestOpportunity.name}&quot; S/{insights.bestOpportunity.gap.toFixed(2)} y seguir competitivo
+                Oportunidad: puedes subir &quot;{insights.bestOpportunity.name}&quot; S/{insights.Number(bestOpportunity.gap).toFixed(2)} y seguir competitivo
               </p>
             </div>
           )}
@@ -242,19 +242,19 @@ export default function CompetitorPriceTracker() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{s.productName}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-                        Mi precio: S/{s.myPrice.toFixed(2)} · Promedio: S/{s.avg.toFixed(2)}
+                        Mi precio: S/{Number(s.myPrice).toFixed(2)} · Promedio: S/{Number(s.avg).toFixed(2)}
                       </p>
                     </div>
                     {s.status === "caro" && (
                       <div className="text-right shrink-0">
                         <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)]">S/{Math.abs(s.diff).toFixed(2)} mas caro</p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sugerido: S/{s.sugerido.toFixed(2)}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sugerido: S/{Number(s.sugerido).toFixed(2)}</p>
                       </div>
                     )}
                     {s.status === "barato" && (
                       <div className="text-right shrink-0">
                         <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">S/{Math.abs(s.diff).toFixed(2)} mas barato</p>
-                        {s.gananciaExtra > 0 && <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]">Puedes subir a S/{s.sugerido.toFixed(2)} (+S/{s.gananciaExtra.toFixed(0)}/mes)</p>}
+                        {s.gananciaExtra > 0 && <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)]">Puedes subir a S/{Number(s.sugerido).toFixed(2)} (+S/{Number(s.gananciaExtra).toFixed(0)}/mes)</p>}
                       </div>
                     )}
                     {s.status === "alineado" && (
@@ -394,7 +394,7 @@ export default function CompetitorPriceTracker() {
                         onClick={() => { setEditingCell({ productId: product.productId, competitorId: "my" }); setEditValue(String(product.myPrice)); }}
                         className="text-xs font-bold text-primary hover:underline"
                       >
-                        S/{product.myPrice.toFixed(2)}
+                        S/{Number(product.myPrice).toFixed(2)}
                       </button>
                     )}
                   </td>

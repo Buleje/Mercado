@@ -7,11 +7,13 @@ import {
   STRIPE_PRICE_IDS,
 } from "@/lib/stripe";
 import type { PlanId } from "@/lib/plans";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // POST /api/billing/checkout
 // Body: { plan: "pro" | "business" }
 // Creates a Stripe Checkout Session and returns { url }
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "billing-checkout"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

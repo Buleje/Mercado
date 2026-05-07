@@ -43,7 +43,7 @@ export function DeliveryZonesConfig() {
                 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
                 : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
             )}>
-              {z.tarifa === 0 ? "GRATIS" : `S/${z.tarifa.toFixed(0)}`}
+              {z.tarifa === 0 ? "GRATIS" : `S/${Number(z.tarifa).toFixed(0)}`}
             </span>
             <button
               onClick={() => saveZones(zones.filter((_, idx) => idx !== i))}

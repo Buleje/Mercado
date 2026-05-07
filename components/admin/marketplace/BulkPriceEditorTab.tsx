@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
@@ -247,7 +248,7 @@ export default function BulkPriceEditorTab() {
       const updates = Array.from(changes.entries()).map(([id, ch]) => ({ id, ...ch }));
       const res = await fetch("/api/marketplace/products/bulk-edit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ updates }),
       });
       setProgress(90);
@@ -442,13 +443,13 @@ export default function BulkPriceEditorTab() {
                     </td>
                     <td className="px-4 py-3 font-medium text-[var(--text-primary)] max-w-[200px] truncate">{p.name}</td>
                     <td className="px-4 py-3 text-[var(--text-secondary)]">{p.category}</td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">S/ {p.price.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-[var(--text-secondary)]">S/ {Number(p.price).toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <input
                         type="number"
                         step="0.01"
                         min="0"
-                        placeholder={p.price.toFixed(2)}
+                        placeholder={Number(p.price).toFixed(2)}
                         value={ch.price !== undefined ? ch.price : ""}
                         onChange={(e) => {
                           const v = parseFloat(e.target.value);

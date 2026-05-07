@@ -8,6 +8,7 @@ import {
   METERED_EVENTS,
 } from "@/lib/billing/metering";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const MeterBodySchema = z.object({
   event: z.enum(METERED_EVENTS),
@@ -24,6 +25,7 @@ const MeterBodySchema = z.object({
  * taken from the admin session — never trusted from the body.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "billing-meter"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

@@ -4,6 +4,7 @@ import { PrestamosDB } from "@/lib/db/prestamos.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreatePrestamoSchema = z.object({
   customerId: z.string().max(20).optional(),
@@ -58,6 +59,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/prestamos — create prestamo with auto-generated cuotas
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "prestamos"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

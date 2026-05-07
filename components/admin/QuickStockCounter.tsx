@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useRef, useCallback } from "react";
 import {
   Barcode,
@@ -146,7 +147,7 @@ export default function QuickStockCounter() {
 
       const res = await fetch("/api/stock/physical-count", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ items: payload }),
       });
 

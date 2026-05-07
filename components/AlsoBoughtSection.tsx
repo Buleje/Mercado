@@ -194,7 +194,7 @@ export default function AlsoBoughtSection({
               )}
               <div className="flex items-center justify-between mt-1.5">
                 <span className="font-extrabold text-primary text-sm">
-                  S/{product.price.toFixed(2)}
+                  S/{Number(product.price).toFixed(2)}
                 </span>
                 <button
                   onClick={() => handleAdd(product)}

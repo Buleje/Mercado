@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { createInstallmentPlan } from "@/lib/credit/installment-manager";
 import type { AllowedInstallments } from "@/lib/credit/installment-manager";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,7 @@ const CreatePlanSchema = z.object({
 // ── POST /api/credit/create-plan ──────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "credit-create-plan"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

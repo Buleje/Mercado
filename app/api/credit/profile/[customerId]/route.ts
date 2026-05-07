@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { updateCreditProfile } from "@/lib/credit/scoring-engine";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -64,6 +65,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ customerId: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "credit-profile-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

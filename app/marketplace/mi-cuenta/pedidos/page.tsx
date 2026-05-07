@@ -202,7 +202,7 @@ export default function PedidosPage() {
 
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    S/ {order.total.toFixed(2)}
+                    S/ {Number(order.total).toFixed(2)}
                   </span>
                   <span
                     className={cn(

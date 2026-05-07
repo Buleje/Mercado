@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   RefreshCw,
   CheckCircle2,
@@ -281,7 +282,7 @@ export function CategoriesTab() {
         const res = await fetch("/api/superadmin/marketplace/categories", {
           method: "PATCH",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(body),
         });
         if (!res.ok) {

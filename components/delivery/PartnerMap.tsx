@@ -146,7 +146,7 @@ export default function PartnerMap({ partnerLat, partnerLng }: Props) {
         marker.bindPopup(`
           <b>${offer.order.customerName}</b><br/>
           ${offer.order.customerLocation ?? "—"}<br/>
-          <span style="color:var(--accent);font-weight:bold">${offer.distanceKm.toFixed(1)} km · S/ ${offer.feeOffered.toFixed(0)}</span>
+          <span style="color:var(--accent);font-weight:bold">${Number(offer.distanceKm).toFixed(1)} km · S/ ${Number(offer.feeOffered).toFixed(0)}</span>
         `);
         marker.on("click", () => {
           marker.openPopup();

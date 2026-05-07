@@ -34,7 +34,7 @@ export function AdminStatsMobile({ quickStats, navigateTab }: AdminStatsProps) {
       <span className="text-[var(--text-tertiary)] dark:text-card-border shrink-0">|</span>
       <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] font-semibold shrink-0">
         <TrendingUp className="h-3 w-3" />
-        S/{quickStats.todayRevenue.toFixed(2)}
+        S/{Number(quickStats.todayRevenue).toFixed(2)}
       </span>
       {quickStats.lowStockProducts > 0 && (
         <>
@@ -83,7 +83,7 @@ export function AdminStatsDesktop({ quickStats, navigateTab }: AdminStatsProps) 
       <span className="text-gray-200 dark:text-card-border">|</span>
       <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] font-semibold">
         <TrendingUp className="h-4 w-4" />
-        S/{quickStats.todayRevenue.toFixed(2)} hoy
+        S/{Number(quickStats.todayRevenue).toFixed(2)} hoy
       </span>
       {quickStats.lowStockProducts > 0 && (
         <>

@@ -7,6 +7,7 @@ import type { MockReview } from "@/lib/mocks/product-reviews.mock";
 import RatingBreakdown, { type BreakdownData } from "./RatingBreakdown";
 import ReviewCard from "./ReviewCard";
 import WriteReviewModal from "./WriteReviewModal";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type ReviewFilter = "all" | "with_photos" | "verified" | "helpful";
 type ReviewSort = "recent" | "helpful" | "rating_high" | "rating_low";
@@ -111,7 +112,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
   const handleHelpful = useCallback(async (reviewId: string) => {
     await fetch(`/api/marketplace/reviews-enhanced/${productId}/helpful`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ reviewId }),
     }).catch(() => {
       /* ignore — optimistic UI already applied */

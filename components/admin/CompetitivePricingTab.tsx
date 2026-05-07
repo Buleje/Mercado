@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
 import {
   TrendingUp,
@@ -126,7 +127,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
                 style={{ width: `${(p.myPrice / maxVal) * 100}%` }}
               />
               <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
-                S/{p.myPrice.toFixed(2)}
+                S/{Number(p.myPrice).toFixed(2)}
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -182,7 +183,7 @@ export default function CompetitivePricingTab() {
     try {
       const res = await fetch(`/api/products/${product.productId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ retailPrice: newPrice }),
       });
       if (!res.ok) throw new Error("Error al actualizar precio");
@@ -401,12 +402,12 @@ export default function CompetitivePricingTab() {
                       )}
                     </td>
                     <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
-                      S/{p.myPrice.toFixed(2)}
+                      S/{Number(p.myPrice).toFixed(2)}
                     </td>
                     <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
                       {p.avgPrice !== null ? (
                         <div>
-                          <p className="font-bold">S/{p.avgPrice.toFixed(2)}</p>
+                          <p className="font-bold">S/{Number(p.avgPrice).toFixed(2)}</p>
                           {p.minPrice !== null && p.maxPrice !== null && (
                             <div className="mt-2">
                               <PriceBar
@@ -423,10 +424,10 @@ export default function CompetitivePricingTab() {
                       )}
                     </td>
                     <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
-                      {p.minPrice !== null ? `S/${p.minPrice.toFixed(2)}` : "—"}
+                      {p.minPrice !== null ? `S/${Number(p.minPrice).toFixed(2)}` : "—"}
                     </td>
                     <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
-                      {p.maxPrice !== null ? `S/${p.maxPrice.toFixed(2)}` : "—"}
+                      {p.maxPrice !== null ? `S/${Number(p.maxPrice).toFixed(2)}` : "—"}
                     </td>
                     <td className="px-4 py-4 text-center text-sm font-bold text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                       {p.competitorCount}

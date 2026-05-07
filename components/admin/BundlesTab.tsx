@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Package, Loader2, Plus, Trash2, ToggleLeft, ToggleRight, X, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/erp";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type BundleItem = { productId: string; quantity: number; productName?: string; productPrice?: number };
 type Bundle = { id: string; name: string; description: string; price: number; image: string; active: boolean; items: BundleItem[]; createdAt: string };
@@ -69,7 +70,7 @@ export default function BundlesTab() {
     setSaving(true);
     const res = await fetch("/api/bundles", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ name, description, price: Number(price), image: image || undefined, items }),
     });
     if (res.ok) {
@@ -83,7 +84,7 @@ export default function BundlesTab() {
   const toggleActive = async (id: string, active: boolean) => {
     await fetch(`/api/bundles/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ active: !active }),
     });
     setTick(v => v + 1);
@@ -152,7 +153,7 @@ export default function BundlesTab() {
                 <div className="border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-32 overflow-y-auto divide-y divide-gray-100 dark:divide-card-border">
                   {filteredProducts.slice(0, 8).map(p => (
                     <button key={String(p.id)} onClick={() => addItem(String(p.id))} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-surface flex justify-between">
-                      <span>{p.name}</span><span className="text-[var(--text-tertiary)]">S/{p.price.toFixed(2)}</span>
+                      <span>{p.name}</span><span className="text-[var(--text-tertiary)]">S/{Number(p.price).toFixed(2)}</span>
                     </button>
                   ))}
                 </div>
@@ -165,7 +166,7 @@ export default function BundlesTab() {
                     return (
                       <div key={i.productId} className="flex flex-wrap items-center gap-2 bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
                         <span className="text-sm font-bold flex-1 truncate">{p.name}</span>
-                        <span className="text-xs text-[var(--text-tertiary)]">S/{p.price.toFixed(2)}</span>
+                        <span className="text-xs text-[var(--text-tertiary)]">S/{Number(p.price).toFixed(2)}</span>
                         <input type="number" min={1} value={i.quantity} onChange={e => updateQty(i.productId, Number(e.target.value))} className="w-14 text-center text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-card py-1" />
                         <button onClick={() => removeItem(i.productId)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
@@ -229,7 +230,7 @@ export default function BundlesTab() {
                   </div>
                   <div className="flex items-end justify-between pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
                     <div>
-                      <p className="text-xl sm:text-2xl font-extrabold text-primary">S/{b.price.toFixed(2)}</p>
+                      <p className="text-xl sm:text-2xl font-extrabold text-primary">S/{Number(b.price).toFixed(2)}</p>
                       {individual > 0 && <p className="text-xs text-[var(--text-tertiary)] line-through">S/{individual.toFixed(2)}</p>}
                     </div>
                     <button onClick={() => remove(b.id)} className="p-2 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>

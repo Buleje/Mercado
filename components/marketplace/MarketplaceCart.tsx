@@ -8,6 +8,7 @@ import { useMarketplaceCart, modifierHashOf, type CartItem } from "@/hooks/use-m
 import ShareCartButton from "@/components/marketplace/ShareCartButton";
 import WhatsAppOrderButton from "@/components/marketplace/WhatsAppOrderButton";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ---------- helpers ----------
 
@@ -284,7 +285,7 @@ export default function MarketplaceCart({
     try {
       const res = await fetch("/api/marketplace/coupons/validate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ code, storeSlug, cartTotal: storeTotal }),
       });
       const data = await res.json();
@@ -412,7 +413,7 @@ export default function MarketplaceCart({
       const group = byStore[storeId];
       fetch("/api/marketplace/cart/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           storeSlug: group.storeSlug,
           customerName: customerName.trim(),
@@ -445,7 +446,7 @@ export default function MarketplaceCart({
         }));
         return fetch("/api/marketplace/orders", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             storeSlug: group.storeSlug,
             customerName: customerName.trim(),

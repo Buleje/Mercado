@@ -228,7 +228,7 @@ export default function QuickReorderModal({
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs font-bold text-primary">
-                        S/{item.currentPrice.toFixed(2)}
+                        S/{Number(item.currentPrice).toFixed(2)}
                       </span>
                       {item.priceChanged && (
                         <span className={cn(
@@ -242,7 +242,7 @@ export default function QuickReorderModal({
                           ) : (
                             <TrendingDown className="h-3 w-3" />
                           )}
-                          {item.priceDiff > 0 ? "+" : ""}S/{item.priceDiff.toFixed(2)}
+                          {item.priceDiff > 0 ? "+" : ""}S/{Number(item.priceDiff).toFixed(2)}
                         </span>
                       )}
                       {!item.available && (

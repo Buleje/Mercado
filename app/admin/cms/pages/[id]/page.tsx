@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 // ═══════════════════════════════════════════════════════
 // CMS PAGE BUILDER - Simple Editor
 // ═══════════════════════════════════════════════════════
@@ -192,7 +193,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
 
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           slug: page.slug,
           title: page.title,
@@ -224,7 +225,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
     try {
       const res = await fetch(`/api/cms/pages/${params.id}/blocks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           type,
           order: page.blocks.length,
@@ -264,7 +265,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         `/api/cms/pages/${params.id}/blocks?blockId=${blockId}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ visible }),
         }
       );
@@ -285,7 +286,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         `/api/cms/pages/${params.id}/blocks?blockId=${selectedBlock}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ props: draftProps }),
         }
       );

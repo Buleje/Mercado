@@ -13,6 +13,7 @@ import {
   BellRing,
   Loader2,
 } from "lucide-react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import type { NotificationItem as NotificationItemType } from "./useNotificationCenter";
 
@@ -182,7 +183,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
                   if (entityId) {
                     const res = await fetch(`/api/fiados/${entityId}/pagar`, {
                       method: "POST",
-                      headers: { "Content-Type": "application/json" },
+                      headers: csrfHeaders({ "Content-Type": "application/json" }),
                       body: JSON.stringify({ monto }),
                     });
                     if (res.ok) {

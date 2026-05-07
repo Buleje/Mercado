@@ -1149,7 +1149,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     { name: "Leche entera 400g", price: 4.80 },
                     { name: "Azucar rubia 1kg", price: 5.20 },
                   ]).map((p, i) => (
-                    <PreviewCard key={i} title={p.name} price={`S/ ${p.price.toFixed(2)}`} primaryColor={draft.primaryColor} borderRadius={draft.borderRadius} styleVariant={draft.cardStyle} />
+                    <PreviewCard key={i} title={p.name} price={`S/ ${Number(p.price).toFixed(2)}`} primaryColor={draft.primaryColor} borderRadius={draft.borderRadius} styleVariant={draft.cardStyle} />
                   ))}
                 </div>
 

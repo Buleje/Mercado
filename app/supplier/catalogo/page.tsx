@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -132,7 +133,7 @@ function OfferModal({ onClose }: { onClose: () => void }) {
     try {
       const res = await fetch("/api/supplier/offers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           title: form.title,
           description: form.description || undefined,
@@ -301,7 +302,7 @@ export default function SupplierCatalogoPage() {
     try {
       const res = await fetch("/api/supplier/catalog", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           updates: [{ productId: p.productId, newPrice, sku: p.sku ?? undefined }],
         }),

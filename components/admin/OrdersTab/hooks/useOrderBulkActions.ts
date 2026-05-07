@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { OrderStatus } from "@/lib/jsondb";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface UseOrderBulkActionsProps {
   onComplete: () => void;
@@ -28,7 +29,7 @@ export function useOrderBulkActions({ onComplete }: UseOrderBulkActionsProps) {
     try {
       await fetch("/api/orders/bulk-status", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids: Array.from(selectedOrderIds), status: bulkStatusTarget }),
       });
     } catch { /* ignore */ }

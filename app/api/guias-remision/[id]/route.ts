@@ -4,6 +4,7 @@ import { GuiasRemisionDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const GuiaItemSchema = z.object({
   descripcion: z.string().min(1).max(500),
@@ -69,6 +70,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
 }
 
 export async function PUT(req: NextRequest, ctx: RouteContext) {
+  const _rl = await applyRateLimit(req, "MODERATE", "guias-remision-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "owner", "manager", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
   const { id } = await ctx.params;
@@ -110,6 +112,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
 }
 
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
+  const _rl = await applyRateLimit(req, "MODERATE", "guias-remision-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "owner", "manager", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
   const { id } = await ctx.params;

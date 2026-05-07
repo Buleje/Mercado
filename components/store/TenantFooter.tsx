@@ -17,6 +17,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { usePathname } from "next/navigation";
 import {
   MapPin,
@@ -361,7 +362,7 @@ export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
                 try {
                   const res = await fetch("/api/newsletter", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: csrfHeaders({ "Content-Type": "application/json" }),
                     body: JSON.stringify({ email: nlEmail.trim() }),
                   });
                   setNlStatus(res.ok ? "success" : "error");

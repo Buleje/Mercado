@@ -156,7 +156,7 @@ export default function FeaturedStoresCarousel({ stores }: Props) {
                   {store.rating > 0 && (
                     <span className="inline-flex items-center gap-1 tabular-nums">
                       <Star className="h-3 w-3 fill-current text-[var(--accent)]" />
-                      {store.rating.toFixed(1)}
+                      {Number(store.rating).toFixed(1)}
                       <span className="opacity-70">({store.reviewCount})</span>
                     </span>
                   )}

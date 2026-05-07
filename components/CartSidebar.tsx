@@ -13,6 +13,7 @@ import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 import { sendOrder, type SendResult } from "@/lib/order-utils";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import CartUpsellSection from "@/components/CartUpsellSection";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /** Renders a cart item image with graceful error fallback */
 function CartItemImage({ src, alt }: { src: string; alt: string }) {
@@ -86,7 +87,7 @@ export default function CartSidebar() {
     setValidatingCoupon(true);
     setCouponMsg("");
     try {
-      const res = await fetch("/api/coupons/validate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: couponCode.trim(), cartTotal: total }) });
+      const res = await fetch("/api/coupons/validate", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ code: couponCode.trim(), cartTotal: total }) });
       const data = await res.json();
       if (res.ok && data.valid) {
         setCouponDiscount(data.discount ?? 0);
@@ -488,7 +489,7 @@ export default function CartSidebar() {
                           </p>
                         )}
                       <p className="text-xs text-muted mt-0.5">
-                        S/{item.price.toFixed(2)} / {item.unit}
+                        S/{Number(item.price).toFixed(2)} / {item.unit}
                       </p>
 
                       <div className="flex items-center justify-between mt-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo } from "react";
 import {
   RefreshCw, Loader2, CheckCircle2, ShoppingCart, ArrowRight,
@@ -133,7 +134,7 @@ export default function AutoReorderTab() {
     setTogglingId(product.id);
     await fetch(`/api/auto-reorder/${product.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ autoReorderEnabled: !product.autoReorderEnabled }),
     });
     setProducts(prev => prev.map(p => p.id === product.id ? { ...p, autoReorderEnabled: !p.autoReorderEnabled } : p));
@@ -144,7 +145,7 @@ export default function AutoReorderTab() {
     if (!editThresholds) return;
     await fetch(`/api/auto-reorder/${editThresholds.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ stockMin: thresholdForm.stockMin, stockMax: thresholdForm.stockMax }),
     });
     setProducts(prev => prev.map(p => p.id === editThresholds.id ? { ...p, ...thresholdForm } : p));
@@ -161,7 +162,7 @@ export default function AutoReorderTab() {
     const total = items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
     const res = await fetch("/api/purchases", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ supplierId, items, total }),
     });
     if (res.ok) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, DataTable } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
 import Image from "next/image";
 import {
@@ -483,7 +484,7 @@ export default function PuntoDeCompraTab() {
       try {
         const res = await fetch("/api/suppliers", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             name: newSupName.trim(),
             ruc: newSupRuc.trim() || undefined,
@@ -520,7 +521,7 @@ export default function PuntoDeCompraTab() {
     try {
       const res = await fetch("/api/purchases", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           supplierId: selectedSupplier?.id || "",
           supplierName: selectedSupplier?.name || "Sin proveedor",

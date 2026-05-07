@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 /**
  * components/admin/ai-center/HITLApprovalsBanner.tsx
  *
@@ -102,7 +103,7 @@ export default function HITLApprovalsBanner() {
       try {
         const res = await fetch("/api/ai-assistant/approvals", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           credentials: "include",
           body: JSON.stringify({ id, action }),
         });

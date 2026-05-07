@@ -260,7 +260,7 @@ function PromoBadge({ productId, quantity, unitPrice }: { productId: number; qua
   const applied = quantity >= promo.buyQty;
   return (
     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1 py-0.5 rounded", applied ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)]")}>
-      {promo.buyQty}xS/{promo.payPrice.toFixed(0)}{saving > 0 ? ` (ahorro S/${saving.toFixed(0)})` : ""}
+      {promo.buyQty}xS/{Number(promo.payPrice).toFixed(0)}{saving > 0 ? ` (ahorro S/${saving.toFixed(0)})` : ""}
     </span>
   );
 }
@@ -425,7 +425,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
   return (
     <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-4 space-y-3">
       <p className="text-sm font-semibold text-[var(--data-warning-500)]">
-        {customerName || customerPhone} tiene fiado de <span className="font-bold">S/{fiado.saldo.toFixed(2)}</span>. ¿Abonar?
+        {customerName || customerPhone} tiene fiado de <span className="font-bold">S/{Number(fiado.saldo).toFixed(2)}</span>. ¿Abonar?
       </p>
       <div className="flex flex-wrap gap-2">
         {quickAmounts.map(a => (
@@ -436,7 +436,7 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
         ))}
         <button onClick={() => abonar(fiado.saldo)} disabled={paying}
           className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white transition-colors disabled:opacity-50">
-          Todo S/{fiado.saldo.toFixed(2)}
+          Todo S/{Number(fiado.saldo).toFixed(2)}
         </button>
         <button onClick={() => setFiado(null)} className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors">No, gracias</button>
       </div>
@@ -2161,7 +2161,7 @@ export default function POSView() {
                               }}
                               className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] hover:border-primary hover:text-primary transition-colors"
                             >
-                              {m.name} · S/{m.price.toFixed(2)}
+                              {m.name} · S/{Number(m.price).toFixed(2)}
                             </button>
                           ))}
                         </div>

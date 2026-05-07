@@ -66,7 +66,7 @@ export default function DashboardWidgets({ onNavigate }: DashboardWidgetsProps) 
   const widgets = [
     {
       label: "Ventas hoy",
-      value: `S/${data.ventasHoy.toFixed(0)}`,
+      value: `S/${Number(data.ventasHoy).toFixed(0)}`,
       icon: DollarSign,
       color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
       tab: "analytics-pro",

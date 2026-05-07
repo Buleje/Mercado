@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { logger } from "@/lib/logger";
 import crypto from "node:crypto";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const VisitSchema = z.object({
   tenantSlug: z.string().min(1).max(120),
@@ -22,6 +23,7 @@ const VisitSchema = z.object({
  * endpoints públicos).
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "store-page-visits"); if (_rl) return _rl;
   const raw = await req.json().catch(() => null);
   const parsed = VisitSchema.safeParse(raw);
   if (!parsed.success) {

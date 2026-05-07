@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MapPin, Search, Check, AlertTriangle, Info, Loader2, Plus, Trash2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/erp";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Warehouse = { id: string; name: string };
 type Location = {
@@ -100,7 +101,7 @@ export default function WarehouseLocationTab() {
     try {
       const res = await fetch("/api/locations", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           code: form.code,
           zone: form.zone,
@@ -126,7 +127,7 @@ export default function WarehouseLocationTab() {
   async function saveLocation(location: Location) {
     const res = await fetch("/api/locations", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         id: location.id,
         productId: location.productId,

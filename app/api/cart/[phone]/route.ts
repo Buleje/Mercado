@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyCartToken } from "@/lib/auth/cart-token";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET    /api/cart/[phone]?token=...  — Retrieve saved cart for a customer
@@ -60,6 +61,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "STRICT", "cart-X"); if (_rl) return _rl;
   const { phone } = await params;
   const clean = authorize(req, phone);
   if (!clean) return notFound();
@@ -91,6 +93,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "STRICT", "cart-X"); if (_rl) return _rl;
   const { phone } = await params;
   const clean = authorize(req, phone);
   if (!clean) return notFound();

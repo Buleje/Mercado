@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo } from "react";
 import {
   CalendarDays, Loader2, Sun, Sunset, Moon, Package,
@@ -112,7 +113,7 @@ export default function DeliveryCalendarTab() {
     if (!assigningSlot) return;
     await fetch("/api/delivery-slots", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ orderId, date: selectedDate, slot: assigningSlot }),
     });
     setAssigningSlot(null);
@@ -266,7 +267,7 @@ export default function DeliveryCalendarTab() {
                             </div>
                           )}
                           {s.total !== undefined && (
-                            <span className="mt-1 inline-block font-bold text-primary">S/ {s.total.toFixed(2)}</span>
+                            <span className="mt-1 inline-block font-bold text-primary">S/ {Number(s.total).toFixed(2)}</span>
                           )}
                         </div>
                         <button
@@ -329,7 +330,7 @@ export default function DeliveryCalendarTab() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-[var(--text-primary)] dark:text-foreground">#{o.id.slice(-6)}</span>
-                      <span className="font-extrabold text-primary">S/ {o.total.toFixed(2)}</span>
+                      <span className="font-extrabold text-primary">S/ {Number(o.total).toFixed(2)}</span>
                     </div>
                     {o.customerName && (
                       <p className="text-xs text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1">

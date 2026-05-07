@@ -3,6 +3,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─── Validación params ────────────────────────────────────────────────────────
 
@@ -135,6 +136,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ tenantSlug: string }> }
 ) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-churn-X"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if ("status" in auth) return auth;
 

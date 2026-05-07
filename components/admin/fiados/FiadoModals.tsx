@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import React from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -396,7 +397,7 @@ export default function FiadoModals({
                   </button>
                   <a
                     href={`https://wa.me/${reciboData.clientePhone.replace(/\D/g, "").startsWith("51") ? reciboData.clientePhone.replace(/\D/g, "") : "51" + reciboData.clientePhone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\nBuleje\nFecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: S/${reciboData.montoPagado.toFixed(2)}\nSaldo anterior: S/${reciboData.saldoAnterior.toFixed(2)}\n*Saldo actual: S/${reciboData.saldoActual.toFixed(2)}*\n${"─".repeat(25)}\nGracias por tu pago. Vuelve pronto!`
+                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\nBuleje\nFecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: S/${Number(reciboData.montoPagado).toFixed(2)}\nSaldo anterior: S/${Number(reciboData.saldoAnterior).toFixed(2)}\n*Saldo actual: S/${Number(reciboData.saldoActual).toFixed(2)}*\n${"─".repeat(25)}\nGracias por tu pago. Vuelve pronto!`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -597,7 +598,7 @@ export default function FiadoModals({
                       try {
                         await fetch(`/api/fiados/${selected.id}`, {
                           method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
+                          headers: csrfHeaders({ "Content-Type": "application/json" }),
                           body: JSON.stringify({
                             descripcion: `${selected.descripcion ?? ""} [COMPROMISO: S/${compromisoMonto} hasta ${compromisoFecha}]`.trim(),
                           }),
@@ -676,7 +677,7 @@ export default function FiadoModals({
                           lines.push("", `${zone} — ${items.length} deudor${items.length !== 1 ? "es" : ""} (S/${zoneTotal.toFixed(2)})`);
                           for (const f of items) {
                             const phone = f.customerId.replace(/\D/g, "");
-                            lines.push(`  -> ${f.customerName || f.customerId} · S/${f.saldo.toFixed(2)} · ${phone.slice(0, 3)}XXXXXX [ ]`);
+                            lines.push(`  -> ${f.customerName || f.customerId} · S/${Number(f.saldo).toFixed(2)} · ${phone.slice(0, 3)}XXXXXX [ ]`);
                           }
                         }
                         lines.push("", `Total: S/${deudores.reduce((s, f) => s + f.saldo, 0).toFixed(2)} (${deudores.length} clientes)`);
@@ -756,7 +757,7 @@ export default function FiadoModals({
                                       </div>
                                       <div className="flex gap-1 shrink-0">
                                         <a
-                                          href={`https://wa.me/${cleanPhone.startsWith("51") ? cleanPhone : "51" + cleanPhone}?text=${encodeURIComponent(`Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${f.saldo.toFixed(2)} en Buleje.`)}`}
+                                          href={`https://wa.me/${cleanPhone.startsWith("51") ? cleanPhone : "51" + cleanPhone}?text=${encodeURIComponent(`Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`)}`}
                                           target="_blank" rel="noopener noreferrer"
                                           className="p-1.5 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
                                           title="WhatsApp"

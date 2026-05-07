@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useParams } from "next/navigation";
 import { Loader2, AlertTriangle, ArrowRight } from "@buleje/design-system/icons";
 import {
@@ -104,7 +105,7 @@ export default function DriverDashboardPage() {
     try {
       const res = await fetch(`/api/delivery/driver/${partnerId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ assignmentId, status: newStatus }),
       });
       if (res.ok) await fetchData();
@@ -189,7 +190,7 @@ export default function DriverDashboardPage() {
             />
             <HeroStat
               icon={<CashIcon className="h-5 w-5" />}
-              value={`S/ ${data.stats.todayEarnings.toFixed(0)}`}
+              value={`S/ ${data.Number(stats.todayEarnings).toFixed(0)}`}
               label="Ganado hoy"
             />
           </div>
@@ -251,7 +252,7 @@ export default function DriverDashboardPage() {
                     </p>
                   </div>
                   <span className="text-base font-extrabold text-[var(--data-success-500)] tabular-nums shrink-0">
-                    +S/ {a.fee.toFixed(2)}
+                    +S/ {Number(a.fee).toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -330,10 +331,10 @@ function ActiveCard({
 
         <div className="flex items-center justify-between text-base">
           <span className="font-bold text-[var(--text-secondary)]">
-            Total: S/ {a.orderTotal.toFixed(2)}
+            Total: S/ {Number(a.orderTotal).toFixed(2)}
           </span>
           <span className="font-extrabold text-[var(--accent)]">
-            Comisión: S/ {a.fee.toFixed(2)}
+            Comisión: S/ {Number(a.fee).toFixed(2)}
           </span>
         </div>
 

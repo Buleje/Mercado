@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/assistant/chat — Asistente Buleje (mock intent responses).
@@ -96,6 +97,7 @@ function matchIntent(message: string): IntentRule | null {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "assistant-chat"); if (_rl) return _rl;
   let body: unknown;
   try {
     body = await req.json();

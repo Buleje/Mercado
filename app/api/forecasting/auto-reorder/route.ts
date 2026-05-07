@@ -19,6 +19,7 @@ import {
 } from "@/lib/forecasting/auto-reorder";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Schema opcional: si el cliente envía las sugerencias precalculadas
 const BodySchema = z.object({
@@ -27,6 +28,7 @@ const BodySchema = z.object({
 }).strict();
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "forecasting-auto-reorder"); if (_rl) return _rl;
   // 1. Auth — solo admin puede crear POs automáticas
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

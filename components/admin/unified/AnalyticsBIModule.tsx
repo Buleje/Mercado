@@ -157,12 +157,12 @@ function InlineKPIStrip() {
   }
 
   const items = [
-    { label: "Ventas hoy", value: `S/ ${kpis.ventasHoy.toFixed(0)}`, color: "text-[var(--data-success-500)]" },
-    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-[var(--data-success-500)]" },
-    { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: kpis.margen >= 20 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]" },
+    { label: "Ventas hoy", value: `S/ ${Number(kpis.ventasHoy).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
+    { label: "Ticket prom", value: `S/ ${Number(kpis.ticketPromedio).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
+    { label: "Margen", value: `${Number(kpis.margen).toFixed(1)}%`, color: kpis.margen >= 20 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]" },
     { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-[var(--text-secondary)]" },
-    { label: "Fiado pend.", value: `S/ ${kpis.fiadoPendiente.toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]" },
-    { label: "Rotación", value: `${kpis.rotacion.toFixed(1)}x`, color: "text-[var(--data-info-500)]" },
+    { label: "Fiado pend.", value: `S/ ${Number(kpis.fiadoPendiente).toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]" },
+    { label: "Rotación", value: `${Number(kpis.rotacion).toFixed(1)}x`, color: "text-[var(--data-info-500)]" },
   ];
 
   return (
@@ -358,9 +358,9 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
                 <td className="px-3 py-3 text-right text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
                 <td className="px-3 py-3 text-center">
                   {c.tendencia > 5 ? (
-                    <span className="text-[var(--data-success-500)] text-xs font-bold">&#8593; +{c.tendencia.toFixed(0)}%</span>
+                    <span className="text-[var(--data-success-500)] text-xs font-bold">&#8593; +{Number(c.tendencia).toFixed(0)}%</span>
                   ) : c.tendencia < -5 ? (
-                    <span className="text-[var(--data-error-500)] text-xs font-bold">&#8595; {c.tendencia.toFixed(0)}%</span>
+                    <span className="text-[var(--data-error-500)] text-xs font-bold">&#8595; {Number(c.tendencia).toFixed(0)}%</span>
                   ) : (
                     <span className="text-[var(--text-tertiary)] text-xs font-bold">&#8594; Estable</span>
                   )}
@@ -461,10 +461,10 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
           <p className="text-lg font-extrabold text-[var(--text-primary)] truncate">{star.name}</p>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
             <span className="text-sm text-[var(--text-secondary)]">{star.qty} unidades esta semana</span>
-            <span className="text-sm font-bold text-primary">S/{star.revenue.toFixed(0)}</span>
+            <span className="text-sm font-bold text-primary">S/{Number(star.revenue).toFixed(0)}</span>
             {star.trend !== 0 && (
               <span className={`text-xs font-bold ${star.trend > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
-                {star.trend > 0 ? "\u2191" : "\u2193"} {star.trend > 0 ? "+" : ""}{star.trend.toFixed(0)}% vs sem. pasada
+                {star.trend > 0 ? "\u2191" : "\u2193"} {star.trend > 0 ? "+" : ""}{Number(star.trend).toFixed(0)}% vs sem. pasada
               </span>
             )}
           </div>

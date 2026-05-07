@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -153,7 +154,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     try {
       const res = await fetch(`/api/products/${product.id}/notify-restock`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ phone }),
       });
       if (res.ok) {
@@ -272,7 +273,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     const url = window.location.href;
     if (navigator.share) {
       try {
-        await navigator.share({ title: product.name, text: `${product.name} — S/${product.price.toFixed(2)}`, url });
+        await navigator.share({ title: product.name, text: `${product.name} — S/${Number(product.price).toFixed(2)}`, url });
       } catch {}
     } else {
       await navigator.clipboard.writeText(url);
@@ -395,7 +396,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             <div className="bg-gray-50 dark:bg-surface rounded-2xl p-5 border border-gray-100 dark:border-card-border">
               <div className="flex items-end gap-2">
                 <span className="text-3xl sm:text-4xl font-extrabold text-primary">
-                  S/{product.price.toFixed(2)}
+                  S/{Number(product.price).toFixed(2)}
                 </span>
                 <span className="text-base text-muted mb-1">por {product.unit}</span>
               </div>
@@ -484,7 +485,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                             <Image src={alt.image} alt={alt.name} width={48} height={48} className="rounded-lg object-cover shrink-0" />
                             <div className="min-w-0 flex-1">
                               <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">{alt.name}</p>
-                              <p className="text-xs font-semibold text-primary">S/{alt.price.toFixed(2)}</p>
+                              <p className="text-xs font-semibold text-primary">S/{Number(alt.price).toFixed(2)}</p>
                             </div>
                           </Link>
                         ))}
@@ -828,7 +829,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     </p>
                     <div className="flex items-center justify-between mt-1.5">
                       <span className="font-extrabold text-primary text-sm">
-                        S/{rp.price.toFixed(2)}
+                        S/{Number(rp.price).toFixed(2)}
                       </span>
                       <span className="text-xs text-muted">{rp.unit}</span>
                     </div>

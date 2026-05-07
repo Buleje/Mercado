@@ -4,6 +4,7 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Check, AlertTriangle, Download, Search, Package, Info, Loader2 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type CountStatus = "pendiente" | "contando" | "finalizado";
 
@@ -142,7 +143,7 @@ export default function PhysicalInventoryTab() {
     try {
       const res = await fetch("/api/inventory-movements", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "bulk-adjust", items: pending.map(({ productId, newStock, notes }) => ({ productId, newStock, notes })) }),
       });
       if (res.ok) {
@@ -176,7 +177,7 @@ export default function PhysicalInventoryTab() {
     try {
       const res = await fetch("/api/inventory-movements", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "adjust", productId: id, newStock: val, notes: `Conteo fisico manual. Sistema: ${currentItem?.systemQty ?? 0}, conteo: ${val}` }),
       });
       if (!res.ok) throw new Error("No se pudo registrar el ajuste");

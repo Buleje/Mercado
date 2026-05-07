@@ -416,7 +416,7 @@ export default function POSCustomerSearch({
                 const dateStr = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
                 return (
                   <span key={i} className="inline-flex items-center text-sm text-[var(--text-secondary)] dark:text-muted mr-2">
-                    {dateStr} · S/{p.total.toFixed(0)} · {p.paymentMethod}
+                    {dateStr} · S/{Number(p.total).toFixed(0)} · {p.paymentMethod}
                     {i < paymentHistory.length - 1 && <span className="mx-1 text-[var(--text-tertiary)]">|</span>}
                   </span>
                 );
@@ -428,7 +428,7 @@ export default function POSCustomerSearch({
           <div className="bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               Última compra: {getRelativeTime(lastPurchase.date)} — {lastPurchase.items.map(i => i.name).slice(0, 3).join(", ")}
-              {lastPurchase.items.length > 3 && "..."} (S/{lastPurchase.total.toFixed(2)})
+              {lastPurchase.items.length > 3 && "..."} (S/{Number(lastPurchase.total).toFixed(2)})
             </p>
             {onRepeatOrder && lastPurchase.items.some(i => i.active) && (
               <button
@@ -504,7 +504,7 @@ export default function POSCustomerSearch({
                 </div>
                 {c.creditBalance != null && c.creditBalance > 0 ? (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] shrink-0">
-                    Fiado S/{c.creditBalance.toFixed(2)}
+                    Fiado S/{Number(c.creditBalance).toFixed(2)}
                   </span>
                 ) : (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] shrink-0">

@@ -199,7 +199,7 @@ export default function QuickReorderButton() {
               className="mt-2 text-2xl font-extrabold tabular-nums"
               style={{ color: "var(--color-primary-dark, #009690)" }}
             >
-              S/ {lastOrder.total.toFixed(2)}
+              S/ {Number(lastOrder.total).toFixed(2)}
             </p>
             <div className="mt-4 flex gap-2">
               <button

@@ -4,6 +4,7 @@ import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Search, Gift, Loader2, CheckCircle, XCircle, Award, Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ export default function LoyaltyRedeemTab() {
     try {
       const res = await fetch("/api/loyalty/redeem", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           customerPhone: customer.phone,
           rewardId: reward.id,

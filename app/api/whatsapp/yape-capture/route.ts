@@ -27,6 +27,7 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import { extractYapePayment } from "@/lib/ai/yape-vision";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
@@ -386,6 +387,7 @@ function processVisionInBackground(
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "whatsapp-yape-capture"); if (_rl) return _rl;
   logger.info("[yape-capture] POST recibido");
 
   let resolved: ResolvedCapture;

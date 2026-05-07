@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo, startTransition } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
@@ -1021,7 +1022,7 @@ export default function Header() {
                           <div className="flex-1 min-w-0">
                             <span className="font-bold text-sm block truncate"><HighlightMatch text={item.name} query={searchQuery} /></span>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-xs font-bold text-primary">S/{item.price.toFixed(2)}</span>
+                              <span className="text-xs font-bold text-primary">S/{Number(item.price).toFixed(2)}</span>
                               {(item.stock ?? 0) > 0 ? (
                                 <span className={cn("text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-full", (item.stock ?? 0) <= 5 ? "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400" : "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-400")}>
                                   {(item.stock ?? 0) <= 5 ? `¡Solo ${item.stock}!` : "Disponible"}
@@ -1100,7 +1101,7 @@ export default function Header() {
                                 )}
                                 <div className="flex-1 min-w-0">
                                   <span className="font-bold text-sm block truncate">{p.name}</span>
-                                  <span className="text-xs text-muted font-semibold">S/{p.price.toFixed(2)}</span>
+                                  <span className="text-xs text-muted font-semibold">S/{Number(p.price).toFixed(2)}</span>
                                 </div>
                               </button>
                             ))}
@@ -1347,7 +1348,7 @@ export default function Header() {
                             onClick={async () => {
                               await fetch("/api/customer-notifications", {
                                 method: "POST",
-                                headers: { "Content-Type": "application/json" },
+                                headers: csrfHeaders({ "Content-Type": "application/json" }),
                                 body: JSON.stringify({ phone: customer.phone, markAllRead: true }),
                               }).catch((err) => {
                                 // Fire-and-forget — UI ya se actualizó optimista
@@ -1706,7 +1707,7 @@ export default function Header() {
                         )}
                         <div className="flex-1 min-w-0">
                           <span className="font-bold text-sm block truncate"><HighlightMatch text={item.name} query={searchQuery} /></span>
-                          <span className="text-xs font-bold text-primary">S/{item.price.toFixed(2)}</span>
+                          <span className="text-xs font-bold text-primary">S/{Number(item.price).toFixed(2)}</span>
                         </div>
                       </button>
                     ))}
@@ -1850,7 +1851,7 @@ export default function Header() {
                       )}
                       <div className="flex-1 min-w-0">
                         <span className="font-bold text-sm block truncate"><HighlightMatch text={item.name} query={searchQuery} /></span>
-                        <span className="text-xs font-bold text-primary">S/{item.price.toFixed(2)}</span>
+                        <span className="text-xs font-bold text-primary">S/{Number(item.price).toFixed(2)}</span>
                       </div>
                     </button>
                   ))}
@@ -1916,7 +1917,7 @@ export default function Header() {
                         )}
                         <div className="flex-1 min-w-0">
                           <span className="font-semibold text-xs block truncate">{p.name}</span>
-                          <span className="text-[length:var(--ts-2xs)] text-muted">S/{p.price.toFixed(2)}</span>
+                          <span className="text-[length:var(--ts-2xs)] text-muted">S/{Number(p.price).toFixed(2)}</span>
                         </div>
                         <Flame className="h-3 w-3 text-[var(--accent)] shrink-0" strokeWidth={1.75} />
                       </button>

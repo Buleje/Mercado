@@ -423,7 +423,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
       <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
         <span className="text-sm text-gray-500 dark:text-gray-400">Costo de delivery</span>
         <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
-          S/ {data.fee.toFixed(2)}
+          S/ {Number(data.fee).toFixed(2)}
         </span>
       </div>
     </div>

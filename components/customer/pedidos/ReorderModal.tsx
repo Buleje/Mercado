@@ -18,6 +18,7 @@ import { X, Trash2, Plus, Minus, CheckCircle2, RefreshCcw } from "@buleje/design
 import { PrimaryButton, cn } from "@buleje/design-system";
 import { useCurrency } from "@/contexts/currency-context";
 import { useLocale } from "@/contexts/locale-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export interface ReorderItem {
   productId: number;
@@ -99,7 +100,7 @@ export default function ReorderModal({
     try {
       const res = await fetch("/api/orders/reorder", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           originalOrderId,
           items: items.map((it) => ({

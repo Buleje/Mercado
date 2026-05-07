@@ -10,6 +10,7 @@ import {
 } from "@/lib/cms-db/pages";
 import { BlockSchema } from "@/lib/cms/types";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ═══════════════════════════════════════════════════════
 // GET /api/cms/pages/:id/blocks - Get all blocks
@@ -44,6 +45,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "cms-pages-X-blocks"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -89,6 +91,7 @@ export async function POST(
 export async function PUT(
   req: NextRequest
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "cms-pages-X-blocks"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -130,6 +133,7 @@ export async function PUT(
 export async function DELETE(
   req: NextRequest
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "cms-pages-X-blocks"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

@@ -90,7 +90,7 @@ export default function ItemListJsonLd({
     if (item.offers) {
       itemData.offers = {
         "@type": "Offer",
-        price: item.offers.price.toFixed(2),
+        price: item.Number(offers.price).toFixed(2),
         priceCurrency: item.offers.priceCurrency ?? "PEN",
         availability: `https://schema.org/${item.offers.availability ?? "InStock"}`,
       };
@@ -98,7 +98,7 @@ export default function ItemListJsonLd({
     if (item.aggregateRating && item.aggregateRating.reviewCount > 0) {
       itemData.aggregateRating = {
         "@type": "AggregateRating",
-        ratingValue: item.aggregateRating.ratingValue.toFixed(1),
+        ratingValue: item.Number(aggregateRating.ratingValue).toFixed(1),
         reviewCount: item.aggregateRating.reviewCount,
         bestRating: 5,
         worstRating: 1,

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { FiadosDB } from "@/lib/db/fiados.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CobrarSchema = z.object({
   customerPhone: z.string().min(1),
@@ -16,6 +17,7 @@ const CobrarSchema = z.object({
  * Distributes the payment across active fiados oldest-first.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "fiados-cobrar"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

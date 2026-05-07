@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import {
@@ -149,7 +150,7 @@ function NewCategoryModal({ open, onOpenChange, onSaved }: { open: boolean; onOp
     try {
       const res = await fetch("/api/superadmin/image-bank", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ name: name.trim(), description: description.trim() || undefined }),
       });
       if (!res.ok) {
@@ -693,7 +694,7 @@ function ItemForm({
         : `/api/superadmin/image-bank/${categoryId}/items/${itemId}`;
       const res = await fetch(url, {
         method: isNew ? "POST" : "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ name: name.trim(), imageUrl }),
       });
       if (!res.ok) {

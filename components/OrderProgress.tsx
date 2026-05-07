@@ -2,6 +2,7 @@
 
 import { useState, useEffect, startTransition, useCallback } from "react";
 import { Package, Truck, CheckCircle2, Clock, X, ChevronDown, ChevronUp, AlertCircle, Star, Printer } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type TrackedOrder = {
   id: string;
@@ -106,7 +107,7 @@ export default function OrderProgress() {
     // Persist to backend
     fetch("/api/surveys", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         orderId: order?.id,
         phone: order?.customerName, // best approximation from tracked data

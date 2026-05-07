@@ -94,7 +94,7 @@ export function VendorPendingOrders({ orders }: Props) {
             </div>
             <div className="shrink-0 text-right">
               <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">
-                S/ {order.total.toFixed(2)}
+                S/ {Number(order.total).toFixed(2)}
               </p>
             </div>
           </li>

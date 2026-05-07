@@ -153,7 +153,7 @@ function ProductSEOCard({
         </h3>
         <div className="mt-auto pt-2 flex items-baseline gap-1">
           <span className="text-lg font-bold text-[var(--data-success-700)]">
-            S/{product.price.toFixed(2)}
+            S/{Number(product.price).toFixed(2)}
           </span>
           <span className="text-xs text-slate-400">/{product.unit}</span>
         </div>

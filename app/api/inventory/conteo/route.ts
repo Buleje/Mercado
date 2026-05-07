@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateSchema = z.object({
   tipo: z.enum(["completo", "categoria", "ubicacion"]).default("completo"),
@@ -12,6 +13,7 @@ const CreateSchema = z.object({
 
 // POST — Iniciar un nuevo conteo físico
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "inventory-conteo"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

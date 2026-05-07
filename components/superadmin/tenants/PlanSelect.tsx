@@ -22,6 +22,7 @@ import type { PlanId } from "@/lib/superadmin-types";
 import { PLAN_ID_LABEL, planIdToTier, tierToPlanId } from "@/lib/billing/plan-mapping";
 import { PLANS, PLAN_ORDER, type PlanTier } from "@/lib/billing/plan-tiers";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface PlanSelectProps {
   slug: string;
@@ -89,7 +90,7 @@ export function PlanSelect({ slug, current, onChanged }: PlanSelectProps) {
       const res = await fetch(`/api/superadmin/tenants/${slug}`, {
         method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ plan }),
       });
       if (res.ok) onChanged(plan);

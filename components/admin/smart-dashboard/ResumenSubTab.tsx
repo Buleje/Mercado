@@ -331,7 +331,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
               label: "Categoria que empuja",
               value: growingCategory?.top ? growingCategory.top.cat : "Sin tendencia clara",
               detail: growingCategory?.top
-                ? `${growingCategory.top.pct.toFixed(0)}% esta semana frente a la anterior`
+                ? `${growingCategory.Number(top.pct).toFixed(0)}% esta semana frente a la anterior`
                 : "Aun no hay suficientes ventas para comparar",
               emphasis: growingCategory?.top ? "positive" : "default",
             },
@@ -408,7 +408,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
         <div className="flex flex-wrap items-center gap-2">
           {semanaAnterior && (
             <span className={cn("inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border", semanaAnterior.pct >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
-              Hace 1 sem ({semanaAnterior.diaLabel}): {fmtR(semanaAnterior.monto)} {semanaAnterior.pct >= 0 ? "+" : ""}{semanaAnterior.pct.toFixed(0)}%
+              Hace 1 sem ({semanaAnterior.diaLabel}): {fmtR(semanaAnterior.monto)} {semanaAnterior.pct >= 0 ? "+" : ""}{Number(semanaAnterior.pct).toFixed(0)}%
             </span>
           )}
           {hitoProximo && (
@@ -419,7 +419,7 @@ export function ResumenSubTab(props: ResumenSubTabProps) {
           {bestHourToday && (
             <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-zinc-800 border border-[var(--rule-base)] dark:border-zinc-700 rounded-lg px-3 py-2">
               <Clock className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[var(--text-secondary)] dark:text-zinc-300">Mejor hora: <span className="font-bold">{bestHourToday.hour}:00</span> (S/{bestHourToday.total.toFixed(0)})</span>
+              <span className="text-[var(--text-secondary)] dark:text-zinc-300">Mejor hora: <span className="font-bold">{bestHourToday.hour}:00</span> (S/{Number(bestHourToday.total).toFixed(0)})</span>
             </span>
           )}
           {diasSinCierre != null && diasSinCierre >= 1 && (

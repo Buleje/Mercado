@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useMemo, useState } from "react";
 import {
   Package,
@@ -124,7 +125,7 @@ export default function ShrinkageTab() {
     try {
       const res = await fetch("/api/mermas", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ productId: Number(form.productId), quantity: Number(form.quantity), cause: form.cause, notes: form.notes, reportedBy: form.reportedBy }),
       });
       const created = await res.json();

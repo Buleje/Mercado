@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { ChatMessagesDB, type MessageType } from "@/lib/db/chat.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const MessageTypeSchema = z.enum([
   "text",
@@ -28,6 +29,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ threadId: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-chat-threads-X-messages"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

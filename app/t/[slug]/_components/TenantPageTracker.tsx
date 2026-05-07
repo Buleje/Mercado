@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /**
  * Client beacon — trackea pageview al /api/store-page/visits.
@@ -32,7 +33,7 @@ export default function TenantPageTracker({ tenantSlug }: { tenantSlug: string }
       } else {
         void fetch("/api/store-page/visits", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body,
           keepalive: true,
         }).catch(() => {});

@@ -257,7 +257,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                   )}
                   {c.creditBalance != null && c.creditBalance > 0 ? (
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)]">
-                      Fiado S/{c.creditBalance.toFixed(2)}
+                      Fiado S/{Number(c.creditBalance).toFixed(2)}
                     </span>
                   ) : (
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]">

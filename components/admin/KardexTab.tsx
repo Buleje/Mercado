@@ -303,7 +303,7 @@ export default function KardexTab() {
             <Package className="h-5 w-5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{product.name}</p>
-              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock: {product.stock} {product.unit} {product.costPrice != null ? `· Costo: S/ ${product.costPrice.toFixed(2)}` : ""}</p>
+              <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Stock: {product.stock} {product.unit} {product.costPrice != null ? `· Costo: S/ ${Number(product.costPrice).toFixed(2)}` : ""}</p>
             </div>
             <button
               type="button"

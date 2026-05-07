@@ -191,7 +191,7 @@ export default function ExecutiveAnalytics() {
           actions={
             <InsightBadge
               tone={data.cancelRate > 15 ? "negative" : data.cancelRate > 5 ? "neutral" : "positive"}
-              text={`Cancelación ${data.cancelRate.toFixed(1)}%`}
+              text={`Cancelación ${Number(data.cancelRate).toFixed(1)}%`}
             />
           }
         >
@@ -231,13 +231,13 @@ export default function ExecutiveAnalytics() {
           <div className="mt-4 pt-4 border-t border-[var(--rule-soft)] grid grid-cols-2 gap-3">
             <div className="text-center">
               <p className="text-3xl font-extrabold text-[var(--data-success-600)] dark:text-emerald-400 tabular-nums">
-                {data.completionRate.toFixed(0)}%
+                {Number(data.completionRate).toFixed(0)}%
               </p>
               <p className="text-sm text-[var(--text-secondary)]">Tasa de entrega</p>
             </div>
             <div className="text-center">
               <p className="text-3xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] tabular-nums">
-                {data.cancelRate.toFixed(0)}%
+                {Number(data.cancelRate).toFixed(0)}%
               </p>
               <p className="text-sm text-[var(--text-secondary)]">Tasa de cancelación</p>
             </div>
@@ -350,7 +350,7 @@ export default function ExecutiveAnalytics() {
           actions={
             <InsightBadge
               tone={data.repeatRate >= 30 ? "positive" : data.repeatRate >= 15 ? "neutral" : "negative"}
-              text={`${data.repeatRate.toFixed(0)}% recurrentes`}
+              text={`${Number(data.repeatRate).toFixed(0)}% recurrentes`}
             />
           }
         >
@@ -388,7 +388,7 @@ export default function ExecutiveAnalytics() {
             <div className="flex items-center justify-between">
               <span className="text-base text-[var(--text-secondary)]">Pedidos promedio por cliente</span>
               <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
-                {data.avgOrdersPerCustomer.toFixed(1)}
+                {Number(data.avgOrdersPerCustomer).toFixed(1)}
               </span>
             </div>
           </div>

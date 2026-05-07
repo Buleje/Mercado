@@ -2,6 +2,7 @@
 
 import { useCallback, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ export async function trackActivity(
   // 2. POST to API (fire-and-forget)
   fetch("/api/activity-log", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: csrfHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(entry),
   }).catch(() => {});
 

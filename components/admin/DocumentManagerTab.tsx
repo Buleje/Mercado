@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   FolderOpen, Download, Search, Plus, X,
@@ -118,7 +119,7 @@ export default function DocumentManagerTab() {
               status,
               uploadDate: c.createdAt?.split("T")[0] || "",
               expiryDate: c.fechaVencimiento || "",
-              size: `${monedaSymbol}${c.monto.toFixed(2)}`,
+              size: `${monedaSymbol}${Number(c.monto).toFixed(2)}`,
               relatedTo: c.clienteNombre,
               notes: c.descripcion?.substring(0, 100) || "",
               isContrato: true,
@@ -156,7 +157,7 @@ export default function DocumentManagerTab() {
 
       const res = await fetch(`/api/contratos/${doc.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           estado: "ACTIVO",
           fechaVencimiento: newExpiry.toISOString().split("T")[0],

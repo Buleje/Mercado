@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
   Upload,
@@ -159,7 +160,7 @@ export default function HealthCheckActionModal({
       const res = await fetch("/api/superadmin/stores/health-field", {
         method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {

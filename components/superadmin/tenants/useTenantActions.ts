@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface UseTenantActionsParams {
   setTenants: React.Dispatch<React.SetStateAction<TenantRow[]>>;
@@ -27,7 +28,7 @@ export function useTenantActions({
     try {
       const res = await fetch(`/api/superadmin/tenants/${slug}`, {
         method: "PATCH", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ active: !current }),
       });
       if (!res.ok) { showToast("Error al actualizar estado", false); return; }
@@ -41,7 +42,7 @@ export function useTenantActions({
     try {
       const res = await fetch(`/api/superadmin/tenants/${slug}`, {
         method: "PATCH", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ plan }),
       });
       if (!res.ok) { showToast("Error al cambiar plan", false); return; }
@@ -101,7 +102,7 @@ export function useTenantActions({
     try {
       const res = await fetch("/api/superadmin/impersonate", {
         method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ slug }),
       });
       if (!res.ok) { showToast("Error al impersonar", false); return; }
@@ -139,7 +140,7 @@ export function useTenantActions({
     try {
       const res = await fetch("/api/superadmin/stores", {
         method: "PATCH", credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ storeId: store.id, isPublished: newPublished }),
       });
       if (!res.ok) { showToast(`Error al ${action}`, false); return; }

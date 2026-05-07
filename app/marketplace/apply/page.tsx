@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter } from "next/navigation";
 import { m, AnimatePresence } from "framer-motion";
 import {
@@ -148,7 +149,7 @@ export default function MarketplaceApplyPage() {
     try {
       const res = await fetch("/api/marketplace/stores/apply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(form),
       });
       const data = await res.json();

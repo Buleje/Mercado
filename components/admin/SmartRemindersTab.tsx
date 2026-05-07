@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Bell, Plus, Check, Trash2, Clock, AlertTriangle, Package, DollarSign, Calendar, X, CheckCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /* ── types ──────────────────────────────────────────────────── */
 type ReminderType = "pago" | "inventario" | "tarea" | "vencimiento" | "cliente" | "general";
@@ -90,7 +91,7 @@ export default function SmartRemindersTab() {
     const nextStatus = r.status === "completado" ? "pendiente" : "completado";
     setReminders(prev => prev.map(x => x.id === id ? { ...x, status: nextStatus } : x));
     try {
-      await fetch(`/api/reminders?id=${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: nextStatus }) });
+      await fetch(`/api/reminders?id=${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: nextStatus }) });
       if (nextStatus === "completado") toast.success("Recordatorio completado");
     } catch { toast.error("Error al actualizar el recordatorio"); }
   };
@@ -108,7 +109,7 @@ export default function SmartRemindersTab() {
     try {
       const res = await fetch("/api/reminders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           title: newTitle.trim(),
           description: newDesc.trim(),

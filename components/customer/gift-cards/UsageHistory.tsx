@@ -69,10 +69,10 @@ export default function UsageHistory({ usage }: Props) {
 
             <div className="text-right">
               <div className="text-sm font-bold text-gray-900 dark:text-white">
-                — S/ {u.amount.toFixed(2)}
+                — S/ {Number(u.amount).toFixed(2)}
               </div>
               <div className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400">
-                Resto: S/ {u.balanceAfter.toFixed(2)}
+                Resto: S/ {Number(u.balanceAfter).toFixed(2)}
               </div>
             </div>
           </li>

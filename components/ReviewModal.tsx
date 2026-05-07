@@ -6,6 +6,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { X, Star, Send, Pencil, Camera, ZoomIn } from "@buleje/design-system/icons";
 import { useReviews } from "@/contexts/reviews-context";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const PRESETS: Record<"critical" | "neutral" | "positive", string[]> = {
   critical: [
@@ -107,7 +108,7 @@ export default function ReviewModal() {
     try {
       await fetch("/api/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ name: customerName, location: customerLocation, text: activeText.trim(), rating, photo: photoBase64 }),
       });
     } catch { /* non-critical — review saved locally */ }

@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   FileText, Download, Search, Eye, X, CheckCircle2,
@@ -173,7 +174,7 @@ export default function EInvoiceTab() {
 
     const res = await fetch("/api/admin/sunat/generate-invoice", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         orderId: emitForm.orderId,
         tipo: emitForm.tipoDoc === "01" ? "factura" : "boleta",

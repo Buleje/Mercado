@@ -606,7 +606,7 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
           Precio final: <strong className="text-[var(--text-primary)] dark:text-foreground">S/{finalPrice.toFixed(2)}</strong>
           {row.priceModifier !== 0 && (
             <span className="ml-1.5">
-              ({row.priceModifier > 0 ? "+" : ""}{row.priceModifier.toFixed(2)} sobre el base S/{basePrice.toFixed(2)})
+              ({row.priceModifier > 0 ? "+" : ""}{Number(row.priceModifier).toFixed(2)} sobre el base S/{basePrice.toFixed(2)})
             </span>
           )}
         </p>

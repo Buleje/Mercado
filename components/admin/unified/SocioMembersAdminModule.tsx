@@ -169,8 +169,8 @@ function exportCSV(rows: SocioMember[]) {
     STATUS_LABELS[r.status],
     r.startDate,
     r.renewsAt,
-    r.totalCashback.toFixed(2),
-    r.totalSpent.toFixed(2),
+    Number(r.totalCashback).toFixed(2),
+    Number(r.totalSpent).toFixed(2),
     r.ordersCount.toString(),
   ]);
   const csv = [headers, ...csvRows].map((r) => r.join(",")).join("\n");

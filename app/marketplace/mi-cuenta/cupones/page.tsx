@@ -13,7 +13,7 @@ function formatDiscount(coupon: DbCustomerCoupon): string {
   if (coupon.discountType === "porcentaje") {
     return `${coupon.discountValue}% dto.`;
   }
-  return `S/ ${coupon.discountValue.toFixed(2)} dto.`;
+  return `S/ ${Number(coupon.discountValue).toFixed(2)} dto.`;
 }
 
 function formatExpiry(iso: string | null): string {
@@ -177,7 +177,7 @@ function CouponCard({
         </p>
         <p className={cn("mt-1 text-xs", dimmed ? "text-gray-400 dark:text-gray-500" : "text-gray-400 dark:text-gray-500")}>
           {formatExpiry(coupon.expiresAt)}
-          {coupon.minPurchase ? ` · min. S/ ${coupon.minPurchase.toFixed(2)}` : ""}
+          {coupon.minPurchase ? ` · min. S/ ${Number(coupon.minPurchase).toFixed(2)}` : ""}
         </p>
       </div>
 

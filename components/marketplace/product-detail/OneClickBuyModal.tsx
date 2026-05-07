@@ -16,6 +16,7 @@ import { X, MapPin, Wallet, Zap, CheckCircle2, Edit2 } from "@buleje/design-syst
 import { PrimaryButton, cn } from "@buleje/design-system";
 import { useCurrency } from "@/contexts/currency-context";
 import { useLocale } from "@/contexts/locale-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type PaymentMethod = "yape" | "plin" | "cash";
 
@@ -101,7 +102,7 @@ export default function OneClickBuyModal({
     try {
       const res = await fetch("/api/one-click/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           productId,
           storeId,

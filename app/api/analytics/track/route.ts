@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { trackEvent } from "@/lib/analytics/posthog";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "analytics-track"); if (_rl) return _rl;
   try {
     const body = await req.json();
     const event = typeof body?.event === "string" ? body.event : "unknown";

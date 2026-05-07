@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Lock, X, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -195,7 +196,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ pin }),
       });
 

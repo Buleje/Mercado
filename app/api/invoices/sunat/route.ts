@@ -16,6 +16,7 @@ import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { generateInvoice, type InvoiceOrder } from "@/lib/sunat-invoice";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ const getSchema = z.object({
 // ── POST — Generar comprobante ────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "invoices-sunat"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

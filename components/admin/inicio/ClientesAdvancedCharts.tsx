@@ -538,7 +538,7 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
           title="Distribución de reseñas por rating"
           kpis={[
             { label: "Total reseñas", value: String(ratingChart.total), tone: "primary" },
-            { label: "Promedio", value: ratingChart.promedio.toFixed(1), tone: "success" },
+            { label: "Promedio", value: Number(ratingChart.promedio).toFixed(1), tone: "success" },
             {
               label: "4★ y 5★",
               value: String(ratingChart.buenos),

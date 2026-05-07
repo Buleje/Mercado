@@ -131,9 +131,9 @@ export default function CommissionCalculator() {
   const handleExport = () => {
     const rows = summaries.map((s) => ({
       Cajero: s.cashierName,
-      "Ventas totales": s.totalSales.toFixed(2),
+      "Ventas totales": Number(s.totalSales).toFixed(2),
       "% Comision": s.rate,
-      "Comision S/": s.commission.toFixed(2),
+      "Comision S/": Number(s.commission).toFixed(2),
       "Nro ventas": s.saleCount,
     }));
     exportToCSV(rows, `comisiones-${new Date().toISOString().split("T")[0]}.csv`);

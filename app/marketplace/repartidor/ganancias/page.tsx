@@ -142,7 +142,7 @@ export default function GananciasRepartidorPage() {
             </div>
             <div className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-white/15 backdrop-blur text-sm font-extrabold">
               <StarBadge className="h-4 w-4 text-[var(--brand-secondary)]" />
-              <span className="tabular-nums">{partner.rating.toFixed(1)}</span>
+              <span className="tabular-nums">{Number(partner.rating).toFixed(1)}</span>
             </div>
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function GananciasRepartidorPage() {
           <Stat
             icon={<CashIcon className="h-6 w-6 text-[var(--accent)]" />}
             label="Ganado"
-            value={`S/ ${totals.earned.toFixed(2)}`}
+            value={`S/ ${Number(totals.earned).toFixed(2)}`}
             tone="accent"
           />
           <Stat
@@ -166,13 +166,13 @@ export default function GananciasRepartidorPage() {
           <Stat
             icon={<TrendIcon className="h-6 w-6 text-[var(--data-success-500)]" />}
             label="Promedio"
-            value={`S/ ${totals.avgFee.toFixed(2)}`}
+            value={`S/ ${Number(totals.avgFee).toFixed(2)}`}
             tone="success"
           />
           <Stat
             icon={<CalendarIcon className="h-6 w-6 text-[var(--brand-secondary)]" />}
             label="Pendiente"
-            value={`S/ ${totals.pending.toFixed(2)}`}
+            value={`S/ ${Number(totals.pending).toFixed(2)}`}
             tone="amber"
           />
         </div>

@@ -411,7 +411,7 @@ export default function BreakEvenTab() {
                     : "text-[var(--data-error-500)]"
                 )}
               >
-                {generalAnalysis.safetyMargin.toFixed(1)}%
+                {Number(generalAnalysis.safetyMargin).toFixed(1)}%
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">distancia al punto de quiebre</p>
             </div>

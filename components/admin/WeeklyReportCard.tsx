@@ -187,7 +187,7 @@ export default function WeeklyReportCard() {
           ["Ventas de la semana", fmt(weekTotal)],
           ["Número de transacciones", String(data.sales.length)],
           ["Ticket promedio", fmt(data.sales.length > 0 ? weekTotal / data.sales.length : 0)],
-          ["Margen promedio estimado", `${data.margin.toFixed(1)}%`],
+          ["Margen promedio estimado", `${Number(data.margin).toFixed(1)}%`],
           ["Gastos del periodo", fmt(expTotal)],
           ["Alertas de stock bajo", String(data.lowStockCount)],
         ],
@@ -294,7 +294,7 @@ export default function WeeklyReportCard() {
               <div className="rounded-lg bg-[var(--surface-sunken)] p-3 text-center">
                 <p className="text-xs text-[var(--text-tertiary)] mb-1">Margen</p>
                 <p className="text-base font-bold text-primary dark:text-[var(--data-success-500)]">
-                  {data.margin.toFixed(1)}%
+                  {Number(data.margin).toFixed(1)}%
                 </p>
               </div>
               <div className="rounded-lg bg-[var(--surface-sunken)] p-3 text-center">

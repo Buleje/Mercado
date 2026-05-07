@@ -264,7 +264,7 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
               <div className="grid grid-cols-3 gap-3 pt-3 border-t border-[var(--rule-base)]">
                 <div className="text-center">
                   <div className="text-base font-extrabold text-[var(--text-primary)] tabular-nums">
-                    S/{store.totalRevenue.toFixed(0)}
+                    S/{Number(store.totalRevenue).toFixed(0)}
                   </div>
                   <div className="text-sm text-[var(--text-tertiary)]">Ingresos 6 meses</div>
                 </div>

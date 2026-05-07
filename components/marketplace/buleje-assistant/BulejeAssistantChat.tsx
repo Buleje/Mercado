@@ -15,6 +15,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   MessageCircle,
   Sparkles,
@@ -97,7 +98,7 @@ export default function BulejeAssistantChat() {
       try {
         const res = await fetch("/api/buleje-assistant", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             messages: nextMessages.map((m) => ({
               role: m.role,

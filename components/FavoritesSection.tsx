@@ -26,12 +26,12 @@ export default function FavoritesSection() {
   const totalFavorites = favProducts.reduce((s, p) => s + p.price, 0);
 
   const buildListText = () => {
-    const lines = favProducts.map((p, i) => `${i + 1}. ${p.name} — S/${p.price.toFixed(2)}`);
+    const lines = favProducts.map((p, i) => `${i + 1}. ${p.name} — S/${Number(p.price).toFixed(2)}`);
     return `🛒 Mi lista de compras (Buleje)\n${lines.join("\n")}\nTotal: S/${totalFavorites.toFixed(2)}`;
   };
 
   const buildShareText = () => {
-    const lines = favProducts.map((p, i) => ` ${i + 1}. ${p.name} — S/${p.price.toFixed(2)}`);
+    const lines = favProducts.map((p, i) => ` ${i + 1}. ${p.name} — S/${Number(p.price).toFixed(2)}`);
     const storeUrl = typeof window !== "undefined" ? window.location.origin : "";
     return `⭐ *Mis productos favoritos en Buleje*\n${lines.join("\n")}\n─────\n💰 Total: S/${totalFavorites.toFixed(2)}\n🛒 Compra aquí: ${storeUrl}`;
   };
@@ -143,7 +143,7 @@ export default function FavoritesSection() {
               <div className="p-3 flex flex-col gap-1.5 flex-1">
                 <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 flex-1">{product.name}</h3>
                 <div className="flex items-end justify-between gap-2">
-                  <span className="text-base font-extrabold text-primary">S/{product.price.toFixed(2)}</span>
+                  <span className="text-base font-extrabold text-primary">S/{Number(product.price).toFixed(2)}</span>
                   {(() => { const qty = cartItems.find(i => i.id === product.id)?.quantity ?? 0; return qty > 0 ? (
                     <div className="flex items-center gap-0.5 bg-primary rounded-full px-1 py-1 shrink-0">
                       <button onClick={() => updateQty(product.id, qty - 1)} className="h-7 w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Disminuir">

@@ -84,7 +84,7 @@ export default function VenderSocialProof() {
                       className="h-3.5 w-3.5 fill-current"
                       aria-hidden="true"
                     />
-                    {s.rating.toFixed(1)}
+                    {Number(s.rating).toFixed(1)}
                   </p>
                 </div>
                 <div>

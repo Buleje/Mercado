@@ -173,7 +173,7 @@ export default function StockPrediction() {
                       {item.stock} <span className="text-xs font-normal text-[var(--text-tertiary)]">{item.unit}</span>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">
-                      {item.avgDailySales.toFixed(1)}
+                      {Number(item.avgDailySales).toFixed(1)}
                     </td>
                     <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right text-sm font-extrabold", urgencyColor(item.daysRemaining))}>
                       {item.daysRemaining !== null ? `${Math.round(item.daysRemaining)} dias` : "—"}

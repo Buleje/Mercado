@@ -23,6 +23,7 @@ import { useState, useCallback, type FormEvent } from "react";
 import { Ticket, Loader2, Check, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { ValidateCouponSchema } from "@/lib/validations/coupon-redeem.schema";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface CouponPayload {
   code: string;
@@ -73,7 +74,7 @@ export default function CouponInput({
       try {
         const res = await fetch("/api/coupons/validate", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             code: parsed.data.code,
             cartTotal: parsed.data.cartTotal,

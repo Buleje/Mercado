@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { NotificationLogsDB, OrdersDB, SettingsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // SECURITY 2026-05-06 (audit notifs #4): Zod schema en lugar de validación
 // manual. Antes `body.message` arbitrario se persistía en NotificationLog.
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "notifications"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

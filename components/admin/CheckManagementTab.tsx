@@ -214,7 +214,7 @@ export default function CheckManagementTab() {
           },
           {
             label: "Rebotados / Tasa",
-            value: `${stats.bounced} (${stats.bouncedRate.toFixed(1)}%)`,
+            value: `${stats.bounced} (${Number(stats.bouncedRate).toFixed(1)}%)`,
             color: stats.bounced > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]",
             bg: stats.bounced > 0 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
             icon: Ban,

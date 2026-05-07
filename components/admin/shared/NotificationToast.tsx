@@ -63,7 +63,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-foreground">Nuevo pedido</p>
             <p className="text-xs text-muted truncate">
-              {order.customer} — S/{order.total.toFixed(2)}
+              {order.customer} — S/{Number(order.total).toFixed(2)}
             </p>
           </div>
           <button

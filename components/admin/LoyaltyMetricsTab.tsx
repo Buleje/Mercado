@@ -211,7 +211,7 @@ export default function LoyaltyMetricsTab() {
                       {c.points.toLocaleString("es-PE")}
                     </td>
                     <td className="py-2 text-right text-xs text-[var(--text-secondary)]">
-                      S/{c.totalSpent.toFixed(2)}
+                      S/{Number(c.totalSpent).toFixed(2)}
                     </td>
                   </tr>
                 ))}

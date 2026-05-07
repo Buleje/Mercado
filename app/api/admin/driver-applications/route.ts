@@ -15,6 +15,7 @@ import { z } from "zod";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { parseKycNotes } from "@/lib/schemas/driver-apply";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const ActionSchema = z.object({
   action: z.enum(["approve", "reject"]),
@@ -100,6 +101,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-driver-applications"); if (_rl) return _rl;
   const { requireAdmin } = await import("@/lib/require-admin");
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

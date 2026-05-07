@@ -99,7 +99,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
 
         <div className="flex items-center justify-between gap-1 pt-0.5">
           <span className="text-sm font-extrabold text-primary dark:text-primary-light leading-none">
-            S/{product.price.toFixed(2)}
+            S/{Number(product.price).toFixed(2)}
           </span>
 
           {/* Botón agregar — touch target 44x44 */}

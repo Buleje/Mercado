@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import {
@@ -108,7 +109,7 @@ function ConfirmDeliveryModal({ orderId, onClose, onSuccess }: ConfirmModalProps
     try {
       const res = await fetch("/api/delivery/confirm", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           orderId,
           photo: photo ?? undefined,
@@ -472,7 +473,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
             <div className="flex items-center gap-2 text-sm">
               <DollarSign className="h-4 w-4 text-gray-400 shrink-0" />
               <span className="font-mono font-bold text-gray-900 dark:text-white">
-                S/ {order.total.toFixed(2)}
+                S/ {Number(order.total).toFixed(2)}
               </span>
               {order.paymentMethod && (
                 <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">

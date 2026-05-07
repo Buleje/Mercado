@@ -9,6 +9,7 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Gift,
   DollarSign,
@@ -178,8 +179,8 @@ function exportCSV(rows: GiftCardDetails[]) {
   const csvRows = rows.map((r) => [
     r.id,
     r.code,
-    r.amount.toFixed(2),
-    r.balance.toFixed(2),
+    Number(r.amount).toFixed(2),
+    Number(r.balance).toFixed(2),
     r.recipientName,
     r.status,
     r.createdAt,
@@ -288,7 +289,7 @@ export default function GiftCardsAdminModule() {
     try {
       const res = await fetch(`/api/admin/gift-cards/${id}/cancel`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ reason: reason.trim() }),
       });
       if (res.ok) {
@@ -323,7 +324,7 @@ export default function GiftCardsAdminModule() {
     try {
       const res = await fetch("/api/admin/gift-cards/issue-manual", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           amount: Math.floor(data.amount),
           recipientName: data.recipientName,

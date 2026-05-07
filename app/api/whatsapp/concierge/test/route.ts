@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { handleIncomingMessage } from "@/lib/whatsapp/concierge/concierge-router";
 import { getActiveProvider } from "@/lib/ai/provider";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
@@ -44,6 +45,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "whatsapp-concierge-test"); if (_rl) return _rl;
   if (!isDev()) {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }

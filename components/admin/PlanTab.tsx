@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useState } from "react";
 import {
   Zap, ShoppingBag, Users, ShoppingCart, Globe, BarChart2,
@@ -313,7 +314,7 @@ export default function PlanTab() {
     try {
       const res = await fetch("/api/tenant/custom-domain", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ domain }),
       });
       const data = await res.json() as { customDomain?: string; error?: string };
@@ -365,7 +366,7 @@ export default function PlanTab() {
     try {
       const res = await tenantFetch("/api/billing/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ plan: planId }),
       });
       const data = await res.json() as { url?: string; error?: string };
@@ -386,7 +387,7 @@ export default function PlanTab() {
     try {
       const res = await tenantFetch("/api/billing/mp-checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ plan: planId }),
       });
       const data = await res.json() as { init_point?: string; error?: string };

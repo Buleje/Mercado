@@ -178,7 +178,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
       receta.tiempoMinutos ? `\u23F1\uFE0F ${receta.tiempoMinutos} minutos` : "",
       receta.porciones ? `\uD83D\uDC65 ${receta.porciones} porciones` : "",
       `\uD83E\uDDC1 Ingredientes: ${receta.ingredientes.map(i => i.nombre).join(", ")}`,
-      `\uD83D\uDCB0 Total: S/ ${receta.totalIngredientes.toFixed(2)}`,
+      `\uD83D\uDCB0 Total: S/ ${Number(receta.totalIngredientes).toFixed(2)}`,
       "",
       `\uD83D\uDC49 Ver receta completa: ${url}`,
     ].filter(Boolean).join("\n");
@@ -560,7 +560,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                             <span>{r.ingredientes.length} ing.</span>
                           </div>
                           <p className="text-sm font-bold text-primary dark:text-primary-light mt-2">
-                            S/ {r.totalIngredientes.toFixed(2)}
+                            S/ {Number(r.totalIngredientes).toFixed(2)}
                           </p>
                         </div>
                       </Link>
@@ -593,7 +593,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                       Lista de compras
                     </h2>
                     <span className="text-lg font-extrabold text-primary dark:text-primary-light">
-                      S/ {receta.totalIngredientes.toFixed(2)}
+                      S/ {Number(receta.totalIngredientes).toFixed(2)}
                     </span>
                   </div>
                   <p className="text-sm text-[var(--text-tertiary)] mt-1">

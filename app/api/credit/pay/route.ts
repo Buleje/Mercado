@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { processPayment } from "@/lib/credit/installment-manager";
 import { updateCreditProfile } from "@/lib/credit/scoring-engine";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,7 @@ const PaySchema = z.object({
 // ── POST /api/credit/pay ──────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "credit-pay"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

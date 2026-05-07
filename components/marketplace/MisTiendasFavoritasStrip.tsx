@@ -212,7 +212,7 @@ function FavoriteStoreCard({
           {store.rating > 0 && (
             <span className="inline-flex items-center gap-0.5 font-bold text-[var(--text-primary)]">
               <Star className="h-3 w-3 fill-[var(--accent)] text-[var(--accent)]" aria-hidden />
-              {store.rating.toFixed(1)}
+              {Number(store.rating).toFixed(1)}
             </span>
           )}
           {store.zone && (

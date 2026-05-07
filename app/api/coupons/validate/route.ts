@@ -5,6 +5,7 @@ import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "coupons-validate"); if (_rl) return _rl;
   // SECURITY 2026-05-06 (audit pagos M007): doble rate limit para frenar
   // brute-force de códigos cortos (PROMO20, BIENV2026...).
   //   - Por IP: 10 intentos / 5 min (limita atacante simple)

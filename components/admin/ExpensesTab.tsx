@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo } from "react";
 import {
   Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, X, BarChart2,
@@ -105,7 +106,7 @@ export default function ExpensesTab() {
     setSaving(true);
     const res = await fetch("/api/expenses", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ ...form, amount: Number(form.amount) }),
     });
     if (res.ok) {
@@ -157,7 +158,7 @@ export default function ExpensesTab() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {summary.map(s => (
             <div key={s.category} className={cn("bg-white dark:bg-card border rounded-xl p-3 text-center", s.category === maxCat?.category ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border")}>
-              <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground">S/{s.total.toFixed(0)}</p>
+              <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground">S/{Number(s.total).toFixed(0)}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">{s.category} ({s.count})</p>
               {totalAll > 0 && <div className="mt-1 h-1 bg-gray-100 dark:bg-surface rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
             </div>
@@ -181,12 +182,12 @@ export default function ExpensesTab() {
                 return (
                   <div key={i} className="flex flex-col items-center gap-1 flex-1 group">
                     <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      S/{m.total.toFixed(0)}
+                      S/{Number(m.total).toFixed(0)}
                     </span>
                     <div
                       className={cn("w-full rounded-t-md transition-all", isCurrent ? "bg-[var(--data-error-500)]" : "bg-[var(--data-error-500)]/70 dark:bg-[var(--data-error-500)]/40")}
                       style={{ height: `${barH}px`, opacity: m.total > 0 ? 1 : 0.25 }}
-                      title={`${m.label}: S/${m.total.toFixed(2)}`}
+                      title={`${m.label}: S/${Number(m.total).toFixed(2)}`}
                     />
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted capitalize">{m.label}</p>
                   </div>
@@ -247,7 +248,7 @@ export default function ExpensesTab() {
                 <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">{e.description}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
               </div>
-              <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-S/{e.amount.toFixed(2)}</p>
+              <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-S/{Number(e.amount).toFixed(2)}</p>
               <button onClick={() => remove(e.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>
             </div>
             );

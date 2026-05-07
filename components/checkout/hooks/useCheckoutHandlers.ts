@@ -196,7 +196,7 @@ export function useCheckoutHandlers({
         dispatch({
           type: "SET_UI",
           patch: {
-            dataError: `Tu ubicación está a ${zone.distanceKm.toFixed(1)} km. Solo entregamos hasta ${MAX_DELIVERY_KM} km.`,
+            dataError: `Tu ubicación está a ${Number(zone.distanceKm).toFixed(1)} km. Solo entregamos hasta ${MAX_DELIVERY_KM} km.`,
           },
         });
         return;

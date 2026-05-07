@@ -22,6 +22,7 @@ import {
 } from "@/lib/db/vendor-applications.db";
 import { toSuperadminView } from "@/lib/vendor/registration-mapper";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const ReviewBody = z
   .object({
@@ -55,6 +56,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-vendor-applications-X-review"); if (_rl) return _rl;
   const platformToken = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!platformToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

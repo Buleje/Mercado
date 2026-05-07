@@ -39,6 +39,7 @@ const PurchaseSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "gift-cards-purchase"); if (_rl) return _rl;
   const ip = getClientIp(req);
   const { allowed } = rateLimit(`giftcard:purchase:${ip}`, 5, 300);
   if (!allowed) {

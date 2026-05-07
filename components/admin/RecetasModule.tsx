@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -419,7 +420,7 @@ export default function RecetasModule() {
 
       const res = await fetch("/api/recetas", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -450,7 +451,7 @@ export default function RecetasModule() {
 
       const res = await fetch(`/api/recetas/${selected.id}/producir`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -765,7 +766,7 @@ export default function RecetasModule() {
                             ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                             : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                       )}>
-                        Margen: {costData.margenPorcentaje.toFixed(1)}%
+                        Margen: {Number(costData.margenPorcentaje).toFixed(1)}%
                       </span>
                     </div>
 

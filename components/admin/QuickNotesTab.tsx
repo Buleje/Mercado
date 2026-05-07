@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { StickyNote, Plus, Trash2, Pin, PinOff, Edit3, Check, X, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /* ── types ──────────────────────────────────────────────────── */
 type Note = {
@@ -81,7 +82,7 @@ export default function QuickNotesTab() {
     try {
       const res = await fetch("/api/notes", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ title: newTitle.trim(), content: newContent.trim(), color: newColor, pinned: false }),
       });
       if (res.ok) {
@@ -109,7 +110,7 @@ export default function QuickNotesTab() {
     try {
       await fetch(`/api/notes?id=${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ pinned: newPinned }),
       });
     } catch { toast.error("Error al actualizar la nota"); }
@@ -126,7 +127,7 @@ export default function QuickNotesTab() {
     try {
       await fetch(`/api/notes?id=${editingId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ title: editTitle.trim(), content: editContent.trim(), color: editColor }),
       });
       toast.success("Nota guardada");

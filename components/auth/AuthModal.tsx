@@ -7,6 +7,7 @@ import {
   useCallback,
   type KeyboardEvent,
 } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { X, User, Phone, Shield, Loader2, Search } from "lucide-react";
 import {
   getSupabaseBrowser,
@@ -224,7 +225,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
     try {
       const res = await fetch("/api/auth/dni", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ dni: cleanDni }),
       });
       const data = (await res.json()) as DniResponse;
@@ -266,7 +267,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
     try {
       const res = await fetch("/api/auth/otp/send", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ phone: normalizedPhone }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
@@ -301,7 +302,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
       }
       const res = await fetch("/api/auth/otp/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       const data = (await res.json()) as VerifyResponse;

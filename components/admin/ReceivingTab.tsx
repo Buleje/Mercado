@@ -484,7 +484,7 @@ export default function ReceivingTab() {
                   <option value="">— Elegir orden de compra —</option>
                   {pendingOCs.map((oc) => (
                     <option key={oc.id} value={oc.id}>
-                      {oc.id} · {oc.supplierName ?? "Sin proveedor"} · {oc.items?.length ?? 0} items{oc.total ? ` · S/${oc.total.toFixed(2)}` : ""}
+                      {oc.id} · {oc.supplierName ?? "Sin proveedor"} · {oc.items?.length ?? 0} items{oc.total ? ` · S/${Number(oc.total).toFixed(2)}` : ""}
                     </option>
                   ))}
                 </select>

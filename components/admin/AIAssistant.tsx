@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
@@ -358,7 +359,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
       try {
         const res = await fetch("/api/ai-assistant", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             message: "Dame solo alertas URGENTES en 1 línea cada una. Máximo 3 alertas. Si no hay nada urgente, responde exactamente: SIN_ALERTAS. También dame un puntaje de salud general del negocio de 0 a 100 en formato HEALTH:XX",
             history: [],
@@ -490,7 +491,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     try {
       const res = await fetch("/api/ai-assistant", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           message: msg,
           history,
@@ -586,7 +587,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     try {
       const res = await fetch("/api/ai-assistant/actions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: { type: action.type, payload: action.payload } }),
       });
       const data = await res.json();

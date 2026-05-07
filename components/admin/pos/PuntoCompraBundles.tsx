@@ -126,7 +126,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
               </div>
               <div className="text-right shrink-0">
                 <p className="text-xs font-bold font-mono text-primary">
-                  S/{bundle.price.toFixed(2)}
+                  S/{Number(bundle.price).toFixed(2)}
                 </p>
                 {savings > 0 && (
                   <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">

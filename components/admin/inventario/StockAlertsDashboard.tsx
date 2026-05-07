@@ -258,7 +258,7 @@ export default function StockAlertsDashboard() {
                           <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground font-medium">{p.name}</td>
                           <td className="py-2 px-2 text-center text-[var(--text-secondary)] dark:text-muted">{p.stock}</td>
                           <td className="py-2 px-2 text-right text-[var(--data-error-500)] font-medium">
-                            S/{p.valorAtado.toFixed(2)}
+                            S/{Number(p.valorAtado).toFixed(2)}
                           </td>
                           <td className="py-2 px-2 text-[var(--text-secondary)] dark:text-muted">{formatDate(p.lastSaleDate)}</td>
                         </tr>

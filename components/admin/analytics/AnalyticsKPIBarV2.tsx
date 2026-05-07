@@ -162,7 +162,7 @@ export default function AnalyticsKPIBarV2() {
       {
         key: "margenOperativo",
         label: "MARGEN",
-        value: `${data.margenOperativo.valor.toFixed(1)}%`,
+        value: `${data.Number(margenOperativo.valor).toFixed(1)}%`,
         icon: Percent,
         color: margenColor[data.margenOperativo.estado] ?? "green",
       },
@@ -231,7 +231,7 @@ export default function AnalyticsKPIBarV2() {
       {
         key: "margenOperativo",
         label: "MARGEN",
-        value: `${data.margenOperativo.valor.toFixed(1)}%`,
+        value: `${data.Number(margenOperativo.valor).toFixed(1)}%`,
         cambio: data.margenOperativo.cambio,
         icon: Percent,
         color: getColor(data.margenOperativo.cambio),
@@ -294,7 +294,7 @@ export default function AnalyticsKPIBarV2() {
                     )}
                   >
                     {card.cambio >= 0 ? "+" : ""}
-                    {card.cambio.toFixed(1)}%
+                    {Number(card.cambio).toFixed(1)}%
                   </span>
                 ) : card.subtitle ? (
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate block">

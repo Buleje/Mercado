@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Save, Eye, EyeOff, Palette } from "@buleje/design-system/icons";
 import AdminTabShell from "../../_components/_shared/AdminTabShell";
 import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Customization = {
   published: boolean;
@@ -113,7 +114,7 @@ export default function AppearanceTab() {
       }
       const res = await fetch("/api/store-page/customization", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
       if (!res.ok) {

@@ -107,7 +107,7 @@ export default function ManualAssignModal({ orderId, orderLocation, onClose, onA
                 Asignado a {success.partnerName}
               </p>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                Se le envió WhatsApp con S/ {success.fee.toFixed(0)} de envío.
+                Se le envió WhatsApp con S/ {Number(success.fee).toFixed(0)} de envío.
               </p>
             </div>
           )}
@@ -153,7 +153,7 @@ export default function ManualAssignModal({ orderId, orderLocation, onClose, onA
                     <p className="font-extrabold text-[var(--text-primary)] text-sm">{p.name}</p>
                     <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-2">
                       <span className="inline-flex items-center gap-0.5">
-                        <Star className="h-3 w-3 text-[var(--data-warning-500)]" />{p.rating.toFixed(1)}
+                        <Star className="h-3 w-3 text-[var(--data-warning-500)]" />{Number(p.rating).toFixed(1)}
                       </span>
                       <span>· {Math.round(p.acceptanceRate * 100)}%</span>
                       <span>· {p.vehicleType}</span>

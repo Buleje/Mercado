@@ -18,6 +18,7 @@ import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Next 16 con cacheComponents: force-dynamic es redundante.
 
@@ -89,6 +90,7 @@ export async function GET(req: NextRequest) {
  * Body: { ids: string[] } or { all: true }
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "me-notifications"); if (_rl) return _rl;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 

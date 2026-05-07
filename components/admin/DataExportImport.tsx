@@ -4,6 +4,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback } from "react";
 import { Download, Upload, CheckCircle, XCircle, FileJson, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -104,7 +105,7 @@ export default function DataExportImport() {
     try {
       const res = await fetch("/api/admin/import-data", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           products: preview.products,
           customers: preview.customers,

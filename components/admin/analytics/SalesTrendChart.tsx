@@ -79,11 +79,11 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
       <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{formatDate(d.fecha, "full")}</p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Ventas</span>
-        <span className="font-mono font-medium text-primary">S/ {d.total.toFixed(2)}</span>
+        <span className="font-mono font-medium text-primary">S/ {Number(d.total).toFixed(2)}</span>
       </p>
       <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Media 7d</span>
-        <span className="font-mono font-medium text-[var(--text-tertiary)]">S/ {d.movingAvg7d.toFixed(2)}</span>
+        <span className="font-mono font-medium text-[var(--text-tertiary)]">S/ {Number(d.movingAvg7d).toFixed(2)}</span>
       </p>
       {d.isQuincena && <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1.5">Quincena</p>}
       {d.isFeriado && <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">{d.feriadoNombre ?? "Feriado"}</p>}

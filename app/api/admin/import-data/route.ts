@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod/v4";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schemas de validación ─────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-import-data"); if (_rl) return _rl;
   // 1. Auth — solo admin puede importar datos
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

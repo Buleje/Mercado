@@ -10,6 +10,7 @@ import { SunatDB } from "@/lib/db/sunat.db";
 import { retryInvoice } from "@/lib/sunat/invoice-worker";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
+  const _rl = await applyRateLimit(req, "MODERATE", "sunat-invoices-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;

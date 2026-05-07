@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ export default function SupplierRegisterForm() {
     try {
       const res = await fetch("/api/supplier/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           ruc: form.ruc.replace(/\D/g, ""),
           razonSocial: form.razonSocial.trim(),

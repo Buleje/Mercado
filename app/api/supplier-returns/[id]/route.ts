@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const TENANT = "main";
 const ESTADOS = ["PENDIENTE", "ENVIADA", "RESUELTA"] as const;
@@ -39,6 +40,7 @@ function notifySupplierWhatsApp(
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "MODERATE", "supplier-returns-X"); if (_rl) return _rl;
   try {
     const auth = await requireAdmin(req, ["admin", "almacenero"]);
     if (auth instanceof NextResponse) return auth;
@@ -80,6 +82,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "MODERATE", "supplier-returns-X"); if (_rl) return _rl;
   try {
     const auth = await requireAdmin(req, ["admin"]);
     if (auth instanceof NextResponse) return auth;

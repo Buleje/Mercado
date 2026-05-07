@@ -6,6 +6,7 @@ import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { safeParseJSON } from "@/lib/ai-json-parser";
 import { callLLM } from "@/lib/llm-router";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Schema estructurado del output — ADR 009 (prompt-based JSON enforcement).
 // Si el LLM devuelve algo que no matchee este schema, caemos al fallback
@@ -35,6 +36,7 @@ const DemandPredictionSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "demand-prediction"); if (_rl) return _rl;
   // Only admin can access demand prediction (sensitive business intelligence)
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

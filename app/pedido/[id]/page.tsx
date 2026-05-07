@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
@@ -484,7 +485,7 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
     try {
       const res = await fetch("/api/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           name: customerName || "Cliente",
           rating,

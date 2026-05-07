@@ -4,6 +4,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Clock, Save, Check, RefreshCw, Minus, Plus } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ export default function DeliveryTimeSlots() {
     try {
       await fetch("/api/admin/delivery-slots", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(slots),
       });
     } catch { /* localStorage is the fallback */ }

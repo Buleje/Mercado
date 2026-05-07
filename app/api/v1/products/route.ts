@@ -17,6 +17,7 @@ import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { withDbRetry } from "@/lib/db-retry";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * Strip sensitive fields (costPrice, stock counts) from product records when
@@ -115,6 +116,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "v1-products"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

@@ -192,7 +192,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
                   </p>
                   <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
                     {formatDate(item.date)} ·{" "}
-                    Esperado: {item.expected.toFixed(0)} · Real: {item.actual.toFixed(0)}
+                    Esperado: {Number(item.expected).toFixed(0)} · Real: {Number(item.actual).toFixed(0)}
                   </p>
                 </div>
 

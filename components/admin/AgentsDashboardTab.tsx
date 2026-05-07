@@ -1,6 +1,7 @@
 "use client";
 
 import { PageTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Activity,
@@ -254,7 +255,7 @@ export default function AgentsDashboardTab() {
       const res = await fetch("/api/agents/execute", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ domain: execDomain, action: execAction }),
       });
       const data: unknown = await res.json();

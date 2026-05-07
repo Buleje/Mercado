@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Wifi,
   WifiOff,
@@ -140,10 +141,10 @@ function OrderCard({ assignment, onStatusUpdate, updating }: OrderCardProps) {
         <div className="flex items-center gap-2">
           <DollarSign className="h-4 w-4 text-gray-400 shrink-0" />
           <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
-            S/ {assignment.order.total.toFixed(2)}
+            S/ {assignment.Number(order.total).toFixed(2)}
           </span>
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            · Tu ganancia: S/ {assignment.fee.toFixed(2)}
+            · Tu ganancia: S/ {Number(assignment.fee).toFixed(2)}
           </span>
         </div>
       </div>
@@ -301,7 +302,7 @@ export default function DeliveryAppDashboard() {
     try {
       const res = await fetch("/api/delivery/assignments", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ id: assignmentId, status: newStatus }),
       });
       if (!res.ok) {
@@ -347,7 +348,7 @@ export default function DeliveryAppDashboard() {
         inTransitOrders.map((a) =>
           fetch("/api/delivery/tracking/update", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ orderId: a.orderId, lat, lng }),
           })
         )

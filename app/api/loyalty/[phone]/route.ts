@@ -82,6 +82,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "loyalty-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

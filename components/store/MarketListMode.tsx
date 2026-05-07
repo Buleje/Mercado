@@ -241,7 +241,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                             {r.selected.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {r.parsed.quantity > 1 ? `${r.parsed.quantity} x ` : ""}S/ {r.selected.price.toFixed(2)}
+                            {r.parsed.quantity > 1 ? `${r.parsed.quantity} x ` : ""}S/ {r.Number(selected.price).toFixed(2)}
                             {r.parsed.quantity > 1 && ` = S/ ${(r.selected.price * r.parsed.quantity).toFixed(2)}`}
                           </p>
                         </div>
@@ -261,7 +261,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
                               onClick={() => selectProduct(idx, m)}
                               className="px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] border border-amber-300 dark:border-[var(--data-warning-700)] text-xs font-medium text-[var(--text-secondary)] hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                             >
-                              {m.name} · S/{m.price.toFixed(2)}
+                              {m.name} · S/{Number(m.price).toFixed(2)}
                             </button>
                           ))}
                         </div>

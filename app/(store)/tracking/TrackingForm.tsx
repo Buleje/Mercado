@@ -132,7 +132,7 @@ function OrderResult({ order }: { order: PublicOrder }) {
         <div className="text-right">
           <p className="text-xs text-muted-foreground dark:text-muted">Total</p>
           <p className="text-sm font-bold text-foreground dark:text-foreground">
-            S/ {order.total.toFixed(2)}
+            S/ {Number(order.total).toFixed(2)}
           </p>
         </div>
       </div>

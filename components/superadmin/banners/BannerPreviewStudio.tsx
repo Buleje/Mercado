@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo, Fragment } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
   Play,
@@ -1777,7 +1778,7 @@ function AICopySuggester({
     try {
       const res = await fetch("/api/superadmin/banners/copy-suggest", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           productName: item.productName,
           price: item.price,
@@ -2582,7 +2583,7 @@ function ProductCard({
       </p>
       <div className="flex items-baseline justify-between gap-1 mt-1">
         <span className={cn("font-display text-sm font-extrabold tabular-nums", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
-          {product.price !== null ? `S/ ${product.price.toFixed(2)}` : "—"}
+          {product.price !== null ? `S/ ${Number(product.price).toFixed(2)}` : "—"}
         </span>
         <span className={cn("text-[length:var(--ts-2xs)] truncate", dark ? "text-[rgb(var(--st-fg)/0.4)]" : "text-black/40")}>
           {product.unit}

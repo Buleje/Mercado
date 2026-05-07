@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 /**
  * TenantLifecycleKanban.tsx — Roadmap item #40
  *
@@ -184,7 +185,7 @@ export default function TenantLifecycleKanban() {
         const res = await fetch("/api/superadmin/impersonate", {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ slug: tenant.slug }),
         });
         if (!res.ok) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { usePathname } from "next/navigation";
 import { useLocale } from "@/contexts/locale-context";
 import {
@@ -669,7 +670,7 @@ export default function Footer() {
                 try {
                   const res = await fetch("/api/newsletter", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: csrfHeaders({ "Content-Type": "application/json" }),
                     body: JSON.stringify({ email: nlEmail.trim() }),
                   });
                   setNlStatus(res.ok ? "success" : "error");

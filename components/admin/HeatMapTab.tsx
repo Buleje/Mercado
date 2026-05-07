@@ -178,7 +178,7 @@ export default function HeatMapTab() {
           >
             <p className="font-bold">{tooltip.day} {tooltip.hour}:00</p>
             <p>{tooltip.value} transacciones</p>
-            <p className="text-[var(--data-success-500)]">S/ {tooltip.amount.toFixed(2)}</p>
+            <p className="text-[var(--data-success-500)]">S/ {Number(tooltip.amount).toFixed(2)}</p>
           </div>
         )}
       </div>

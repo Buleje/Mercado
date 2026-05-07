@@ -1,5 +1,6 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type StepData = {
   brand: { nombre: string; direccion: string; telefono: string; logoUrl?: string };
@@ -51,7 +52,7 @@ export function useOnboarding() {
       // Save brand settings
       await fetch('/api/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           businessName: stepData.brand.nombre,
           businessAddress: stepData.brand.direccion,
@@ -64,7 +65,7 @@ export function useOnboarding() {
       if (stepData.product) {
         await fetch('/api/products', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             name: stepData.product.nombre,
             price: stepData.product.precio,
@@ -79,7 +80,7 @@ export function useOnboarding() {
       if (stepData.client) {
         await fetch('/api/customers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             name: stepData.client.nombre,
             phone: stepData.client.celular,
@@ -90,7 +91,7 @@ export function useOnboarding() {
       // Mark onboarding complete
       await fetch('/api/onboarding/complete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ preferences: stepData.preferences }),
       });
 

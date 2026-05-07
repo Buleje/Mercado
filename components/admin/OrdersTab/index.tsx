@@ -397,7 +397,7 @@ export default function OrdersTab() {
                 <td className="py-1.5 pr-2">{o.customer.phone || "—"}</td>
                 <td className="py-1.5 pr-2">{STATUS_LABELS[o.status]}</td>
                 <td className="py-1.5 pr-2">{o.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}</td>
-                <td className="py-1.5 text-right font-semibold">S/{o.total.toFixed(2)}</td>
+                <td className="py-1.5 text-right font-semibold">S/{Number(o.total).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>

@@ -1215,7 +1215,7 @@ export default function ProductsAdminTab() {
                   {/* Category */}
                   <span className="text-[length:var(--ts-xs)] text-muted w-24 text-center truncate">{cat?.emoji} {cat?.label}</span>
                   {/* Price */}
-                  <span className="text-sm font-extrabold text-primary w-16 text-right">S/{p.price.toFixed(2)}</span>
+                  <span className="text-sm font-extrabold text-primary w-16 text-right">S/{Number(p.price).toFixed(2)}</span>
                   {/* Stock */}
                   <span className={cn(
                     "text-xs font-bold w-16 text-center",
@@ -1380,7 +1380,7 @@ export default function ProductsAdminTab() {
                   </h3>
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-2xl font-black text-primary leading-none">
-                      S/<span className="text-2xl">{p.price.toFixed(2)}</span>
+                      S/<span className="text-2xl">{Number(p.price).toFixed(2)}</span>
                     </span>
                     <span className="text-xs font-medium text-[var(--text-tertiary)]">
                       {p.unit ?? "unidad"}

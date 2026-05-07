@@ -18,6 +18,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { sunatEventBus } from "@/lib/sunat/sale-events";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const BodySchema = z.object({
   saleId: z.string().min(1),
@@ -27,6 +28,7 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "sunat-emit-on-sale"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;

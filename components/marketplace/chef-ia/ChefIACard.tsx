@@ -18,6 +18,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   ChefHat,
   Clock,
@@ -78,7 +79,7 @@ export default function ChefIACard({
     try {
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ presupuesto, personas, restriccion }),
       });
       if (!res.ok) throw new Error("No pudimos generar las recetas");

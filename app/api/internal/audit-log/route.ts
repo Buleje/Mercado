@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/internal/audit-log
@@ -14,6 +15,7 @@ import { logger } from "@/lib/logger";
  */
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "internal-audit-log"); if (_rl) return _rl;
   // Only accept requests from the same origin (proxy.ts)
   const internalKey = req.headers.get("x-internal-key");
   const expected = process.env.INTERNAL_API_KEY || process.env.CRON_SECRET;

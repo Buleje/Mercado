@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
 import {
   DndContext,
@@ -354,7 +355,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
       // POST reorder al backend (fire-and-forget)
       fetch(`/api/marketplace/stores/${storeSlug}/banners/reorder`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ section, order: reordered.map((b) => b.id) }),
       }).catch(() => {});
 
@@ -370,7 +371,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         const updated = { ...b, active: !b.active };
         fetch(`/api/marketplace/stores/${storeSlug}/banners/${bannerId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ active: updated.active }),
         }).catch(() => {});
         return updated;
@@ -395,7 +396,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         // Editar existente
         const res = await fetch(`/api/marketplace/stores/${storeSlug}/banners/${editingBanner.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ ...data, section }),
         });
         if (!res.ok) throw new Error("Error al actualizar banner");
@@ -409,7 +410,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         // Crear nuevo
         const res = await fetch(`/api/marketplace/stores/${storeSlug}/banners`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ ...data, section, position: bannersBySection[section].length }),
         });
         if (!res.ok) throw new Error("Error al crear banner");

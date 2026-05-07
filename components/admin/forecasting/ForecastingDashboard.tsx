@@ -2,6 +2,7 @@
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminCard from "@/components/admin/shared/AdminCard";
+import { csrfHeaders } from "@/lib/csrf-client";
 /**
  * ForecastingDashboard.tsx
  *
@@ -340,7 +341,7 @@ export default function ForecastingDashboard() {
     try {
       const res = await fetch("/api/forecasting/auto-reorder", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ usePrecalculated: false }),
       });
       const data = await res.json() as { message?: string; error?: string };
@@ -361,7 +362,7 @@ export default function ForecastingDashboard() {
     try {
       const res = await fetch(`/api/products/${suggestion.productId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ price: suggestion.suggestedPrice }),
       });
       if (res.ok) {

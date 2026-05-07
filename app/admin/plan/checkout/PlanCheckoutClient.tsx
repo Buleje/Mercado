@@ -21,6 +21,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -173,7 +174,7 @@ export default function PlanCheckoutClient() {
       // realmente seguía en free.
       const res = await fetch("/api/admin/plan/checkout/confirm", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ plan: targetPlan, method }),
         credentials: "include",
       }).catch(() => null);
@@ -201,7 +202,7 @@ export default function PlanCheckoutClient() {
       try {
         const res = await fetch("/api/admin/plan/checkout/stripe-session", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ plan: targetPlan }),
           credentials: "include",
         });

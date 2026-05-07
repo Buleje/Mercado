@@ -229,7 +229,7 @@ function OrderCard({
           </div>
           <div className="text-right shrink-0">
             <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
-              S/{order.total.toFixed(2)}
+              S/{Number(order.total).toFixed(2)}
             </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-1">
               {order.items.length} {order.items.length === 1 ? "ítem" : "ítems"}

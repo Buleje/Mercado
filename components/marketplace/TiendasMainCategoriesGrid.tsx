@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import Image from "next/image";
 import {
   ChevronLeft,
@@ -172,7 +173,7 @@ export default function TiendasMainCategoriesGrid({
     // Fire-and-forget al endpoint de analytics
     fetch("/api/marketplace/analytics/category-click", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ categoryId, ts: Date.now() }),
       keepalive: true,
     }).catch(() => {

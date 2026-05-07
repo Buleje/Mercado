@@ -7,6 +7,7 @@ import { z } from "zod";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { sendWelcomeTenant } from "@/lib/email/resend";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * Lógica completa del listado de stores con product counts, cacheada via
@@ -90,6 +91,7 @@ const PatchSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-stores"); if (_rl) return _rl;
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status:401 });
   const session = await getPlatformSession(token);

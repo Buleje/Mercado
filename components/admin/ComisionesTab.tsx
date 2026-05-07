@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   DollarSign, Users, TrendingUp, Settings, RefreshCw,
@@ -115,7 +116,7 @@ export default function ComisionesTab() {
     try {
       const res = await fetch("/api/commission-rules", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           cashierId: newTier.cashierId,
           label: newTier.label,

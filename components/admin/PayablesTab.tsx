@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, PageTitle, StatCard } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
 import {
@@ -69,7 +70,7 @@ export default function PayablesTab() {
     setSaving(true);
     await fetch("/api/payables", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         supplierId: addForm.supplierId,
         supplierName: sup?.name || "",
@@ -90,7 +91,7 @@ export default function PayablesTab() {
     setSaving(true);
     await fetch(`/api/payables/${payableId}/payments`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         amount: Number(payForm.amount),
         method: payForm.method,
@@ -164,8 +165,8 @@ export default function PayablesTab() {
             >
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm truncate">{s.name}</p>
               <div className="flex flex-wrap items-center gap-3 mt-1">
-                <span className="text-xs text-[var(--data-error-500)] font-bold">Debe: S/{s.pending.toFixed(2)}</span>
-                <span className="text-xs text-[var(--data-success-500)]">Pagado: S/{s.totalPaid.toFixed(2)}</span>
+                <span className="text-xs text-[var(--data-error-500)] font-bold">Debe: S/{Number(s.pending).toFixed(2)}</span>
+                <span className="text-xs text-[var(--data-success-500)]">Pagado: S/{Number(s.totalPaid).toFixed(2)}</span>
               </div>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{s.count} factura{s.count !== 1 ? "s" : ""}</p>
             </button>
@@ -198,8 +199,8 @@ export default function PayablesTab() {
                     </div>
                     {p.description && <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">{p.description}</p>}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
-                      <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-foreground">S/{p.amount.toFixed(2)}</span></span>
-                      <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">S/{p.paidAmount.toFixed(2)}</span></span>
+                      <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-foreground">S/{Number(p.amount).toFixed(2)}</span></span>
+                      <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">S/{Number(p.paidAmount).toFixed(2)}</span></span>
                       <span>Restante: <span className="font-bold text-[var(--data-error-500)]">S/{remaining.toFixed(2)}</span></span>
                       <span>Vence: {formatDate(p.dueDate)}</span>
                     </div>
@@ -283,7 +284,7 @@ export default function PayablesTab() {
                         {p.payments.map((pay) => (
                           <div key={pay.id} className="flex items-center justify-between text-sm bg-white dark:bg-card rounded-lg px-3 py-2">
                             <div>
-                              <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">S/{pay.amount.toFixed(2)}</span>
+                              <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">S/{Number(pay.amount).toFixed(2)}</span>
                               <span className="text-[var(--text-tertiary)] dark:text-muted ml-2">{METHOD_LABELS[pay.method]}</span>
                               {pay.reference && <span className="text-[var(--text-tertiary)] dark:text-muted ml-2 text-xs">Ref: {pay.reference}</span>}
                             </div>

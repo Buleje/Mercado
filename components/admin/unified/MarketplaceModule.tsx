@@ -398,7 +398,7 @@ void DashboardTab;
           { label: "Hoy", value: fmtS(data.today.revenue), sub: `${data.today.orders} pedido(s)`, color: "text-primary" },
           { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-[var(--data-success-500)]" },
           { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-[var(--text-secondary)]" },
-          { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning-500)]" },
+          { label: "Reseñas", value: `★ ${data.Number(store.rating).toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning-500)]" },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4 ">
             <p className={cn("text-xl sm:text-2xl font-extrabold", color)}>{value}</p>
@@ -966,7 +966,7 @@ function MarketplaceQuickActions({
   if (state.commissionsToCollect > 0) {
     actions.push({
       id: "commissions",
-      label: `S/ ${state.commissionsToCollect.toFixed(2)} liquidado por cobrar`,
+      label: `S/ ${Number(state.commissionsToCollect).toFixed(2)} liquidado por cobrar`,
       count: 1,
       tone: "warning",
       icon: DollarSign,
@@ -1972,7 +1972,7 @@ const WHATSAPP_TEMPLATES: Array<{ id: string; label: string; build: (o: Marketpl
     id: "confirm",
     label: "Confirmar pedido",
     build: (o) =>
-      `Hola ${o.customerName}, recibimos tu pedido #${o.id.slice(-8).toUpperCase()} por S/${o.total.toFixed(2)}. Lo estamos preparando. ¡Gracias por tu compra!`,
+      `Hola ${o.customerName}, recibimos tu pedido #${o.id.slice(-8).toUpperCase()} por S/${Number(o.total).toFixed(2)}. Lo estamos preparando. ¡Gracias por tu compra!`,
   },
   {
     id: "ready",
@@ -2078,7 +2078,7 @@ function OrderCard({
           <p className="text-sm font-bold text-[var(--text-primary)] truncate">{order.customerName}</p>
         </div>
         <span className="text-sm font-bold text-primary whitespace-nowrap">
-          S/{order.total.toFixed(2)}
+          S/{Number(order.total).toFixed(2)}
         </span>
       </div>
       <p className="text-xs text-[var(--text-secondary)]">
@@ -2814,10 +2814,10 @@ function ComisionesTab() {
                         </p>
                       </td>
                       <td className="px-4 py-4 text-right text-sm text-[var(--text-secondary)] tabular-nums">
-                        S/{e.orderTotal.toFixed(2)}
+                        S/{Number(e.orderTotal).toFixed(2)}
                       </td>
                       <td className="px-4 py-4 text-right text-base font-extrabold text-[var(--text-primary)] tabular-nums">
-                        S/{e.amount.toFixed(2)}
+                        S/{Number(e.amount).toFixed(2)}
                       </td>
                       <td className="px-4 py-4 text-center">
                         <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold", sc.className)}>
@@ -3177,7 +3177,7 @@ function CuponesTab() {
                 Descontado total
               </p>
               <p className="text-3xl font-extrabold tabular-nums text-[var(--data-warning-500)] leading-tight mt-2">
-                S/ {aggregate.discounted.toFixed(2)}
+                S/ {Number(aggregate.discounted).toFixed(2)}
               </p>
               <p className="text-sm text-[var(--text-tertiary)] mt-1">
                 Estimado por usos × valor
@@ -3193,7 +3193,7 @@ function CuponesTab() {
                 Ventas atribuidas
               </p>
               <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
-                S/ {aggregate.revenue.toFixed(2)}
+                S/ {Number(aggregate.revenue).toFixed(2)}
               </p>
               <p className="text-sm text-[var(--text-tertiary)] mt-1">
                 Aprox. ticket promedio
@@ -3399,7 +3399,7 @@ function CuponesTab() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono font-extrabold text-base text-primary">{c.code}</span>
                       <span className="px-3 py-1 rounded-full text-sm font-extrabold bg-primary/10 text-primary tabular-nums">
-                        {c.discountType === "percent" ? `${c.discountValue}%` : `S/ ${c.discountValue.toFixed(2)}`}
+                        {c.discountType === "percent" ? `${c.discountValue}%` : `S/ ${Number(c.discountValue).toFixed(2)}`}
                       </span>
                       <span
                         className={cn(
@@ -3415,7 +3415,7 @@ function CuponesTab() {
                       </span>
                       {c.minPurchase && (
                         <span className="px-3 py-1 rounded-full text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)] tabular-nums">
-                          Mín S/ {c.minPurchase.toFixed(2)}
+                          Mín S/ {Number(c.minPurchase).toFixed(2)}
                         </span>
                       )}
                     </div>
@@ -3474,7 +3474,7 @@ function CuponesTab() {
                       Descontado
                     </p>
                     <p className="text-xl font-extrabold tabular-nums text-[var(--data-warning-500)] mt-1">
-                      S/ {m.discountedAmount.toFixed(2)}
+                      S/ {Number(m.discountedAmount).toFixed(2)}
                     </p>
                   </div>
                   <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
@@ -3482,7 +3482,7 @@ function CuponesTab() {
                       Ventas atribuidas
                     </p>
                     <p className="text-xl font-extrabold tabular-nums text-[var(--data-success-500)] mt-1">
-                      S/ {m.attributedRevenue.toFixed(2)}
+                      S/ {Number(m.attributedRevenue).toFixed(2)}
                     </p>
                   </div>
                   <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
@@ -3499,7 +3499,7 @@ function CuponesTab() {
                         )}
                       >
                         {m.roiPct >= 0 ? "+" : ""}
-                        {m.roiPct.toFixed(0)}%
+                        {Number(m.roiPct).toFixed(0)}%
                       </p>
                     )}
                   </div>
@@ -3889,7 +3889,7 @@ function FidelidadTab() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-base font-extrabold tabular-nums text-[var(--data-success-500)]">
-                      S/ {c.totalSpent.toFixed(2)}
+                      S/ {Number(c.totalSpent).toFixed(2)}
                     </p>
                     <p className="text-sm text-[var(--text-tertiary)] font-bold tabular-nums mt-0.5">
                       {c.points} pts
@@ -4121,7 +4121,7 @@ function FidelidadTab() {
                 {data.points}
               </p>
               <p className="text-sm text-[var(--text-tertiary)] mt-1 tabular-nums">
-                Gasto total: <strong className="text-[var(--text-primary)]">S/ {data.totalSpent.toFixed(2)}</strong>
+                Gasto total: <strong className="text-[var(--text-primary)]">S/ {Number(data.totalSpent).toFixed(2)}</strong>
               </p>
             </div>
           </div>
@@ -5544,7 +5544,7 @@ function OrdenTab() {
                                     <div className="mt-auto flex items-end justify-between gap-2 pt-2">
                                       <div className="min-w-0 flex-1">
                                         <span className="block text-[var(--ts-xl)] font-black tabular-nums tracking-tight text-[var(--text-primary)] leading-none">
-                                          S/ {prod.retailPrice.toFixed(2)}
+                                          S/ {Number(prod.retailPrice).toFixed(2)}
                                         </span>
                                       </div>
                                       {/* Mock carrito — decorativo, replica el CTA del storefront */}

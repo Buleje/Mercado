@@ -134,7 +134,7 @@ function buildMensajeWhatsApp(
   conDescuento?: { pct: number }
 ): string {
   const nombre = fiado.customerName || fiado.customerId;
-  const monto = fiado.saldo.toFixed(2);
+  const monto = Number(fiado.saldo).toFixed(2);
 
   if (conDescuento) {
     const montoDesc = (fiado.saldo * (1 - conDescuento.pct / 100)).toFixed(2);
@@ -244,7 +244,7 @@ function ModalDescuento({
             </span>{" "}
             · Deuda:{" "}
             <span className="font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-              S/{fiado.saldo.toFixed(2)}
+              S/{Number(fiado.saldo).toFixed(2)}
             </span>
           </p>
 
@@ -608,11 +608,11 @@ export default function CobranzaInteligente() {
                       {/* Monto */}
                       <td className="px-4 py-3 text-right">
                         <span className="font-extrabold font-mono text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                          S/{f.saldo.toFixed(2)}
+                          S/{Number(f.saldo).toFixed(2)}
                         </span>
                         {f.total !== f.saldo && (
                           <p className="text-xs text-[var(--text-tertiary)]">
-                            de S/{f.total.toFixed(2)}
+                            de S/{Number(f.total).toFixed(2)}
                           </p>
                         )}
                       </td>

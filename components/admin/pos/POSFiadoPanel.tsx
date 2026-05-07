@@ -158,7 +158,7 @@ export default function POSFiadoPanel({
                 step="0.10"
                 value={cobroMonto}
                 onChange={(e) => setCobroMonto(e.target.value)}
-                placeholder={data.montoPendiente.toFixed(2)}
+                placeholder={Number(data.montoPendiente).toFixed(2)}
                 className="w-full pl-7 pr-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
               />
             </div>

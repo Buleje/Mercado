@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -638,7 +639,7 @@ export default function NotasCreditoModule() {
     try {
       const res = await fetch("/api/notas-credito", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           saleId: form.orderId.trim() || undefined,
           motivoCodigo: form.codigoMotivo,
@@ -666,7 +667,7 @@ export default function NotasCreditoModule() {
   const handleEmitSunat = async (nc: NotaCredito) => {
     if (!confirm("\u00bfEmitir nota de cr\u00e9dito a SUNAT? Esta acci\u00f3n no se puede deshacer.")) return;
     try {
-      const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "EMITIDA" }) });
+      const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) });
       if (res.ok) fetchNotas();
     } catch { /* silent */ }
   };
@@ -674,7 +675,7 @@ export default function NotasCreditoModule() {
   const handleAnular = async (nc: NotaCredito) => {
     if (!confirm("\u00bfSeguro que quieres anular esta nota de cr\u00e9dito?")) return;
     try {
-      const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "ANULADA" }) });
+      const res = await fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "ANULADA" }) });
       if (res.ok) { fetchNotas(); if (selected?.id === nc.id) setSelected(null); }
     } catch { /* silent */ }
   };
@@ -685,7 +686,7 @@ export default function NotasCreditoModule() {
     if (borradores.length === 0) return;
     if (!confirm(`¿Emitir ${borradores.length} nota(s) de crédito a SUNAT?`)) return;
     await Promise.all(borradores.map(nc =>
-      fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "EMITIDA" }) }).catch(() => null)
+      fetch(`/api/notas-credito/${nc.id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: "EMITIDA" }) }).catch(() => null)
     ));
     fetchNotas(); setCheckedIds(new Set());
   };
@@ -911,7 +912,7 @@ export default function NotasCreditoModule() {
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">vs Mes anterior</p>
               <div className="flex items-center gap-1">
                 {kpis.trend > 0 ? <TrendingUp className="h-4 w-4 text-[var(--data-error-500)]" /> : <TrendingDown className="h-4 w-4 text-[var(--data-success-500)]" />}
-                <p className={cn("text-2xl font-extrabold", kpis.trend > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>{kpis.trend > 0 ? "+" : ""}{kpis.trend.toFixed(0)}%</p>
+                <p className={cn("text-2xl font-extrabold", kpis.trend > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>{kpis.trend > 0 ? "+" : ""}{Number(kpis.trend).toFixed(0)}%</p>
               </div>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{kpis.trend > 0 ? "subió" : "bajó"} respecto al mes pasado</p>
             </div>

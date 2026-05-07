@@ -111,7 +111,7 @@ export default memo(function PuntoCompraProductCard({
       <div className="flex items-baseline justify-between gap-1 mb-0.5">
         <span
           className="text-sm font-bold text-[var(--text-primary)]"
-          title={`Costo: S/${displayPrice.toFixed(2)} | Venta: S/${product.price.toFixed(2)} | Margen: ${product.costPrice ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : "—"}%`}
+          title={`Costo: S/${displayPrice.toFixed(2)} | Venta: S/${Number(product.price).toFixed(2)} | Margen: ${product.costPrice ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : "—"}%`}
         >
           S/{displayPrice.toFixed(2)}
         </span>

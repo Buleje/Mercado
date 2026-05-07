@@ -236,7 +236,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
         <StatCard label="Egresos" value={fmt(data.egresos)} icon={ArrowDownToLine} delta={data.dEgresos} sparkline={data.flujoDiario.length >= 2 ? { data: data.flujoDiario.map(d => d.egresos) } : undefined} />
         <StatCard label="Balance" value={fmt(data.balance)} icon={Wallet} delta={data.dBalance} emphasis={data.balance >= 0 ? "neutral" : "error"} sparkline={data.flujoDiario.length >= 2 ? { data: data.flujoDiario.map(d => d.balance) } : undefined} />
         <StatCard label="Utilidad Neta" value={fmt(data.utilidadNeta)} icon={DollarSign} emphasis={data.utilidadNeta >= 0 ? "success" : "error"} />
-        <StatCard label="Margen Neto" value={`${data.margenNeto.toFixed(1)}%`} icon={Percent} emphasis={data.margenNeto >= 15 ? "success" : data.margenNeto >= 5 ? "warning" : "error"} />
+        <StatCard label="Margen Neto" value={`${Number(data.margenNeto).toFixed(1)}%`} icon={Percent} emphasis={data.margenNeto >= 15 ? "success" : data.margenNeto >= 5 ? "warning" : "error"} />
         <StatCard label="Tickets" value={String(data.ticketsTotal)} icon={Banknote} />
       </div>
 

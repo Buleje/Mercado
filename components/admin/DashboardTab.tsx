@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   TrendingUp, DollarSign, ShoppingCart, Users, Package,
   AlertTriangle, BarChart3, Clock, Banknote,
@@ -960,7 +961,7 @@ export default function DashboardTab() {
 
       // KPI grid (3 cols)
       const kpis = [
-        ["Ventas", fmt(st.ventas)], ["Utilidad", fmt(st.utilidad)], ["Margen", st.margen.toFixed(1) + "%"],
+        ["Ventas", fmt(st.ventas)], ["Utilidad", fmt(st.utilidad)], ["Margen", Number(st.margen).toFixed(1) + "%"],
         ["Tickets", String(st.tickets)], ["Ticket prom.", fmt(st.ticketProm)], ["Unidades", String(st.uds)],
         ["Clientes", String(st.clientesAtendidos)], ["Nuevos", String(st.newCust)], ["Recurrentes", String(st.returningCust)],
       ];
@@ -1188,7 +1189,7 @@ export default function DashboardTab() {
     try {
       const res = await tenantFetch(`/api/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
@@ -1252,7 +1253,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         ID: o.id.slice(-8),
         Cliente: o.customer.name,
         Teléfono: o.customer.phone ?? "",
-        "Total S/": o.total.toFixed(2),
+        "Total S/": Number(o.total).toFixed(2),
         Pago: o.paymentMethod ?? "",
         Estado: o.status,
       }));
@@ -1264,7 +1265,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         ID: String(s.id).slice(-8),
         Cliente: "POS",
         Teléfono: s.customerPhone ?? "",
-        "Total S/": s.total.toFixed(2),
+        "Total S/": Number(s.total).toFixed(2),
         Pago: s.payment,
         Estado: "entregado",
       }));
@@ -1281,7 +1282,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
       try {
         await tenantFetch(`/api/orders/${orderId}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ adminNote: note }),
         });
       } catch { setOpError("Error al guardar la nota. Intenta de nuevo."); }
@@ -1307,7 +1308,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
     setBulkUpdating(true);
     const ids = [...selectedOrders];
     await Promise.allSettled(ids.map(id =>
-      tenantFetch(`/api/orders/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) })
+      tenantFetch(`/api/orders/${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ status: newStatus }) })
     ));
     setQuickStatusMap(prev => {
       const next = { ...prev };
@@ -1490,7 +1491,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               const lines = [
                 `*Resumen ${period === "hoy" ? "del día" : period === "semana" ? "semanal" : period === "mes" ? "del mes" : "general"}*`,
                 `Ventas: ${fmt(st.ventas)}`,
-                `Utilidad: ${fmt(st.utilidad)} (${st.margen.toFixed(1)}%)`,
+                `Utilidad: ${fmt(st.utilidad)} (${Number(st.margen).toFixed(1)}%)`,
                 `Tickets: ${st.tickets} (prom ${fmt(st.ticketProm)})`,
                 `Clientes: ${st.clientesAtendidos}`,
                 "",
@@ -1574,7 +1575,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {([
               { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", delta: st.dVentas },
               { label: "Utilidad", value: fmt(st.utilidad), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", delta: st.dUtilidad },
-              { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-gray-50 dark:bg-surface", delta: st.dMargen },
+              { label: "Margen", value: `${Number(st.margen).toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-gray-50 dark:bg-surface", delta: st.dMargen },
               { label: "Tickets", value: String(st.tickets), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", delta: st.dTickets },
               { label: "Clientes", value: String(st.clientesAtendidos), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", delta: st.dClientes },
               { label: "Stock Alerta", value: String(st.stockCritico.length + st.agotados.length), accent: (st.stockCritico.length + st.agotados.length) > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-gray-50 dark:bg-surface" },
@@ -1640,7 +1641,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     { label: "Ingresos", value: fmt(st.ventas), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
                     { label: "Egresos", value: fmt(st.totalPurch), accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
                     { label: "Utilidad Bruta", value: fmt(st.utilidad), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
-                    { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+                    { label: "Margen", value: `${Number(st.margen).toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
                   ].map(k => (
                     <div key={k.label} className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                       <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{k.label}</div>
@@ -2417,7 +2418,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-[var(--data-success-500)]" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
             <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-[var(--data-success-500)]" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
-            <Kpi label="Margen" value={`${st.margen.toFixed(1)}%`} icon={Percent} accent={st.margen>=25?"text-[var(--data-success-500)]":st.margen>=15?"text-[var(--data-warning-500)]":"text-[var(--data-error-500)]"} delta={st.dMargen} />
+            <Kpi label="Margen" value={`${Number(st.margen).toFixed(1)}%`} icon={Percent} accent={st.margen>=25?"text-[var(--data-success-500)]":st.margen>=15?"text-[var(--data-warning-500)]":"text-[var(--data-error-500)]"} delta={st.dMargen} />
             <Kpi label="Tickets" value={String(st.tickets)} icon={Receipt} accent="text-[var(--text-secondary)]" delta={st.dTickets} sparklineData={st.sparklineOrders} />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -2444,7 +2445,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               return days >= 0 && days <= 7;
             });
             if (nearExpiry.length > 0) alertItems.push({ type: "danger", msg: `${nearExpiry.length} producto${nearExpiry.length>1?"s":""} próximo${nearExpiry.length>1?"s":""} a vencer (7 días)` });
-            if (st.margen < 15) alertItems.push({ type: "warning", msg: `Margen general bajo: ${st.margen.toFixed(1)}% — revisar precios o costos` });
+            if (st.margen < 15) alertItems.push({ type: "warning", msg: `Margen general bajo: ${Number(st.margen).toFixed(1)}% — revisar precios o costos` });
             if (alertItems.length === 0) return null;
             return (
               <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]/50 dark:bg-amber-950/15 p-4">
@@ -2731,7 +2732,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                               <div className="text-xs">
                                 <div className="font-bold text-[var(--text-primary)] dark:text-foreground">{convRate.toFixed(1)}%</div>
                                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{v.visitors} visitantes • {v.conversions} conversiones</div>
-                                {test.metric === "revenue" && <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] font-semibold">S/{v.revenue.toFixed(2)}</div>}
+                                {test.metric === "revenue" && <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] font-semibold">S/{Number(v.revenue).toFixed(2)}</div>}
                               </div>
                             </div>
                           );

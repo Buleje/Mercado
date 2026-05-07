@@ -5,6 +5,7 @@ import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "coupons-X"); if (_rl) return _rl;
   // Rate limit: 10 attempts per IP per 5 minutes
   const ip = getClientIp(req);
   const { allowed } = rateLimit(`coupon:${ip}`, 10, 300);

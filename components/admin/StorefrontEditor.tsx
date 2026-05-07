@@ -637,7 +637,7 @@ function SectionEditorModal({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-foreground truncate leading-tight">{p.name}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-sm font-bold text-primary tabular-nums">S/{p.price.toFixed(2)}</span>
+                          <span className="text-sm font-bold text-primary tabular-nums">S/{Number(p.price).toFixed(2)}</span>
                           {p.category && (
                             <>
                               <span className="text-xs text-muted">·</span>
@@ -780,7 +780,7 @@ function SectionEditorModal({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-foreground truncate leading-tight">{p.name}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-sm font-bold text-primary tabular-nums">S/{p.price.toFixed(2)}</span>
+                          <span className="text-sm font-bold text-primary tabular-nums">S/{Number(p.price).toFixed(2)}</span>
                           {p.category && (
                             <>
                               <span className="text-xs text-muted">·</span>

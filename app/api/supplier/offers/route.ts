@@ -5,6 +5,7 @@ import { SupplierOfferDB } from "@/lib/db/supplier-portal.db";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const createOfferSchema = z.object({
   title: z.string().min(1).max(120),
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest) {
  * Crear nueva oferta de temporada.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "supplier-offers"); if (_rl) return _rl;
   try {
     const supplier = await requireSupplier(req);
     if (!supplier) {

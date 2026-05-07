@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import { UserCircle, Mail, Phone, Shield, Key, Save, Loader2, CheckCircle } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface UserProfile {
   username: string;
@@ -57,7 +58,7 @@ export default function MiPerfilTab() {
     try {
       const res = await fetch("/api/auth/me", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           username: profile.username,
           phone: profile.phone,
@@ -89,7 +90,7 @@ export default function MiPerfilTab() {
     try {
       const res = await fetch("/api/auth/change-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       if (res.ok) {

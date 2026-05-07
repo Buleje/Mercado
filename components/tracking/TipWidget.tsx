@@ -13,6 +13,7 @@
 
 import { useState } from "react";
 import { Gift, Loader2, CheckCircle2, AlertTriangle } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface Props {
   orderId: string;
@@ -39,7 +40,7 @@ export default function TipWidget({ orderId, partnerName }: Props) {
     try {
       const res = await fetch(`/api/delivery/tip/${orderId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           amount: finalAmount,
           message: message.trim() || undefined,

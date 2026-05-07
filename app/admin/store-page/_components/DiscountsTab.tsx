@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useState } from "react";
 import {
   Percent,
@@ -219,7 +220,7 @@ export default function DiscountsTab() {
                     try {
                       await fetch("/api/store-page/discounts", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: csrfHeaders({ "Content-Type": "application/json" }),
                         body: JSON.stringify(form),
                       });
                     } catch {

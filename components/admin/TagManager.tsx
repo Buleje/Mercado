@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Tag as TagIcon, Package, Users, ShoppingCart, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import TagBadge, { TAG_COLORS, type TagColor, type Tag } from "./TagBadge";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Entity = "product" | "customer" | "order";
 
@@ -57,7 +58,7 @@ export default function TagManager() {
     try {
       const res = await fetch("/api/tags", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ name, color: newColor, entity }),
       });
       if (!res.ok) throw new Error("Error al crear etiqueta");

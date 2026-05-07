@@ -220,7 +220,7 @@ export default function CustomerSegmentationTab() {
                         <span className={cn("px-2 py-0.5 rounded-full text-xs font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{c.orderCount}</td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">S/{c.totalSpent.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">S/{Number(c.totalSpent).toFixed(2)}</td>
                       <td className="px-4 py-3 text-right text-xs">
                         {c.daysSinceLast === null ? <span className="text-[var(--text-tertiary)]">—</span> : (
                           <span className={cn(c.daysSinceLast > 60 ? "text-[var(--data-error-500)] font-semibold" : c.daysSinceLast > 30 ? "text-[var(--data-warning-500)] font-semibold" : "text-[var(--text-secondary)] dark:text-muted")}>
@@ -262,7 +262,7 @@ export default function CustomerSegmentationTab() {
                   {[
                     { label: "Recencia", value: r, desc: c.daysSinceLast !== null ? `hace ${c.daysSinceLast}d` : "sin compras", color: r >= 70 ? "bg-[var(--accent-soft)]" : r >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
                     { label: "Frecuencia", value: f, desc: `${c.orderCount} pedidos`, color: f >= 70 ? "bg-[var(--accent-soft)]" : f >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
-                    { label: "Monto", value: m, desc: `S/${c.totalSpent.toFixed(0)}`, color: m >= 70 ? "bg-[var(--accent-soft)]" : m >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
+                    { label: "Monto", value: m, desc: `S/${Number(c.totalSpent).toFixed(0)}`, color: m >= 70 ? "bg-[var(--accent-soft)]" : m >= 40 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]" },
                   ].map(metric => (
                     <div key={metric.label}>
                       <div className="flex justify-between items-center mb-1">

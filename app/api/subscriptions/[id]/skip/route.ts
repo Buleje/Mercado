@@ -5,6 +5,7 @@ import { requireCustomer } from "@/lib/auth/require-customer";
 import { SubscriptionsDB } from "@/lib/db/subscriptions.db";
 import { ApiError, toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/subscriptions/[id]/skip
@@ -24,6 +25,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "subscriptions-X-skip"); if (_rl) return _rl;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
   const { tenantId, customerId: userId } = customer;

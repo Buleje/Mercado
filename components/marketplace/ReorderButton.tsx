@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { RotateCcw } from "@buleje/design-system/icons";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useToast } from "@/contexts/toast-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ export default function ReorderButton({ customerPhone }: ReorderButtonProps) {
 
     fetch("/api/marketplace/reorder/last", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ phone: customerPhone }),
     })
       .then((r) => (r.ok ? r.json() : { items: [] }))

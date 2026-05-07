@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushToPhone } from "@/lib/push-sender";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 async function checkAndCreateBirthdayCoupons() {
   const now = new Date();
@@ -71,6 +72,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "birthday-coupons"); if (_rl) return _rl;
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

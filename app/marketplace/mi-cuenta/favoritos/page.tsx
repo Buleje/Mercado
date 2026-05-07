@@ -129,7 +129,7 @@ export default function FavoritosPage() {
                 {product.name}
               </p>
               <p className="mt-1 text-sm font-semibold text-[#2d6a4f] dark:text-[#52b788]">
-                S/ {product.price.toFixed(2)}
+                S/ {Number(product.price).toFixed(2)}
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500">
                 {product.storeName}

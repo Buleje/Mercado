@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ─── Types (mirror of lib/db/supplier-signup.db.ts DbSupplierRow) ────────────
 
@@ -123,7 +124,7 @@ export default function SuppliersQueueClient() {
         `/api/superadmin/marketplace/suppliers/${rejectingId}/reject`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ reason: rejectReason.trim() }),
         },
       );

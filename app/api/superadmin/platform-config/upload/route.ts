@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/superadmin/platform-config/upload  (multipart/form-data)
@@ -31,6 +32,7 @@ const KIND_CONFIG: Record<z.infer<typeof KindSchema>, { width: number; height?: 
 };
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-platform-config-upload"); if (_rl) return _rl;
   let formData: FormData;
   try {
     formData = await req.formData();

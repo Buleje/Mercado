@@ -136,7 +136,7 @@ export default function OrderSuccessModal() {
                 Total pagado
               </p>
               <p className="text-3xl sm:text-4xl font-extrabold tabular-nums leading-none">
-                S/ {order.total.toFixed(2)}
+                S/ {Number(order.total).toFixed(2)}
               </p>
               <p className="mt-1 text-sm font-semibold text-white/85">
                 {itemsCount} producto{itemsCount === 1 ? "" : "s"} ·{" "}
@@ -221,7 +221,7 @@ export default function OrderSuccessModal() {
                     {item.name}
                   </p>
                   <p className="text-xs text-[var(--text-tertiary)]">
-                    {item.storeName} · {item.quantity} × S/ {item.price.toFixed(2)}
+                    {item.storeName} · {item.quantity} × S/ {Number(item.price).toFixed(2)}
                   </p>
                 </div>
                 <div className="text-right shrink-0">

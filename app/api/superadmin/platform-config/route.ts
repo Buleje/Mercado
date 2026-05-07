@@ -8,6 +8,7 @@ import {
   nestedToFlat,
   type PlatformConfig,
 } from "@/lib/platform-config";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/superadmin/platform-config
@@ -69,6 +70,7 @@ const ConfigSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-platform-config"); if (_rl) return _rl;
   const platformUser = req.headers.get("x-platform-user") ?? "superadmin";
 
   let body: unknown;

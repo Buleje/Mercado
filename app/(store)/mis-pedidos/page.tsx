@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, startTransition } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -1276,7 +1277,7 @@ export default function MisPedidosPage() {
     try {
       const res = await fetch(`/api/orders/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: "cancelado" }),
       });
       if (!res.ok) return;

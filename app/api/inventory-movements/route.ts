@@ -3,6 +3,7 @@ import { z } from "zod";
 import { InventoryMovementsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const AdjustSchema = z.object({
   action: z.literal("adjust"),
@@ -52,6 +53,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "inventory-movements"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

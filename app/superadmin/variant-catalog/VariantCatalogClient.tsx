@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { z } from "zod";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
@@ -433,7 +434,7 @@ function NewTemplateModal({
     try {
       const res = await fetch("/api/superadmin/variant-catalog", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           category: category.trim(),
           name: name.trim(),
@@ -647,7 +648,7 @@ function TemplateCard({
   const togglePublished = async () => {
     await fetch(`/api/superadmin/variant-catalog/${template.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ isPublished: !template.isPublished }),
     });
     onChanged();
@@ -761,7 +762,7 @@ function OptionCard({ option, onEdit, onChanged }: { option: Option; onEdit: () 
           <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{option.name}</p>
           {option.priceDelta !== 0 && (
             <p className="text-xs font-mono text-[var(--text-secondary)]">
-              {option.priceDelta > 0 ? "+" : ""}S/ {option.priceDelta.toFixed(2)}
+              {option.priceDelta > 0 ? "+" : ""}S/ {Number(option.priceDelta).toFixed(2)}
             </p>
           )}
           {option.isDefault && (
@@ -831,7 +832,7 @@ function OptionModal({
         : `/api/superadmin/variant-catalog/${templateId}/options`;
       const res = await fetch(url, {
         method: editing ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {

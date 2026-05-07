@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { tryAdmin } from "@/lib/require-admin";
 import { createApiKey, revokeApiKey, listApiKeys } from "@/lib/api-keys";
 import { getPlanLimits } from "@/lib/plans";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─── Auth helper ──────────────────────────────────────────────────────────────
 // SECURITY 2026-05-06: derivamos tenantId del JWT (no del header x-tenant-id).
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
 // Create a new API key. The raw key is returned ONCE — show it to the user immediately.
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "api-keys"); if (_rl) return _rl;
   const auth = await authAdmin(req);
   if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
 // Revoke an API key by its ID.
 
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "api-keys"); if (_rl) return _rl;
   const auth = await authAdmin(req);
   if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

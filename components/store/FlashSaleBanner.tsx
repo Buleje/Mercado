@@ -77,8 +77,8 @@ export default function FlashSaleBanner({ items = [], endsAt, className }: Flash
               <p className="text-xs font-bold truncate">{item.name}</p>
               <p className="text-[length:var(--ts-2xs)] text-white/60">{item.storeName}</p>
               <div className="flex items-baseline gap-1 mt-1">
-                <span className="text-sm font-extrabold">S/{item.salePrice.toFixed(0)}</span>
-                <span className="text-[length:var(--ts-2xs)] line-through text-white/50">S/{item.originalPrice.toFixed(0)}</span>
+                <span className="text-sm font-extrabold">S/{Number(item.salePrice).toFixed(0)}</span>
+                <span className="text-[length:var(--ts-2xs)] line-through text-white/50">S/{Number(item.originalPrice).toFixed(0)}</span>
                 <span className="text-[length:var(--ts-2xs)] font-bold text-yellow-300">-{discount}%</span>
               </div>
               {item.stock <= 5 && (

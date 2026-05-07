@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import sharp from "sharp";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 // SECURITY 2026-05-06 (audit storefront H02): SVG REMOVIDO de allowlist.
@@ -21,6 +22,7 @@ const ALLOWED_FOLDERS = new Set([
 ]);
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "upload"); if (_rl) return _rl;
   // Solo admins pueden subir imágenes
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

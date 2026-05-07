@@ -3,6 +3,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─── Schemas de validación ────────────────────────────────────────────────────
 
@@ -64,6 +65,7 @@ export async function GET(req: NextRequest) {
 // ─── POST /api/superadmin/churn/playbooks — crear playbook ───────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-churn-playbooks"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if ("status" in auth) return auth;
 
@@ -112,6 +114,7 @@ export async function POST(req: NextRequest) {
 // ─── PATCH /api/superadmin/churn/playbooks — actualizar playbook ─────────────
 
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-churn-playbooks"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if ("status" in auth) return auth;
 
@@ -161,6 +164,7 @@ export async function PATCH(req: NextRequest) {
 // ─── DELETE /api/superadmin/churn/playbooks — desactivar playbook ────────────
 
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-churn-playbooks"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if ("status" in auth) return auth;
 

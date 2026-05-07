@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { ShieldCheck, Save, CheckCircle, RotateCcw, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const ALL_TAB_IDS = [
   { id: "dashboard", label: "Dashboard" },
@@ -77,7 +78,7 @@ export default function RolePermissionsTab() {
     try {
       await fetch("/api/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ rolePermissions: perms }),
       });
       setSaved(true);

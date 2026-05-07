@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback, DragEvent, ChangeEvent } from "react";
 import { CheckCircle, AlertTriangle, Loader2, X, Users } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -129,7 +130,7 @@ export default function CustomerImporter() {
       try {
         const res = await fetch("/api/customers", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             name: c.nombre,
             phone: normalizePhone(c.teléfono),

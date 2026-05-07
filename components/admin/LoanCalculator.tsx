@@ -85,7 +85,7 @@ export default function LoanCalculator() {
       "Mes,Cuota,Capital,Interes,Saldo",
       ...rows.map(
         (r) =>
-          `${r.month},${r.payment.toFixed(2)},${r.principal.toFixed(2)},${r.interest.toFixed(2)},${r.balance.toFixed(2)}`
+          `${r.month},${Number(r.payment).toFixed(2)},${Number(r.principal).toFixed(2)},${Number(r.interest).toFixed(2)},${Number(r.balance).toFixed(2)}`
       ),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/csv" });

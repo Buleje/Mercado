@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 interface Ctx {
   params: Promise<{ productId: string }>;
 }
 
 export async function DELETE(req: NextRequest, { params }: Ctx) {
+  const _rl = await applyRateLimit(req, "MODERATE", "store-page-overrides-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

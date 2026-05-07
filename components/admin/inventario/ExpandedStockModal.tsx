@@ -210,13 +210,13 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                     {/* Costo */}
                     <td className="px-4 py-3">
                       {p.costPrice != null && p.costPrice > 0
-                        ? <span className="font-mono text-xs text-[var(--text-secondary)]">S/{p.costPrice.toFixed(2)}</span>
+                        ? <span className="font-mono text-xs text-[var(--text-secondary)]">S/{Number(p.costPrice).toFixed(2)}</span>
                         : <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>
                       }
                     </td>
 
                     {/* Precio venta */}
-                    <td className="px-4 py-3 font-bold text-primary text-xs">S/{p.price.toFixed(2)}</td>
+                    <td className="px-4 py-3 font-bold text-primary text-xs">S/{Number(p.price).toFixed(2)}</td>
 
                     {/* Margen */}
                     <td className="px-4 py-3">
@@ -227,10 +227,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                             p.margin.pct >= 15 ? "text-[var(--data-warning-500)]" :
                             "text-[var(--data-error-500)]"
                           )}>
-                            {p.margin.pct.toFixed(0)}%
+                            {p.Number(margin.pct).toFixed(0)}%
                           </span>
                           <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                            S/{p.margin.soles.toFixed(2)}
+                            S/{p.Number(margin.soles).toFixed(2)}
                           </span>
                         </div>
                       ) : (

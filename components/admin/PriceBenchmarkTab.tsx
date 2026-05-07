@@ -78,7 +78,7 @@ export default function PriceBenchmarkTab() {
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Comparativa de precios vs competencia local para posicionamiento estratégico</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(i => ({ producto: i.product, categoria: i.category, precio_propio: i.ownPrice, comp1: i.competitor1.price ?? "N/A", comp2: i.competitor2.price ?? "N/A", comp3: i.competitor3.price ?? "N/A", promedio_mercado: i.marketAvg.toFixed(2), diferencia_pct: i.diffPct.toFixed(1), posicionamiento: POS_META[i.positioning].label })), "benchmark-precios")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(i => ({ producto: i.product, categoria: i.category, precio_propio: i.ownPrice, comp1: i.competitor1.price ?? "N/A", comp2: i.competitor2.price ?? "N/A", comp3: i.competitor3.price ?? "N/A", promedio_mercado: Number(i.marketAvg).toFixed(2), diferencia_pct: Number(i.diffPct).toFixed(1), posicionamiento: POS_META[i.positioning].label })), "benchmark-precios")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>

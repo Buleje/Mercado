@@ -36,6 +36,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "STRICT", "lives-X-event"); if (_rl) return _rl;
   try {
     const { id } = await params;
 

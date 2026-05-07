@@ -156,7 +156,7 @@ export default function ReciboPOSPage() {
                     {item.quantity}
                   </td>
                   <td className="py-1 text-right text-gray-600">
-                    {item.price.toFixed(2)}
+                    {Number(item.price).toFixed(2)}
                   </td>
                   <td className="py-1 text-right font-medium text-gray-800">
                     {(item.price * item.quantity).toFixed(2)}
@@ -170,18 +170,18 @@ export default function ReciboPOSPage() {
           <div className="border-t border-dashed border-gray-300 pt-2 space-y-0.5 text-xs">
             <div className="flex justify-between font-bold text-gray-900">
               <span>TOTAL</span>
-              <span>S/{sale.total.toFixed(2)}</span>
+              <span>S/{Number(sale.total).toFixed(2)}</span>
             </div>
             {sale.payment === "efectivo" && (
               <>
                 <div className="flex justify-between text-gray-600">
                   <span>Pagó con</span>
-                  <span>S/{sale.amountPaid.toFixed(2)}</span>
+                  <span>S/{Number(sale.amountPaid).toFixed(2)}</span>
                 </div>
                 {sale.change > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>Vuelto</span>
-                    <span>S/{sale.change.toFixed(2)}</span>
+                    <span>S/{Number(sale.change).toFixed(2)}</span>
                   </div>
                 )}
               </>

@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
 import {
   Inbox,
@@ -213,7 +214,7 @@ export default function SupportInbox() {
     try {
       await fetch(`/api/superadmin/support/${selectedId}/reply`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ body: reply.trim() }),
       });
     } catch {
@@ -243,7 +244,7 @@ export default function SupportInbox() {
     // Fire-and-forget API call
     fetch(`/api/superadmin/support/${ticketId}/status`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ status }),
     }).catch(() => {});
   }, []);

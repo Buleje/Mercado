@@ -67,11 +67,11 @@ function CompareModal() {
   const catLabel = (cat: string) => categories.find(c => c.id === cat)?.label ?? cat;
 
   const rows: { label: string; values: string[]; type?: string }[] = [
-    { label: "Precio", values: items.map(p => `S/${p.price.toFixed(2)}`), type: "price" },
+    { label: "Precio", values: items.map(p => `S/${Number(p.price).toFixed(2)}`), type: "price" },
     { label: "Categoría", values: items.map(p => catLabel(p.category ?? "—")) },
     { label: "Unidad", values: items.map(p => p.unit ?? "—") },
     { label: "Stock", values: items.map(p => p.stock != null ? (p.stock > 0 ? `${p.stock} disponibles` : "Agotado") : "—"), type: "stock" },
-    { label: "Calificación", values: items.map(p => p.rating != null && p.rating > 0 ? `${p.rating.toFixed(1)} (${p.reviewCount ?? 0})` : "Sin reseñas"), type: "rating" },
+    { label: "Calificación", values: items.map(p => p.rating != null && p.rating > 0 ? `${Number(p.rating).toFixed(1)} (${p.reviewCount ?? 0})` : "Sin reseñas"), type: "rating" },
     { label: "Badge", values: items.map(p => p.badge ?? "—") },
   ];
 

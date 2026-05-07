@@ -4,6 +4,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { invalidateAll } from "@/lib/cache";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -59,6 +60,7 @@ const DATA_TABLES = [
 // BlockTemplate, ApiKey, PushSubscription, TenantInvitation, StorePermission
 
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-purge"); if (_rl) return _rl;
   const session = await requirePlatform(req);
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

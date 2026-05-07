@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateObject } from "ai";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/voice-order — Transcripcion de audio + parseo de items.
@@ -57,6 +58,7 @@ Reglas:
 - Si no se entiende un item, omitilo.`;
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "voice-order"); if (_rl) return _rl;
   // Caso 1: JSON con transcription ya hecha (cliente uso Web Speech API)
   const contentType = req.headers.get("content-type") ?? "";
 

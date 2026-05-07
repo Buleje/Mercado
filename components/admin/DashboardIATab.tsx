@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   DollarSign,
@@ -305,7 +306,7 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
     try {
       const res = await fetch("/api/ai-assistant", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ message: trimmed, stream: false }),
       });
       if (!res.ok) throw new Error("Error del asistente");

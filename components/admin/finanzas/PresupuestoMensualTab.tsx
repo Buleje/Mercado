@@ -5,6 +5,7 @@ import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Loader2, Plus, X, AlertTriangle, Pencil, Wallet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -129,7 +130,7 @@ export default function PresupuestoMensualTab() {
     try {
       const res = await fetch("/api/presupuesto", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ categorias }),
       });
       if (!res.ok) {

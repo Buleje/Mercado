@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { enqueueActivityLog } from "@/lib/queue";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─── Validation schemas ───────────────────────────────────────────────────────
 
@@ -93,6 +94,7 @@ export async function GET(req: NextRequest) {
 // ─── POST /api/campaigns ──────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "campaigns"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -132,6 +134,7 @@ export async function POST(req: NextRequest) {
 // ─── PATCH /api/campaigns?id=xxx ─────────────────────────────────────────────
 
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "campaigns"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -162,6 +165,7 @@ export async function PATCH(req: NextRequest) {
 // ─── DELETE /api/campaigns?id=xxx ────────────────────────────────────────────
 
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "campaigns"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

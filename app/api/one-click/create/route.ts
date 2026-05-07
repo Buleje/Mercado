@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { OneClickOrderSchema } from "@/lib/validators/one-click";
 import { createOneClickOrder } from "@/lib/db/one-click-orders.db";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/one-click/create
@@ -16,6 +17,7 @@ import { requireCustomer } from "@/lib/auth/require-customer";
  * Validación: OneClickOrderSchema (Zod safeParse).
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "one-click-create"); if (_rl) return _rl;
   const customerOrResp = await requireCustomer(req);
   if (customerOrResp instanceof NextResponse) return customerOrResp;
   const customer = customerOrResp;

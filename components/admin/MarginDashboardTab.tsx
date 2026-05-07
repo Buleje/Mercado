@@ -109,7 +109,7 @@ export default function MarginDashboardTab() {
             <BarChart3 className="h-4 w-4 text-white" />
           </div>
           <p className={cn("text-xl sm:text-2xl font-extrabold", pctColor(data.summary.overallMarginPct))}>
-            {data.summary.overallMarginPct.toFixed(1)}%
+            {data.Number(summary.overallMarginPct).toFixed(1)}%
           </p>
           <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mt-0.5">Margen global</p>
         </div>
@@ -221,7 +221,7 @@ export default function MarginDashboardTab() {
                     </td>
                     <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-foreground hidden md:table-cell">{fmt(p.grossProfit)}</td>
                     <td className="px-4 py-2.5 text-right">
-                      <span className={cn("font-bold", pctColor(p.marginPct))}>{p.marginPct.toFixed(1)}%</span>
+                      <span className={cn("font-bold", pctColor(p.marginPct))}>{Number(p.marginPct).toFixed(1)}%</span>
                     </td>
                   </tr>
                 ))}
@@ -244,7 +244,7 @@ export default function MarginDashboardTab() {
               <div className="flex items-center justify-between mb-2">
                 <CardTitle className="font-semibold text-[var(--text-primary)] dark:text-foreground">{cat.category}</CardTitle>
                 <span className={cn("font-bold text-sm", pctColor(cat.marginPct))}>
-                  {cat.marginPct.toFixed(1)}%
+                  {Number(cat.marginPct).toFixed(1)}%
                 </span>
               </div>
               <MarginBar value={cat.marginPct} />
@@ -286,7 +286,7 @@ export default function MarginDashboardTab() {
                     <MarginBar value={p.marginPct} />
                   </div>
                   <span className={cn("text-sm font-bold shrink-0", pctColor(p.marginPct))}>
-                    {p.marginPct.toFixed(1)}%
+                    {Number(p.marginPct).toFixed(1)}%
                   </span>
                 </div>
               ))}
@@ -312,7 +312,7 @@ export default function MarginDashboardTab() {
                     <MarginBar value={p.marginPct} />
                   </div>
                   <span className={cn("text-sm font-bold shrink-0", pctColor(p.marginPct))}>
-                    {p.marginPct.toFixed(1)}%
+                    {Number(p.marginPct).toFixed(1)}%
                   </span>
                 </div>
               ))}
@@ -343,7 +343,7 @@ export default function MarginDashboardTab() {
                 className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-card border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold"
               >
                 {p.name}
-                <span className="font-extrabold">{p.marginPct.toFixed(0)}%</span>
+                <span className="font-extrabold">{Number(p.marginPct).toFixed(0)}%</span>
               </span>
             ))}
             {belowThreshold.length > 8 && (

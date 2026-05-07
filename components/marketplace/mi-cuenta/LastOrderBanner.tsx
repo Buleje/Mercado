@@ -60,7 +60,7 @@ export function LastOrderBanner() {
           {preview}
         </p>
         <p className="mt-0.5 text-xs text-[var(--text-tertiary)] tabular-nums">
-          S/ {last.total.toFixed(2)}
+          S/ {Number(last.total).toFixed(2)}
         </p>
       </div>
 

@@ -471,7 +471,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
               ))}
             </div>
             <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
-              {product.rating.toFixed(1)}
+              {Number(product.rating).toFixed(1)}
               {product.reviewCount != null && <span className="ml-0.5">({product.reviewCount})</span>}
             </span>
           </div>

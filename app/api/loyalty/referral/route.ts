@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { processReferral, ensureReferralCode } from "@/lib/loyalty/referral";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -23,6 +24,7 @@ const GetCodeSchema = z.object({
  * The tenantId comes from the x-tenant-id header (set by middleware).
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "loyalty-referral"); if (_rl) return _rl;
   const tenantId = req.headers.get("x-tenant-id");
   if (!tenantId) {
     return NextResponse.json({ error: "Tenant no identificado" }, { status: 400 });

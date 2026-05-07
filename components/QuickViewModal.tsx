@@ -13,6 +13,7 @@ import { useFavorites } from "@/contexts/favorites-context";
 import { cn } from "@/lib/utils";
 import { useCachedData } from "@/hooks/use-cached-data";
 import type { Product } from "@/data/products";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type LiveProduct = Product & { stock?: number; stockMin?: number };
 
@@ -49,7 +50,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
     try {
       const res = await fetch("/api/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           id: `rv-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           name: formName.trim(),
@@ -210,7 +211,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                 {staticDesc && <p className="mt-2 text-sm text-muted leading-relaxed line-clamp-2">{staticDesc}</p>}
               </div>
               <div className="text-right shrink-0">
-                <span className="text-2xl sm:text-3xl font-extrabold text-primary">S/{product.price.toFixed(2)}</span>
+                <span className="text-2xl sm:text-3xl font-extrabold text-primary">S/{Number(product.price).toFixed(2)}</span>
                 <span className="block text-sm text-muted">por {product.unit}</span>
               </div>
             </div>
@@ -283,7 +284,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                   )}
                   <div className="bg-surface dark:bg-surface rounded-xl p-3 text-center">
                     <p className="text-xs text-muted mb-1">Precio</p>
-                    <p className="font-bold text-primary text-sm">S/{product.price.toFixed(2)}/{product.unit}</p>
+                    <p className="font-bold text-primary text-sm">S/{Number(product.price).toFixed(2)}/{product.unit}</p>
                   </div>
                 </div>
 
@@ -415,7 +416,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                       <div className="p-3">
                         <p className="text-sm font-semibold text-foreground line-clamp-1">{cp.name}</p>
                         <div className="flex items-center justify-between mt-1.5">
-                          <span className="font-extrabold text-primary text-sm">S/{cp.price.toFixed(2)}</span>
+                          <span className="font-extrabold text-primary text-sm">S/{Number(cp.price).toFixed(2)}</span>
                           <button
                             onClick={() => { addItem({ ...cp, category: "", unit: cp.unit } as LiveProduct); showToast(cp.name, cp.image ?? ""); }}
                             className="h-7 w-7 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all"
@@ -447,7 +448,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                       <div className="p-3">
                         <p className="text-sm font-semibold text-foreground line-clamp-1">{rp.name}</p>
                         <div className="flex items-center justify-between mt-1.5">
-                          <span className="font-extrabold text-primary text-sm">S/{rp.price.toFixed(2)}</span>
+                          <span className="font-extrabold text-primary text-sm">S/{Number(rp.price).toFixed(2)}</span>
                           <button
                             onClick={() => { addItem(rp); showToast(rp.name, rp.image); }}
                             className="h-7 w-7 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all"

@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
   CheckCircle2,
@@ -292,7 +293,7 @@ export default function HealthFillAllModal({
         const r = await fetch("/api/superadmin/stores/health-field", {
           method: "PATCH",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             tenantId,
             checkId: p.checkId,

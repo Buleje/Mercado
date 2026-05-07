@@ -218,7 +218,7 @@ export default function BreakEvenDashboard() {
                           : "text-[var(--data-error-500)]",
                     )}
                   >
-                    {stats.progress.toFixed(0)}%
+                    {Number(stats.progress).toFixed(0)}%
                   </p>
                   <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-1">
                     {stats.reached ? "Punto alcanzado" : "Hacia la meta"}

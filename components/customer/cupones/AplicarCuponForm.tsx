@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Loader2, CheckCircle2, AlertCircle } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Status =
   | { kind: "idle" }
@@ -22,7 +23,7 @@ export default function AplicarCuponForm() {
     try {
       const res = await fetch("/api/cupones/apply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ code: cleanCode }),
       });
       const data = await res.json();

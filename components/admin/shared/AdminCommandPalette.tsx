@@ -116,7 +116,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
           setDynProducts(products.map(p => ({
             id: `product-${p.id}`,
             label: p.name,
-            subtitle: `S/ ${p.price.toFixed(2)}${p.category ? ` · ${p.category}` : ""}`,
+            subtitle: `S/ ${Number(p.price).toFixed(2)}${p.category ? ` · ${p.category}` : ""}`,
             category: "Producto",
             iconComponent: Package,
             onSelect: () => {

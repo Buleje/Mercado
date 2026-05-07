@@ -5,6 +5,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from 'react';
 import Image from "next/image";
 import dynamic from 'next/dynamic';
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const BarcodeScannerDynamic = dynamic(() => import('./BarcodeScanner'), { ssr: false });
 
@@ -63,7 +64,7 @@ export default function ConteoFisicoWizard() {
     try {
       const res = await fetch('/api/inventory/conteo', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ tipo, ...(tipo === 'categoria' ? { categoria } : {}) }),
       });
       const data = await res.json();
@@ -114,7 +115,7 @@ export default function ConteoFisicoWizard() {
     try {
       const res = await fetch(`/api/inventory/conteo/${conteo.id}/items`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ itemId: item.id, stockContado }),
       });
       if (!res.ok) throw new Error('Error al guardar');

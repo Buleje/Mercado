@@ -193,7 +193,7 @@ export default function RecentlyViewed() {
                   <div className="p-2">
                     <h3 className="text-xs font-medium text-foreground line-clamp-2 mb-1.5">{product.name}</h3>
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-sm font-extrabold text-primary">S/{product.price.toFixed(2)}</span>
+                      <span className="text-sm font-extrabold text-primary">S/{Number(product.price).toFixed(2)}</span>
                       {(() => { const qty = cartItems.find(i => i.id === product.id)?.quantity ?? 0; return qty > 0 ? (
                         <div className="flex items-center gap-0.5 bg-primary rounded-full px-1 py-1 shrink-0">
                           <button onClick={() => updateQty(product.id, qty - 1)} className="h-7 w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Disminuir">

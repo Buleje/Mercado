@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { ChatThreadsDB, type ThreadStatus } from "@/lib/db/chat.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const StatusSchema = z.enum(["open", "closed", "archived", "blocked"]);
 
@@ -58,6 +59,7 @@ export async function GET(req: NextRequest) {
  * Cerrar un hilo. El admin puede cerrarlo con una razón opcional.
  */
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-chat-threads"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

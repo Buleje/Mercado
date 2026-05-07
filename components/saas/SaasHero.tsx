@@ -163,7 +163,7 @@ const TabPOS = memo(function TabPOS() {
           {PRODUCTOS.map((p) => (
             <button key={p.nombre} type="button" onClick={() => agregar(p)} className="text-left rounded-xl p-2 border transition-all duration-150 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" style={{ background: "rgba(15,118,110,0.08)", borderColor: "rgba(15,118,110,0.2)", minHeight: "44px" }}>
               <p className="text-xs font-semibold text-gray-200 leading-tight">{p.nombre}</p>
-              <p className="text-xs font-mono" style={{ color: "#2dd4bf" }}>S/ {p.precio.toFixed(2)}</p>
+              <p className="text-xs font-mono" style={{ color: "#2dd4bf" }}>S/ {Number(p.precio).toFixed(2)}</p>
             </button>
           ))}
         </div>

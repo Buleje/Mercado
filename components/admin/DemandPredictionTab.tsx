@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Brain, Loader2, TrendingUp, ShoppingCart, Calendar, AlertTriangle, Package, ClipboardList } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import type { Product, Sale } from "@/types/erp";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Prediction = { prediction: { productId: number; productName: string; estimatedDemand: number; confidence: string }[]; peakDays: string[]; purchaseSuggestions: string[]; summary: string };
 
@@ -99,7 +100,7 @@ export default function DemandPredictionTab() {
 
       const res = await fetch("/api/purchases", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           supplierId: "",
           items: [{
@@ -144,7 +145,7 @@ export default function DemandPredictionTab() {
   const analyze = async () => {
     setLoading(true); setError("");
     try {
-      const res = await fetch("/api/demand-prediction", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ days: Number(period) }) });
+      const res = await fetch("/api/demand-prediction", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ days: Number(period) }) });
       if (!res.ok) throw new Error("Error al analizar");
       setPrediction(await res.json());
     } catch { setError("No se pudo generar la predicción. Verifica la configuración de IA."); }
@@ -232,7 +233,7 @@ export default function DemandPredictionTab() {
                     </p>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-[var(--text-secondary)] dark:text-muted">
                       <span>Stock: <strong>{alert.product.stock}</strong> {alert.product.unit}</span>
-                      <span>Promedio diario: <strong>{alert.dailyAvg.toFixed(1)}</strong></span>
+                      <span>Promedio diario: <strong>{Number(alert.dailyAvg).toFixed(1)}</strong></span>
                       <span className={`font-extrabold ${
                         isUrgent ? "text-[var(--data-error-500)]" : isWarning ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]"
                       }`}>

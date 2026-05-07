@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod/v4";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateSchema = z.object({
   subject: z.string().min(3).max(200),
@@ -55,6 +56,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "support-tickets"); if (_rl) return _rl;
   // 1. Auth
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;

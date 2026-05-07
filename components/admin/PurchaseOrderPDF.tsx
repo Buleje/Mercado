@@ -30,7 +30,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
       <tr style="background:${i % 2 === 0 ? "#f9fafb" : "#ffffff"}">
         <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#111827">${item.name}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:center;color:#374151">${item.quantity} ${item.unit}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;color:#374151">S/${item.unitCost.toFixed(2)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;color:#374151">S/${Number(item.unitCost).toFixed(2)}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;font-weight:600;color:#111827">S/${(item.quantity * item.unitCost).toFixed(2)}</td>
       </tr>`
     )

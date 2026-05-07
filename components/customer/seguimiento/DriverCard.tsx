@@ -85,7 +85,7 @@ export function DriverCard({ driver, hidePhone = false, className }: Props) {
           <div className="flex items-center gap-3 mt-1 text-[length:var(--ts-2xs)] text-muted">
             <span className="inline-flex items-center gap-1 tabular-nums">
               <Star className="h-3 w-3 text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" />
-              <strong className="text-foreground">{driver.rating.toFixed(1)}</strong>
+              <strong className="text-foreground">{Number(driver.rating).toFixed(1)}</strong>
               <span>de {driver.totalDeliveries} entregas</span>
             </span>
           </div>

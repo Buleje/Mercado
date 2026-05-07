@@ -475,7 +475,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                     <div key={`${d.type}-${d.value}`} className="flex items-center justify-between bg-gray-50 dark:bg-surface rounded-lg px-3 py-1.5 text-xs">
                       <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted">
                         {d.type === "billete" ? <Banknote className="h-3 w-3" /> : <Coins className="h-3 w-3" />}
-                        S/ {d.value < 1 ? d.value.toFixed(2) : d.value}
+                        S/ {d.value < 1 ? Number(d.value).toFixed(2) : d.value}
                       </span>
                       <span className="font-bold text-[var(--text-primary)] dark:text-foreground">×{d.count} = {fmt(d.value * d.count)}</span>
                     </div>

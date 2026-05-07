@@ -191,7 +191,7 @@ export function OrdersDetailPanel({
               Total
             </p>
             <p className="text-xl font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
-              S/{order.total.toFixed(2)}
+              S/{Number(order.total).toFixed(2)}
             </p>
             <button
               type="button"
@@ -320,7 +320,7 @@ export function OrdersDetailPanel({
                     Total a cobrar
                   </span>
                   <span className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-                    S/{order.total.toFixed(2)}
+                    S/{Number(order.total).toFixed(2)}
                   </span>
                 </div>
               </div>

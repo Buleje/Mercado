@@ -4,6 +4,7 @@ import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { RotateCcw, Check, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -87,7 +88,7 @@ async function loadColorsFromDB(): Promise<ThemeColors> {
 async function saveColorsToDB(colors: ThemeColors): Promise<void> {
   await fetch("/api/settings", {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: csrfHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       storeTheme: {
         primaryColor:    colors.primary,

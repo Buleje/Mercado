@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { PageHeroesDB } from "@/lib/db/page-heroes.db";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const UpdateSchema = z.object({
   title: z.string().max(200).nullish(),
@@ -18,6 +19,7 @@ const UpdateSchema = z.object({
 
 /** PUT — update a hero */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -35,6 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 /** DELETE — remove a hero */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-page-heroes-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

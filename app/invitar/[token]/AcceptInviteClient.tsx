@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, CheckCircle2, AlertTriangle, UserPlus } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface Props {
   token: string;
@@ -67,7 +68,7 @@ export default function AcceptInviteClient({ token }: Props) {
     try {
       const res = await fetch(`/api/invitations/${token}/accept`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ username, password }),
       });
       const data = await res.json();

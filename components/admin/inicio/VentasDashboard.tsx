@@ -285,7 +285,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Ventas Netas" value={fmt(data.ventasNetas)} icon={DollarSign} delta={data.dVentas} sparkline={data.sparkVentas.length >= 2 ? { data: data.sparkVentas } : undefined} />
         <StatCard label="Utilidad Bruta" value={fmt(data.utilidadBruta)} icon={TrendingUp} delta={data.dUtilidad} sparkline={data.sparkUtilidad.length >= 2 ? { data: data.sparkUtilidad } : undefined} />
-        <StatCard label="Margen" value={`${data.margen.toFixed(1)}%`} icon={Percent} delta={data.dMargen} emphasis={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "error"} />
+        <StatCard label="Margen" value={`${Number(data.margen).toFixed(1)}%`} icon={Percent} delta={data.dMargen} emphasis={data.margen >= 25 ? "success" : data.margen >= 15 ? "warning" : "error"} />
         <StatCard label="Tickets" value={String(data.tickets)} icon={Receipt} delta={data.dTickets} sparkline={data.sparkTickets.length >= 2 ? { data: data.sparkTickets } : undefined} />
         <StatCard label="Ticket Prom." value={fmt(data.ticketPromedio)} icon={ShoppingCart} delta={data.dTicketProm} />
         <StatCard label="Cancelados" value={String(data.cancelados)} icon={AlertTriangle} delta={data.dCancelados} emphasis={data.cancelados > 0 ? "error" : "neutral"} />

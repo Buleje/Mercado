@@ -82,6 +82,7 @@ const OnboardingSchema = z.object({
 
 // ─── Handler principal ───────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "onboarding"); if (_rl) return _rl;
   const ip = getClientIp(req);
   const requestId = req.headers.get("x-request-id") ?? undefined;
 

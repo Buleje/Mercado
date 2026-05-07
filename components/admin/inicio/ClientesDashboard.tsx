@@ -302,7 +302,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
         <StatCard label="Activos" value={String(data.clientesActivos)} icon={UserCheck} delta={data.dActivos} />
         <StatCard label="Nuevos" value={String(data.nuevos)} icon={UserPlus} delta={data.dNuevos} />
         <StatCard label="Recurrentes" value={String(data.recurrentes)} icon={Heart} />
-        <StatCard label="Rating Prom." value={data.ratingPromedio.toFixed(1)} icon={Star} emphasis={data.ratingPromedio >= 4 ? "success" : data.ratingPromedio >= 3 ? "warning" : "error"} />
+        <StatCard label="Rating Prom." value={Number(data.ratingPromedio).toFixed(1)} icon={Star} emphasis={data.ratingPromedio >= 4 ? "success" : data.ratingPromedio >= 3 ? "warning" : "error"} />
         <StatCard label="Reseñas" value={String(data.totalResenas)} icon={Crown} />
       </div>
 

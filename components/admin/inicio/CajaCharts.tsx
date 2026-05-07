@@ -304,7 +304,7 @@ export default function CajaCharts({ data }: { data: CajaData }) {
             { label: "Utilidad neta", value: fmtS(data.utilidadNeta), tone: data.utilidadNeta >= 0 ? "success" : "warning" },
             {
               label: "Margen neto",
-              value: `${data.margenNeto.toFixed(1)}%`,
+              value: `${Number(data.margenNeto).toFixed(1)}%`,
               tone: data.margenNeto >= 15 ? "success" : data.margenNeto >= 5 ? "primary" : "warning",
             },
             { label: "Tickets", value: String(data.ticketsTotal), tone: "neutral" },

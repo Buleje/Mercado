@@ -138,7 +138,7 @@ export function OrdersPrintPreview({
                   <div className="bg-gray-100 rounded-lg p-3 mb-4">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-extrabold text-[var(--text-primary)]">TOTAL</span>
-                      <span className="text-2xl font-extrabold text-primary">S/{order.total.toFixed(2)}</span>
+                      <span className="text-2xl font-extrabold text-primary">S/{Number(order.total).toFixed(2)}</span>
                     </div>
                   </div>
 

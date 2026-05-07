@@ -3,6 +3,7 @@
 import { PageTitle } from "@buleje/design-system";
 import { useEffect } from "react";
 import { AlertTriangle } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export default function AdminError({
   error,
@@ -16,7 +17,7 @@ export default function AdminError({
     // Uses public log-error endpoint — health require auth which falla en error boundary.
     fetch("/api/admin/log-error", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         error: error.message,
         digest: error.digest,

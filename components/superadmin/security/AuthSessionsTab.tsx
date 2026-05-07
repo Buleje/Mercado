@@ -15,6 +15,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import {
   Lock,
@@ -140,7 +141,7 @@ export function AuthSessionsTab() {
     try {
       const res = await fetch("/api/superadmin/security/sessions/revoke", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
         body: JSON.stringify({ all: true }),
       });

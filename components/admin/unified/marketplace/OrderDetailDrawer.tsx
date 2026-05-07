@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import dynamic from "next/dynamic";
 import {
   X, ShoppingCart, User, Phone, MessageSquare, MapPin, Package,
@@ -181,7 +182,7 @@ export default function OrderDetailDrawer({
         const r = await fetch("/api/admin/delivery/manual-assign", {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ orderId: orderSeed.id, partnerId }),
         });
         if (!r.ok) {
@@ -209,7 +210,7 @@ export default function OrderDetailDrawer({
       const r = await fetch(`/api/marketplace/orders/${orderSeed.id}`, {
         method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: "cancelado", cancelReason: reason }),
       });
       if (!r.ok) throw new Error("No se pudo cancelar");

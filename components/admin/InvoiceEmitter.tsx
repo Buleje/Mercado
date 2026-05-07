@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useCallback } from "react";
 import {
   Receipt, Search, Plus, X, Loader2, Send,
@@ -169,7 +170,7 @@ export default function InvoiceEmitter({
     try {
       const res = await fetch("/api/invoices", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           type: tipo,
           clientDoc: docNumero || undefined,

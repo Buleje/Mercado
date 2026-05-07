@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import Image from "next/image";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
@@ -224,13 +225,13 @@ export default function PromotionsTab() {
       if (editingId) {
         await fetch(`/api/promotions/${editingId}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(payload),
         });
       } else {
         await fetch("/api/promotions", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(payload),
         });
       }
@@ -243,7 +244,7 @@ export default function PromotionsTab() {
   const toggleActive = async (p: DbPromotion) => {
     await fetch(`/api/promotions/${p.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ active: !p.active }),
     });
     load();
@@ -358,7 +359,7 @@ export default function PromotionsTab() {
     try {
       const r = await fetch("/api/promotions/ai-suggest", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ context: aiContext }),
       });
       const data = await r.json();
@@ -398,7 +399,7 @@ export default function PromotionsTab() {
     // Create in-app notifications for all selected customers (fire-and-forget)
     fetch("/api/campaigns/notify", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ phones, title: sendPromo.name, message: sendPromo.description || msg, promoId: sendPromo.id }),
     }).catch(() => {});
 

@@ -25,6 +25,7 @@ import { X, CheckCircle2, User, MapPin, Wallet } from "@buleje/design-system/ico
 import { PrimaryButton, cn } from "@buleje/design-system";
 import { useCurrency } from "@/contexts/currency-context";
 import { useLocale } from "@/contexts/locale-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Payment = "yape" | "plin" | "cash";
 
@@ -109,7 +110,7 @@ export default function GuestBuyFormModal({
     try {
       const res = await fetch("/api/guest/orders/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           name,
           phone,

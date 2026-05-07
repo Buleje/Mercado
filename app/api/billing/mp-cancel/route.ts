@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { cancelMPSubscription } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/mp-cancel
@@ -16,6 +17,7 @@ import { reportCriticalError } from "@/lib/sentry-alerts";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "billing-mp-cancel"); if (_rl) return _rl;
   // ── Auth ─────────────────────────────────────────────────
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

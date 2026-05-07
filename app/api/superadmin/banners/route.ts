@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const BANNERS_PATH = join(process.cwd(), "lib", "data", "promo-banners.json");
 
@@ -158,6 +159,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-banners"); if (_rl) return _rl;
   if (!(await requirePlatformSession(req))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

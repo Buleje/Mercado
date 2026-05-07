@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/admin/lives/[id]/start — transición scheduled → live.
@@ -10,6 +11,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-lives-X-start"); if (_rl) return _rl;
   const auth = await requireAdmin(req, [
     "admin",
     "tienda_owner",

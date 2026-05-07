@@ -449,7 +449,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
         />
         <StatCard
           label="Comisión del período"
-          value={`S/ ${data.myCommission.toFixed(2)}`}
+          value={`S/ ${Number(data.myCommission).toFixed(2)}`}
           icon={TrendingUp}
           emphasis={data.myCommission > 0 ? "warning" : "neutral"}
         />
@@ -606,7 +606,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
             max={100}
             size={210}
             strokeWidth={14}
-            centerLabel={`${data.conversionRate.toFixed(1)}%`}
+            centerLabel={`${Number(data.conversionRate).toFixed(1)}%`}
             centerSubLabel="visita → pedido"
             footerText={
               data.conversionRate >= 4
@@ -632,7 +632,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
               Comisión pendiente
             </p>
             <p className="font-display text-lg sm:text-xl font-extrabold text-[var(--data-warning-500)] tabular-nums tracking-tight mt-0.5">
-              S/ {data.myCommission.toFixed(2)} <span className="text-sm font-semibold text-[var(--text-secondary)] tracking-normal">pendientes de liquidación al marketplace</span>
+              S/ {Number(data.myCommission).toFixed(2)} <span className="text-sm font-semibold text-[var(--text-secondary)] tracking-normal">pendientes de liquidación al marketplace</span>
             </p>
           </div>
           <a

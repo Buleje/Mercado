@@ -268,7 +268,7 @@ export function OrdersList({
                       {o.items.length} {o.items.length === 1 ? "producto" : "productos"}
                     </span>
                     <span className="inline-flex items-center gap-1 ml-auto sm:ml-0 font-black tabular-nums text-[var(--text-primary)] text-base">
-                      S/{o.total.toFixed(2)}
+                      S/{Number(o.total).toFixed(2)}
                     </span>
                   </div>
                 </div>

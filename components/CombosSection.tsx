@@ -181,7 +181,7 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
               <span className="text-foreground/70 truncate flex-1 mr-2">
                 {categories.find(c => c.id === p.category)?.emoji} {p.name}
               </span>
-              <span className="text-muted line-through shrink-0">S/{p.price.toFixed(2)}</span>
+              <span className="text-muted line-through shrink-0">S/{Number(p.price).toFixed(2)}</span>
             </div>
           ))}
         </div>
@@ -190,8 +190,8 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
         <div className="mt-auto">
           <div className="flex items-end justify-between gap-2">
             <div>
-              <span className="block text-xs text-muted line-through">S/{combo.originalTotal.toFixed(2)}</span>
-              <span className="text-xl font-extrabold text-primary">S/{combo.comboPrice.toFixed(2)}</span>
+              <span className="block text-xs text-muted line-through">S/{Number(combo.originalTotal).toFixed(2)}</span>
+              <span className="text-xl font-extrabold text-primary">S/{Number(combo.comboPrice).toFixed(2)}</span>
               <span className="block text-[length:var(--ts-2xs)] text-[var(--data-success-600)] font-semibold">
                 Ahorras S/{(combo.originalTotal - combo.comboPrice).toFixed(2)}
               </span>

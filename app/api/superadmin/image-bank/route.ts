@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { ImageBankDB } from "@/lib/db/image-bank.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/superadmin/image-bank
@@ -30,6 +31,7 @@ const CreateCategorySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-image-bank"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
   const body = await req.json().catch((err) => { logger.warn("[image-bank POST] body parse fail", { err: String(err) }); return null; });

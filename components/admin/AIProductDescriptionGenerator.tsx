@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sparkles, Loader2, Check, RefreshCw, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ export default function AIProductDescriptionGenerator({
     try {
       const res = await fetch("/api/ai-assistant", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ message: prompt }),
       });
 

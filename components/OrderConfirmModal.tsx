@@ -170,7 +170,7 @@ export default function OrderConfirmModal() {
                     </div>
                     <div className="flex items-center justify-between px-3 py-2 bg-primary/5 border-t border-gray-100 dark:border-card-border">
                       <p className="text-xs font-bold text-foreground">Total</p>
-                      <p className="text-sm font-extrabold text-primary">S/{lastOrder.total.toFixed(2)}</p>
+                      <p className="text-sm font-extrabold text-primary">S/{Number(lastOrder.total).toFixed(2)}</p>
                     </div>
                   </div>
                 )}

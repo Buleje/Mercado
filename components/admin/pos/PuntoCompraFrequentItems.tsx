@@ -111,7 +111,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
               {item.name}
             </p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-              ~{item.avgQuantity} uds · S/{item.avgCost.toFixed(2)} c/u
+              ~{item.avgQuantity} uds · S/{Number(item.avgCost).toFixed(2)} c/u
             </p>
           </div>
 

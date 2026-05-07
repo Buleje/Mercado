@@ -428,7 +428,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                           onClick={e => {
                             e.stopPropagation();
                             const nombre = f.customerName || f.customerId;
-                            const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de S/${f.saldo.toFixed(2)} en Buleje. Cuando puedas pasa a regularizarlo!`;
+                            const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje. Cuando puedas pasa a regularizarlo!`;
                             const cleanPhone = f.customerId.replace(/\D/g, "");
                             window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
                           }}
@@ -580,7 +580,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                     <button
                       onClick={() => {
                         const cleanPhone = f.customerId.replace(/\D/g, "");
-                        const msg = `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${f.saldo.toFixed(2)} en Buleje.`;
+                        const msg = `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`;
                         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
                       }}
                       // WhatsApp brand color (#25D366) — excepcion documentada (no token equivalent)

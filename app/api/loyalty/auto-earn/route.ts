@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { autoEarnLoyaltyPoints } from "@/lib/loyalty/auto-earn";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId, ApiError } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Schema de validación ─────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ const AutoEarnBodySchema = z.object({
  *   Cuando la compra no califica para puntos (monto < mínimo o ya acreditado).
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "loyalty-auto-earn"); if (_rl) return _rl;
   const traceId = newTraceId();
 
   try {

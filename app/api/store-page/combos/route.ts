@@ -5,6 +5,7 @@
  * Por ahora devuelve array vacio para evitar 404 en AdminStorePageTab.
  */
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function GET() {
   return NextResponse.json([], {
@@ -13,6 +14,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const _rl = await applyRateLimit(req, "STRICT", "store-page-combos"); if (_rl) return _rl;
   try {
     const body = await req.json().catch(() => ({}));
     // stub: acusa recibo, no persiste

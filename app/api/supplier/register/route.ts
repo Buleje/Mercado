@@ -46,6 +46,7 @@ const RegisterSchema = z.object({
  * supplier via email/WhatsApp.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "supplier-register"); if (_rl) return _rl;
   const traceId = newTraceId();
   try {
     // ── Rate limit (strict — 3 attempts/hour/IP) ───────────────────────

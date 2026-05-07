@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Filter, Save, Trash2, Play, Plus, X, Copy, Check, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 /* ── types ──────────────────────────────────────────────────── */
 type FilterCondition = {
@@ -69,7 +70,7 @@ export default function SavedFiltersTab() {
     if (!newName.trim() || !newConditions.some(c => c.field && c.value)) return;
     const res = await fetch("/api/saved-filters", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         name: newName.trim(),
         description: newDesc.trim(),
@@ -99,7 +100,7 @@ export default function SavedFiltersTab() {
     if (!f) return;
     setFilters(prev => prev.map(x => x.id === id ? { ...x, isDefault: !x.isDefault } : x));
     try {
-      await fetch(`/api/saved-filters?id=${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isDefault: !f.isDefault }) });
+      await fetch(`/api/saved-filters?id=${id}`, { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ isDefault: !f.isDefault }) });
     } catch { toast.error("Error al actualizar el filtro"); }
   };
 
@@ -107,7 +108,7 @@ export default function SavedFiltersTab() {
     try {
       const res = await fetch("/api/saved-filters", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           name: f.name + " (copia)",
           description: f.description,

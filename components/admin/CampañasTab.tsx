@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   Megaphone, Plus, Send, Clock, CheckCircle2, XCircle,
@@ -310,7 +311,7 @@ export default function CampañasTab() {
     try {
       const res = await fetch("/api/campaigns", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(data),
       });
       if (res.ok) {
@@ -340,7 +341,7 @@ export default function CampañasTab() {
       try {
         await fetch("/api/campaigns/notify", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             phones: [],
             title: campaign.name,
@@ -358,7 +359,7 @@ export default function CampañasTab() {
     try {
       const res = await fetch(`/api/campaigns?id=${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: "completada", sentAt: now, delivered, opened }),
       });
       if (res.ok) {

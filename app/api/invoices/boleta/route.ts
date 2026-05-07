@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { emitirBoleta } from "@/lib/integrations/sunat";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/invoices/boleta
@@ -26,6 +27,7 @@ const BoletaSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "invoices-boleta"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

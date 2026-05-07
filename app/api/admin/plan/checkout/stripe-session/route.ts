@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { PLANS, type PlanTier } from "@/lib/billing/plan-tiers";
 import { tierToPlanId } from "@/lib/billing/plan-mapping";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/admin/plan/checkout/stripe-session
@@ -30,6 +31,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-plan-checkout-stripe-session"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

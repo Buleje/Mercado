@@ -79,7 +79,7 @@ function buildColumns(
     render: (row) => (
       <span className="inline-flex items-center gap-1 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
         <Star className="w-3.5 h-3.5 fill-current" />
-        {row.rating.toFixed(1)}
+        {Number(row.rating).toFixed(1)}
         <span className="text-gray-400 font-normal text-xs">({row.reviewCount})</span>
       </span>
     ),

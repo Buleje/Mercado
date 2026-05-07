@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/products/[id]/notify-restock
@@ -11,6 +12,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const _rl = await applyRateLimit(request, "STRICT", "products-X-notify-restock"); if (_rl) return _rl;
   try {
     const { id } = await params;
     const body = await request.json();

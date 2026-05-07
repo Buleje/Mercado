@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Bot,
   BotMessageSquare,
@@ -150,7 +151,7 @@ export function BulejeAssistant({ product, defaultOpen = false }: BulejeAssistan
       try {
         const res = await fetch("/api/assistant/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             productId: product.id,
             message: trimmed,

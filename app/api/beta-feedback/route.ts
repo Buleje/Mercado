@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readData, writeData } from "@/lib/file-store";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   rating: z.number().int().min(1).max(5),
@@ -10,6 +11,7 @@ const schema = z.object({
 type FeedbackEntry = { rating: number; comment?: string; createdAt: string };
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "beta-feedback"); if (_rl) return _rl;
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);

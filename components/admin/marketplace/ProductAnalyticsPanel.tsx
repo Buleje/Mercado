@@ -265,7 +265,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
                       <tr key={tp.id}>
                         <td className="py-2 text-[var(--text-primary)]">{tp.name}</td>
                         <td className="py-2 text-right text-[var(--text-secondary)]">{tp.views.toLocaleString()}</td>
-                        <td className="py-2 text-right text-[var(--text-secondary)]">S/ {tp.revenue.toFixed(2)}</td>
+                        <td className="py-2 text-right text-[var(--text-secondary)]">S/ {Number(tp.revenue).toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>

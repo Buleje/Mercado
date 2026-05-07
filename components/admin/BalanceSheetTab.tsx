@@ -139,8 +139,8 @@ export default function BalanceSheetTab() {
       {/* Ratios KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Liquidez corriente", value: totals.liquidezCorriente.toFixed(2), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Prueba ácida", value: totals.pruebaAcida.toFixed(2), color: "text-[var(--data-info-500)]", bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
+          { label: "Liquidez corriente", value: Number(totals.liquidezCorriente).toFixed(2), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Prueba ácida", value: Number(totals.pruebaAcida).toFixed(2), color: "text-[var(--data-info-500)]", bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/30" },
           { label: "Endeudamiento", value: pct(totals.endeudamiento), color: totals.endeudamiento > 60 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]", bg: totals.endeudamiento > 60 ? "bg-[var(--data-error-50)] dark:bg-red-950/30" : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Capital de trabajo", value: fmt(totals.capitalTrabajo), color: totals.capitalTrabajo >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "ROE", value: pct(totals.roe), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },

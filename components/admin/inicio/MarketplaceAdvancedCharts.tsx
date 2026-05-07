@@ -370,7 +370,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
           title="Distribución de reseñas"
           kpis={[
             { label: "Total reseñas", value: String(ratings.total), tone: "primary" },
-            { label: "Promedio", value: ratings.promedio.toFixed(1), tone: "success" },
+            { label: "Promedio", value: Number(ratings.promedio).toFixed(1), tone: "success" },
             { label: "4★ y 5★", value: String(ratings.buenos), tone: "success" },
             {
               label: "1★ y 2★",

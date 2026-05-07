@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /** GET /api/billing/webhook-queue — return all queue items for the admin UI */
 export async function GET(req: NextRequest) {
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
  * y bloquear su activación de plan ya pagado.
  */
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "billing-webhook-queue"); if (_rl) return _rl;
   const { requirePlatformAPI } = await import("@/lib/superadmin-auth");
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;

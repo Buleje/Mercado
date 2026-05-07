@@ -7,6 +7,7 @@ import {
   useMemo,
   startTransition,
 } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -675,7 +676,7 @@ export default function PuntosPage() {
       try {
         const res = await fetch("/api/loyalty/redeem", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           credentials: "include",
           body: JSON.stringify({ phone: clean, rewardId: reward.id }),
         });

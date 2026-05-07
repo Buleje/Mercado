@@ -98,7 +98,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Kpi label="Total Clientes" value={String(st.totalCustomers)} icon={Users} accent="text-[var(--text-secondary)]" />
             <Kpi label="Atendidos" value={String(st.clientesAtendidos)} icon={Users} accent="text-[var(--text-secondary)]" />
-            <Kpi label="Rating Prom." value={`${st.avgRating.toFixed(1)}`} icon={Star} accent="text-[var(--data-warning-500)]" />
+            <Kpi label="Rating Prom." value={`${Number(st.avgRating).toFixed(1)}`} icon={Star} accent="text-[var(--data-warning-500)]" />
             <Kpi label="Reseñas" value={String(reviews.length)} icon={Star} accent="text-amber-400" />
           </div>
 

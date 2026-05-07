@@ -16,7 +16,7 @@ export default function OCPDFExport({ oc, supplier }: OCPDFExportProps) {
 
   const handleWhatsApp = () => {
     const items = oc.items
-      .map((i, idx) => `${idx + 1}. ${i.name} x${i.quantity} ${i.unit} @ S/${i.unitCost.toFixed(2)} = S/${(i.quantity * i.unitCost).toFixed(2)}`)
+      .map((i, idx) => `${idx + 1}. ${i.name} x${i.quantity} ${i.unit} @ S/${Number(i.unitCost).toFixed(2)} = S/${(i.quantity * i.unitCost).toFixed(2)}`)
       .join("\n");
 
     const subtotal = oc.items.reduce((s, i) => s + i.quantity * i.unitCost, 0);

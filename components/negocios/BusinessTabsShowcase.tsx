@@ -84,7 +84,7 @@ function POSMockup() {
               <p className="text-[length:var(--ts-2xs)] text-gray-500">{p.qty} vendidos</p>
             </div>
             <span className="text-xs font-extrabold text-[var(--data-success-600)] tabular-nums">
-              S/{p.price.toFixed(2)}
+              S/{Number(p.price).toFixed(2)}
             </span>
           </div>
         ))}

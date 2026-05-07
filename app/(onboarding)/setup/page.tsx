@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Schemas Zod (safeParse siempre) ──────────────────────────────────────────
 
@@ -320,7 +321,7 @@ export default function SetupPage() {
     try {
       const res = await fetch("/api/settings", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           businessAddress: storeConfig.address,
           businessPhone: storeConfig.phone,
@@ -348,7 +349,7 @@ export default function SetupPage() {
     try {
       const res = await fetch("/api/v1/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           name: firstProduct.name,
           price: parseFloat(firstProduct.price),
@@ -380,7 +381,7 @@ export default function SetupPage() {
     try {
       const res = await fetch("/api/admin-users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           name: cashier.name,
           username: cashier.username,
@@ -412,7 +413,7 @@ export default function SetupPage() {
     try {
       await fetch("/api/onboarding/complete", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ preferences: {} }),
       });
     } catch {

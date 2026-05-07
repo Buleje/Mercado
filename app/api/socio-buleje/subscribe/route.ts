@@ -4,6 +4,7 @@ import { SubscribeBodySchema } from "@/lib/validators/socio-buleje";
 import { SocioBulejeDB } from "@/lib/db/socio-buleje.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/socio-buleje/subscribe
@@ -16,6 +17,7 @@ import { logger } from "@/lib/logger";
  *   - Reactivación (ex-socio): status `active` + cycle `pending` (S/19|189).
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "socio-buleje-subscribe"); if (_rl) return _rl;
   const traceId = newTraceId();
   try {
     const body = await req.json().catch(() => ({}));

@@ -133,7 +133,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-xs text-gray-400 capitalize">{store.category}</span>
                     <span className="text-xs text-[var(--data-warning-500)] flex items-center gap-0.5">
-                      <Star className="w-3 h-3 fill-current" /> {store.rating.toFixed(1)}
+                      <Star className="w-3 h-3 fill-current" /> {Number(store.rating).toFixed(1)}
                     </span>
                     <span className="text-xs text-gray-400">{store._count.products} productos</span>
                   </div>

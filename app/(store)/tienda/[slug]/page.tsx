@@ -45,17 +45,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const category = categories.find((c) => c.id === product.category);
   const productUrl = `https://www.buleje.pe/tienda/${slug}`;
-  const titleStr = `${product.name} — S/${product.price.toFixed(2)} · ${ctx.name}`;
+  const titleStr = `${product.name} — S/${Number(product.price).toFixed(2)} · ${ctx.name}`;
 
   return {
     title: ctx.isTenant ? { absolute: titleStr } : titleStr,
-    description: `Compra ${product.name} a S/${product.price.toFixed(2)} por ${product.unit}. ${category?.label ?? "Producto"} con delivery rápido. Paga con Yape o efectivo en ${ctx.name}.`,
+    description: `Compra ${product.name} a S/${Number(product.price).toFixed(2)} por ${product.unit}. ${category?.label ?? "Producto"} con delivery rápido. Paga con Yape o efectivo en ${ctx.name}.`,
     alternates: {
       canonical: productUrl,
     },
     openGraph: {
       title: titleStr,
-      description: `${product.name} a S/${product.price.toFixed(2)}/${product.unit}. ${category?.label ?? ""} con delivery rápido.`,
+      description: `${product.name} a S/${Number(product.price).toFixed(2)}/${product.unit}. ${category?.label ?? ""} con delivery rápido.`,
       url: productUrl,
       images: [{ url: product.image, width: 600, height: 600, alt: `${product.name} — compra online con delivery` }],
       type: "website",
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${product.name} — S/${product.price.toFixed(2)}`,
+      title: `${product.name} — S/${Number(product.price).toFixed(2)}`,
       description: `Compra ${product.name} con delivery.`,
       images: [product.image],
     },
@@ -135,7 +135,7 @@ async function ProductDetailContent({ params }: Props) {
             offers: {
               "@type": "Offer",
               url: `https://www.buleje.pe/tienda/${slug}`,
-              price: product.price.toFixed(2),
+              price: Number(product.price).toFixed(2),
               priceCurrency: "PEN",
               priceValidUntil: "2026-12-31",
               availability: product.badge?.toLowerCase() === "agotado"

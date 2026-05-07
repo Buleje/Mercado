@@ -51,7 +51,7 @@ export default function ReportsTab() {
         csv += `ID,Fecha,Total,Método Pago,Productos\n`;
         (sales || []).forEach((s: { id: string; createdAt: string; total: number; paymentMethod?: string; items?: { productId: number; quantity: number }[] }) => {
           const items = (s.items || []).map((i: { productId: number; quantity: number }) => `${productMap[i.productId] || i.productId} x${i.quantity}`).join("; ");
-          csv += `${s.id.slice(-8)},${new Date(s.createdAt).toLocaleDateString()},S/${s.total.toFixed(2)},${s.paymentMethod || "efectivo"},"${items}"\n`;
+          csv += `${s.id.slice(-8)},${new Date(s.createdAt).toLocaleDateString()},S/${Number(s.total).toFixed(2)},${s.paymentMethod || "efectivo"},"${items}"\n`;
         });
       } else if (type === "inventario") {
         const [products] = data;
@@ -61,7 +61,7 @@ export default function ReportsTab() {
         csv += `Total Productos,${(products || []).length}\nValor Total Inventario,"S/${totalValue.toFixed(2)}"\nProductos Stock Bajo,${lowStock.length}\n\n`;
         csv += `ID,Nombre,Categoría,Precio,Stock,Min Stock,Valor\n`;
         (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; minStock?: number }) => {
-          csv += `${p.id},"${p.name}",${p.category || ""},S/${p.price.toFixed(2)},${p.stock},${p.minStock || 5},S/${(p.price * p.stock).toFixed(2)}\n`;
+          csv += `${p.id},"${p.name}",${p.category || ""},S/${Number(p.price).toFixed(2)},${p.stock},${p.minStock || 5},S/${(p.price * p.stock).toFixed(2)}\n`;
         });
       } else if (type === "clientes") {
         const [customers] = data;
@@ -95,11 +95,11 @@ export default function ReportsTab() {
         csv = `Reporte de Horas Pico - ${now}\n\n`;
         csv += `Análisis por Hora\nHora,Cantidad Ventas,Monto Total\n`;
         hourData.forEach(h => {
-          csv += `${h.hour}:00,${h.count},S/${h.total.toFixed(2)}\n`;
+          csv += `${h.hour}:00,${h.count},S/${Number(h.total).toFixed(2)}\n`;
         });
         csv += `\nAnálisis por Día de la Semana\nDía,Cantidad Ventas,Monto Total\n`;
         dayData.forEach(d => {
-          csv += `${dayNames[d.day]},${d.count},S/${d.total.toFixed(2)}\n`;
+          csv += `${dayNames[d.day]},${d.count},S/${Number(d.total).toFixed(2)}\n`;
         });
       } else if (type === "margen") {
         const [products, sales] = data;
@@ -128,7 +128,7 @@ export default function ReportsTab() {
         csv += `Producto,Unidades Vendidas,Ingresos,Costo,Margen,% Margen\n`;
         topMargin.forEach(p => {
           const marginPct = p.revenue > 0 ? ((p.margin / p.revenue) * 100).toFixed(1) : "0.0";
-          csv += `"${p.name}",${p.units},S/${p.revenue.toFixed(2)},S/${p.cost.toFixed(2)},S/${p.margin.toFixed(2)},${marginPct}%\n`;
+          csv += `"${p.name}",${p.units},S/${Number(p.revenue).toFixed(2)},S/${Number(p.cost).toFixed(2)},S/${Number(p.margin).toFixed(2)},${marginPct}%\n`;
         });
       } else if (type === "metricas-completas") {
         // FASE 6.4: Full Business Metrics Export
@@ -208,7 +208,7 @@ export default function ReportsTab() {
           });
         });
         [...productSales.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 10).forEach(p => {
-          csv += `"${p.name}",${p.units},S/${p.revenue.toFixed(2)}\n`;
+          csv += `"${p.name}",${p.units},S/${Number(p.revenue).toFixed(2)}\n`;
         });
         csv += `\n`;
         
@@ -392,7 +392,7 @@ export default function ReportsTab() {
         html += `<table><thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Método Pago</th><th>Productos</th></tr></thead><tbody>`;
         (sales || []).forEach((s: { id: string; createdAt: string; total: number; paymentMethod?: string; items?: { productId: number; quantity: number }[] }) => {
           const items = (s.items || []).map((i: { productId: number; quantity: number }) => `${productMap[i.productId] || i.productId} x${i.quantity}`).join(", ");
-          html += `<tr><td>${s.id.slice(-8)}</td><td>${new Date(s.createdAt).toLocaleDateString()}</td><td>S/${s.total.toFixed(2)}</td><td>${s.paymentMethod || "efectivo"}</td><td>${items}</td></tr>`;
+          html += `<tr><td>${s.id.slice(-8)}</td><td>${new Date(s.createdAt).toLocaleDateString()}</td><td>S/${Number(s.total).toFixed(2)}</td><td>${s.paymentMethod || "efectivo"}</td><td>${items}</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "inventario") {
@@ -407,7 +407,7 @@ export default function ReportsTab() {
         </div>`;
         html += `<table><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Min Stock</th><th>Valor</th></tr></thead><tbody>`;
         (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; minStock?: number }) => {
-          html += `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.category || ""}</td><td>S/${p.price.toFixed(2)}</td><td>${p.stock}</td><td>${p.minStock || 5}</td><td>S/${(p.price * p.stock).toFixed(2)}</td></tr>`;
+          html += `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.category || ""}</td><td>S/${Number(p.price).toFixed(2)}</td><td>${p.stock}</td><td>${p.minStock || 5}</td><td>S/${(p.price * p.stock).toFixed(2)}</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "clientes") {
@@ -455,13 +455,13 @@ export default function ReportsTab() {
         html += `<h3 style="font-size: 16px; color: #475569; margin-top: 20px;">Análisis por Hora</h3>`;
         html += `<table><thead><tr><th>Hora</th><th>Cantidad Ventas</th><th>Monto Total</th></tr></thead><tbody>`;
         hourData.forEach(h => {
-          html += `<tr><td>${h.hour}:00</td><td>${h.count}</td><td>S/${h.total.toFixed(2)}</td></tr>`;
+          html += `<tr><td>${h.hour}:00</td><td>${h.count}</td><td>S/${Number(h.total).toFixed(2)}</td></tr>`;
         });
         html += `</tbody></table>`;
         html += `<h3 style="font-size: 16px; color: #475569; margin-top: 30px;">Análisis por Día de la Semana</h3>`;
         html += `<table><thead><tr><th>Día</th><th>Cantidad Ventas</th><th>Monto Total</th></tr></thead><tbody>`;
         dayData.forEach(d => {
-          html += `<tr><td>${dayNames[d.day]}</td><td>${d.count}</td><td>S/${d.total.toFixed(2)}</td></tr>`;
+          html += `<tr><td>${dayNames[d.day]}</td><td>${d.count}</td><td>S/${Number(d.total).toFixed(2)}</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "margen") {
@@ -491,7 +491,7 @@ export default function ReportsTab() {
         html += `<table><thead><tr><th>Producto</th><th>Unidades Vendidas</th><th>Ingresos</th><th>Costo</th><th>Margen</th><th>% Margen</th></tr></thead><tbody>`;
         topMargin.forEach(p => {
           const marginPct = p.revenue > 0 ? ((p.margin / p.revenue) * 100).toFixed(1) : "0.0";
-          html += `<tr><td>${p.name}</td><td>${p.units}</td><td>S/${p.revenue.toFixed(2)}</td><td>S/${p.cost.toFixed(2)}</td><td>S/${p.margin.toFixed(2)}</td><td>${marginPct}%</td></tr>`;
+          html += `<tr><td>${p.name}</td><td>${p.units}</td><td>S/${Number(p.revenue).toFixed(2)}</td><td>S/${Number(p.cost).toFixed(2)}</td><td>S/${Number(p.margin).toFixed(2)}</td><td>${marginPct}%</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "informe-mensual") {
@@ -560,7 +560,7 @@ export default function ReportsTab() {
         <table><thead><tr><th>#</th><th>Producto</th><th>Unidades</th><th>Ingresos</th><th>Costo</th><th>Margen</th></tr></thead><tbody>
         ${topProducts.map((p, i) => {
           const margin = p.revenue > 0 ? ((p.revenue - p.cost) / p.revenue * 100).toFixed(1) : "0.0";
-          return `<tr><td>${i + 1}</td><td>${p.name}</td><td>${p.units}</td><td>S/${p.revenue.toFixed(2)}</td><td>S/${p.cost.toFixed(2)}</td><td>${margin}%</td></tr>`;
+          return `<tr><td>${i + 1}</td><td>${p.name}</td><td>${p.units}</td><td>S/${Number(p.revenue).toFixed(2)}</td><td>S/${Number(p.cost).toFixed(2)}</td><td>${margin}%</td></tr>`;
         }).join("")}
         </tbody></table>
 

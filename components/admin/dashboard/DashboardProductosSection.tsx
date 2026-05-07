@@ -146,8 +146,8 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                         {/* Tooltip on hover */}
                         <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-[length:var(--ts-2xs)] px-2 py-1 rounded whitespace-nowrap z-10">
                           <div className="font-semibold">{p.name}</div>
-                          <div>Rev: {fmt(p.revenue)} ({p.revenuePct.toFixed(1)}%)</div>
-                          <div>Acum: {p.cumulativePct.toFixed(1)}%</div>
+                          <div>Rev: {fmt(p.revenue)} ({Number(p.revenuePct).toFixed(1)}%)</div>
+                          <div>Acum: {Number(p.cumulativePct).toFixed(1)}%</div>
                           <div className={cn("font-bold", p.abcClass === "A" ? "text-[var(--data-success-500)]" : p.abcClass === "B" ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>Clase {p.abcClass}</div>
                         </div>
                       </div>

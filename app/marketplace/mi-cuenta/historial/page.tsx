@@ -115,7 +115,7 @@ export default function HistorialPage() {
 
                   <div className="shrink-0 text-right">
                     <p className="text-sm font-extrabold text-gray-900 dark:text-white">
-                      S/{item.price.toFixed(2)}
+                      S/{Number(item.price).toFixed(2)}
                     </p>
                     <span className="mt-0.5 inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-semibold text-primary">
                       Ver

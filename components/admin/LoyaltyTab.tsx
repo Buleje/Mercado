@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Heart, Loader2, Search, Gift, Award, ArrowUpRight, NotebookPen, Save, DollarSign, Clock, Bell, Users2, Link, Copy, MessageSquare, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Customer } from "@/types/erp";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Tier = { name: string; minSpent: number; pointsMultiplier: number; color: string };
 
@@ -93,7 +94,7 @@ export default function LoyaltyTab() {
     setCreditSaving(true);
     const res = await fetch(`/api/customers/${encodeURIComponent(selected.phone)}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ creditDelta: delta }),
     });
     if (res.ok) {
@@ -109,7 +110,7 @@ export default function LoyaltyTab() {
     setNotesSaving(true);
     await fetch(`/api/customers/${encodeURIComponent(selected.phone)}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ privateNotes }),
     });
     setSelected(prev => prev ? { ...prev, privateNotes } : prev);
@@ -123,7 +124,7 @@ export default function LoyaltyTab() {
     if (pts <= 0 || pts > selected.loyaltyPoints) return;
     const res = await fetch(`/api/loyalty/${encodeURIComponent(phone)}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "redeem", points: pts }),
     });
     if (res.ok) {
@@ -168,7 +169,7 @@ export default function LoyaltyTab() {
 
     const res = await fetch(`/api/customers/${encodeURIComponent(selected.phone)}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ referralCode: code }),
     });
     if (res.ok) {

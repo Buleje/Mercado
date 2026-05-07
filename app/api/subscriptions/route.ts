@@ -6,6 +6,7 @@ import { CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { SubscriptionsDB } from "@/lib/db/subscriptions.db";
 import { ApiError, toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // `dynamic = "force-dynamic"` removido (2026-04-21) — incompatible con
 // `nextConfig.cacheComponents` (Next 16 ADR-019). El handler accede a
@@ -75,6 +76,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "subscriptions"); if (_rl) return _rl;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 

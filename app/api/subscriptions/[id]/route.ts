@@ -6,6 +6,7 @@ import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { SubscriptionsDB } from "@/lib/db/subscriptions.db";
 import { ApiError, toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 // Next 16: sin segment configs. Las routes son dynamic por default con cookies/headers.
 
 /**
@@ -78,6 +79,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "subscriptions-X"); if (_rl) return _rl;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
   const { tenantId, customerId: userId } = customer;
@@ -158,6 +160,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "subscriptions-X"); if (_rl) return _rl;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
   const { tenantId, customerId: userId } = customer;

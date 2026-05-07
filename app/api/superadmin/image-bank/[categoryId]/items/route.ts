@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { ImageBankDB } from "@/lib/db/image-bank.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/superadmin/image-bank/[categoryId]/items
@@ -28,6 +29,7 @@ const CreateItemSchema = z.object({
 });
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ categoryId: string }> }) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-image-bank-X-items"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
   const { categoryId } = await ctx.params;

@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Users, Star, DollarSign, Clock, Package,
@@ -213,7 +214,7 @@ export default function SupplierComparator() {
     try {
       const res = await fetch("/api/purchase-orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ supplierId: supplier.id, supplierName: supplier.name }),
       });
       if (!res.ok) throw new Error("No se pudo crear la OC");
@@ -314,7 +315,7 @@ export default function SupplierComparator() {
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mejor precio</p>
-              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `S/${kpis.lowestPrice.toFixed(2)}` : "—"}</p>
+              <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `S/${Number(kpis.lowestPrice).toFixed(2)}` : "—"}</p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1 truncate">{kpis.lowestPriceName}</p>
             </div>
             <RefreshCw className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
@@ -418,7 +419,7 @@ export default function SupplierComparator() {
                       <td className="px-4 py-3 text-center">
                         <div className="flex flex-col items-center gap-1">
                           <ScoreBadge score={s.score} />
-                          <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{s.score.toFixed(0)}pts</span>
+                          <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{Number(s.score).toFixed(0)}pts</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -445,7 +446,7 @@ export default function SupplierComparator() {
               <p className="text-xs font-bold text-[var(--text-primary)] truncate">{selectedSupplier.name}</p>
               <div className="flex items-center gap-2 mt-1">
                 <ScoreBadge score={selectedSupplier.score} />
-                <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{selectedSupplier.score.toFixed(1)} puntos</span>
+                <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{Number(selectedSupplier.score).toFixed(1)} puntos</span>
               </div>
             </div>
 

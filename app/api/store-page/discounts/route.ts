@@ -24,6 +24,7 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { prismaForTenant } from "@/lib/tenant";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─── Mapping helpers ─────────────────────────────────────────────────────────
 
@@ -116,6 +117,7 @@ export async function GET(req: NextRequest) {
 // ─── POST ────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "store-page-discounts"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   const blocked = await requireActiveSubscription(auth.tenantId);

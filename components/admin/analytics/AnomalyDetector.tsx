@@ -152,7 +152,7 @@ function detectAnomalies(sales: Sale[], orders: Order[]): Anomaly[] {
         anomalies.push({
           id: `velocity-${p.name}`,
           type: "Velocidad de venta",
-          what: `"${p.name}" vende ${p.rate.toFixed(1)} unid/dia (${p.units} total)`,
+          what: `"${p.name}" vende ${Number(p.rate).toFixed(1)} unid/dia (${p.units} total)`,
           when: `Ultimos ${p.daysActive} dias activos`,
           deviation: `+${dev.toFixed(1)} desv. est. sobre productos similares`,
           cause: "Producto viral, promocion activa o temporada especifica",
@@ -162,7 +162,7 @@ function detectAnomalies(sales: Sale[], orders: Order[]): Anomaly[] {
         anomalies.push({
           id: `stall-${p.name}`,
           type: "Producto estancado",
-          what: `"${p.name}" solo vende ${p.rate.toFixed(1)} unid/dia`,
+          what: `"${p.name}" solo vende ${Number(p.rate).toFixed(1)} unid/dia`,
           when: `Ultimos ${p.daysActive} dias`,
           deviation: `${dev.toFixed(1)} desv. est. bajo el promedio de productos`,
           cause: "Revisar: precio, visibilidad en catalogo, vencimiento o competencia",

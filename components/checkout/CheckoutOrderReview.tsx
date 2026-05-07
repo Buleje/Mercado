@@ -159,7 +159,7 @@ export function CheckoutOrderReview({
                     </span>
                     <span className="text-xs text-gray-400">{item.unit}</span>
                     <span className="text-xs text-gray-400">
-                      S/{item.price.toFixed(2)} c/u
+                      S/{Number(item.price).toFixed(2)} c/u
                     </span>
                     {item.note && (
                       <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] truncate">

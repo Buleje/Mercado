@@ -67,7 +67,7 @@ export function VendorRecentSales({ sales }: Props) {
             </div>
             <div className="shrink-0">
               <p className="font-bold text-sm text-primary">
-                S/ {sale.total.toFixed(2)}
+                S/ {Number(sale.total).toFixed(2)}
               </p>
             </div>
           </li>

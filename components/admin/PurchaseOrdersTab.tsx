@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
@@ -247,7 +248,7 @@ export default function PurchaseOrdersTab() {
     setSaving(true);
     const res = await fetch("/api/purchases", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         supplierId,
         supplierName: sup?.name || "",
@@ -260,7 +261,7 @@ export default function PurchaseOrdersTab() {
       const po = await res.json();
       await fetch("/api/payables", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           supplierId,
           supplierName: sup?.name || "",
@@ -283,7 +284,7 @@ export default function PurchaseOrdersTab() {
   const updateStatus = async (id: string, status: PurchaseStatus) => {
     await fetch(`/api/purchases/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ status }),
     });
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
@@ -299,13 +300,13 @@ export default function PurchaseOrdersTab() {
         if (prod) {
           await fetch(`/api/products/${item.productId}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ stock: (prod.stock ?? 0) + item.quantity, costPrice: item.unitCost }),
           });
         } else {
           await fetch("/api/products", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({
               name: item.name, category: "abarrotes", price: item.unitCost,
               costPrice: item.unitCost, unit: item.unit, stock: item.quantity, active: true,
@@ -329,7 +330,7 @@ export default function PurchaseOrdersTab() {
       const sup = suppliers.find(s => s.id === o.supplierId);
       const res = await fetch("/api/purchases", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           supplierId: o.supplierId,
           supplierName: sup?.name || o.supplierName || "",
@@ -664,11 +665,11 @@ export default function PurchaseOrdersTab() {
                     </div>
                     <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Total gastado</p>
-                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{stats.totalAmount.toFixed(2)}</p>
+                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{Number(stats.totalAmount).toFixed(2)}</p>
                     </div>
                     <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
                       <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] uppercase mb-1">Promedio</p>
-                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{stats.avgAmount.toFixed(2)}</p>
+                      <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{Number(stats.avgAmount).toFixed(2)}</p>
                     </div>
                     <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase mb-1">Última compra</p>
@@ -691,7 +692,7 @@ export default function PurchaseOrdersTab() {
                               {prod.name}
                               <span className="text-[var(--text-tertiary)] dark:text-muted text-xs">({prod.count} und)</span>
                             </span>
-                            <span className="font-semibold text-primary">S/{prod.total.toFixed(2)}</span>
+                            <span className="font-semibold text-primary">S/{Number(prod.total).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
@@ -713,7 +714,7 @@ export default function PurchaseOrdersTab() {
                               <div
                                 className="w-full bg-[var(--text-primary)] rounded-t transition-all hover:opacity-80"
                                 style={{ height: `${height}%` }}
-                                title={`${m.month}: S/${m.amount.toFixed(2)}`}
+                                title={`${m.month}: S/${Number(m.amount).toFixed(2)}`}
                               ></div>
                             </div>
                             <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">{m.month}</p>
@@ -738,7 +739,7 @@ export default function PurchaseOrdersTab() {
                             </span>
                           </div>
                           <div className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                            {order.items.length} producto{order.items.length !== 1 ? "s" : ""} · <span className="font-bold text-primary">S/{order.total.toFixed(2)}</span>
+                            {order.items.length} producto{order.items.length !== 1 ? "s" : ""} · <span className="font-bold text-primary">S/{Number(order.total).toFixed(2)}</span>
                           </div>
                           {order.notes && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1 italic">{order.notes}</p>}
                         </div>
@@ -906,7 +907,7 @@ export default function PurchaseOrdersTab() {
                     </span>
                   </div>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
-                    {formatDate(o.createdAt)} · {o.items.length} producto{o.items.length !== 1 ? "s" : ""} · <span className="font-bold text-primary">S/{o.total.toFixed(2)}</span>
+                    {formatDate(o.createdAt)} · {o.items.length} producto{o.items.length !== 1 ? "s" : ""} · <span className="font-bold text-primary">S/{Number(o.total).toFixed(2)}</span>
                   </p>
                   {o.notes && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 italic">{o.notes}</p>}
                 </div>
@@ -992,7 +993,7 @@ export default function PurchaseOrdersTab() {
                               {item.quantity}x {item.name} <span className="text-[var(--text-tertiary)] dark:text-muted">({item.unit})</span>
                             </span>
                             <div className="text-right">
-                              <span className="text-[var(--text-tertiary)] dark:text-muted text-xs mr-2">S/{item.unitCost.toFixed(2)} c/u</span>
+                              <span className="text-[var(--text-tertiary)] dark:text-muted text-xs mr-2">S/{Number(item.unitCost).toFixed(2)} c/u</span>
                               <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">S/{(item.quantity * item.unitCost).toFixed(2)}</span>
                             </div>
                           </div>
@@ -1010,7 +1011,7 @@ export default function PurchaseOrdersTab() {
                     })}
                     <div className="flex justify-between items-center text-sm font-bold border-t border-[var(--rule-base)] dark:border-card-border pt-1.5 mt-1">
                       <span className="text-[var(--text-primary)] dark:text-foreground">Total</span>
-                      <span className="text-primary">S/{o.total.toFixed(2)}</span>
+                      <span className="text-primary">S/{Number(o.total).toFixed(2)}</span>
                     </div>
                   </div>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">ID: {o.id}</p>
@@ -1157,7 +1158,7 @@ export default function PurchaseOrdersTab() {
                   setSavingNewProd(true);
                   const res = await fetch("/api/products", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: csrfHeaders({ "Content-Type": "application/json" }),
                     body: JSON.stringify({ ...newProdForm, active: true }),
                   });
                   if (res.ok) {

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { SupplierPriceVersionDB } from "@/lib/db/supplier-portal.db";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const priceUpdateSchema = z.object({
   updates: z
@@ -98,6 +99,7 @@ export async function GET(req: NextRequest) {
  * Registra versión histórica en SupplierPriceVersion.
  */
 export async function PUT(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "supplier-catalog"); if (_rl) return _rl;
   try {
     const supplier = await requireSupplier(req);
     if (!supplier) {

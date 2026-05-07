@@ -23,6 +23,7 @@ import {
   useRef,
   useReducer,
 } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import Image from "next/image";
 import {
   CheckCircle,
@@ -256,7 +257,7 @@ export default function PagosYapeClient({ initialCount }: Props) {
         {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ reason: result }),
         },
       );

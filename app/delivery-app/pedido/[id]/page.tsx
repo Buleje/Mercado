@@ -215,7 +215,7 @@ export default function PedidoPage() {
             </p>
           </div>
           <span className="text-base font-extrabold text-[var(--accent)] tabular-nums">
-            S/ {assignment.fee.toFixed(2)}
+            S/ {Number(assignment.fee).toFixed(2)}
           </span>
         </div>
       </header>
@@ -310,7 +310,7 @@ export default function PedidoPage() {
                 Total cliente
               </p>
               <p className="mt-1 text-xl font-extrabold text-[var(--text-primary)] tabular-nums">
-                S/ {assignment.order.total.toFixed(2)}
+                S/ {assignment.Number(order.total).toFixed(2)}
               </p>
             </div>
             <div className="text-right">
@@ -318,7 +318,7 @@ export default function PedidoPage() {
                 Tu pago
               </p>
               <p className="mt-1 text-xl font-extrabold text-[var(--accent)] tabular-nums">
-                S/ {assignment.fee.toFixed(2)}
+                S/ {Number(assignment.fee).toFixed(2)}
               </p>
             </div>
           </div>

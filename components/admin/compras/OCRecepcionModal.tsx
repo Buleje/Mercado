@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState } from "react";
 import {
   X, ChevronRight, ChevronLeft, Check,
@@ -86,7 +87,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
     try {
       const res = await fetch("/api/compras/recepciones", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           ocId,
           items: receivedItems
@@ -244,7 +245,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                               {item.name}
                             </td>
                             <td className="py-2 px-1 text-right text-[var(--text-secondary)] dark:text-muted">
-                              S/ {item.originalPrice.toFixed(2)}
+                              S/ {Number(item.originalPrice).toFixed(2)}
                             </td>
                             <td className="py-2 px-1 text-center">
                               <input

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { ReorderSchema } from "@/lib/validators/reorder";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/orders/reorder
@@ -19,6 +20,7 @@ import { requireCustomer } from "@/lib/auth/require-customer";
  * Auth: customer session required.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "orders-reorder"); if (_rl) return _rl;
   const customerOrResp = await requireCustomer(req);
   if (customerOrResp instanceof NextResponse) return customerOrResp;
   const customer = customerOrResp;

@@ -5,6 +5,7 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import { toast } from "sonner";
 import { X, Package, Check, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export interface ReorderCandidate {
   id: string | number;
@@ -82,7 +83,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
       }));
       const res = await fetch("/api/admin/inventory/reorder", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           items,
           notes: notes || "Generada desde Inventario · stockout",

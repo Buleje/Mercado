@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const VALID_STATUSES = ["pendiente", "confirmado", "en_camino", "entregado", "cancelado"] as const;
 
@@ -14,6 +15,7 @@ const BulkStatusSchema = z.object({
 
 // POST /api/orders/bulk-status — bulk status update (admin only)
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "orders-bulk-status"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

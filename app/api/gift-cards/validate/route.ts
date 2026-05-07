@@ -21,6 +21,7 @@ const ValidateSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "gift-cards-validate"); if (_rl) return _rl;
   const ip = getClientIp(req);
   const { allowed } = rateLimit(`giftcard:validate:${ip}`, 5, 60);
   if (!allowed) {

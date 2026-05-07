@@ -148,7 +148,7 @@ export default function StoreReviews({ summary, reviews, storeSlug, storeName }:
             className="text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white"
             aria-label={`Calificación promedio: ${summary.average}`}
           >
-            {summary.average.toFixed(1)}
+            {Number(summary.average).toFixed(1)}
           </span>
           <StarRow filled={Math.round(summary.average)} />
           <span className="text-xs text-gray-400 dark:text-gray-500">

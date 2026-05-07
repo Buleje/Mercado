@@ -348,12 +348,12 @@ export default function ExecutiveDashboardTab() {
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1.5">{h.metric}</p>
                 <div className="flex items-end justify-between">
                   <span className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground leading-none">
-                    {h.isCurrency ? fmtShort(h.value) : h.isDecimal ? h.value.toFixed(1) : h.value}
+                    {h.isCurrency ? fmtShort(h.value) : h.isDecimal ? Number(h.value).toFixed(1) : h.value}
                     {h.isDecimal && <Star className="h-3 w-3 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] inline ml-1 mb-1" />}
                   </span>
                   <span className={cn("text-xs font-bold flex items-center gap-0.5", h.trend >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                     {h.trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                    {h.trend > 0 ? "+" : ""}{h.trend.toFixed ? h.trend.toFixed(1) : h.trend}
+                    {h.trend > 0 ? "+" : ""}{h.trend.toFixed ? Number(h.trend).toFixed(1) : h.trend}
                   </span>
                 </div>
                 {expandedModule === h.module && (

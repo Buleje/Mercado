@@ -18,6 +18,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Mic,
   MicOff,
@@ -88,7 +89,7 @@ export default function VoiceOrderButton({
       try {
         const res = await fetch(endpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ transcription: text }),
         });
         const data = await res.json();

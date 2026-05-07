@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Zap, Search, Clock, Tag, X, Loader2, Eye, EyeOff } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -163,7 +164,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
 
   function selectProduct(p: Product) {
     setSelected(p);
-    setSalePrice(p.price.toFixed(2));
+    setSalePrice(Number(p.price).toFixed(2));
     setQuery(p.name);
     setProducts([]);
     setError(null);
@@ -210,7 +211,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
 
       const res = await fetch("/api/promotions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
 

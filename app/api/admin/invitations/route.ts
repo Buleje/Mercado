@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { EmployeeInvitationsDb } from "@/lib/db/employee-invitations.db";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * Invitaciones a empleados (cajero/almacenero/manager).
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-invitations"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 

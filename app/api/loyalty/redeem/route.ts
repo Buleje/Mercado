@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { LoyaltyDB, normalizePhone } from "@/lib/jsondb";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Recompensas predefinidas ───────────────────────────────────────────────────
 
@@ -72,6 +73,7 @@ const RedeemSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "loyalty-redeem"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

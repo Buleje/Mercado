@@ -4,6 +4,7 @@ import { PurchasesDB } from "@/lib/db/purchases.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
   supplierId: z.string().optional(),
@@ -31,6 +32,7 @@ const bodySchema = z.object({
  *  - notes: opcional
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-inventory-reorder"); if (_rl) return _rl;
   try {
     const admin = await requireAdmin(req, ["owner", "admin", "manager"]);
     if (admin instanceof NextResponse) return admin;

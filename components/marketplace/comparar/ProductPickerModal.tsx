@@ -222,7 +222,7 @@ export default function ProductPickerModal({
                           {it.store.name} · {it.product.category}
                         </p>
                         <p className="mt-0.5 text-sm font-bold text-primary">
-                          S/ {it.retailPrice.toFixed(2)}
+                          S/ {Number(it.retailPrice).toFixed(2)}
                           {it.product.unit && (
                             <span className="ml-1 text-xs font-normal text-gray-500 dark:text-gray-400">
                               / {it.product.unit}

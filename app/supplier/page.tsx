@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import SupplierDashboard from "@/components/supplier/SupplierDashboard";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface SupplierInfo {
   id: string;
@@ -37,7 +38,7 @@ export default function SupplierPage() {
   const handleLogin = async (apiKey: string): Promise<string | null> => {
     const res = await fetch("/api/supplier/auth", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ apiKey }),
     });
     if (!res.ok) {

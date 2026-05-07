@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/superadmin/upload
@@ -30,6 +31,7 @@ const ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const BUCKET = "media";
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-upload"); if (_rl) return _rl;
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const session = await getPlatformSession(token);

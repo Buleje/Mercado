@@ -5,6 +5,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 import { enqueueActivityLog } from "@/lib/queue";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const UpdateSchema = z.object({
   name: z.string().min(1).max(64).optional(),
@@ -45,6 +46,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-users-X"); if (_rl) return _rl;
   const traceId = newTraceId();
   try {
     const auth = await requireAdmin(req, ["admin"]);
@@ -93,6 +95,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-users-X"); if (_rl) return _rl;
   const traceId = newTraceId();
   try {
     const auth = await requireAdmin(req, ["admin"]);

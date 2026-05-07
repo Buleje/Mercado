@@ -47,13 +47,13 @@ function formatDiscount(coupon: ActiveCoupon): string {
   if (coupon.discountType === "percent") {
     return `-${coupon.discountValue}%`;
   }
-  return `-S/${coupon.discountValue.toFixed(2)}`;
+  return `-S/${Number(coupon.discountValue).toFixed(2)}`;
 }
 
 function buildLabel(coupon: ActiveCoupon): string {
   const discount = formatDiscount(coupon);
   if (coupon.minPurchase && coupon.minPurchase > 0) {
-    return `${discount} en compras mayores a S/${coupon.minPurchase.toFixed(0)}`;
+    return `${discount} en compras mayores a S/${Number(coupon.minPurchase).toFixed(0)}`;
   }
   return coupon.description || `Cupón ${discount}`;
 }

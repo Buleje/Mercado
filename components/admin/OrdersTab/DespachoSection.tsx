@@ -237,7 +237,7 @@ export function DespachoSection({
                   <p className="mt-1 flex items-center gap-2 text-xs text-[var(--text-tertiary)] tabular-nums">
                     <span className="inline-flex items-center gap-0.5">
                       <Star className="h-3 w-3 text-[var(--data-warning-500)]" strokeWidth={2.5} aria-hidden />
-                      {p.rating.toFixed(1)}
+                      {Number(p.rating).toFixed(1)}
                     </span>
                     <span aria-hidden>·</span>
                     <span>{Math.round(p.acceptanceRate * 100)}% acepta</span>

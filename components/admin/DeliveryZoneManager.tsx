@@ -4,6 +4,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { MapPin, Save, RefreshCw, Plus, Trash2, Check, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -222,7 +223,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
         {zone.fee === 0 ? (
           <span className="text-primary dark:text-[var(--data-success-500)] font-medium">Gratis</span>
         ) : (
-          `S/ ${zone.fee.toFixed(2)}`
+          `S/ ${Number(zone.fee).toFixed(2)}`
         )}
       </td>
       <td className="px-3 py-2.5">
@@ -308,7 +309,7 @@ export default function DeliveryZoneManager() {
     try {
       await fetch("/api/admin/delivery-zones", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(zones),
       });
     } catch {

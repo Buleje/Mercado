@@ -354,7 +354,7 @@ export default function SeasonalityInsights() {
                             <TrendingDown className="h-3 w-3" />
                           )}
                           {p.pctChange > 0 ? "+" : ""}
-                          {p.pctChange.toFixed(0)}%
+                          {Number(p.pctChange).toFixed(0)}%
                         </span>
                       )}
                     </div>
@@ -401,7 +401,7 @@ export default function SeasonalityInsights() {
                       : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                   )}
                 >
-                  {p.pctChange > 0 ? "+" : ""}{p.pctChange.toFixed(0)}%
+                  {p.pctChange > 0 ? "+" : ""}{Number(p.pctChange).toFixed(0)}%
                 </span>
               </div>
             ))}

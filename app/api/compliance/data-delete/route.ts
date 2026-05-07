@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/compliance/data-delete
@@ -35,6 +36,7 @@ const ANONYMIZED_PLACEHOLDER = "[DATOS ELIMINADOS - Ley 29733]";
 const ANONYMIZED_PHONE = "0000000000";
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "compliance-data-delete"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

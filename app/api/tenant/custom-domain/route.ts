@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { getPlanLimits } from "@/lib/plans";
 import { invalidateCustomDomainCache } from "@/lib/resolve-tenant";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /** Validate a custom domain string (basic format check). */
 function isValidDomain(d: string): boolean {
@@ -26,6 +27,7 @@ export async function GET(req: NextRequest) {
 
 // PUT /api/tenant/custom-domain  →  body: { domain: string }
 export async function PUT(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "tenant-custom-domain"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -85,6 +87,7 @@ export async function PUT(req: NextRequest) {
 
 // DELETE /api/tenant/custom-domain  →  removes the custom domain
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "tenant-custom-domain"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

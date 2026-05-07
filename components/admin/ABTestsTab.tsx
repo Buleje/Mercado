@@ -3,6 +3,7 @@
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { FlaskConical, Plus, Trash2, ToggleLeft, ToggleRight, BarChart3, Loader2, X } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Variant = { id: string; label: string; weight: number };
 type ABTest = { id: string; name: string; description: string; variants: Variant[]; active: boolean; createdAt: string };
@@ -41,7 +42,7 @@ export default function ABTestsTab() {
     if (!name.trim() || variants.length < 2) return;
     await fetch("/api/ab-tests", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ name: name.trim(), description: desc.trim(), variants }),
     });
     setName(""); setDesc(""); setShowCreate(false);
@@ -50,12 +51,12 @@ export default function ABTestsTab() {
   };
 
   const toggle = async (id: string) => {
-    await fetch("/api/ab-tests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    await fetch("/api/ab-tests", { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ id }) });
     fetchTests();
   };
 
   const del = async (id: string) => {
-    await fetch("/api/ab-tests", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    await fetch("/api/ab-tests", { method: "DELETE", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ id }) });
     fetchTests();
   };
 
@@ -145,7 +146,7 @@ export default function ABTestsTab() {
                               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Conversiones</p>
                             </div>
                             <div>
-                              <p className="text-lg font-bold text-[var(--text-secondary)]">{r.conversionRate.toFixed(1)}%</p>
+                              <p className="text-lg font-bold text-[var(--text-secondary)]">{Number(r.conversionRate).toFixed(1)}%</p>
                               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Tasa</p>
                             </div>
                           </div>

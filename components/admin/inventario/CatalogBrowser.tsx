@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useCallback } from "react";
 import {
   Search, Grid3x3, List, Plus, Trash2, ShoppingCart,
@@ -55,9 +56,9 @@ function ProductCard({
       <p className="text-xs text-muted truncate">{product.brand} · {product.presentation ?? product.unit}</p>
       <div className="flex items-center justify-between mt-2">
         <div>
-          <p className="text-sm font-extrabold text-primary">S/ {product.suggestedPrice.toFixed(2)}</p>
+          <p className="text-sm font-extrabold text-primary">S/ {Number(product.suggestedPrice).toFixed(2)}</p>
           {product.suggestedCostPrice && (
-            <p className="text-xs text-muted">Costo: S/ {product.suggestedCostPrice.toFixed(2)}</p>
+            <p className="text-xs text-muted">Costo: S/ {Number(product.suggestedCostPrice).toFixed(2)}</p>
           )}
         </div>
         <button
@@ -100,7 +101,7 @@ function ProductRow({
         <p className="text-xs font-semibold text-foreground truncate">{product.name}</p>
         <p className="text-xs text-muted">{product.brand} · {product.category}</p>
       </div>
-      <p className="text-xs font-bold text-primary shrink-0 w-16 text-right">S/ {product.suggestedPrice.toFixed(2)}</p>
+      <p className="text-xs font-bold text-primary shrink-0 w-16 text-right">S/ {Number(product.suggestedPrice).toFixed(2)}</p>
       {product.barcode && (
         <p className="text-xs text-muted font-mono shrink-0 w-24 text-right hidden lg:block">{product.barcode}</p>
       )}
@@ -283,7 +284,7 @@ export default function CatalogBrowser() {
     try {
       const res = await fetch("/api/products/catalog-import", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           items: cart.map((c) => ({
             name: c.product.name, category: c.product.category, price: c.price,
@@ -424,15 +425,15 @@ export default function CatalogBrowser() {
               <div className="hidden sm:flex items-center gap-4 text-right">
                 <div>
                   <p className="text-xs text-muted">Inversion</p>
-                  <p className="text-sm font-bold text-foreground">S/ {cartTotals.inversion.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-foreground">S/ {Number(cartTotals.inversion).toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted">Venta estimada</p>
-                  <p className="text-sm font-bold text-primary">S/ {cartTotals.ventaTotal.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-primary">S/ {Number(cartTotals.ventaTotal).toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted">Ganancia</p>
-                  <p className="text-sm font-bold text-[var(--data-success-500)]">+S/ {cartTotals.ganancia.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-[var(--data-success-500)]">+S/ {Number(cartTotals.ganancia).toFixed(2)}</p>
                 </div>
               </div>
               {cartExpanded ? <ChevronDown className="h-5 w-5 text-muted" /> : <ChevronUp className="h-5 w-5 text-muted" />}
@@ -460,15 +461,15 @@ export default function CatalogBrowser() {
                 <div className="sm:hidden grid grid-cols-3 gap-3 mb-3">
                   <div className="text-center">
                     <p className="text-xs text-muted">Inversion</p>
-                    <p className="text-sm font-bold">S/ {cartTotals.inversion.toFixed(2)}</p>
+                    <p className="text-sm font-bold">S/ {Number(cartTotals.inversion).toFixed(2)}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-muted">Venta</p>
-                    <p className="text-sm font-bold text-primary">S/ {cartTotals.ventaTotal.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-primary">S/ {Number(cartTotals.ventaTotal).toFixed(2)}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-xs text-muted">Ganancia</p>
-                    <p className="text-sm font-bold text-[var(--data-success-500)]">+S/ {cartTotals.ganancia.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-[var(--data-success-500)]">+S/ {Number(cartTotals.ganancia).toFixed(2)}</p>
                   </div>
                 </div>
 

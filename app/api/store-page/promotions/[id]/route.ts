@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const UpdateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -23,6 +24,7 @@ interface Ctx {
 }
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {
+  const _rl = await applyRateLimit(req, "MODERATE", "store-page-promotions-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -54,6 +56,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Ctx) {
+  const _rl = await applyRateLimit(req, "MODERATE", "store-page-promotions-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

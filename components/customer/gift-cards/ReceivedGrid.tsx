@@ -74,11 +74,11 @@ export default function ReceivedGrid({ cards }: Props) {
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">S/</span>
                     <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {card.balance.toFixed(2)}
+                      {Number(card.balance).toFixed(2)}
                     </span>
                     {card.balance !== card.amount && (
                       <span className="ml-1 text-xs text-gray-400 line-through dark:text-gray-500">
-                        S/ {card.amount.toFixed(2)}
+                        S/ {Number(card.amount).toFixed(2)}
                       </span>
                     )}
                   </div>

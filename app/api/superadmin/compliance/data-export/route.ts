@@ -5,6 +5,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
 import { logActivityQueued } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─── POST /api/superadmin/compliance/data-export ──────────────────────────────
 //
@@ -42,6 +43,7 @@ function checkRate(username: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-compliance-data-export"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 

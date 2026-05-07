@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useCallback, useMemo } from "react";
 import {
   FileText, RefreshCw, CheckSquare, Square, Download,
@@ -118,7 +119,7 @@ export default function BulkInvoiceGenerator() {
       try {
         const r = await fetch(`/api/invoices/sunat`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             orderId: order.id,
             type: invoiceType,
@@ -158,7 +159,7 @@ export default function BulkInvoiceGenerator() {
     try {
       const res = await fetch("/api/invoices/bulk-pdf", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ orderIds: successIds, type: invoiceType }),
       });
       if (!res.ok) throw new Error("Error al generar ZIP");

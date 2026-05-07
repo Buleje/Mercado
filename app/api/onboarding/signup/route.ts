@@ -19,6 +19,7 @@ const signupLimiter = createDistributedRateLimiter({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "onboarding-signup"); if (_rl) return _rl;
   // 1. Rate limit
   const ip = getClientIp(req);
   const allowed = await signupLimiter.check(ip);

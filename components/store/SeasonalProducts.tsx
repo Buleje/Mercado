@@ -188,7 +188,7 @@ export default function SeasonalProducts() {
                   <p className="text-xs text-[var(--text-tertiary)]">{p.unit}</p>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-sm font-extrabold text-[var(--accent)] dark:text-[#2dd4bf]">
-                      S/ {p.price.toFixed(2)}
+                      S/ {Number(p.price).toFixed(2)}
                     </span>
                     <button
                       onClick={() => handleAdd(p)}

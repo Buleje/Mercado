@@ -228,8 +228,8 @@ function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { origin
         </h3>
         <div className="flex items-center justify-between gap-1">
           <div>
-            <span className="text-base font-bold text-[var(--text-primary)] tabular-nums">S/{deal.price.toFixed(2)}</span>
-            <span className="block text-xs text-[var(--text-tertiary)] line-through tabular-nums">S/{deal.originalPrice.toFixed(2)}</span>
+            <span className="text-base font-bold text-[var(--text-primary)] tabular-nums">S/{Number(deal.price).toFixed(2)}</span>
+            <span className="block text-xs text-[var(--text-tertiary)] line-through tabular-nums">S/{Number(deal.originalPrice).toFixed(2)}</span>
           </div>
           {qty > 0 ? (
             <div className="flex items-center gap-0.5 bg-[var(--accent)] rounded-full px-1 py-1 shrink-0 sm:px-1.5">

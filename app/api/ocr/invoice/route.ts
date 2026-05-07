@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { safeParseJSON } from "@/lib/ai-json-parser";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const RequestSchema = z.object({
   image: z.string().min(100, "Imagen requerida"),
@@ -22,6 +23,7 @@ const InvoiceSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "ocr-invoice"); if (_rl) return _rl;
   try {
     const body = await req.json();
     const parsed = RequestSchema.safeParse(body);

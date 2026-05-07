@@ -5,6 +5,7 @@
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { MessageSquare, Star, CheckCircle2 } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ export default function SuggestionBox() {
     try {
       const res = await fetch("/api/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("API error");

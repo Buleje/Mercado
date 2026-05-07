@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition, useId } from "react";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ------------------------------------------------------------------ types ---
 
@@ -180,7 +181,7 @@ function ReviewForm({
 
         const res = await fetch("/api/reviews", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(payload),
         });
 

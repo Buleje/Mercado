@@ -4,6 +4,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * PATCH /api/superadmin/stores/health-field
@@ -24,6 +25,7 @@ const Schema = z.object({
 });
 
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-stores-health-field"); if (_rl) return _rl;
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const session = await getPlatformSession(token);

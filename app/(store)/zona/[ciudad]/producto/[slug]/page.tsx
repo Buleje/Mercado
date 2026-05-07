@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProductBySlug("main", productoSlug);
   if (!product) return { title: "Producto no encontrado" };
 
-  const price = product.price.toFixed(2);
+  const price = Number(product.price).toFixed(2);
   const title = `${product.name} en ${zone.name} — S/${price} | Buleje`;
   const description =
     product.description
@@ -198,7 +198,7 @@ function RelatedProductCard({
         </h3>
         <div className="mt-auto pt-2 flex items-baseline gap-1">
           <span className="text-base font-bold text-[#2d6a4f]">
-            S/{product.price.toFixed(2)}
+            S/{Number(product.price).toFixed(2)}
           </span>
           <span className="text-xs text-slate-400">/{product.unit}</span>
         </div>
@@ -249,7 +249,7 @@ async function ZoneProductContent({
     },
   ];
 
-  const price = product.price.toFixed(2);
+  const price = Number(product.price).toFixed(2);
   const otherZones = zones.filter((z) => z.slug !== zone.slug);
 
   return (

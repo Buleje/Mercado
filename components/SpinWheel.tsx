@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, startTransition, useCallback } from "react";
 import { Gift, X, Copy, Check, Sparkles, Trophy, RefreshCw } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // Paleta cohesiva — colores vibrantes pero coordinados (no random RGB).
 // Alterna entre "premio" (warm) y "neutral" (cool) para legibilidad.
@@ -185,7 +186,7 @@ export default function SpinWheel() {
           const timeout = setTimeout(() => controller.abort(), 5000);
           const res = await fetch("/api/coupons/spin", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({
               prize: prize.label,
               type: prize.value === 0 ? "free_delivery" : prize.label.includes("%") ? "percent" : "fixed",
@@ -218,7 +219,7 @@ export default function SpinWheel() {
       const timeout = setTimeout(() => controller.abort(), 5000);
       const res = await fetch("/api/coupons/spin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           prize: result.label,
           type: result.value === 0 ? "free_delivery" : result.label.includes("%") ? "percent" : "fixed",

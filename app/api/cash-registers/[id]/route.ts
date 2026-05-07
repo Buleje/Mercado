@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { sendCashSummaryEmail } from "@/lib/mailer";
 import { toErrorPayload } from "@/lib/api-error";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * SECURITY 2026-05-06 (pentest H003): asegura ownership de la caja antes de
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "MODERATE", "cash-registers-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

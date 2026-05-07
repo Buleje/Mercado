@@ -238,7 +238,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                                 {p.daysRemaining < 1 ? 'Se agota HOY' : `${Math.floor(p.daysRemaining)} días restantes`}
                               </span>
                               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                                • {p.dailyRate.toFixed(1)} uds/día
+                                • {Number(p.dailyRate).toFixed(1)} uds/día
                               </span>
                             </div>
                           </div>
@@ -280,7 +280,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                                 ~{Math.floor(p.daysRemaining)} días restantes
                               </span>
                               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                                • {p.dailyRate.toFixed(1)} uds/día
+                                • {Number(p.dailyRate).toFixed(1)} uds/día
                               </span>
                             </div>
                           </div>

@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useRef, type FormEvent } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageTitle, SectionTitle } from "@buleje/design-system";
 import {
@@ -64,7 +65,7 @@ export default function SuperAdminLoginPage() {
     try {
       const res = await fetch("/api/superadmin/auth", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ username, password, honeypot }),
       });
       const data = await res.json();
@@ -94,7 +95,7 @@ export default function SuperAdminLoginPage() {
     try {
       const res = await fetch("/api/superadmin/auth", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ challengeId, code }),
       });
       if (res.ok) {

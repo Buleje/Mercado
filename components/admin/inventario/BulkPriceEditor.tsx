@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type ProductRow = {
   id: number;
@@ -145,7 +146,7 @@ export default function BulkPriceEditor() {
     try {
       const res = await fetch('/api/products/bulk-price', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           updates: changedProducts.map(p => ({
             productId: p.id,
@@ -268,10 +269,10 @@ export default function BulkPriceEditor() {
                     </td>
                     <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground truncate max-w-[200px]">{p.name}</td>
                     <td className="py-2 px-2 text-right text-[var(--text-secondary)] dark:text-muted">
-                      {p.costPrice != null ? `S/${p.costPrice.toFixed(2)}` : '-'}
+                      {p.costPrice != null ? `S/${Number(p.costPrice).toFixed(2)}` : '-'}
                     </td>
                     <td className="py-2 px-2 text-right text-[var(--text-primary)] dark:text-foreground font-medium">
-                      S/{p.price.toFixed(2)}
+                      S/{Number(p.price).toFixed(2)}
                     </td>
                     <td className={`py-2 px-2 text-right font-medium ${marginColor(currentMargin)}`}>
                       {currentMargin != null ? `${currentMargin.toFixed(0)}%` : '-'}

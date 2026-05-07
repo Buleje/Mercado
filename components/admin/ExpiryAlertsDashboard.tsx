@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   AlertTriangle, ChevronDown, ChevronUp, RefreshCw,
@@ -50,8 +51,8 @@ function exportListToExcel(rows: ExpiryBatch[], label: string) {
       r.daysUntilExpiry,
       r.quantity,
       `"${r.unit}"`,
-      r.costUnit.toFixed(2),
-      r.valorRiesgo.toFixed(2),
+      Number(r.costUnit).toFixed(2),
+      Number(r.valorRiesgo).toFixed(2),
       `"${r.warehouseName ?? ""}"`,
     ].join(","))
   ];
@@ -226,7 +227,7 @@ export default function ExpiryAlertsDashboard() {
     try {
       const res = await fetch("/api/promotions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           name: `Liquidación — ${batch.productName}`,
           productId: batch.productId,
@@ -251,7 +252,7 @@ export default function ExpiryAlertsDashboard() {
     try {
       const res = await fetch(`/api/inventory/expiry/${batch.id}/writeoff`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ reason: "expiry" }),
       });
       if (!res.ok) throw new Error("No se pudo dar de baja el lote");

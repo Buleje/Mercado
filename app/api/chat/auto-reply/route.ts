@@ -3,6 +3,7 @@ import { z } from "zod";
 import { chatCompletion, getActiveProvider } from "@/lib/ai-config";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { ProductsDB } from "@/lib/db/products.db";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── FAQ knowledge base for auto-replies (fallback when no AI) ────────────────
 const FAQ_ENTRIES: { keywords: string[]; answer: string }[] = [
@@ -142,6 +143,7 @@ async function searchProducts(query: string, tenantId: string): Promise<string |
 
 // POST: Get AI auto-reply for a customer message
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "chat-auto-reply"); if (_rl) return _rl;
   const body = await req.json();
   const parsed = BodySchema.safeParse(body);
   if (!parsed.success) {

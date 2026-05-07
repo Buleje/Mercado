@@ -229,7 +229,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <div className="flex-1 text-sm text-[var(--text-tertiary)]">
               Costo estimado del período:{" "}
               <strong className="text-[var(--text-primary)]">
-                USD {snapshot.estimatedCostUsd.toFixed(2)}
+                USD {Number(snapshot.estimatedCostUsd).toFixed(2)}
               </strong>
             </div>
 

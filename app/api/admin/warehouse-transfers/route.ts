@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateSchema = z.object({
   fromWarehouseId: z.string().min(1),
@@ -71,6 +72,7 @@ export async function GET(req: NextRequest) {
 
 /** POST /api/admin/warehouse-transfers — record a new transfer */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-warehouse-transfers"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -172,6 +174,7 @@ export async function POST(req: NextRequest) {
 
 /** PATCH /api/admin/warehouse-transfers — update transfer status */
 export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-warehouse-transfers"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

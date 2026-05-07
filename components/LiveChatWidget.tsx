@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useCustomer } from "@/contexts/customer-context";
 import { usePathname } from "next/navigation";
 import {
@@ -129,7 +130,7 @@ export default function LiveChatWidget() {
     try {
       const res = await fetch("/api/chat/auto-reply", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ message }),
       });
       if (!res.ok) throw new Error();
@@ -157,7 +158,7 @@ export default function LiveChatWidget() {
       // Save customer message to server
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ phone, name: customerName || "Cliente", message: msg }),
       });
       if (res.ok) {
@@ -186,7 +187,7 @@ export default function LiveChatWidget() {
     if (type === "fallback") {
       fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           phone: "sistema",
           name: "Bot",

@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const BodySchema = z.object({
   prompt: z.string().min(2).max(200).optional(),
@@ -56,6 +57,7 @@ async function tryXaiImage(prompt: string): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest, ctx: RouteCtx) {
+  const _rl = await applyRateLimit(req, "MODERATE", "products-X-generate-image"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

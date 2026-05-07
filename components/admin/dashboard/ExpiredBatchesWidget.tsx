@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
 import {
   AlertOctagon,
@@ -143,7 +144,7 @@ export default function ExpiredBatchesWidget() {
           if (!productId) return Promise.reject(new Error(`Sin productId: ${b.lote}`));
           return fetch("/api/mermas", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({
               productId,
               quantity: b.quantity,

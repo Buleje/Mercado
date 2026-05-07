@@ -5,6 +5,7 @@ import { ChatThreadsDB, ChatMessagesDB } from "@/lib/db/chat.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { isFeatureEnabled } from "@/lib/feature-flags";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * Endpoints PÚBLICOS para que el comprador (buyer) envíe/reciba mensajes
@@ -57,6 +58,7 @@ const SendMessageBody = z.object({
  * Lista los mensajes de un hilo (con validación de ownership del buyer).
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "chat-public"); if (_rl) return _rl;
   if (!isFeatureEnabled("marketplace-chat-public")) {
     return NextResponse.json(
       { error: "Chat temporalmente no disponible" },

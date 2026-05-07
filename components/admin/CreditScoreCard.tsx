@@ -326,7 +326,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
               <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]">
                 <span className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Deuda pendiente actual</span>
                 <span className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                  S/ {result.totalPending.toFixed(2)}
+                  S/ {Number(result.totalPending).toFixed(2)}
                 </span>
               </div>
             )}

@@ -131,7 +131,7 @@ export function MiNegocioInsightCard({ greeting, trend, className }: Props) {
   } else if (ventas.cambioVsAyer > 15) {
     insight = {
       type: "opportunity",
-      text: `Vas ${ventas.cambioVsAyer.toFixed(0)}% arriba vs ayer${topProducto ? `. "${topProducto.nombre}" lidera las ventas.` : "."}`,
+      text: `Vas ${Number(ventas.cambioVsAyer).toFixed(0)}% arriba vs ayer${topProducto ? `. "${topProducto.nombre}" lidera las ventas.` : "."}`,
     };
   } else if (pedidos.pendientes > 0) {
     insight = {

@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo } from "react";
 import {
   DollarSign, Plus, Pencil, Trash2, Check, MapPin,
@@ -86,10 +87,10 @@ export default function ShippingCostsTab() {
     if (!form.zone.trim()) return;
     const body = { ...form, freeAbove: form.freeAbove || null };
     if (editRule) {
-      await fetch(`/api/shipping-rules/${editRule.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      await fetch(`/api/shipping-rules/${editRule.id}`, { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
       setRules(prev => prev.map(r => r.id === editRule.id ? { ...r, ...body } : r));
     } else {
-      const res = await fetch("/api/shipping-rules", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch("/api/shipping-rules", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify(body) });
       if (res.ok) {
         const created: ShippingRule = await res.json();
         setRules(prev => [...prev, created]);
@@ -101,7 +102,7 @@ export default function ShippingCostsTab() {
   const toggleActive = async (id: string) => {
     const rule = rules.find(r => r.id === id);
     if (!rule) return;
-    await fetch(`/api/shipping-rules/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active: !rule.active }) });
+    await fetch(`/api/shipping-rules/${id}`, { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ active: !rule.active }) });
     setRules(prev => prev.map(r => r.id === id ? { ...r, active: !r.active } : r));
   };
 

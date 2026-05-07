@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, DollarSign, Loader2, AlertTriangle,
@@ -673,7 +674,7 @@ export default function PrestamosModule() {
     try {
       const res = await fetch(`/api/prestamos/${selected.id}/pagar`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ cuotaId: pagoCuotaId, montoPagado: monto }),
       });
       if (!res.ok) {
@@ -706,7 +707,7 @@ export default function PrestamosModule() {
       for (const c of cuotasToPay) {
         const res = await fetch(`/api/prestamos/${selected.id}/pagar`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ cuotaId: c.id, montoPagado: c.monto }),
         });
         if (!res.ok) {
@@ -741,7 +742,7 @@ export default function PrestamosModule() {
     try {
       const res = await fetch(`/api/prestamos/${selected.id}/refinanciar`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ monto, tasaInteres: tasa, numeroCuotas: cuotas, sistemaAmortizacion: refSistema }),
       });
       if (!res.ok) { const err = await res.json().catch(() => ({ error: "Error" })); throw new Error(err.error || "Error al refinanciar"); }
@@ -765,7 +766,7 @@ export default function PrestamosModule() {
     try {
       const res = await fetch(`/api/prestamos/${selected.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: "CANCELADO" }),
       });
       if (!res.ok) throw new Error("Error al cancelar");
@@ -838,7 +839,7 @@ export default function PrestamosModule() {
 
       const res = await fetch("/api/prestamos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -1347,7 +1348,7 @@ export default function PrestamosModule() {
                     {cobrosData.vencidas.map((c) => {
                       const symbol = c.moneda === "USD" ? "$" : "S/";
                       const msg = encodeURIComponent(
-                        `🏪 *${storeName}*\n━━━━━━━━━━━━━━━━━━━\n⚠️ *CUOTA VENCIDA*\n━━━━━━━━━━━━━━━━━━━\nHola *${c.nombre}* 👋\n\nTienes una cuota de préstamo vencida:\n\n  💰 *Cuota N°${c.numeroCuota}:* ${symbol}${c.monto.toFixed(2)}\n  📅 Venció hace *${c.diasAtraso} día${c.diasAtraso !== 1 ? "s" : ""}*\n\nPor favor, regulariza tu pago para evitar mora adicional.\n\n_${storeName}_ 🙏`
+                        `🏪 *${storeName}*\n━━━━━━━━━━━━━━━━━━━\n⚠️ *CUOTA VENCIDA*\n━━━━━━━━━━━━━━━━━━━\nHola *${c.nombre}* 👋\n\nTienes una cuota de préstamo vencida:\n\n  💰 *Cuota N°${c.numeroCuota}:* ${symbol}${Number(c.monto).toFixed(2)}\n  📅 Venció hace *${c.diasAtraso} día${c.diasAtraso !== 1 ? "s" : ""}*\n\nPor favor, regulariza tu pago para evitar mora adicional.\n\n_${storeName}_ 🙏`
                       );
                       const waLink = c.phone
                         ? `https://wa.me/${c.phone.replace(/\D/g, "").length === 9 ? `51${c.phone.replace(/\D/g, "")}` : c.phone.replace(/\D/g, "")}?text=${msg}`
@@ -1366,7 +1367,7 @@ export default function PrestamosModule() {
                             </p>
                           </div>
                           <span className="text-sm font-extrabold font-mono text-[var(--data-error-500)] shrink-0">
-                            {symbol}{c.monto.toFixed(2)}
+                            {symbol}{Number(c.monto).toFixed(2)}
                           </span>
                           {waLink && (
                             <a
@@ -1403,7 +1404,7 @@ export default function PrestamosModule() {
                       const symbol = c.moneda === "USD" ? "$" : "S/";
                       const isUrgent = c.diasRestantes <= 3;
                       const msg = encodeURIComponent(
-                        `🏪 *${storeName}*\n━━━━━━━━━━━━━━━━━━━\n📅 *RECORDATORIO DE CUOTA*\n━━━━━━━━━━━━━━━━━━━\nHola *${c.nombre}* 👋\n\nTe recordamos que tienes una cuota próxima:\n\n  💰 *Cuota N°${c.numeroCuota}:* ${symbol}${c.monto.toFixed(2)}\n  📅 Vence en *${c.diasRestantes} día${c.diasRestantes !== 1 ? "s" : ""}*\n\n¡Ten listo tu pago a tiempo! 🙏\n\n_${storeName}_`
+                        `🏪 *${storeName}*\n━━━━━━━━━━━━━━━━━━━\n📅 *RECORDATORIO DE CUOTA*\n━━━━━━━━━━━━━━━━━━━\nHola *${c.nombre}* 👋\n\nTe recordamos que tienes una cuota próxima:\n\n  💰 *Cuota N°${c.numeroCuota}:* ${symbol}${Number(c.monto).toFixed(2)}\n  📅 Vence en *${c.diasRestantes} día${c.diasRestantes !== 1 ? "s" : ""}*\n\n¡Ten listo tu pago a tiempo! 🙏\n\n_${storeName}_`
                       );
                       const waLink = c.phone
                         ? `https://wa.me/${c.phone.replace(/\D/g, "").length === 9 ? `51${c.phone.replace(/\D/g, "")}` : c.phone.replace(/\D/g, "")}?text=${msg}`
@@ -1427,7 +1428,7 @@ export default function PrestamosModule() {
                             </p>
                           </div>
                           <span className="text-sm font-extrabold font-mono text-[var(--text-primary)] shrink-0">
-                            {symbol}{c.monto.toFixed(2)}
+                            {symbol}{Number(c.monto).toFixed(2)}
                           </span>
                           {waLink && (
                             <a
@@ -1944,7 +1945,7 @@ export default function PrestamosModule() {
 <p class="sub">${storeName}</p>
 <div class="info">
   <div><b>Cliente:</b> ${selected.customerId || selected.entidadNombre || "—"}</div>
-  <div><b>Monto:</b> ${selected.moneda === "USD" ? "$" : "S/"}${selected.monto.toFixed(2)}</div>
+  <div><b>Monto:</b> ${selected.moneda === "USD" ? "$" : "S/"}${Number(selected.monto).toFixed(2)}</div>
   <div><b>Tasa:</b> ${selected.tasaInteres}% mensual${selected.tea ? ` (TEA ${selected.tea}%)` : ""}</div>
   <div><b>Sistema:</b> ${SISTEMA_LABELS[selected.sistemaAmortizacion]}</div>
   <div><b>N° Cuotas:</b> ${selected.numeroCuotas}</div>
@@ -1958,9 +1959,9 @@ export default function PrestamosModule() {
 ${cuotas.map(c => { const row = `<tr>
   <td>${c.numeroCuota}</td>
   <td>${new Date(c.fechaVence).toLocaleDateString("es-PE")}</td>
-  <td class="right">S/${c.capital.toFixed(2)}</td>
-  <td class="right">S/${c.interes.toFixed(2)}</td>
-  <td class="right"><b>S/${c.monto.toFixed(2)}</b></td>
+  <td class="right">S/${Number(c.capital).toFixed(2)}</td>
+  <td class="right">S/${Number(c.interes).toFixed(2)}</td>
+  <td class="right"><b>S/${Number(c.monto).toFixed(2)}</b></td>
   <td class="right">S/${(saldo = Math.max(0, saldo - c.capital)).toFixed(2)}</td>
   <td class="${c.pagadoEn ? "paid" : "pending"}">${c.pagadoEn ? "Pagado" : "Pendiente"}</td>
   <td>${c.pagadoEn ? new Date(c.pagadoEn).toLocaleDateString("es-PE") : "—"}</td>
@@ -2019,7 +2020,7 @@ ${cuotas.map(c => { const row = `<tr>
   ${selected.nroOperacion ? `<div class="row"><span>N° Operación:</span><b>${selected.nroOperacion}</b></div>` : ""}
 </div>
 <div class="section">
-  <div class="row"><span>Monto prestado:</span><b>${selected.moneda === "USD" ? "$" : "S/"} ${selected.monto.toFixed(2)}</b></div>
+  <div class="row"><span>Monto prestado:</span><b>${selected.moneda === "USD" ? "$" : "S/"} ${Number(selected.monto).toFixed(2)}</b></div>
   <div class="row"><span>Tasa de interes:</span><b>${selected.tasaInteres}% mensual</b></div>
   ${selected.tea ? `<div class="row"><span>TEA:</span><b>${selected.tea}%</b></div>` : ""}
   <div class="row"><span>Amortización:</span><b>${SISTEMA_LABELS[selected.sistemaAmortizacion]}</b></div>
@@ -2036,9 +2037,9 @@ ${cuotas.map(c => { const row = `<tr>
   ${cuotas.map(c => `<tr>
     <td>${c.numeroCuota}</td>
     <td>${new Date(c.fechaVence).toLocaleDateString("es-PE")}</td>
-    <td class="right">S/ ${c.capital.toFixed(2)}</td>
-    <td class="right">S/ ${c.interes.toFixed(2)}</td>
-    <td class="right"><b>S/ ${c.monto.toFixed(2)}</b></td>
+    <td class="right">S/ ${Number(c.capital).toFixed(2)}</td>
+    <td class="right">S/ ${Number(c.interes).toFixed(2)}</td>
+    <td class="right"><b>S/ ${Number(c.monto).toFixed(2)}</b></td>
     <td class="${c.pagadoEn ? "paid" : "pend"}">${c.pagadoEn ? "PAGADO" : "PEND."}</td>
     <td>${c.pagadoEn ? new Date(c.pagadoEn).toLocaleDateString("es-PE") : "—"}</td>
   </tr>`).join("")}

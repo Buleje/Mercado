@@ -169,7 +169,7 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
                   
                   <div className="flex items-center justify-between mt-3">
                     <span className="text-base sm:text-lg font-bold text-primary">
-                      S/ {product.price.toFixed(2)}
+                      S/ {Number(product.price).toFixed(2)}
                     </span>
                     <span className="text-xs text-muted">
                       /{product.unit}

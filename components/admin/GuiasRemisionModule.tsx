@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, StatCard } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -585,7 +586,7 @@ export default function GuiasRemisionModule() {
       const orderIds = form.orderIds.split(",").map(s => s.trim()).filter(Boolean);
       const res = await fetch("/api/guias-remision", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           ...form,
           orderId: orderIds[0] || undefined,
@@ -635,7 +636,7 @@ export default function GuiasRemisionModule() {
     try {
       const res = await fetch(`/api/guias-remision/${selected.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "anular", motivo }),
       });
       if (!res.ok) throw new Error("Error al anular");
@@ -657,7 +658,7 @@ export default function GuiasRemisionModule() {
     try {
       const res = await fetch(`/api/guias-remision/${selected.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "duplicar" }),
       });
       if (!res.ok) throw new Error("Error al duplicar");
@@ -751,7 +752,7 @@ export default function GuiasRemisionModule() {
       <table>
         <thead><tr><th>#</th><th>Descripción</th><th>Unidad</th><th class="right">Cantidad</th><th class="right">Peso unit. (kg)</th><th class="right">Peso total (kg)</th></tr></thead>
         <tbody>
-          ${items.map((it, i) => `<tr><td>${i + 1}</td><td>${it.descripcion}</td><td>${it.unidad}</td><td class="right">${it.cantidad}</td><td class="right">${it.pesoUnitario ? it.pesoUnitario.toFixed(2) : "-"}</td><td class="right">${it.pesoUnitario ? (it.cantidad * it.pesoUnitario).toFixed(1) : "-"}</td></tr>`).join("")}
+          ${items.map((it, i) => `<tr><td>${i + 1}</td><td>${it.descripcion}</td><td>${it.unidad}</td><td class="right">${it.cantidad}</td><td class="right">${it.pesoUnitario ? Number(it.pesoUnitario).toFixed(2) : "-"}</td><td class="right">${it.pesoUnitario ? (it.cantidad * it.pesoUnitario).toFixed(1) : "-"}</td></tr>`).join("")}
         </tbody>
       </table>
       <div class="total-peso">Peso total: ${pesoTotal > 0 ? pesoTotal.toFixed(1) + " kg" : "N/A"}</div>

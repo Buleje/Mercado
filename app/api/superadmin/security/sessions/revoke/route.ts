@@ -4,6 +4,7 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { revokeAllSessions } from "@/lib/superadmin-revocation";
 import { logActivityQueued } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─── POST /api/superadmin/security/sessions/revoke ────────────────────────────
 //
@@ -17,6 +18,7 @@ import { logger } from "@/lib/logger";
 // Body opcional: { all: true } — único modo soportado por ahora.
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-security-sessions-revoke"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 

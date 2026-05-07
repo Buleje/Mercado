@@ -189,8 +189,8 @@ function exportCSV(rows: Subscription[]) {
     STATUS_LABELS[r.status],
     r.startDate,
     r.nextBilling,
-    r.monthlyAmount.toFixed(2),
-    r.totalBilled.toFixed(2),
+    Number(r.monthlyAmount).toFixed(2),
+    Number(r.totalBilled).toFixed(2),
   ]);
   const csv = [headers, ...csvRows].map((r) => r.join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv" });

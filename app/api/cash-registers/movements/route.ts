@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateMovementSchema = z.object({
   cashRegisterId: z.string().min(1),
@@ -16,6 +17,7 @@ const CreateMovementSchema = z.object({
 
 // POST /api/cash-registers/movements — register manual cash movement
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "cash-registers-movements"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

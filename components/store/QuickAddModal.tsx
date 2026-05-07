@@ -159,7 +159,7 @@ export default function QuickAddModal() {
       if (!chosen || chosen.size === 0) continue;
       const picked = g.options.filter((o) => chosen.has(o.id));
       const text = picked
-        .map((o) => (o.priceDelta > 0 ? `${o.name} (+S/${o.priceDelta.toFixed(2)})` : o.name))
+        .map((o) => (o.priceDelta > 0 ? `${o.name} (+S/${Number(o.priceDelta).toFixed(2)})` : o.name))
         .join(", ");
       lines.push(`${g.name}: ${text}`);
     }
@@ -334,7 +334,7 @@ export default function QuickAddModal() {
                 {/* Precio destacado */}
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="text-3xl sm:text-4xl font-extrabold text-[var(--color-primary)] tracking-tight">
-                    S/ {product.price.toFixed(2)}
+                    S/ {Number(product.price).toFixed(2)}
                   </span>
                   {product.unit && (
                     <span className="text-sm text-[var(--text-tertiary)]">
@@ -433,7 +433,7 @@ export default function QuickAddModal() {
                               </span>
                               {o.priceDelta > 0 && (
                                 <span className="text-sm font-semibold text-[var(--text-secondary)]">
-                                  +S/{o.priceDelta.toFixed(2)}
+                                  +S/{Number(o.priceDelta).toFixed(2)}
                                 </span>
                               )}
                             </label>

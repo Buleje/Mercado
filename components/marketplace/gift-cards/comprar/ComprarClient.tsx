@@ -11,6 +11,7 @@ import StepMontoDiseno from "./StepMontoDiseno";
 import StepDestinatario from "./StepDestinatario";
 import StepDedicatoria from "./StepDedicatoria";
 import StepPreviewPago from "./StepPreviewPago";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -49,7 +50,7 @@ export default function ComprarClient() {
   async function handleSubmit() {
     const res = await fetch("/api/gift-cards/purchase", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         amount,
         design,

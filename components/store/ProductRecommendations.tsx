@@ -86,7 +86,7 @@ export function ProductRecommendations({
                     {rec.name}
                   </p>
                   <p className="text-sm font-bold text-primary">
-                    S/ {rec.price.toFixed(2)}
+                    S/ {Number(rec.price).toFixed(2)}
                   </p>
                 </div>
               </div>

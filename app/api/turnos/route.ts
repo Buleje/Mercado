@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateTurnoSchema = z.object({
   inicioEfectivo: z.number().min(0),
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/turnos — open new turno
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "turnos"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

@@ -5,6 +5,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
 import { X, Zap, ClipboardList, ChevronDown, ChevronUp, Loader2, Check } from "@buleje/design-system/icons";
 import { cn } from '@/lib/utils';
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
 
@@ -274,7 +275,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
       if (isEdit) {
         const res = await fetch(`/api/suppliers/${encodeURIComponent(supplier!.id as string)}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(body),
         });
         if (!res.ok) {
@@ -284,7 +285,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
       } else {
         const res = await fetch('/api/suppliers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(body),
         });
         if (!res.ok) {

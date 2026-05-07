@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Gamepad2,
   Gift,
@@ -78,7 +79,7 @@ export default function EngagementTab() {
     try {
       await fetch("/api/store-page/engagement", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           featureId: id,
           enabled: !features.find((f) => f.id === id)?.enabled,

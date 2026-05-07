@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const ScheduleBody = z.object({
   title: z.string().min(3).max(200),
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
  * POST /api/admin/lives — programa una nueva live.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-lives"); if (_rl) return _rl;
   const auth = await requireAdmin(req, [
     "admin",
     "tienda_owner",

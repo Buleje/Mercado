@@ -16,12 +16,14 @@ import { ProductsDB } from "@/lib/db/products.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { slugify } from "@/data/products";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 interface Props {
   params: Promise<{ orderId: string }>;
 }
 
 export async function POST(req: NextRequest, { params }: Props) {
+  const _rl = await applyRateLimit(req, "MODERATE", "me-reorder-X"); if (_rl) return _rl;
   const customer = await requireCustomer(req);
   if (customer instanceof NextResponse) return customer;
 

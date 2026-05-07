@@ -607,7 +607,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                               color: "var(--color-primary-dark, #009690)",
                             }}
                           >
-                            S/ {o.total.toFixed(2)}
+                            S/ {Number(o.total).toFixed(2)}
                           </p>
                         )}
                         <p className="text-xs text-muted mt-2">
@@ -921,7 +921,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                                 {item.name}
                               </p>
                               <p className="text-xs text-muted mt-0.5 tabular-nums">
-                                {item.unit} · S/{item.price.toFixed(2)} c/u
+                                {item.unit} · S/{Number(item.price).toFixed(2)} c/u
                               </p>
                               <p
                                 className="text-base font-extrabold tabular-nums mt-0.5"

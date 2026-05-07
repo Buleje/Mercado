@@ -7,6 +7,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { haversineKm } from "@/lib/admin-helpers";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import "leaflet/dist/leaflet.css";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Constantes de Pucallpa ───────────────────────────────────────────────────
 const PUCALLPA_LAT = -8.3791;
@@ -300,7 +301,7 @@ export default function DeliveryRoutesTab() {
       : "confirmado";
     tenantFetch(`/api/orders/${routeId}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         status: orderStatus,
         ...(assignedRiders[routeId] ? { riderName: assignedRiders[routeId] } : {}),
@@ -407,7 +408,7 @@ export default function DeliveryRoutesTab() {
           )}>
             <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{geoResult.address}</p>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
-              Lat {geoResult.lat.toFixed(5)}, Lon {geoResult.lon.toFixed(5)} —
+              Lat {Number(geoResult.lat).toFixed(5)}, Lon {Number(geoResult.lon).toFixed(5)} —
               {" "}{haversineKm(PUCALLPA_LAT, PUCALLPA_LON, geoResult.lat, geoResult.lon).toFixed(2)} km del centro
             </p>
             <div className="flex flex-wrap items-center gap-2 mt-1">

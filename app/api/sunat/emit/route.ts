@@ -21,6 +21,7 @@ import { calculateIGV } from "@/lib/sunat";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { DomainEvents } from "@/lib/domain-events";
 import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Validación de entrada ─────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ const EmitSchema = z.object({
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "sunat-emit"); if (_rl) return _rl;
   // Auth
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

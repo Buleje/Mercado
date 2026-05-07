@@ -132,7 +132,7 @@ export function QuotationComparator({ orders, suppliers }: {
                   )}
                 >
                   <span className="font-semibold">{sup?.name || oc.supplierId}</span>
-                  <span className="text-[var(--text-tertiary)] ml-2">S/{oc.total.toFixed(2)} · {oc.items.length} items · {new Date(oc.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
+                  <span className="text-[var(--text-tertiary)] ml-2">S/{Number(oc.total).toFixed(2)} · {oc.items.length} items · {new Date(oc.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</span>
                 </button>
               );
             })}
@@ -167,7 +167,7 @@ export function QuotationComparator({ orders, suppliers }: {
                         const isBest = best && best.ocId === oc.id;
                         return (
                           <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-foreground")}>
-                            {item ? `S/ ${item.unitCost.toFixed(2)}` : "—"}
+                            {item ? `S/ ${Number(item.unitCost).toFixed(2)}` : "—"}
                           </td>
                         );
                       })}
@@ -312,7 +312,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                     )}
                   </td>
                   <td className="py-2 px-2 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
-                    S/ {c.lastPrice.toFixed(2)}
+                    S/ {Number(c.lastPrice).toFixed(2)}
                   </td>
                   <td className="py-2 px-2 text-right text-[var(--text-secondary)] dark:text-muted text-xs">
                     {formatDate(c.lastDate)}

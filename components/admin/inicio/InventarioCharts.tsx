@@ -15,6 +15,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 import type { InventarioData } from "./InventarioDashboard";
 import {
   BulejeComposedChart,
@@ -52,7 +53,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
     try {
       const res = await fetch("/api/admin/alerts/stock-critical", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({}),
       });
       const json = await res.json();

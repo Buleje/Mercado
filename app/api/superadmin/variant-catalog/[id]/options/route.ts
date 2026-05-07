@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { VariantCatalogDb } from "@/lib/db/variant-catalog.db";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Whitelist de protocolos para imageUrl — bloquea SSRF (file://, internal IPs).
 // Aceptamos:
@@ -35,6 +36,7 @@ const OptionSchema = z.object({
 });
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-variant-catalog-X-options"); if (_rl) return _rl;
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
 

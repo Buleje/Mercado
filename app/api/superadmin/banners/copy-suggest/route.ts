@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateText } from "ai";
 import { chatModel } from "@/lib/ai/provider";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/superadmin/banners/copy-suggest
@@ -34,6 +35,7 @@ const TONE_HINTS: Record<z.infer<typeof Input>["tone"], string> = {
 };
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-banners-copy-suggest"); if (_rl) return _rl;
   try {
     const body = await req.json();
     const parsed = Input.safeParse(body);

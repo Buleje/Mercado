@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─── Zod Schema ───────────────────────────────────────────────────────────────
 
@@ -89,6 +90,7 @@ export async function GET(req: NextRequest) {
 // ─── PUT — crear o actualizar config del tenant ───────────────────────────────
 
 export async function PUT(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-whatsapp-config"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -201,6 +203,7 @@ export async function PUT(req: NextRequest) {
 // ─── DELETE — desactivar config del tenant ────────────────────────────────────
 
 export async function DELETE(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-whatsapp-config"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
 

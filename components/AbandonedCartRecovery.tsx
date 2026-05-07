@@ -5,6 +5,7 @@ import { ShoppingCart, X, ArrowRight } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/cart-context";
 import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // 30 minutes before we consider cart "abandoned"
 const IDLE_MS = 30 * 60 * 1000;
@@ -42,7 +43,7 @@ export default function AbandonedCartRecovery() {
         // Fire abandoned-cart email (best-effort, does not block UI)
         fetch("/api/abandoned-cart", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ items: cartItems, total: t }),
         }).catch(() => {});
       } catch { /* ignore */ }

@@ -6,6 +6,7 @@ import {
   loadConversationHistory,
   saveMessage,
 } from "@/lib/ai-conversation-memory";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const SaveSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
 
 // POST: Save a message to the conversation
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "ai-assistant-conversation"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

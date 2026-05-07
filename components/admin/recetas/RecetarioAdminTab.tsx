@@ -1,6 +1,7 @@
 'use client';
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 import { useState, useEffect, useCallback } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -172,13 +173,13 @@ export default function RecetarioAdminTab() {
       if (editing?._noteId) {
         await fetch(`/api/admin/recetario/${editing._noteId}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(body),
         });
       } else {
         await fetch("/api/admin/recetario", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(body),
         });
       }
@@ -195,7 +196,7 @@ export default function RecetarioAdminTab() {
     try {
       await fetch(`/api/admin/recetario/${r._noteId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ activa: !r.activa }),
       });
       fetchRecetas();
@@ -518,7 +519,7 @@ export default function RecetarioAdminTab() {
                                         onClick={() => selectProduct(idx, p)}
                                         className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--data-success-500)] px-2 py-0.5 rounded-md hover:bg-[var(--accent-soft)] transition-colors"
                                       >
-                                        {p.name} — S/{p.price.toFixed(2)}
+                                        {p.name} — S/{Number(p.price).toFixed(2)}
                                       </button>
                                     ))}
                                 </div>

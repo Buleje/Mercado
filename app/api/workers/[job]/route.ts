@@ -27,6 +27,7 @@ import { handleGeneratePdf } from "@/lib/workers/generate-pdf.worker";
 import { handleSendWhatsapp } from "@/lib/workers/send-whatsapp.worker";
 import { handleSendPushNotification } from "@/lib/workers/send-push-notification.worker";
 import { handleLogActivity } from "@/lib/workers/log-activity.worker";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Registro de handlers ───────────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ export async function POST(
   req: NextRequest,
   context: { params: Promise<{ job: string }> },
 ) {
+  const _rl = await applyRateLimit(req, "STRICT", "workers-X"); if (_rl) return _rl;
   // 1. Verificar secret interno
   if (!verifyWorkerSecret(req)) {
     logger.warn("[worker-router] Unauthorized attempt", {

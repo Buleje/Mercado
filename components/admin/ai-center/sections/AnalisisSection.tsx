@@ -146,7 +146,7 @@ function MargenesTab({ products }: { products: ProductWithMargin[] }) {
                       ) : (
                         <TrendingUp className="w-3.5 h-3.5" />
                       )}
-                      {p.margin.toFixed(1)}%
+                      {Number(p.margin).toFixed(1)}%
                     </span>
                   </td>
                   <td className="py-2.5 text-xs">
@@ -321,7 +321,7 @@ function SimuladorTab({
                 Margen actual
               </p>
               <p className="text-sm font-medium text-[var(--text-primary)] tabular-nums">
-                {result.oldMargin.toFixed(1)}%
+                {Number(result.oldMargin).toFixed(1)}%
               </p>
             </div>
             <div>
@@ -336,7 +336,7 @@ function SimuladorTab({
                     : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
                 )}
               >
-                {result.newMargin.toFixed(1)}%
+                {Number(result.newMargin).toFixed(1)}%
               </p>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { catalogPeru, CATALOG_CATEGORIES } from "@/data/catalog-peru";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ── Validación con safeParse (nunca .parse()) ───────────────────────────────
 
@@ -21,6 +22,7 @@ const ImportCatalogSchema = z.object({
  * Requiere rol admin. tenantId como primer parámetro de aislamiento.
  */
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "onboarding-import-catalog"); if (_rl) return _rl;
   // ── Auth: solo admin puede importar catálogo ────────────────────────────
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

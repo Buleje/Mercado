@@ -224,7 +224,7 @@ export default function MiCuentaPage() {
                 {activeOrder.itemsCount === 1
                   ? "1 producto"
                   : `${activeOrder.itemsCount} productos`}{" "}
-                · S/ {activeOrder.total.toFixed(2)}
+                · S/ {Number(activeOrder.total).toFixed(2)}
               </p>
               {/* Progress bar */}
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/60 dark:bg-black/20">

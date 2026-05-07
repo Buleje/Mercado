@@ -5,6 +5,7 @@ import { Star, User, MessageSquare, Send, CheckCircle } from "@buleje/design-sys
 import { cn } from "@/lib/utils";
 import { useCachedData } from "@/hooks/use-cached-data";
 import { useCustomer } from "@/contexts/customer-context";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type ReviewItem = {
   id: string;
@@ -86,7 +87,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
     try {
       const res = await fetch("/api/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           id: `rv-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           name: formName.trim(),

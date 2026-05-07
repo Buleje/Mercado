@@ -333,12 +333,12 @@ export default function VentasHeatmap() {
             <div className="space-y-2 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
               {bestSlot.avg > 0 && (
                 <p>
-                  <span className="font-bold">Tu mejor horario:</span> {DOW_LABELS[bestSlot.dow]} a las {formatHour(bestSlot.hour)} — promedio S/ {bestSlot.avg.toFixed(0)} ({bestSlot.count} ventas)
+                  <span className="font-bold">Tu mejor horario:</span> {DOW_LABELS[bestSlot.dow]} a las {formatHour(bestSlot.hour)} — promedio S/ {Number(bestSlot.avg).toFixed(0)} ({bestSlot.count} ventas)
                 </p>
               )}
               {worstSlot.avg > 0 && (
                 <p>
-                  <span className="font-bold">Horario mas bajo:</span> {DOW_LABELS[worstSlot.dow]} a las {formatHour(worstSlot.hour)} — promedio S/ {worstSlot.avg.toFixed(0)}
+                  <span className="font-bold">Horario mas bajo:</span> {DOW_LABELS[worstSlot.dow]} a las {formatHour(worstSlot.hour)} — promedio S/ {Number(worstSlot.avg).toFixed(0)}
                 </p>
               )}
               {worstSlot.avg > 0 && isBusinessHour(worstSlot.hour) && (

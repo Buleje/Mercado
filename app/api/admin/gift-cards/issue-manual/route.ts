@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { GiftCardsDB } from "@/lib/db/gift-cards.db";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/admin/gift-cards/issue-manual — ADR-077
@@ -38,6 +39,7 @@ const Schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "admin-gift-cards-issue-manual"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
