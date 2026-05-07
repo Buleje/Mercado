@@ -36,6 +36,10 @@ export async function POST(req: NextRequest) {
     if (!coupon) return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
     if (!coupon.active) return NextResponse.json({ error: "Cupón inactivo" }, { status: 400 });
     if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) return NextResponse.json({ error: "Cupón expirado" }, { status: 400 });
+    // SECURITY (F2 2026-05-07): validate SOLO verifica — nunca incrementa usedCount.
+    // El incremento atómico ocurre dentro del $transaction en /api/orders POST
+    // usando $executeRaw con condición "usedCount < maxUses". Esto evita doble
+    // consumo y race conditions entre llamadas paralelas.
     if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) return NextResponse.json({ error: "Cupón agotado" }, { status: 400 });
     if (coupon.minPurchase && cartTotal < coupon.minPurchase) return NextResponse.json({ error: `Mínimo de compra: S/${coupon.minPurchase}` }, { status: 400 });
 

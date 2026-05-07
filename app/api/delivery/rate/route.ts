@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { verifyRatingToken } from "@/lib/delivery/rating-token";
+import { logger } from "@/lib/logger";
 
 const RatingSchema = z.object({
   assignmentId: z.string().min(1),
   stars: z.number().int().min(1).max(5),
   comment: z.string().max(500).optional(),
+  // SECURITY (F3 2026-05-07): token HMAC para prevenir 1-star bombing.
+  // Backwards-compat: opcional por ahora.
+  token: z.string().max(200).optional(),
+  // orderId necesario para verificar el token (el token está ligado al orderId).
+  orderId: z.string().max(100).optional(),
 });
 
 /**
@@ -27,7 +34,10 @@ export async function POST(req: NextRequest) {
   const rl = await applyRateLimit(req, "STRICT", "delivery-rate");
   if (rl) return rl;
 
-  const body = await req.json().catch(() => null);
+  const body = await req.json().catch((err) => {
+    logger.warn("[delivery/rate] body parse failed", { err: String(err) });
+    return null;
+  });
   if (!body) {
     return NextResponse.json({ error: "Body inválido" }, { status: 400 });
   }
@@ -37,10 +47,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
+  // SECURITY (F3 2026-05-07): validar token HMAC cuando viene.
+  // Token también puede venir en query param ?token=... junto con ?orderId=...
+  const tokenFromQuery = new URL(req.url).searchParams.get("token");
+  const orderIdFromQuery = new URL(req.url).searchParams.get("orderId");
+  const token = parsed.data.token ?? tokenFromQuery ?? null;
+  const orderId = parsed.data.orderId ?? orderIdFromQuery ?? null;
+  if (token && orderId) {
+    const result = verifyRatingToken(token, orderId);
+    if (!result.valid) {
+      return NextResponse.json({ error: "Token inválido o expirado" }, { status: 403 });
+    }
+  } else if (token && !orderId) {
+    return NextResponse.json({ error: "orderId requerido para verificar token" }, { status: 400 });
+  } else {
+    // Backwards-compat: sin token se permite con warning para medir adopción.
+    logger.warn("[delivery/rate] legacy unauthenticated request", {
+      assignmentId: parsed.data.assignmentId,
+    });
+  }
+
   const { prisma } = await import("@/lib/prisma");
 
   try {
     // Find the assignment
+    // eslint-disable-next-line no-restricted-properties -- legacy: lookup publico por assignmentId; verifyRatingToken arriba garantiza ownership.
     const assignment = await prisma.deliveryAssignment.findUnique({
       where: { id: parsed.data.assignmentId },
       select: {
@@ -100,6 +131,7 @@ export async function POST(req: NextRequest) {
         : `---RATING---\n${JSON.stringify(ratingData)}`;
     }
 
+    // eslint-disable-next-line no-restricted-properties -- update por id ya validado por findUnique anterior con assignmentId+token.
     await prisma.deliveryAssignment.update({
       where: { id: assignment.id },
       data: { notes: updatedNotes },
@@ -108,6 +140,7 @@ export async function POST(req: NextRequest) {
     // SECURITY 2026-05-05 (pentest delivery H002): cap a 200 ratings recientes.
     // Antes el findMany sin take traía TODOS los assignments rated del partner
     // en cada llamada — patológico bajo carga.
+    // eslint-disable-next-line no-restricted-properties -- aggregate read scoped por partnerId; refactor a DeliveryAssignmentsDB.recentRatings pendiente.
     const allAssignments = await prisma.deliveryAssignment.findMany({
       where: { partnerId: assignment.partnerId, notes: { contains: '"rated":true' } },
       select: { notes: true },

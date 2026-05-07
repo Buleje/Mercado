@@ -5,22 +5,31 @@ import { CouponsDB } from "@/lib/jsondb";
 import { getTenantIdFromRequest } from "@/lib/tenant";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+// SECURITY (F1 2026-05-07): el cliente ya NO envía el prize.
+// El schema solo acepta datos opcionales de contexto (e.g. phone para
+// limitar 1 giro/día en el futuro — TODO P2 SpinAttempt).
 const SpinSchema = z.object({
-  prize: z.string().min(1).max(50),
-  type: z.enum(["percent", "fixed", "free_delivery"]),
-  value: z.number().min(0).max(100),
+  phone: z.string().max(20).optional(),
 });
 
-// Valid spin prizes — prevents abuse by only allowing known prizes
-const VALID_PRIZES: Record<string, { type: "percent" | "fixed"; value: number; desc: string }> = {
-  "5% OFF":       { type: "percent", value: 5,  desc: "5% de descuento (Ruleta)" },
-  "3% OFF":       { type: "percent", value: 3,  desc: "3% de descuento (Ruleta)" },
-  "10% OFF":      { type: "percent", value: 10, desc: "10% de descuento (Ruleta)" },
-  "S/2 OFF":      { type: "fixed",   value: 2,  desc: "S/2 de descuento (Ruleta)" },
-  "S/5 OFF":      { type: "fixed",   value: 5,  desc: "S/5 de descuento (Ruleta)" },
-  "Envío gratis":  { type: "fixed",   value: 5,  desc: "Delivery gratis (Ruleta)" },
-  "Sorpresa 🎁":  { type: "percent", value: 7,  desc: "Sorpresa 7% desc. (Ruleta)" },
-};
+// Server-authoritative prize table with weighted probabilities.
+// NUNCA confiar en el prize enviado por el cliente — se selecciona aquí.
+const PRIZES: Array<{ name: string; type: "percent" | "fixed"; value: number; desc: string; weight: number }> = [
+  { name: "3% OFF",      type: "percent", value: 3,  desc: "3% de descuento (Ruleta)",  weight: 50 },
+  { name: "5% OFF",      type: "percent", value: 5,  desc: "5% de descuento (Ruleta)",  weight: 30 },
+  { name: "10% OFF",     type: "percent", value: 10, desc: "10% de descuento (Ruleta)", weight: 15 },
+  { name: "20% OFF",     type: "percent", value: 20, desc: "20% de descuento (Ruleta)", weight: 5  },
+];
+
+function rollPrize(): typeof PRIZES[number] {
+  const total = PRIZES.reduce((s, p) => s + p.weight, 0);
+  let r = Math.random() * total;
+  for (const p of PRIZES) {
+    r -= p.weight;
+    if (r <= 0) return p;
+  }
+  return PRIZES[0];
+}
 
 function generateCode(): string {
   // crypto.randomBytes: CSPRNG — seguro para tokens de cupón
@@ -35,16 +44,17 @@ export async function POST(req: NextRequest) {
   // TODO(P2): tabla SpinAttempt para 1 giro/día por IP+phone
 
   try {
-    const raw = await req.json();
+    // Body opcional — si no viene JSON válido, se trata como objeto vacío.
+    let raw: unknown = {};
+    try { raw = await req.json(); } catch { /* sin body — ok */ }
     const parsed = SpinSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
     }
 
-    const prizeConfig = VALID_PRIZES[parsed.data.prize];
-    if (!prizeConfig) {
-      return NextResponse.json({ error: "Premio no reconocido" }, { status: 400 });
-    }
+    // SECURITY (F1 2026-05-07): selección de premio server-side con pesos.
+    // El cliente NO puede elegir su propio premio.
+    const prizeConfig = rollPrize();
 
     const tenantId = getTenantIdFromRequest(req);
 
@@ -69,7 +79,8 @@ export async function POST(req: NextRequest) {
       expiresAt,
     }, tenantId);
 
-    return NextResponse.json({ code: coupon.code, expiresAt }, { status: 201 });
+    // Devolver el premio seleccionado para que el frontend lo muestre en la animación.
+    return NextResponse.json({ code: coupon.code, prize: prizeConfig.name, expiresAt }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }

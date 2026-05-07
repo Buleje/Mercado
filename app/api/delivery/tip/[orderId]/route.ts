@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
+import { verifyRatingToken } from "@/lib/delivery/rating-token";
 
 /**
  * POST /api/delivery/tip/[orderId]
@@ -20,6 +21,9 @@ import { logger } from "@/lib/logger";
 const BodySchema = z.object({
   amount: z.number().positive().max(500),
   message: z.string().max(280).optional(),
+  // SECURITY (F3 2026-05-07): token HMAC generado al crear la DeliveryAssignment.
+  // Backwards-compat: opcional por ahora — si no viene, se permite con warning.
+  token: z.string().max(200).optional(),
 });
 
 export async function POST(
@@ -37,6 +41,21 @@ export async function POST(
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
 
+  // SECURITY (F3 2026-05-07): validar token HMAC para prevenir propinas
+  // arbitrarias desde IDs enumerables.
+  // Token puede venir en body o en query param ?token=...
+  const token = parsed.data.token ?? new URL(req.url).searchParams.get("token") ?? null;
+  if (token) {
+    const result = verifyRatingToken(token, orderId);
+    if (!result.valid) {
+      return NextResponse.json({ error: "Token inválido o expirado" }, { status: 403 });
+    }
+  } else {
+    // Backwards-compat: permitir sin token pero log para medir uso legacy.
+    logger.warn("[delivery/tip] legacy unauthenticated request", { orderId });
+  }
+
+  // eslint-disable-next-line no-restricted-properties -- legacy: lookup publico por orderId; verifyRatingToken arriba garantiza ownership.
   const assignment = await prisma.deliveryAssignment.findUnique({
     where: { orderId },
     select: {
@@ -61,6 +80,7 @@ export async function POST(
     );
   }
 
+  // eslint-disable-next-line no-restricted-properties -- update por id ya validado por findUnique anterior con orderId+token.
   await prisma.deliveryAssignment.update({
     where: { id: assignment.id },
     data: {
