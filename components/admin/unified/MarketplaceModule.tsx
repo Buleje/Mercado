@@ -3111,101 +3111,174 @@ function CuponesTab() {
 
   if (loading) return <TableSkeleton />;
 
+  const inputClass =
+    "w-full h-11 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary";
+  const labelClass =
+    "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] block mb-2";
+
   return (
-    <div className="space-y-5">
-      {/* Header con count + nuevo */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-[var(--text-secondary)]">
-          <strong className="text-[var(--text-primary)]">{coupons.length}</strong> cupón
-          {coupons.length !== 1 ? "es" : ""} · {aggregate.uses} usos totales
-        </p>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:opacity-90 transition"
-        >
-          + Nuevo Cupón
-        </button>
+    <div className="space-y-6">
+      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Ticket className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Cupones del marketplace
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                {coupons.length === 0
+                  ? "Aún no tenés cupones. Creá uno para atraer más clientes."
+                  : `${coupons.length} ${coupons.length === 1 ? "cupón creado" : "cupones creados"} · ${coupons.filter((c) => c.active).length} ${coupons.filter((c) => c.active).length === 1 ? "activo" : "activos"}`}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowForm(!showForm)}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shrink-0"
+          >
+            {showForm ? <X className="h-4 w-4" /> : <Ticket className="h-4 w-4" />}
+            {showForm ? "Cerrar" : "Nuevo cupón"}
+          </button>
+        </div>
+
+        {coupons.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                  <Ticket className="h-5 w-5 text-primary" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Usos totales
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-2">
+                {aggregate.uses}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">
+                {coupons.filter((c) => c.active).length} {coupons.filter((c) => c.active).length === 1 ? "cupón activo" : "cupones activos"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-50)]">
+                  <Percent className="h-5 w-5 text-[var(--data-warning-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Descontado total
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-warning-500)] leading-tight mt-2">
+                S/ {aggregate.discounted.toFixed(2)}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">
+                Estimado por usos × valor
+              </p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                  <DollarSign className="h-5 w-5 text-[var(--data-success-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Ventas atribuidas
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
+                S/ {aggregate.revenue.toFixed(2)}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">
+                Aprox. ticket promedio
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* CP2 agregado: 3 KPI */}
-      {coupons.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
-            <p className="text-xs font-bold text-[var(--text-secondary)]">Usos totales</p>
-            <p className="text-xl font-extrabold text-primary mt-1">{aggregate.uses}</p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-              {coupons.filter((c) => c.active).length} cupones activos
-            </p>
-          </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
-            <p className="text-xs font-bold text-[var(--text-secondary)]">Descontado total</p>
-            <p className="text-xl font-extrabold text-[var(--data-warning-500)] mt-1">
-              S/ {aggregate.discounted.toFixed(2)}
-            </p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">estimado por usos × valor</p>
-          </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
-            <p className="text-xs font-bold text-[var(--text-secondary)]">Ventas atribuidas</p>
-            <p className="text-xl font-extrabold text-[var(--data-success-500)] mt-1">
-              S/ {aggregate.revenue.toFixed(2)}
-            </p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">aprox. ticket promedio</p>
-          </div>
-        </div>
-      )}
-
-      {/* CP1: plantillas */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Zap className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm">Empieza con una plantilla</CardTitle>
-          <span className="text-xs text-[var(--text-secondary)]">
-            · pre-llena el formulario en 1 clic
+      {/* ── 2. Plantillas ──────────────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start gap-3 mb-5">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <Zap className="h-5 w-5" />
           </span>
+          <div>
+            <CardTitle className="font-display text-xl leading-tight">
+              Empezá con una plantilla
+            </CardTitle>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
+              Pre-llena el formulario con un click — listo para personalizar
+            </p>
+          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {COUPON_TEMPLATES.map((t) => (
             <button
               key={t.id}
+              type="button"
               onClick={() => applyTemplate(t.id)}
-              className="text-left rounded-xl border border-[var(--rule-base)] hover:border-primary/50 hover:bg-primary/5 transition p-3"
+              className="text-left rounded-xl border-2 border-[var(--rule-soft)] hover:border-primary hover:bg-primary/5 transition p-5"
             >
-              <div className="text-2xl mb-1">{t.emoji}</div>
-              <p className="text-sm font-bold text-[var(--text-primary)]">{t.label}</p>
-              <p className="text-xs text-[var(--text-secondary)]">{t.hint}</p>
+              <div className="text-3xl mb-3">{t.emoji}</div>
+              <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                {t.label}
+              </p>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
+                {t.hint}
+              </p>
             </button>
           ))}
         </div>
       </div>
 
+      {/* ── 3. Formulario (cuando showForm) ────────────────────────── */}
       {showForm && (
-        <div className="bg-gray-50 border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="bg-[var(--surface-raised)] border-2 border-primary/30 rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+          <div className="flex items-start gap-3 mb-2">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Ticket className="h-5 w-5" />
+            </span>
             <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Código</label>
+              <CardTitle className="font-display text-xl leading-tight">
+                {form.code ? `Editar cupón ${form.code}` : "Nuevo cupón"}
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">
+                Completá los campos requeridos para crear el cupón
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Código</label>
               <input
                 type="text"
                 placeholder="BIENVENIDO10"
                 value={form.code}
-                onChange={(e) => setForm({ ...form, code: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+                className={cn(inputClass, "font-mono uppercase")}
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Tipo</label>
+              <label className={labelClass}>Tipo de descuento</label>
               <select
                 value={form.discountType}
                 onChange={(e) => setForm({ ...form, discountType: e.target.value as "percent" | "fixed" })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className={inputClass}
               >
                 <option value="percent">Porcentaje (%)</option>
                 <option value="fixed">Monto fijo (S/)</option>
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
+              <label className={labelClass}>
                 Valor {form.discountType === "percent" ? "(%)" : "(S/)"}
               </label>
               <input
@@ -3213,176 +3286,212 @@ function CuponesTab() {
                 placeholder="10"
                 value={form.discountValue}
                 onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className={cn(inputClass, "tabular-nums")}
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Compra mínima (S/)</label>
+              <label className={labelClass}>Compra mínima (S/)</label>
               <input
                 type="number"
                 placeholder="Opcional"
                 value={form.minPurchase}
                 onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className={cn(inputClass, "tabular-nums")}
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Usos máximos</label>
+              <label className={labelClass}>Usos máximos</label>
               <input
                 type="number"
                 placeholder="Ilimitado"
                 value={form.maxUses}
                 onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className={cn(inputClass, "tabular-nums")}
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Descripción</label>
+              <label className={labelClass}>Descripción</label>
               <input
                 type="text"
                 placeholder="Descuento de bienvenida"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Vence el</label>
+              <label className={labelClass}>Vence el</label>
               <input
                 type="datetime-local"
                 value={form.expiresAt}
                 onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                className={inputClass}
               />
             </div>
           </div>
-          <div className="flex gap-2 justify-end">
+
+          <div className="flex gap-3 justify-end pt-2 border-t border-[var(--rule-base)]">
             <button
+              type="button"
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-lg text-sm text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-gray-100 transition"
+              className="inline-flex items-center px-5 h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] border-2 border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition"
             >
               Cancelar
             </button>
             <button
+              type="button"
               onClick={handleCreate}
               disabled={saving || !form.code || !form.discountValue}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:opacity-90 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 h-11 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition disabled:opacity-50"
             >
-              {saving ? "Guardando…" : "Crear Cupón"}
+              {saving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Guardando…
+                </>
+              ) : (
+                <>
+                  <Ticket className="h-4 w-4" />
+                  Crear cupón
+                </>
+              )}
             </button>
           </div>
         </div>
       )}
 
+      {/* ── 4. Lista de cupones ────────────────────────────────────── */}
       {coupons.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-tertiary)]">
-          <Ticket className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No hay cupones todavía</p>
-          <p className="text-xs mt-1">Crea un cupón para atraer más clientes al marketplace.</p>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+            <Ticket className="h-8 w-8 text-[var(--text-tertiary)]" />
+          </span>
+          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+            No hay cupones todavía
+          </p>
+          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+            Creá un cupón para atraer más clientes al marketplace. Empezá con una plantilla o personalizá desde cero.
+          </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {coupons.map((c) => {
             const m = couponMetrics(c);
             // eslint-disable-next-line react-hooks/purity -- expiry comparison is allowed to drift across renders
             const expired = c.expiresAt && new Date(c.expiresAt).getTime() < Date.now();
+            const isLive = c.active && !expired;
             return (
               <div
                 key={c.id}
                 className={cn(
-                  "bg-white border border-[var(--rule-base)] rounded-xl p-4",
-                  !c.active && "opacity-60",
+                  "bg-[var(--surface-raised)] border rounded-2xl p-5 sm:p-6 shadow-sm transition-opacity",
+                  isLive ? "border-[var(--rule-base)]" : "border-[var(--rule-soft)] opacity-70",
                 )}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono font-extrabold text-sm text-primary">{c.code}</span>
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary">
+                      <span className="font-mono font-extrabold text-base text-primary">{c.code}</span>
+                      <span className="px-3 py-1 rounded-full text-sm font-extrabold bg-primary/10 text-primary tabular-nums">
                         {c.discountType === "percent" ? `${c.discountValue}%` : `S/ ${c.discountValue.toFixed(2)}`}
                       </span>
                       <span
                         className={cn(
-                          "px-2 py-0.5 rounded-full text-xs font-semibold",
-                          c.active && !expired
+                          "inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold",
+                          isLive
                             ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
-                            : "bg-gray-200 text-[var(--text-secondary)]",
+                            : expired
+                              ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
+                              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                         )}
                       >
                         {expired ? "Expirado" : c.active ? "Activo" : "Inactivo"}
                       </span>
                       {c.minPurchase && (
-                        <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                        <span className="px-3 py-1 rounded-full text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)] tabular-nums">
                           Mín S/ {c.minPurchase.toFixed(2)}
                         </span>
                       )}
                     </div>
                     {c.description && (
-                      <p className="text-xs text-[var(--text-secondary)] mt-1">{c.description}</p>
+                      <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">{c.description}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
+                      type="button"
                       onClick={() => toggleActive(c.id, c.active)}
                       title={c.active ? "Desactivar" : "Activar"}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 transition"
+                      className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition"
                     >
                       {c.active ? (
-                        <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" />
+                        <>
+                          <EyeOff className="h-4 w-4" />
+                          Desactivar
+                        </>
                       ) : (
-                        <Eye className="h-4 w-4 text-[var(--data-success-500)]" />
+                        <>
+                          <Eye className="h-4 w-4 text-[var(--data-success-500)]" />
+                          Activar
+                        </>
                       )}
                     </button>
                     <button
+                      type="button"
                       onClick={() => deleteCoupon(c.id)}
                       title="Eliminar"
-                      className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition"
+                      className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-[var(--rule-base)] hover:bg-[var(--data-error-50)] hover:border-[var(--data-error-500)]/40 transition"
                     >
                       <X className="h-4 w-4 text-[var(--data-error-500)]" />
                     </button>
                   </div>
                 </div>
 
-                {/* CP2: métricas por cupón */}
-                <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <p className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)] font-bold">
+                {/* Métricas por cupón */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
+                    <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
                       Usos
                     </p>
-                    <p className="text-sm font-extrabold text-[var(--text-primary)]">
+                    <p className="text-xl font-extrabold tabular-nums text-[var(--text-primary)] mt-1">
                       {c.usedCount}
-                      {c.maxUses ? <span className="text-xs text-[var(--text-tertiary)] font-semibold">/{c.maxUses}</span> : ""}
+                      {c.maxUses && (
+                        <span className="text-sm text-[var(--text-tertiary)] font-bold">/{c.maxUses}</span>
+                      )}
                     </p>
-                    <CouponMiniBar pct={m.usagePct} max={c.maxUses} />
+                    <div className="mt-2">
+                      <CouponMiniBar pct={m.usagePct} max={c.maxUses} />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)] font-bold">
+                  <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
+                    <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
                       Descontado
                     </p>
-                    <p className="text-sm font-extrabold text-[var(--data-warning-500)]">
+                    <p className="text-xl font-extrabold tabular-nums text-[var(--data-warning-500)] mt-1">
                       S/ {m.discountedAmount.toFixed(2)}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)] font-bold">
+                  <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
+                    <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
                       Ventas atribuidas
                     </p>
-                    <p className="text-sm font-extrabold text-[var(--data-success-500)]">
+                    <p className="text-xl font-extrabold tabular-nums text-[var(--data-success-500)] mt-1">
                       S/ {m.attributedRevenue.toFixed(2)}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)] font-bold">
+                  <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
+                    <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
                       ROI estimado
                     </p>
                     {m.roiPct === null ? (
-                      <p className="text-sm font-bold text-[var(--text-tertiary)]">—</p>
+                      <p className="text-xl font-bold text-[var(--text-tertiary)] mt-1">—</p>
                     ) : (
                       <p
                         className={cn(
-                          "text-sm font-extrabold",
+                          "text-xl font-extrabold tabular-nums mt-1",
                           m.roiPct >= 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]",
                         )}
                       >
@@ -3394,15 +3503,22 @@ function CuponesTab() {
                 </div>
 
                 {(c.expiresAt || c.maxUses) && (
-                  <p className="text-xs text-[var(--text-tertiary)] mt-2 pt-2 border-t border-[var(--rule-base)]">
+                  <div className="text-sm text-[var(--text-tertiary)] mt-4 pt-4 border-t border-[var(--rule-base)] flex flex-wrap items-center gap-x-4 gap-y-1">
                     {c.expiresAt && (
-                      <>Vence: <strong>{new Date(c.expiresAt).toLocaleDateString("es-PE")}</strong></>
+                      <span>
+                        <span className="font-bold uppercase tracking-wider text-[length:var(--ts-2xs)]">Vence:</span>{" "}
+                        <strong className="text-[var(--text-primary)]">
+                          {new Date(c.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+                        </strong>
+                      </span>
                     )}
-                    {c.expiresAt && c.maxUses ? " · " : ""}
                     {c.maxUses && (
-                      <>Cap: <strong>{c.maxUses} usos</strong></>
+                      <span>
+                        <span className="font-bold uppercase tracking-wider text-[length:var(--ts-2xs)]">Cap:</span>{" "}
+                        <strong className="text-[var(--text-primary)] tabular-nums">{c.maxUses} usos</strong>
+                      </span>
                     )}
-                  </p>
+                  </div>
                 )}
               </div>
             );
