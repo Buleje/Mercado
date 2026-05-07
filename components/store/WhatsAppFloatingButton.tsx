@@ -22,14 +22,26 @@ export default function WhatsAppFloatingButton() {
       return;
     }
 
-    // Fetch store phone from settings
+    // Fetch store phone from settings.
+    // FIX 2026-05-07: leer también storeTheme.whatsapp + Tenant.ownerPhone
+    // como fallback. Brandon reporta que el botón no aparece aunque el admin
+    // esté configurado — antes solo leíamos businessPhone/whatsappPhone que
+    // viven en columnas top-level, pero el StoreCustomizer guarda en
+    // storeTheme.whatsapp (sub-objeto) que no se consultaba.
     (async () => {
       try {
         const res = await fetch("/api/settings");
         if (res.ok) {
           const data = await res.json();
-          const storePhone = data?.businessPhone ?? data?.whatsappPhone;
-          if (storePhone) setPhone(storePhone);
+          const storePhone =
+            data?.businessPhone ??
+            data?.whatsappPhone ??
+            data?.storeTheme?.whatsapp ??
+            data?.storeTheme?.phone ??
+            null;
+          if (storePhone && String(storePhone).trim()) {
+            setPhone(String(storePhone).trim());
+          }
         }
       } catch { /* silent */ }
     })();
