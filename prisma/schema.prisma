@@ -1981,6 +1981,9 @@ model Turno {
   id             String      @id @default(cuid())
   tenantId       String
   adminUserId    String
+  // T5 (audit ventas-caja 2026-05-07): asocia el turno a un CashRegister
+  // especifico para multi-caja real. Nullable hasta migrar turnos legados.
+  cashRegisterId String?
   inicioEfectivo Decimal     @default(0) @db.Decimal(10, 2)
   cierreEfectivo Decimal?    @db.Decimal(10, 2)
   ventasTotal    Decimal     @default(0) @db.Decimal(10, 2)
@@ -1994,6 +1997,7 @@ model Turno {
 
   @@index([tenantId, status])
   @@index([adminUserId])
+  @@index([cashRegisterId])
 }
 
 // ═══════════════════════════════════════════════════════

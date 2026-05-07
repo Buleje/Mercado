@@ -10,6 +10,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 const CreateTurnoSchema = z.object({
   inicioEfectivo: z.number().min(0),
   adminUserId: z.string().optional(),
+  // T5: multi-caja real — opcional para compat con turnos legados.
+  cashRegisterId: z.string().min(1).max(120).optional(),
 });
 
 // GET /api/turnos — list turnos for tenant
@@ -71,8 +73,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Verify no open turno exists for this admin
-    const activo = await TurnosDB.getActivo(auth.tenantId, resolvedAdminUserId);
+    // T5: si se especifica cashRegisterId, scopear el lookup al register.
+    // Asi un cajero puede abrir turnos en distintos registers sin colision.
+    const activo = await TurnosDB.getActivo(
+      auth.tenantId,
+      resolvedAdminUserId,
+      parsed.data.cashRegisterId,
+    );
     if (activo) {
       return NextResponse.json(
         { error: "Este cajero ya tiene un turno abierto. Ciérralo antes de abrir otro.", turnoActivo: activo },
@@ -83,6 +90,7 @@ export async function POST(req: NextRequest) {
     const turno = await TurnosDB.abrir({
       tenantId: auth.tenantId,
       adminUserId: resolvedAdminUserId,
+      cashRegisterId: parsed.data.cashRegisterId,
       inicioEfectivo: parsed.data.inicioEfectivo,
     });
 
@@ -90,7 +98,7 @@ export async function POST(req: NextRequest) {
       "Abrir", "turno",
       `Turno abierto con S/${parsed.data.inicioEfectivo.toFixed(2)} de efectivo inicial`,
       turno.id, auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[turnos] activity log failed", { turnoId: turno.id, err: String(err) }));
 
     return NextResponse.json(turno, { status: 201 });
   } catch (e) {
