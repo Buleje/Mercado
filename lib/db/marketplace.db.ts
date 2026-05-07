@@ -777,6 +777,8 @@ export const MarketplaceOrdersDB = {
     notes?: string;
     paymentMethod?: string;
     items: CartItem[];
+    couponCode?: string;
+    loyaltyRedeemPoints?: number;
   }): Promise<DbMarketplaceOrder> {
     // 1. Cargar tienda y verificar que esté publicada
     const store = await prisma.store.findUnique({
@@ -830,9 +832,12 @@ export const MarketplaceOrdersDB = {
     let tierLabel: string | null = null;
     if (params.customerPhone) {
       try {
+        // F2 fix: tenantId scoped — tier solo cuenta pedidos entregados
+        // en ESTA tienda para evitar que pedidos de otro tenant eleven el tier.
         const deliveredCount = await prisma.order.count({
           where: {
             customerPhone: params.customerPhone,
+            tenantId: store.tenantId,
             source: "marketplace",
             deletedAt: null,
             status: "entregado",
@@ -854,11 +859,8 @@ export const MarketplaceOrdersDB = {
       }
     }
     const tierDiscount = parseFloat(((subtotal * tierDiscountPct) / 100).toFixed(2));
+    // total intermedio (antes de cupón/loyalty) — usado en cálculo de couponDiscount porcentual
     const total = parseFloat((subtotal - tierDiscount).toFixed(2));
-
-    // TD-018: store.commission es Decimal → convertir para toFixed()
-    const commissionRate = toNumOrZero(store.commission);
-    const commission = parseFloat(((total * commissionRate) / 100).toFixed(2));
 
     // 2.5. Garantizar que el Customer existe antes de crear el Order.
     //     Order.customerPhone es FK a Customer.phone — sin este upsert, Postgres
@@ -871,71 +873,207 @@ export const MarketplaceOrdersDB = {
       // dispara 1 POST por tienda en paralelo. Ambos intentan upsertar el
       // mismo Customer.phone — el primero gana, el segundo fallaria con P2002
       // (unique). Capturamos ese caso como ok ya que el Customer ya existe.
+      // F5 fix: NO usar upsert({where:{phone}}) — phone es @unique global y
+      // devolvería el Customer de OTRO tenant. Usar findFirst+create scoped.
+      // Race-safe: si hay P2002 en el create (carrito multi-tienda paralelo),
+      // el Customer ya existe en este tenant — ignoramos.
       try {
-        await prisma.customer.upsert({
-          where:  { phone: params.customerPhone },
-          create: {
-            phone:    params.customerPhone,
-            name:     params.customerName,
-            location: params.customerAddress,
-            tenantId: store.tenantId, // asigna al vendedor en primer contacto
-          },
-          update: {
-            // No pisar datos existentes del customer — solo crear si no existe.
-          },
+        const existingCustomer = await prisma.customer.findFirst({
+          where: { phone: params.customerPhone, tenantId: store.tenantId },
+          select: { phone: true },
         });
+        if (!existingCustomer) {
+          // eslint-disable-next-line no-restricted-properties -- aggregate: create scoped a tenantId; refactor a CustomersDB pendiente.
+          await prisma.customer.create({
+            data: {
+              phone:    params.customerPhone,
+              name:     params.customerName,
+              location: params.customerAddress,
+              tenantId: store.tenantId,
+            },
+          });
+        }
       } catch (e: unknown) {
         const code = (e as { code?: string })?.code;
-        if (code !== "P2002") throw e; // P2002 = unique violation (race) — safe to ignore
+        if (code !== "P2002") throw e; // P2002 = race condition — Customer ya creado
       }
     }
 
-    // 3. Crear el Order en el tenant del vendedor
-    const orderId = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
+    // 3. Resolver cupón y loyalty server-side (F1)
+    // Constante: 100 puntos = S/1
+    const LOYALTY_POINTS_PER_SOL = 100;
 
-    // Componer notas con tag de tier para audit
+    // Pre-validar cupón FUERA de la tx para tener el objeto disponible
+    let couponDiscount = 0;
+    let resolvedCouponId: string | null = null;
+    if (params.couponCode) {
+      // eslint-disable-next-line no-restricted-properties -- aggregate: findFirst scoped a tenantId+active; migracion a CouponsDB pendiente.
+      const coupon = await prisma.coupon.findFirst({
+        where: {
+          code:     params.couponCode,
+          tenantId: store.tenantId,
+          active:   true,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        select: { id: true, discountType: true, discountValue: true, maxUses: true, usedCount: true },
+      });
+      if (!coupon) {
+        throw new Error("Cupón inválido o expirado");
+      }
+      // Validar cupo disponible (maxUses=0 o null → ilimitado)
+      const maxUsesVal = coupon.maxUses ?? 0;
+      if (maxUsesVal > 0 && toNumOrZero(coupon.usedCount) >= maxUsesVal) {
+        throw new Error("Cupón ya alcanzó el límite de usos");
+      }
+      const dv = toNumOrZero(coupon.discountValue);
+      if (coupon.discountType === "percent") {
+        couponDiscount = parseFloat(Math.min((subtotal * dv) / 100, subtotal).toFixed(2));
+      } else {
+        couponDiscount = parseFloat(Math.min(dv, subtotal).toFixed(2));
+      }
+      resolvedCouponId = coupon.id;
+    }
+
+    // Loyalty: verificar puntos FUERA de tx (solo lectura previa)
+    let loyaltyDiscount = 0;
+    const redeemPoints = params.loyaltyRedeemPoints ?? 0;
+    if (redeemPoints > 0 && params.customerPhone) {
+      // eslint-disable-next-line no-restricted-properties -- aggregate: findFirst scoped a phone+tenantId; migracion a CustomersDB pendiente.
+      const cust = await prisma.customer.findFirst({
+        where: { phone: params.customerPhone, tenantId: store.tenantId },
+        select: { loyaltyPoints: true },
+      });
+      if (!cust || toNumOrZero(cust.loyaltyPoints) < redeemPoints) {
+        throw new Error("Puntos de fidelidad insuficientes");
+      }
+      loyaltyDiscount = parseFloat((redeemPoints / LOYALTY_POINTS_PER_SOL).toFixed(2));
+    }
+
+    // Total final con todos los descuentos (no puede ser negativo)
+    const totalAfterDiscounts = parseFloat(
+      Math.max(0, total - couponDiscount - loyaltyDiscount).toFixed(2)
+    );
+
+    // TD-018: store.commission es Decimal → convertir para toFixed()
+    const commissionRate = toNumOrZero(store.commission);
+    const commission = parseFloat(((totalAfterDiscounts * commissionRate) / 100).toFixed(2));
+
+    // Componer notas con tags de descuentos para audit
     const noteParts: string[] = [];
     if (params.notes) noteParts.push(params.notes);
     if (tierDiscount > 0 && tierLabel) {
       noteParts.push(`[${tierLabel}: -${tierDiscountPct}% = -S/${tierDiscount.toFixed(2)}]`);
     }
+    if (couponDiscount > 0 && params.couponCode) {
+      noteParts.push(`[Cupón ${params.couponCode}: -S/${couponDiscount.toFixed(2)}]`);
+    }
+    if (loyaltyDiscount > 0) {
+      noteParts.push(`[Loyalty ${redeemPoints}pts: -S/${loyaltyDiscount.toFixed(2)}]`);
+    }
     const composedNotes = noteParts.length > 0 ? noteParts.join(" ") : null;
 
-    await prisma.order.create({
-      data: {
-        id:               `MKT-${orderId}`,
-        tenantId:         store.tenantId,
-        source:           "marketplace",
-        customerName:     params.customerName,
-        customerPhone:    params.customerPhone,
-        customerLocation: params.customerAddress,
-        total,
-        discountAmount:   tierDiscount > 0 ? tierDiscount : null,
-        notes:            composedNotes,
-        paymentMethod:    params.paymentMethod || "marketplace",
-        updatedAt:        new Date(),
-        items: {
-          create: orderItems,
-        },
-      },
-    });
+    const orderId = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
+    const fullOrderId = `MKT-${orderId}`;
 
-    // 4. Registrar comisión
-    await prisma.commissionLedger.create({
-      data: {
-        id:       crypto.randomUUID(),
-        orderId:  `MKT-${orderId}`,
-        storeId:  store.id,
-        type:     "sale",
-        amount:   commission,
-        rate:     store.commission,
-        status:   "pending",
-        tenantId: store.tenantId,
-      },
+    // 4. Transacción atómica: stock + order + commission + cupón + loyalty (F4, F1)
+    // eslint-disable-next-line no-restricted-properties -- $transaction legítima: operaciones atómicas multi-tabla en marketplace checkout.
+    await prisma.$transaction(async (tx) => {
+      // F4: decrementar stock de cada producto (con guard de stock suficiente)
+      for (const item of orderItems) {
+        const storeProduct = storeProducts.find(
+          (sp) => sp.id === params.items.find((pi) => pi.productId === item.productId && pi.name === item.name)?.storeProductId
+        );
+        if (storeProduct?.productId) {
+          // eslint-disable-next-line no-restricted-properties -- $transaction interna: decrement scoped a productId+tenantId con stock guard.
+          const upd = await tx.product.updateMany({
+            where: {
+              id:        storeProduct.productId,
+              tenantId:  store.tenantId,
+              stock:     { gte: item.quantity },
+              deletedAt: null,
+            },
+            data: { stock: { decrement: item.quantity } },
+          });
+          if (upd.count === 0) {
+            throw new Error(`Stock insuficiente para ${item.name}`);
+          }
+        }
+      }
+
+      // Crear Order
+      // eslint-disable-next-line no-restricted-properties -- $transaction interna: order.create scoped a tenantId del vendedor.
+      await tx.order.create({
+        data: {
+          id:               fullOrderId,
+          tenantId:         store.tenantId,
+          source:           "marketplace",
+          customerName:     params.customerName,
+          customerPhone:    params.customerPhone,
+          customerLocation: params.customerAddress,
+          total:            totalAfterDiscounts,
+          discountAmount:   (tierDiscount + couponDiscount + loyaltyDiscount) > 0
+            ? parseFloat((tierDiscount + couponDiscount + loyaltyDiscount).toFixed(2))
+            : null,
+          notes:            composedNotes,
+          paymentMethod:    params.paymentMethod || "marketplace",
+          updatedAt:        new Date(),
+          items: {
+            create: orderItems,
+          },
+        },
+      });
+
+      // Registrar comisión
+      // eslint-disable-next-line no-restricted-properties -- $transaction interna: commissionLedger.create scoped a tenantId.
+      await tx.commissionLedger.create({
+        data: {
+          id:       crypto.randomUUID(),
+          orderId:  fullOrderId,
+          storeId:  store.id,
+          type:     "sale",
+          amount:   commission,
+          rate:     store.commission,
+          status:   "pending",
+          tenantId: store.tenantId,
+        },
+      });
+
+      // F1: incrementar usedCount del cupón de forma atómica.
+      // El check pre-tx validó el cupo; aquí hacemos el increment dentro de la
+      // tx y re-verificamos para cerrar la race window entre check y write.
+      if (resolvedCouponId) {
+        // eslint-disable-next-line no-restricted-properties -- $transaction interna: coupon.update+findUnique atómico para usedCount; refactor a CouponsDB pendiente.
+        await tx.coupon.update({
+          where: { id: resolvedCouponId },
+          data:  { usedCount: { increment: 1 } },
+        });
+        // Re-verificar dentro de la tx que no se pasó del límite (cierra race window)
+        const freshCoupon = await tx.coupon.findUnique({
+          where:  { id: resolvedCouponId },
+          select: { maxUses: true, usedCount: true },
+        });
+        const freshMaxUses = freshCoupon?.maxUses ?? 0;
+        if (
+          freshCoupon &&
+          freshMaxUses > 0 &&
+          toNumOrZero(freshCoupon.usedCount) > freshMaxUses
+        ) {
+          throw new Error("Cupón ya consumido");
+        }
+      }
+
+      // F1: decrementar loyalty points del customer
+      if (redeemPoints > 0 && params.customerPhone) {
+        // eslint-disable-next-line no-restricted-properties -- $transaction interna: customer.updateMany scoped a phone+tenantId.
+        await tx.customer.updateMany({
+          where: { phone: params.customerPhone, tenantId: store.tenantId },
+          data:  { loyaltyPoints: { decrement: redeemPoints } },
+        });
+      }
     });
 
     return {
-      id:             `MKT-${orderId}`,
+      id:             fullOrderId,
       storeId:        store.id,
       storeName:      store.name,
       storeSlug:      store.slug,
@@ -944,7 +1082,7 @@ export const MarketplaceOrdersDB = {
       customerPhone:  params.customerPhone,
       customerAddress: params.customerAddress,
       notes:           params.notes ?? null,
-      total,
+      total:          totalAfterDiscounts,
       commission,
       status:         "pendiente",
       createdAt:      new Date().toISOString(),

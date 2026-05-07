@@ -119,6 +119,15 @@ export async function PATCH(
     return NextResponse.json({ error: "Error inesperado al leer pedido actualizado" }, { status: 500 });
   }
 
+  // F3: revertir comisiones pendientes al cancelar (fire-and-forget)
+  if (parsed.data.status === "cancelado") {
+    // eslint-disable-next-line no-restricted-properties -- legacy: updateMany scoped a orderId+tenantId+status para revertir comisiones; refactor a CommissionsDB pendiente.
+    prisma.commissionLedger.updateMany({
+      where:  { orderId: id, tenantId: auth.tenantId, status: "pending" },
+      data:   { status: "reversed" },
+    }).catch((err) => logger.warn("[marketplace/orders/[id]] commission reverse failed", { err: String(err), orderId: id, tenantId: auth.tenantId }));
+  }
+
   // Log status change history (fire-and-forget)
   // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing audit insert con tenantId en payload; refactor pendiente.
   prisma.orderStatusHistory.create({

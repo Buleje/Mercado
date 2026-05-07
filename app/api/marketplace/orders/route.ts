@@ -17,6 +17,20 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { cacheStore } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function redactPII(body: unknown): string {
+  if (!body || typeof body !== "object") return "[non-object body]";
+  const b = body as Record<string, unknown>;
+  return JSON.stringify({
+    ...b,
+    customerPhone: typeof b.customerPhone === "string" ? `***${b.customerPhone.slice(-4)}` : undefined,
+    customerName: b.customerName ? "[REDACTED]" : undefined,
+    customerAddress: b.customerAddress ? "[REDACTED]" : undefined,
+    customer: b.customer ? "[REDACTED-OBJ]" : undefined,
+  }).slice(0, 600);
+}
+
 // ── GET /api/marketplace/orders — órdenes del marketplace para el admin ─────
 export async function GET(req: NextRequest) {
   const traceId = newTraceId();
@@ -142,7 +156,7 @@ export async function POST(req: NextRequest) {
         .map((i) => `${i.path.join(".") || "body"}: ${i.message}`)
         .join("; ");
       console.error(
-        `\n🚨 [orders 400] Validation failed\n   traceId: ${traceId}\n   issues: ${issuesSummary}\n   body: ${JSON.stringify(body).slice(0, 600)}\n`,
+        `\n[orders 400] Validation failed\n   traceId: ${traceId}\n   issues: ${issuesSummary}\n   body: ${redactPII(body)}\n`,
       );
       logger.warn("[marketplace/orders] Validation failed", {
         traceId,
@@ -165,6 +179,8 @@ export async function POST(req: NextRequest) {
       customerAddress,
       notes,
       paymentMethod,
+      couponCode,
+      loyaltyRedeemPoints,
       items,
       scheduledFor,
     } = parsed.data;
@@ -243,6 +259,8 @@ export async function POST(req: NextRequest) {
       customerAddress,
       notes,
       paymentMethod,
+      couponCode,
+      loyaltyRedeemPoints,
       items,
     });
 
@@ -444,10 +462,23 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+
+    // Errores de negocio conocidos → 409/422 (no 500)
+    if (msg.startsWith("Stock insuficiente para ")) {
+      return NextResponse.json({ error: msg }, { status: 409 });
+    }
+    if (msg === "Cupón inválido o expirado" || msg === "Cupón ya alcanzó el límite de usos" || msg === "Cupón ya consumido") {
+      return NextResponse.json({ error: msg }, { status: 422 });
+    }
+    if (msg === "Puntos de fidelidad insuficientes") {
+      return NextResponse.json({ error: msg }, { status: 422 });
+    }
+
     // Log full stack al terminal del dev server — sin esto, toErrorPayload
     // devuelve un 500 anonimo al cliente pero el server no imprime nada util.
     console.error(
-      `\n🔥 [orders 500] Unhandled error\n   traceId: ${traceId}\n   message: ${err instanceof Error ? err.message : String(err)}\n   stack: ${err instanceof Error ? err.stack : "(no stack)"}\n`,
+      `\n[orders 500] Unhandled error\n   traceId: ${traceId}\n   message: ${msg}\n   stack: ${err instanceof Error ? err.stack : "(no stack)"}\n`,
     );
     logger.error("[marketplace/orders] unhandled error", {
       traceId,
