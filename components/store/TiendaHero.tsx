@@ -42,6 +42,11 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
   const subtitle = storeTheme?.heroSubtitle?.trim() || `Frescos, calidos, con la confianza de tu barrio. ${storeName} te lleva la despensa completa a la puerta — Yape, Plin o efectivo.`;
   const ctaText  = storeTheme?.heroCTA?.trim()      || "Ver productos";
   const heroBg   = (storeTheme as { heroImage?: string } | null | undefined)?.heroImage?.trim();
+  // FIX 2026-05-07 (audit storefront-admin): badge debajo del avatar configurable.
+  // Antes "Hecho en Pucallpa" estaba hardcoded — un negocio en Lima/Cusco mostraba
+  // Pucallpa igual. Ahora lee storeTheme.heroOriginBadge con fallback editorial.
+  const originBadge = (storeTheme as { heroOriginBadge?: string } | null | undefined)?.heroOriginBadge?.trim()
+    || "Hecho en Pucallpa";
 
   // ── Destino del CTA primario ──────────────────────────────────────────────
   // heroLink puede ser "tienda" | "whatsapp" | "categorias" | "custom".
@@ -146,7 +151,7 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
                 </div>
                 {/* Micro-badge identidad */}
                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider shadow-lg shadow-[var(--accent)]/30 whitespace-nowrap">
-                  Hecho en Pucallpa
+                  {originBadge}
                 </div>
               </div>
             </div>

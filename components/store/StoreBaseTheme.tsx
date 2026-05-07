@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * StoreBaseTheme — Inyecta el concepto de diseño BASE de la tienda individual.
+ * StoreBaseTheme — Inyecta el concepto de diseño BASE de la tienda individual
+ * + aplica overrides del admin (borderRadius, spacing) si están configurados.
  *
  * Este componente NO depende del theme custom del tenant. Provee la fundación
  * moderna y armoniosa sobre la que se aplican los conceptos de marca (Marca,
@@ -207,6 +208,67 @@ const STORE_BASE_CSS = `
       }
 `;
 
+import { useSettings } from "@/contexts/settings-context";
+
+/**
+ * Construye CSS de overrides desde storeTheme.borderRadius (number, px) y
+ * storeTheme.spacing ("compact" | "balanced" | "spacious"). El admin los
+ * configura en el StoreCustomizer.
+ *
+ * FIX 2026-05-07 (audit storefront-admin): antes el componente ignoraba
+ * estos valores → el customizer del admin no tenía efecto en la tienda.
+ */
+function buildAdminOverridesCSS(theme: {
+  borderRadius?: number;
+  spacing?: string;
+}): string {
+  const parts: string[] = [];
+
+  if (typeof theme.borderRadius === "number" && theme.borderRadius >= 0 && theme.borderRadius <= 64) {
+    const r = theme.borderRadius;
+    parts.push(`
+      :root {
+        --store-radius-xs: ${Math.max(2, Math.round(r * 0.33))}px;
+        --store-radius-sm: ${Math.max(4, Math.round(r * 0.55))}px;
+        --store-radius-md: ${Math.max(6, Math.round(r * 0.78))}px;
+        --store-radius-lg: ${r}px;
+        --store-radius-xl: ${Math.round(r * 1.4)}px;
+      }
+    `);
+  }
+
+  if (theme.spacing === "compact") {
+    parts.push(`
+      main > section {
+        padding-top: clamp(2rem, 4vw, 3rem) !important;
+        padding-bottom: clamp(2rem, 4vw, 3rem) !important;
+      }
+    `);
+  } else if (theme.spacing === "spacious") {
+    parts.push(`
+      main > section {
+        padding-top: clamp(4rem, 8vw, 7rem) !important;
+        padding-bottom: clamp(4rem, 8vw, 7rem) !important;
+      }
+    `);
+  }
+  // "balanced" o vacío → mantener defaults del STORE_BASE_CSS.
+
+  return parts.join("\n");
+}
+
 export default function StoreBaseTheme() {
-  return <style dangerouslySetInnerHTML={{ __html: STORE_BASE_CSS }} />;
+  const { storeTheme } = useSettings();
+  const overrides = storeTheme
+    ? buildAdminOverridesCSS({
+        borderRadius: storeTheme.borderRadius,
+        spacing: storeTheme.spacing,
+      })
+    : "";
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: STORE_BASE_CSS }} />
+      {overrides && <style dangerouslySetInnerHTML={{ __html: overrides }} />}
+    </>
+  );
 }
