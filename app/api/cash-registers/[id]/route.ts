@@ -5,6 +5,11 @@ import { sendCashSummaryEmail } from "@/lib/mailer";
 import { toErrorPayload } from "@/lib/api-error";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { createNotification } from "@/lib/create-notification";
+import { logger } from "@/lib/logger";
+
+// Umbral de anomalia en arqueo: diferencias mayores generan alerta admin.
+const ANOMALY_THRESHOLD_SOL = 50;
 
 /**
  * SECURITY 2026-05-06 (pentest H003): asegura ownership de la caja antes de
@@ -16,6 +21,7 @@ async function assertRegisterOwnership(
   registerId: string,
   tenantId: string,
 ): Promise<boolean> {
+  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing ownership guard scoped por tenantId; refactor a CashRegistersDB.assertOwnership pendiente.
   const reg = await prisma.cashRegister.findFirst({
     where: { id: registerId, tenantId },
     select: { id: true },
@@ -104,6 +110,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         method: "efectivo",
         description: body.notes ? `Arqueo express: ${body.notes}` : "Arqueo express",
       });
+
+      // Anomaly detection: si el arqueo tiene diferencia con el esperado
+      // mayor al umbral, alertar al admin via notification + push.
+      try {
+        const reg = await CashRegistersDB.getById(auth.tenantId, id);
+        const expected = reg?.expectedAmount ?? null;
+        if (expected != null) {
+          const diff = arqueoAmount - expected;
+          if (Math.abs(diff) >= ANOMALY_THRESHOLD_SOL) {
+            const isShort = diff < 0;
+            createNotification({
+              tenantId: auth.tenantId,
+              type: "cash_register_anomaly",
+              severity: "HIGH",
+              title: isShort ? "⚠️ Faltante en arqueo" : "💰 Sobrante en arqueo",
+              body: `Caja ${id.slice(-6)} · ${auth.username}: ${isShort ? "faltan" : "sobran"} S/${Math.abs(diff).toFixed(2)} (esperado S/${expected.toFixed(2)} · contado S/${arqueoAmount.toFixed(2)})`,
+              actionUrl: `/admin?tab=ventas-caja#arqueo`,
+              actionLabel: "Revisar arqueo",
+              entityId: id,
+            }).catch((err) => logger.warn("[cash-registers/arqueo] anomaly notify failed", { err: String(err) }));
+          }
+        }
+      } catch (anomalyErr) {
+        logger.warn("[cash-registers/arqueo] anomaly detection failed", {
+          err: anomalyErr instanceof Error ? anomalyErr.message : String(anomalyErr),
+        });
+      }
+
       return NextResponse.json(movement, { status: 201 });
     }
 
