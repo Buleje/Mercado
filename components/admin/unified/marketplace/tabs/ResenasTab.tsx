@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { Star, CheckCircle, XCircle, MessageSquare } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { TableSkeleton, type ReviewItem } from "../types";
 
 // ── Status config ────────────────────────────────────────────────────────────
 const REVIEW_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pending:  { label: "Pendiente", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
-  approved: { label: "Aprobada",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-  rejected: { label: "Rechazada", className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
+  pending:  { label: "Pendiente", className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
+  approved: { label: "Aprobada",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  rejected: { label: "Rechazada", className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
 };
 
 // ── Filter type ───────────────────────────────────────────────────────────────
@@ -90,7 +91,7 @@ export default function ResenasTab() {
     try {
       const res = await fetch(`/api/reviews/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status }),
       });
       if (res.ok) {
@@ -106,7 +107,7 @@ export default function ResenasTab() {
     try {
       const res = await fetch(`/api/reviews/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ adminReply: replyText.trim() }),
       });
       if (res.ok) {
@@ -154,18 +155,18 @@ export default function ResenasTab() {
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Total reseñas</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-warning)] flex items-center justify-center gap-1">
-            <Star className="h-5 w-5 fill-[var(--data-warning)]" />
+          <p className="text-2xl font-extrabold text-[var(--data-warning-500)] flex items-center justify-center gap-1">
+            <Star className="h-5 w-5 fill-[var(--data-warning-500)]" />
             {avgRating > 0 ? avgRating.toFixed(1) : "—"}
           </p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Rating promedio</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-error)]">{unrepliedCount}</p>
+          <p className="text-2xl font-extrabold text-[var(--data-error-500)]">{unrepliedCount}</p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Sin responder</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-warning)]">{pendingCount}</p>
+          <p className="text-2xl font-extrabold text-[var(--data-warning-500)]">{pendingCount}</p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Por moderar</p>
         </div>
       </div>
@@ -181,15 +182,15 @@ export default function ResenasTab() {
               return (
                 <div key={star} className="flex items-center gap-2 text-xs">
                   <span className="flex items-center gap-0.5 w-12 text-[var(--text-secondary)] font-semibold">
-                    {star} <Star className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]" />
+                    {star} <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
                   </span>
                   <div className="flex-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all",
-                        star >= 4 ? "bg-[var(--data-success)]"
-                        : star === 3 ? "bg-[var(--data-warning)]"
-                        : "bg-[var(--data-error)]",
+                        star >= 4 ? "bg-[var(--data-success-500)]"
+                        : star === 3 ? "bg-[var(--data-warning-500)]"
+                        : "bg-[var(--data-error-500)]",
                       )}
                       style={{ width: `${pct}%` }}
                     />
@@ -225,7 +226,7 @@ export default function ResenasTab() {
                   filter === f
                     ? "bg-primary text-white"
                     : isWarning
-                    ? "bg-[var(--data-error-50)] text-[var(--data-error)] hover:brightness-95"
+                    ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:brightness-95"
                     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
                 )}
               >
@@ -251,7 +252,7 @@ export default function ResenasTab() {
               <Star
                 className={cn(
                   "h-3 w-3",
-                  filter === String(star) ? "fill-white" : "fill-[var(--data-warning)] text-[var(--data-warning)]",
+                  filter === String(star) ? "fill-white" : "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]",
                 )}
               />
               <span className="ml-0.5 opacity-70">({ratingCount(star)})</span>
@@ -292,7 +293,7 @@ export default function ResenasTab() {
                         className={cn(
                           "h-3.5 w-3.5",
                           s <= review.rating
-                            ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
+                            ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
                             : "text-gray-200",
                         )}
                       />
@@ -313,7 +314,7 @@ export default function ResenasTab() {
                     <button
                       onClick={() => handleStatusChange(review.id, "approved")}
                       disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
+                      className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
                       title="Aprobar"
                     >
                       <CheckCircle className="h-4 w-4" />
@@ -323,7 +324,7 @@ export default function ResenasTab() {
                     <button
                       onClick={() => handleStatusChange(review.id, "rejected")}
                       disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)] transition-colors"
+                      className="p-1.5 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] transition-colors"
                       title="Rechazar"
                     >
                       <XCircle className="h-4 w-4" />

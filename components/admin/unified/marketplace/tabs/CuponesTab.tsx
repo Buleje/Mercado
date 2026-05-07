@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Ticket, Zap, Eye, EyeOff, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { TableSkeleton } from "../types";
 
 // ── Tipos locales ────────────────────────────────────────────────────────────
@@ -89,7 +90,7 @@ function CouponMiniBar({ pct, max }: { pct: number; max?: number | null }) {
   if (!max) {
     return <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">ilimitado</span>;
   }
-  const tone = pct >= 90 ? "bg-[var(--data-error)]" : pct >= 60 ? "bg-[var(--data-warning)]" : "bg-primary";
+  const tone = pct >= 90 ? "bg-[var(--data-error-500)]" : pct >= 60 ? "bg-[var(--data-warning-500)]" : "bg-primary";
   return (
     <div className="w-full">
       <div className="h-1.5 w-full bg-[var(--surface-sunken)] rounded-full overflow-hidden">
@@ -107,6 +108,7 @@ export default function CuponesTab() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<CouponFormState>({
     code: "", description: "", discountType: "percent", discountValue: "", minPurchase: "", maxUses: "", expiresAt: "",
   });
@@ -124,10 +126,11 @@ export default function CuponesTab() {
 
   const handleCreate = async () => {
     setSaving(true);
+    setError(null);
     try {
       const res = await fetch("/api/marketplace/coupons", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           code: form.code,
           description: form.description,
@@ -138,28 +141,52 @@ export default function CuponesTab() {
           expiresAt: form.expiresAt || null,
         }),
       });
-      if (res.ok) {
-        setShowForm(false);
-        setForm({ code: "", description: "", discountType: "percent", discountValue: "", minPurchase: "", maxUses: "", expiresAt: "" });
-        fetchCoupons();
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail ?? body.error ?? `HTTP ${res.status}`);
       }
-    } catch {}
-    setSaving(false);
+      setShowForm(false);
+      setForm({ code: "", description: "", discountType: "percent", discountValue: "", minPurchase: "", maxUses: "", expiresAt: "" });
+      fetchCoupons();
+    } catch (err) {
+      setError(`Error al crear cupón: ${err instanceof Error ? err.message : "desconocido"}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleActive = async (id: string, active: boolean) => {
-    await fetch(`/api/marketplace/coupons/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !active }),
-    });
-    fetchCoupons();
+    try {
+      const res = await fetch(`/api/marketplace/coupons/${id}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ active: !active }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail ?? body.error ?? `HTTP ${res.status}`);
+      }
+      fetchCoupons();
+    } catch (err) {
+      setError(`Error al actualizar cupón: ${err instanceof Error ? err.message : "desconocido"}`);
+    }
   };
 
   const deleteCoupon = async (id: string) => {
     if (!confirm("¿Eliminar este cupón?")) return;
-    await fetch(`/api/marketplace/coupons/${id}`, { method: "DELETE" });
-    fetchCoupons();
+    try {
+      const res = await fetch(`/api/marketplace/coupons/${id}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail ?? body.error ?? `HTTP ${res.status}`);
+      }
+      fetchCoupons();
+    } catch (err) {
+      setError(`Error al eliminar cupón: ${err instanceof Error ? err.message : "desconocido"}`);
+    }
   };
 
   const applyTemplate = (templateId: string) => {
@@ -180,6 +207,20 @@ export default function CuponesTab() {
 
   return (
     <div className="space-y-5">
+      {error && (
+        <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
+          <span className="font-bold flex-1">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="p-1 rounded hover:bg-[var(--data-error-100)]"
+            aria-label="Cerrar error"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-[var(--text-secondary)]">
@@ -201,12 +242,12 @@ export default function CuponesTab() {
           </div>
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
             <p className="text-xs font-bold text-[var(--text-secondary)]">Descontado total</p>
-            <p className="text-xl font-extrabold text-[var(--data-warning)] mt-1">S/ {aggregate.discounted.toFixed(2)}</p>
+            <p className="text-xl font-extrabold text-[var(--data-warning-500)] mt-1">S/ {aggregate.discounted.toFixed(2)}</p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">estimado por usos × valor</p>
           </div>
           <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
             <p className="text-xs font-bold text-[var(--text-secondary)]">Ventas atribuidas</p>
-            <p className="text-xl font-extrabold text-[var(--data-success)] mt-1">S/ {aggregate.revenue.toFixed(2)}</p>
+            <p className="text-xl font-extrabold text-[var(--data-success-500)] mt-1">S/ {aggregate.revenue.toFixed(2)}</p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">aprox. ticket promedio</p>
           </div>
         </div>
@@ -314,7 +355,7 @@ export default function CuponesTab() {
                         {c.discountType === "percent" ? `${c.discountValue}%` : `S/ ${c.discountValue.toFixed(2)}`}
                       </span>
                       <span className={cn("px-2 py-0.5 rounded-full text-xs font-semibold",
-                        c.active && !expired ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-200 text-[var(--text-secondary)]")}>
+                        c.active && !expired ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-200 text-[var(--text-secondary)]")}>
                         {expired ? "Expirado" : c.active ? "Activo" : "Inactivo"}
                       </span>
                       {c.minPurchase && (
@@ -328,11 +369,11 @@ export default function CuponesTab() {
                   <div className="flex items-center gap-1 shrink-0">
                     <button onClick={() => toggleActive(c.id, c.active)} title={c.active ? "Desactivar" : "Activar"}
                       className="p-1.5 rounded-lg hover:bg-gray-100 transition">
-                      {c.active ? <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" /> : <Eye className="h-4 w-4 text-[var(--data-success)]" />}
+                      {c.active ? <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" /> : <Eye className="h-4 w-4 text-[var(--data-success-500)]" />}
                     </button>
                     <button onClick={() => deleteCoupon(c.id)} title="Eliminar"
                       className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition">
-                      <X className="h-4 w-4 text-[var(--data-error)]" />
+                      <X className="h-4 w-4 text-[var(--data-error-500)]" />
                     </button>
                   </div>
                 </div>
@@ -348,18 +389,18 @@ export default function CuponesTab() {
                   </div>
                   <div>
                     <p className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)] font-bold">Descontado</p>
-                    <p className="text-sm font-extrabold text-[var(--data-warning)]">S/ {m.discountedAmount.toFixed(2)}</p>
+                    <p className="text-sm font-extrabold text-[var(--data-warning-500)]">S/ {m.discountedAmount.toFixed(2)}</p>
                   </div>
                   <div>
                     <p className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)] font-bold">Ventas atribuidas</p>
-                    <p className="text-sm font-extrabold text-[var(--data-success)]">S/ {m.attributedRevenue.toFixed(2)}</p>
+                    <p className="text-sm font-extrabold text-[var(--data-success-500)]">S/ {m.attributedRevenue.toFixed(2)}</p>
                   </div>
                   <div>
                     <p className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)] font-bold">ROI estimado</p>
                     {m.roiPct === null ? (
                       <p className="text-sm font-bold text-[var(--text-tertiary)]">—</p>
                     ) : (
-                      <p className={cn("text-sm font-extrabold", m.roiPct >= 100 ? "text-[var(--data-success)]" : "text-[var(--data-warning)]")}>
+                      <p className={cn("text-sm font-extrabold", m.roiPct >= 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")}>
                         {m.roiPct >= 0 ? "+" : ""}{m.roiPct.toFixed(0)}%
                       </p>
                     )}

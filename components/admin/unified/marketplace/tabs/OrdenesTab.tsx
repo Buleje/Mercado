@@ -18,6 +18,7 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
   DndContext,
   DragOverlay,
@@ -94,7 +95,7 @@ const WHATSAPP_TEMPLATES: Array<{ id: string; label: string; build: (o: Marketpl
   {
     id: "confirm",
     label: "Confirmar pedido",
-    build: (o) => `Hola ${o.customerName}, recibimos tu pedido #${o.id.slice(-8).toUpperCase()} por S/${o.total.toFixed(2)}. Lo estamos preparando. ¡Gracias por tu compra!`,
+    build: (o) => `Hola ${o.customerName}, recibimos tu pedido #${o.id.slice(-8).toUpperCase()} por S/${Number(o.total).toFixed(2)}. Lo estamos preparando. ¡Gracias por tu compra!`,
   },
   {
     id: "ready",
@@ -208,7 +209,7 @@ function OrderCard({
           </p>
         </div>
         <span className="text-sm font-extrabold text-[var(--accent)] whitespace-nowrap font-mono tabular-nums">
-          S/{order.total.toFixed(2)}
+          S/{Number(order.total).toFixed(2)}
         </span>
       </div>
       <p className="text-xs text-[var(--text-secondary)] font-medium">
@@ -438,9 +439,11 @@ export default function OrdenesTab() {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
     setAdvancingId(orderId);
     try {
-      const res = await fetch(`/api/orders/${orderId}`, {
+      // FIX 2026-05-06 (audit team): endpoint correcto es /api/marketplace/orders
+      // (antes /api/orders → 404 silencioso, drag rebotaba).
+      const res = await fetch(`/api/marketplace/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) {

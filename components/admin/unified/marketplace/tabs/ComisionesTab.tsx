@@ -11,6 +11,7 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { TableSkeleton, type CommissionEntry, type CommissionSummary } from "../types";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -18,9 +19,9 @@ import { TableSkeleton, type CommissionEntry, type CommissionSummary } from "../
 const COMMISSIONS_LAST_PAID_KEY = "marketplace:commissions:last-paid-snapshot";
 
 const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ElementType }> = {
-  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", icon: Clock },
-  liquidado:  { label: "Liquidado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]",     icon: CheckCircle },
-  pagado:     { label: "Pagado",     className: "bg-[var(--accent-soft)] text-[var(--data-success)]",     icon: CheckCircle },
+  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", icon: Clock },
+  liquidado:  { label: "Liquidado",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",     icon: CheckCircle },
+  pagado:     { label: "Pagado",     className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",     icon: CheckCircle },
 };
 
 function sumCommissionsInMonth(entries: CommissionEntry[], status: string, offsetMonths: number): number {
@@ -43,8 +44,8 @@ function estimatePayoutDate(createdAt: string): Date {
   return d;
 }
 
-function fmtMoney(n: number): string {
-  return `S/ ${n.toFixed(2)}`;
+function fmtMoney(n: number | string): string {
+  return `S/ ${Number(n).toFixed(2)}`;
 }
 
 function fmtDelta(curr: number, prev: number): { label: string; tone: "up" | "down" | "flat" } {
@@ -67,8 +68,8 @@ function CommissionKpiCard({
 }) {
   const delta = fmtDelta(monthCurr, monthPrev);
   const palette: Record<typeof tone, { ring: string; text: string }> = {
-    warning: { ring: "bg-[var(--data-warning-50)]",  text: "text-[var(--data-warning)]" },
-    success: { ring: "bg-[var(--accent-soft)]",      text: "text-[var(--data-success)]" },
+    warning: { ring: "bg-[var(--data-warning-50)]",  text: "text-[var(--data-warning-500)]" },
+    success: { ring: "bg-[var(--accent-soft)]",      text: "text-[var(--data-success-500)]" },
     info:    { ring: "bg-blue-50",                   text: "text-blue-700" },
   };
   const p = palette[tone];
@@ -86,8 +87,8 @@ function CommissionKpiCard({
       <div className="flex items-center gap-2 mt-2 text-xs">
         <span className="text-[var(--text-secondary)]">Mes actual: <strong>{fmtMoney(monthCurr)}</strong></span>
         <span className={cn("px-1.5 py-0.5 rounded-full font-bold text-[length:var(--ts-2xs)]",
-          delta.tone === "up" ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-            : delta.tone === "down" ? "bg-[var(--data-error-100)] text-[var(--data-error)]"
+          delta.tone === "up" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+            : delta.tone === "down" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
             : "bg-gray-100 text-[var(--text-secondary)]"
         )} title={`vs mes anterior (${fmtMoney(monthPrev)})`}>
           {delta.label}
@@ -142,7 +143,7 @@ export default function ComisionesTab() {
     try {
       const res = await fetch("/api/commissions/ledger", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids: [entryId], status: "pagado" }),
       });
       if (!res.ok) throw new Error();
@@ -166,7 +167,7 @@ export default function ComisionesTab() {
     try {
       const res = await fetch("/api/commissions/ledger", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ids: settledIds, status: "pagado" }),
       });
       if (!res.ok) throw new Error();
@@ -185,7 +186,7 @@ export default function ComisionesTab() {
   return (
     <div className="space-y-5">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" /> {error}
           <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
         </div>
@@ -235,7 +236,7 @@ export default function ComisionesTab() {
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm font-extrabold text-[var(--data-success)] whitespace-nowrap">{fmtMoney(Number(e.amount))}</span>
+                    <span className="text-sm font-extrabold text-[var(--data-success-500)] whitespace-nowrap">{fmtMoney(Number(e.amount))}</span>
                   </li>
                 );
               })}
@@ -250,8 +251,8 @@ export default function ComisionesTab() {
 
       {/* Toast de nuevos pagos */}
       {newlyPaid.length > 0 && (
-        <div className="flex items-start gap-3 p-4 rounded-xl border border-[var(--data-success)]/40 bg-[var(--accent-soft)]">
-          <CheckCircle className="h-5 w-5 text-[var(--data-success)] shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 rounded-xl border border-[var(--data-success-500)]/40 bg-[var(--accent-soft)]">
+          <CheckCircle className="h-5 w-5 text-[var(--data-success-500)] shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-[var(--text-primary)]">
               {newlyPaid.length === 1 ? "1 lote pagado nuevo" : `${newlyPaid.length} lotes pagados nuevos`}
@@ -287,7 +288,7 @@ export default function ComisionesTab() {
           <button onClick={handleBulkPay} disabled={markingPaid === "bulk"}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50">
             <DollarSign className="h-3.5 w-3.5" />
-            {markingPaid === "bulk" ? "Procesando..." : `Pagar todo liquidado (S/${summary.liquidado.toFixed(2)})`}
+            {markingPaid === "bulk" ? "Procesando..." : `Pagar todo liquidado (S/${Number(summary.liquidado).toFixed(2)})`}
           </button>
         )}
       </div>
@@ -320,8 +321,8 @@ export default function ComisionesTab() {
                       <td className="px-4 py-3">
                         <p className="font-mono text-xs font-bold text-[var(--text-primary)]">#{e.orderId.slice(-8).toUpperCase()}</p>
                       </td>
-                      <td className="px-4 py-3 text-right text-[var(--text-secondary)]">S/{e.orderTotal.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">S/{e.amount.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right text-[var(--text-secondary)]">S/{Number(e.orderTotal).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">S/{Number(e.amount).toFixed(2)}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold", sc.className)}>
                           <StatusIcon className="h-3 w-3" /> {sc.label}
@@ -333,7 +334,7 @@ export default function ComisionesTab() {
                       <td className="px-4 py-3 text-center">
                         {e.status === "liquidado" && (
                           <button onClick={() => handleMarkPaid(e.id)} disabled={markingPaid === e.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
                             title="Marcar como pagado">
                             <CheckCircle className="h-3 w-3" />
                             {markingPaid === e.id ? "..." : "Pagar"}

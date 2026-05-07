@@ -19,6 +19,7 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { ORDER_STATUS_CONFIG, TableSkeleton } from "../types";
 
 // ─────────────────────────────────────────────
@@ -60,10 +61,10 @@ export function AdminMarketplaceOverview() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Tiendas activas", value: `${data.stores.active}/${data.stores.total}`, sub: data.stores.pending > 0 ? `${data.stores.pending} por aprobar` : "Todas aprobadas", color: "text-primary" },
-          { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-[var(--data-success)]" },
+          { label: "Pedidos hoy", value: String(data.today.orders), sub: fmtS(data.today.revenue), color: "text-[var(--data-success-500)]" },
           { label: "Ventas del mes", value: fmtS(data.month.revenue), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs anterior` : "—", color: "text-[var(--text-secondary)]" },
-          { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-[var(--data-warning)]" },
-          { label: "Pedidos pendientes", value: String(data.pendingOrders), sub: data.pendingOrders > 0 ? "¡Requieren atención!" : "Todo al día", color: data.pendingOrders > 0 ? "text-[var(--data-error)]" : "text-[var(--data-success)]" },
+          { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-[var(--data-warning-500)]" },
+          { label: "Pedidos pendientes", value: String(data.pendingOrders), sub: data.pendingOrders > 0 ? "¡Requieren atención!" : "Todo al día", color: data.pendingOrders > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]" },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
@@ -90,7 +91,7 @@ export function AdminMarketplaceOverview() {
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{s.name}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">{s.orders} pedido(s)</p>
                   </div>
-                  <span className="text-xs font-bold text-[var(--data-success)] shrink-0">{fmtS(s.revenue)}</span>
+                  <span className="text-xs font-bold text-[var(--data-success-500)] shrink-0">{fmtS(s.revenue)}</span>
                 </div>
               ))}
             </div>
@@ -135,9 +136,9 @@ export function AdminMarketplaceOverview() {
 function HealthGauge({ score }: { score: number }) {
   const c = Math.max(0, Math.min(100, Math.round(score)));
   const tone =
-    c >= 80 ? "text-[var(--data-success)]"
-    : c >= 50 ? "text-[var(--data-warning)]"
-    : "text-[var(--data-error)]";
+    c >= 80 ? "text-[var(--data-success-500)]"
+    : c >= 50 ? "text-[var(--data-warning-500)]"
+    : "text-[var(--data-error-500)]";
   const stroke =
     c >= 80 ? "var(--data-success)"
     : c >= 50 ? "var(--data-warning)"
@@ -188,9 +189,9 @@ function HealthBreakdownBar({
   total?: number;
 }) {
   const tone =
-    pct >= 80 ? "bg-[var(--data-success)]"
-    : pct >= 50 ? "bg-[var(--data-warning)]"
-    : pct > 0 ? "bg-[var(--data-error)]"
+    pct >= 80 ? "bg-[var(--data-success-500)]"
+    : pct >= 50 ? "bg-[var(--data-warning-500)]"
+    : pct > 0 ? "bg-[var(--data-error-500)]"
     : "bg-[var(--rule-base)]";
   return (
     <div className="space-y-1">
@@ -374,10 +375,10 @@ export function MarketplaceQuickActions({
   }
 
   const toneStyles: Record<QuickAction["tone"], { bar: string; bg: string; iconBg: string; iconFg: string }> = {
-    danger:  { bar: "before:bg-[var(--data-error)]",   bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]", iconBg: "bg-[var(--data-error)]/10",   iconFg: "text-[var(--data-error)]" },
-    warning: { bar: "before:bg-[var(--data-warning)]", bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]", iconBg: "bg-[var(--data-warning)]/10", iconFg: "text-[var(--data-warning)]" },
+    danger:  { bar: "before:bg-[var(--data-error-500)]",   bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]", iconBg: "bg-[var(--data-error-500)]/10",   iconFg: "text-[var(--data-error-500)]" },
+    warning: { bar: "before:bg-[var(--data-warning-500)]", bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]", iconBg: "bg-[var(--data-warning-500)]/10", iconFg: "text-[var(--data-warning-500)]" },
     info:    { bar: "before:bg-primary",               bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]", iconBg: "bg-primary/10",               iconFg: "text-primary" },
-    success: { bar: "before:bg-[var(--data-success)]", bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]", iconBg: "bg-[var(--data-success)]/10", iconFg: "text-[var(--data-success)]" },
+    success: { bar: "before:bg-[var(--data-success-500)]", bg: "bg-[var(--surface-raised)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]", iconBg: "bg-[var(--data-success-500)]/10", iconFg: "text-[var(--data-success-500)]" },
   };
 
   const tonePriority: Record<QuickAction["tone"], number> = { danger: 0, warning: 1, info: 2, success: 3 };
@@ -406,9 +407,9 @@ export function MarketplaceQuickActions({
           </div>
           {!state.loading && (
             <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
-              healthScore >= 80 ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-              : healthScore >= 50 ? "bg-[var(--data-warning-50)] text-[var(--data-warning)]"
-              : "bg-[var(--data-error-50)] text-[var(--data-error)]"
+              healthScore >= 80 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+              : healthScore >= 50 ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]"
+              : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
             )}>
               {healthScore >= 80 ? "Excelente" : healthScore >= 50 ? "Mejorable" : "Urgente"}
             </span>
@@ -464,7 +465,7 @@ export function MarketplaceQuickActions({
         ) : actions.length === 0 ? (
           <div className="text-center py-10">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] mb-3">
-              <CheckCircle className="h-6 w-6 text-[var(--data-success)]" />
+              <CheckCircle className="h-6 w-6 text-[var(--data-success-500)]" />
             </span>
             <p className="font-display text-base font-bold text-[var(--text-primary)]">Todo en orden</p>
             <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-xs mx-auto">
@@ -536,6 +537,7 @@ export default function DashboardTab() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [quickConfirmError, setQuickConfirmError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -548,13 +550,18 @@ export default function DashboardTab() {
 
   const handleQuickConfirm = useCallback(async (orderId: string) => {
     setConfirmingId(orderId);
+    setQuickConfirmError(null);
     try {
       const res = await fetch(`/api/marketplace/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: "confirmado" }),
       });
-      if (res.ok && data) {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail ?? body.error ?? `HTTP ${res.status}`);
+      }
+      if (data) {
         setData({
           ...data,
           pendingOrders: Math.max(0, data.pendingOrders - 1),
@@ -563,8 +570,14 @@ export default function DashboardTab() {
           ),
         });
       }
-    } catch { /* silent */ }
-    setConfirmingId(null);
+    } catch (err) {
+      // FIX 2026-05-06: catch silencioso reemplazado.
+      // Antes admin clickeaba "Confirmar", fallaba en silencio y creía
+      // que se confirmó. Crítico para pedidos reales.
+      setQuickConfirmError(`Error al confirmar pedido: ${err instanceof Error ? err.message : "desconocido"}`);
+    } finally {
+      setConfirmingId(null);
+    }
   }, [data]);
 
   if (loading) return <TableSkeleton />;
@@ -576,18 +589,32 @@ export default function DashboardTab() {
     </div>
   );
 
-  const fmtS = (n: number) => `S/${n.toFixed(2)}`;
-  const maxRevenue = Math.max(...data.dailySales.map((d) => d.revenue), 1);
+  // FIX 2026-05-06: Number() defensivo — Decimal Prisma viene como string en JSON.
+  const fmtS = (n: number | string) => `S/${Number(n).toFixed(2)}`;
+  // FIX: reduce en vez de spread (evita RangeError con arrays grandes).
+  const maxRevenue = data.dailySales.reduce((m, d) => Math.max(m, Number(d.revenue)), 1);
 
   return (
     <div className="space-y-5">
+      {quickConfirmError && (
+        <div className="p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-xl text-sm text-[var(--data-error-500)] font-bold flex items-center gap-2">
+          <span className="flex-1">{quickConfirmError}</span>
+          <button
+            type="button"
+            onClick={() => setQuickConfirmError(null)}
+            className="text-xs underline"
+          >
+            cerrar
+          </button>
+        </div>
+      )}
       {/* KPIs rápidos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Hoy", value: fmtS(data.today.revenue), sub: `${data.today.orders} pedido(s)`, color: "text-primary" },
-          { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-[var(--data-success)]" },
+          { label: "Este mes", value: fmtS(data.month.revenue), sub: `${data.month.orders} pedido(s)`, color: "text-[var(--data-success-500)]" },
           { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-[var(--text-secondary)]" },
-          { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning)]" },
+          { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning-500)]" },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4">
             <p className={cn("text-xl sm:text-2xl font-extrabold", color)}>{value}</p>
@@ -606,9 +633,9 @@ export default function DashboardTab() {
           </CardTitle>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div><p className="text-lg font-extrabold text-primary">{fmtS(data.allChannels.today.revenue)}</p><p className="text-xs text-[var(--text-secondary)]">Hoy (total)</p></div>
-            <div><p className="text-lg font-extrabold text-[var(--data-success)]">{data.allChannels.today.orders}</p><p className="text-xs text-[var(--text-secondary)]">Pedidos hoy (total)</p></div>
+            <div><p className="text-lg font-extrabold text-[var(--data-success-500)]">{data.allChannels.today.orders}</p><p className="text-xs text-[var(--text-secondary)]">Pedidos hoy (total)</p></div>
             <div><p className="text-lg font-extrabold text-[var(--text-secondary)]">{fmtS(data.allChannels.month.revenue)}</p><p className="text-xs text-[var(--text-secondary)]">Este mes (total)</p></div>
-            <div><p className="text-lg font-extrabold text-[var(--data-warning)]">{data.allChannels.month.orders}</p><p className="text-xs text-[var(--text-secondary)]">Pedidos mes (total)</p></div>
+            <div><p className="text-lg font-extrabold text-[var(--data-warning-500)]">{data.allChannels.month.orders}</p><p className="text-xs text-[var(--text-secondary)]">Pedidos mes (total)</p></div>
           </div>
           <p className="text-xs text-[var(--text-tertiary)] mt-2">Incluye ventas directas, POS y marketplace.</p>
         </div>
@@ -618,13 +645,13 @@ export default function DashboardTab() {
       {(data.products.lowStock > 0 || data.pendingReviews > 0) && (
         <div className="flex flex-wrap gap-2">
           {data.products.lowStock > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning-500)] text-xs font-semibold">
               <AlertCircle className="h-3.5 w-3.5" />
               {data.products.lowStock} producto(s) con stock bajo
             </div>
           )}
           {data.pendingReviews > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-semibold">
               <MessageSquare className="h-3.5 w-3.5" />
               {data.pendingReviews} reseña(s) por moderar
             </div>
@@ -700,7 +727,7 @@ export default function DashboardTab() {
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{p.name}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">{p.qty} vendido(s)</p>
                   </div>
-                  <span className="text-xs font-bold text-[var(--data-success)] shrink-0">{fmtS(p.revenue)}</span>
+                  <span className="text-xs font-bold text-[var(--data-success-500)] shrink-0">{fmtS(p.revenue)}</span>
                 </div>
               ))}
             </div>
@@ -756,7 +783,7 @@ export default function DashboardTab() {
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Total productos</p>
         </div>
         <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className={cn("text-xl font-extrabold", data.products.lowStock > 0 ? "text-[var(--data-warning)]" : "text-[var(--data-success)]")}>
+          <p className={cn("text-xl font-extrabold", data.products.lowStock > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>
             {data.products.lowStock}
           </p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Stock bajo</p>
