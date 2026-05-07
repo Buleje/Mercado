@@ -31,6 +31,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Trophy,
+  DollarSign,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -721,67 +722,224 @@ function AsignacionesTab() {
 
   if (loading) return <TableSkeleton />;
 
+  // Derivados para KPIs
+  const pendientes  = assignments.filter((a) => a.status === "pendiente").length;
+  const enCamino    = assignments.filter((a) => a.status === "en_camino").length;
+  const entregadas  = assignments.filter((a) => a.status === "entregado").length;
+  const canceladas  = assignments.filter((a) => a.status === "cancelado").length;
+  const ingresos    = assignments
+    .filter((a) => a.status === "entregado")
+    .reduce((acc, a) => acc + toNum(a.fee), 0);
+  const partnersActivos = partners.length;
+
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-          <button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button>
+        <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <span className="font-bold">{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="ml-auto p-1 rounded-lg hover:bg-[var(--data-error-100)] transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-[var(--text-secondary)]">{assignments.length} asignación{assignments.length !== 1 ? "es" : ""}</p>
-        <button
-          onClick={() => setAssignModal({ open: true })}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Asignar
-        </button>
+      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <ClipboardList className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Asignaciones de delivery
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                {assignments.length === 0
+                  ? "Acá vas a ver las órdenes asignadas a cada repartidor en tiempo real."
+                  : `${assignments.length} ${assignments.length === 1 ? "asignación" : "asignaciones"} · ${partnersActivos} ${partnersActivos === 1 ? "repartidor activo" : "repartidores activos"}.`}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAssignModal({ open: true })}
+            disabled={partnersActivos === 0}
+            title={partnersActivos === 0 ? "No hay repartidores activos disponibles" : "Asignar nueva orden"}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            Asignar orden
+          </button>
+        </div>
+
+        {assignments.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--data-warning-50)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
+                  <Clock className="h-5 w-5 text-[var(--data-warning-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Pendientes
+              </p>
+              <p className={cn(
+                "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+                pendientes > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
+              )}>
+                {pendientes}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Por despachar</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                  <Truck className="h-5 w-5 text-primary" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                En camino
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-2">
+                {enCamino}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Activas ahora</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                  <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Entregadas
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
+                {entregadas}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Completadas</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                  <DollarSign className="h-5 w-5 text-[var(--data-success-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Ingresos
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+                S/{ingresos.toFixed(0)}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Tarifas cobradas</p>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* ── 2. Tabla / Empty state ─────────────────────────────────── */}
       {assignments.length === 0 && !error ? (
-        <EmptyState icon={ClipboardList} title="Sin asignaciones registradas" description="Asigna repartidores a ordenes pendientes." />
-      ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+            <ClipboardList className="h-8 w-8 text-[var(--text-tertiary)]" />
+          </span>
+          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+            Sin asignaciones registradas
+          </p>
+          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+            Asigná un repartidor a una orden pendiente y se mostrará acá con su estado en vivo.
+          </p>
+          <button
+            type="button"
+            onClick={() => setAssignModal({ open: true })}
+            disabled={partnersActivos === 0}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 mt-6"
+          >
+            <Plus className="h-4 w-4" />
+            Crear primera asignación
+          </button>
+        </div>
+      ) : assignments.length > 0 ? (
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Listado de asignaciones
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] font-bold">
+              {assignments.length} {assignments.length === 1 ? "registro" : "registros"}
+            </p>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Orden</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Repartidor</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Tarifa</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] hidden sm:table-cell">Asignado</th>
+                  <th className="text-left px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Orden
+                  </th>
+                  <th className="text-left px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Repartidor
+                  </th>
+                  <th className="text-right px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Tarifa
+                  </th>
+                  <th className="text-center px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Estado
+                  </th>
+                  <th className="text-right px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">
+                    Asignado
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {assignments.map((a) => {
                   const sc = ASSIGNMENT_STATUS_CONFIG[a.status] ?? {
-                    label: a.status, className: "bg-gray-100 text-[var(--text-secondary)]",
+                    label: a.status,
+                    className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                   };
+                  const initial = (a.partnerName || "?").trim().charAt(0).toUpperCase();
                   return (
-                    <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs font-bold text-[var(--text-primary)]">
+                    <tr key={a.id} className="hover:bg-[var(--surface-sunken)]/50 transition-colors">
+                      <td className="px-6 py-4 font-mono text-sm font-extrabold text-[var(--text-primary)]">
                         #{a.orderId.slice(-8).toUpperCase()}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">
-                        {a.partnerName}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-sm font-extrabold shrink-0">
+                            {initial}
+                          </div>
+                          <span className="font-bold text-[var(--text-primary)]">
+                            {a.partnerName}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-right text-[var(--text-secondary)]">
-                        S/{toNum(a.fee).toFixed(2)}
+                      <td className="px-6 py-4 text-right">
+                        <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
+                          S/{toNum(a.fee).toFixed(2)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold", sc.className)}>
+                      <td className="px-6 py-4 text-center">
+                        <span className={cn(
+                          "inline-flex items-center px-3 py-1 rounded-full text-sm font-bold",
+                          sc.className,
+                        )}>
                           {sc.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-xs text-[var(--text-secondary)] hidden sm:table-cell">
-                        <span className="flex items-center justify-end gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(a.assignedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                      <td className="px-6 py-4 text-right text-sm text-[var(--text-secondary)] hidden sm:table-cell">
+                        <span className="inline-flex items-center justify-end gap-1.5 font-bold">
+                          <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
+                          {new Date(a.assignedAt).toLocaleDateString("es-PE", {
+                            day: "2-digit",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </td>
                     </tr>
@@ -790,44 +948,67 @@ function AsignacionesTab() {
               </tbody>
             </table>
           </div>
+          {canceladas > 0 && (
+            <div className="px-6 py-3 border-t border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
+              <p className="text-sm text-[var(--text-tertiary)] font-bold">
+                <AlertCircle className="inline h-4 w-4 mr-1.5 -mt-0.5 text-[var(--data-error-500)]" />
+                {canceladas} {canceladas === 1 ? "asignación cancelada" : "asignaciones canceladas"}
+              </p>
+            </div>
+          )}
         </div>
-      )}
+      ) : null}
 
-      {/* Modal asignar */}
+      {/* ── 3. Modal asignar ───────────────────────────────────────── */}
       {assignModal.open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={() => setAssignModal({ open: false })}
         >
           <div
-            className="bg-white rounded-xl w-full max-w-sm p-5 space-y-4"
+            className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-md p-6 sm:p-7 space-y-5 shadow-2xl border border-[var(--rule-base)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)]">Asignar repartidor</CardTitle>
-              <button onClick={() => setAssignModal({ open: false })} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 transition-colors">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Plus className="h-5 w-5" />
+                </span>
+                <CardTitle className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+                  Nueva asignación
+                </CardTitle>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssignModal({ open: false })}
+                className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">ID de orden (opcional)</label>
+            <div className="space-y-2">
+              <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                ID de orden (opcional)
+              </label>
               <input
                 type="text"
                 value={assignModal.orderId ?? ""}
                 onChange={(e) => setAssignModal((p) => ({ ...p, orderId: e.target.value }))}
                 placeholder="Ej: ORD-12345"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Repartidor *</label>
+            <div className="space-y-2">
+              <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Repartidor *
+              </label>
               <div className="relative">
                 <select
                   value={selectedPartner}
                   onChange={(e) => setSelectedPartner(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                  className="w-full px-4 h-12 pr-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                 >
                   <option value="">Seleccionar repartidor...</option>
                   {partners.map((p) => (
@@ -836,28 +1017,36 @@ function AsignacionesTab() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
               </div>
+              {partners.length === 0 && (
+                <p className="text-sm text-[var(--data-warning-500)] font-bold flex items-center gap-1.5 mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  No hay repartidores activos. Activá uno desde la pestaña Repartidores.
+                </p>
+              )}
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
+                type="button"
                 onClick={() => setAssignModal({ open: false })}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="flex-1 h-12 rounded-xl text-sm font-bold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
               >
                 Cancelar
               </button>
               <button
+                type="button"
                 onClick={handleAssign}
                 disabled={assigning || !selectedPartner}
-                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+                className="flex-[2] inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
               >
                 {assigning ? (
                   <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <CheckCircle className="h-4 w-4" />
                 )}
-                Asignar
+                {assigning ? "Asignando..." : "Confirmar asignación"}
               </button>
             </div>
           </div>
