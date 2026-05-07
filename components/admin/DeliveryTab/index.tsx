@@ -14,6 +14,8 @@ import {
   Users,
   CheckCircle,
   TrendingUp,
+  Maximize2,
+  Minimize2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { RoutesList } from "./RoutesList";
@@ -37,9 +39,9 @@ const LiveMap = dynamic(
   },
 );
 
-/**
- * Tiempo relativo en español: "hace 5 min" | "hace 2h"
- */
+type ViewMode = "split" | "map-focus";
+type MobileTab = "rutas" | "mapa" | "paradas";
+
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const min = Math.round(diffMs / 60_000);
@@ -57,11 +59,15 @@ export default function DeliveryTab() {
   const trackingState = useLiveTrackingFeed();
   const [feedFilter, setFeedFilter] = useState<"all" | "active" | "completed">("all");
 
-  // ── KPIs derivados de las rutas ─────────────────────────────────
+  // ── Layout adaptativo: si NO hay rutas, default = mapa grande sin sidebars
+  const hasRoutes = routesState.routes.length > 0;
+  const [viewMode, setViewMode] = useState<ViewMode>(hasRoutes ? "split" : "map-focus");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("mapa");
+
+  // ── KPIs ─────────────────────────────────────────────────────────
   const kpis = useMemo(() => {
     const activeRoutes = routesState.routes.filter((r) => r.status === "in_progress");
     const planned = routesState.routes.filter((r) => r.status === "planned");
-    const completed = routesState.routes.filter((r) => r.status === "completed");
     const totalStops = routesState.routes.reduce((acc, r) => acc + r.totalStops, 0);
     const completedStops = routesState.routes.reduce((acc, r) => acc + r.completedStops, 0);
     const pendingStops = totalStops - completedStops;
@@ -74,7 +80,6 @@ export default function DeliveryTab() {
     return {
       activeRoutes: activeRoutes.length,
       planned: planned.length,
-      completed: completed.length,
       totalStops,
       completedStops,
       pendingStops,
@@ -105,6 +110,159 @@ export default function DeliveryTab() {
     if (selectedRouteId) stopsState.reload();
   };
 
+  // Vehicle/driver markers en el mapa: cuántos hay activos
+  const driversWithLocation = trackingState.events.filter(
+    (e) => e.lat != null && e.lng != null && ["in_transit", "picked_up", "nearby"].includes(e.status),
+  ).length;
+
+  // ── Subcomponente reutilizable: panel de Rutas ──────────────────
+  const routesPanel = (
+    <aside
+      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden flex flex-col"
+      aria-labelledby="routes-heading"
+    >
+      <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
+        <div>
+          <p
+            id="routes-heading"
+            className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"
+          >
+            Rutas de hoy
+          </p>
+          <p className="text-base font-extrabold text-[var(--text-primary)] mt-1">
+            {routesState.routes.length} {routesState.routes.length === 1 ? "ruta" : "rutas"}
+          </p>
+        </div>
+        {kpis.activeRoutes > 0 && (
+          <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/30">
+            <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            {kpis.activeRoutes}
+          </span>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        <RoutesList
+          routes={routesState.routes}
+          selectedRouteId={selectedRouteId}
+          onSelectRoute={setSelectedRouteId}
+          loading={routesState.loading}
+        />
+      </div>
+    </aside>
+  );
+
+  // ── Subcomponente reutilizable: panel de Paradas ────────────────
+  const stopsPanel = (
+    <aside
+      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden flex flex-col"
+      aria-labelledby="stops-heading"
+    >
+      <div className="px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
+        <p
+          id="stops-heading"
+          className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"
+        >
+          Paradas
+        </p>
+        <p className="text-base font-extrabold text-[var(--text-primary)] mt-1">
+          {selectedRoute
+            ? `${selectedRoute.completedStops}/${selectedRoute.totalStops} entregadas`
+            : "Seleccioná una ruta"}
+        </p>
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {selectedRouteId ? (
+          <StopsTimeline
+            stops={stopsState.stops}
+            loading={stopsState.loading}
+            onMarkStop={stopsState.markStop}
+          />
+        ) : (
+          <div className="p-8 text-center">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-3">
+              <MapPin className="h-6 w-6 text-[var(--text-tertiary)]" />
+            </span>
+            <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
+              Sin ruta seleccionada
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              Hacé clic en una ruta para ver sus paradas con timeline.
+            </p>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+
+  // ── Subcomponente: Mapa con header ──────────────────────────────
+  const mapPanel = (
+    <section
+      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden flex flex-col"
+      aria-labelledby="map-heading"
+    >
+      <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <MapPin className="h-5 w-5" />
+          </span>
+          <div>
+            <p
+              id="map-heading"
+              className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"
+            >
+              Mapa en tiempo real
+            </p>
+            <p className="text-base font-extrabold text-[var(--text-primary)] mt-1">
+              {selectedRoute ? <>Ruta de {selectedRoute.driverName}</> : "Vista general · Pucallpa"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {driversWithLocation > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold bg-primary/10 text-primary border border-primary/30">
+              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              {driversWithLocation} en vivo
+            </span>
+          )}
+          {stopsState.stops.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">
+              <Package className="h-3.5 w-3.5" />
+              {stopsState.stops.length} paradas
+            </span>
+          )}
+          {selectedRouteId && (
+            <button
+              type="button"
+              onClick={() => setSelectedRouteId(null)}
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-soft)] transition-colors"
+            >
+              Vista general
+            </button>
+          )}
+          {hasRoutes && (
+            <button
+              type="button"
+              onClick={() => setViewMode((v) => (v === "split" ? "map-focus" : "split"))}
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-soft)] transition-colors"
+              title={viewMode === "split" ? "Mapa amplio" : "Vista compacta"}
+            >
+              {viewMode === "split" ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+              <span className="hidden sm:inline">
+                {viewMode === "split" ? "Mapa amplio" : "Compacto"}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+      <div className={cn(
+        "flex-1 min-h-0 p-3",
+        viewMode === "map-focus" ? "h-[640px]" : "h-[640px] lg:h-auto",
+      )}>
+        <LiveMap stops={stopsState.stops} trackingEvents={trackingState.events} />
+      </div>
+    </section>
+  );
+
   return (
     <div className="space-y-6">
       {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
@@ -126,8 +284,10 @@ export default function DeliveryTab() {
                     <span className="font-bold text-[var(--text-primary)]">{kpis.driversInRoute}</span>{" "}
                     {kpis.driversInRoute === 1 ? "repartidor en calle" : "repartidores en calle"}.
                   </>
+                ) : hasRoutes ? (
+                  <>Hay rutas planificadas. Cuando inicien, los verás moverse en el mapa en vivo.</>
                 ) : (
-                  <>Sin rutas en curso. Los clientes reciben link de tracking automático por WhatsApp.</>
+                  <>Sin rutas todavía. Tu mapa de Pucallpa ya está listo para mostrar repartidores en tiempo real cuando salgan.</>
                 )}
               </p>
             </div>
@@ -160,220 +320,156 @@ export default function DeliveryTab() {
           </div>
         </div>
 
-        {/* KPIs grid */}
+        {/* KPIs grid — más compactos cuando no hay actividad */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                <Truck className="h-5 w-5 text-primary" />
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 lg:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                <Truck className="h-4 w-4 text-primary" />
               </span>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                En curso
+              </p>
             </div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              En curso
-            </p>
             <p className={cn(
-              "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+              "text-2xl lg:text-3xl font-extrabold tabular-nums leading-tight",
               kpis.activeRoutes > 0 ? "text-primary" : "text-[var(--text-primary)]",
             )}>
               {kpis.activeRoutes}
             </p>
-            <p className="text-sm text-[var(--text-tertiary)] mt-1">Rutas activas</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 font-bold">Rutas activas</p>
           </div>
-          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
-                <Clock className="h-5 w-5 text-[var(--data-warning-500)]" />
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 lg:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
+                <Clock className="h-4 w-4 text-[var(--data-warning-500)]" />
               </span>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Planificadas
+              </p>
             </div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Planificadas
-            </p>
-            <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+            <p className="text-2xl lg:text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight">
               {kpis.planned}
             </p>
-            <p className="text-sm text-[var(--text-tertiary)] mt-1">Por iniciar</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 font-bold">Por iniciar</p>
           </div>
-          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                <Users className="h-5 w-5 text-primary" />
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 lg:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                <Users className="h-4 w-4 text-primary" />
               </span>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Drivers
+              </p>
             </div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Drivers
-            </p>
-            <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+            <p className="text-2xl lg:text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight">
               {kpis.driversInRoute}
             </p>
-            <p className="text-sm text-[var(--text-tertiary)] mt-1">En calle ahora</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 font-bold">En calle</p>
           </div>
-          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
-                <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 lg:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
+                <Package className="h-4 w-4 text-[var(--data-warning-500)]" />
               </span>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Pendientes
+              </p>
             </div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Pendientes
-            </p>
             <p className={cn(
-              "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+              "text-2xl lg:text-3xl font-extrabold tabular-nums leading-tight",
               kpis.pendingStops > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
             )}>
               {kpis.pendingStops}
             </p>
-            <p className="text-sm text-[var(--text-tertiary)] mt-1">Paradas por entregar</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 font-bold">Por entregar</p>
           </div>
-          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
-                <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 lg:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" />
               </span>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Entregadas
+              </p>
             </div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Entregadas
-            </p>
-            <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
+            <p className="text-2xl lg:text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight">
               {kpis.completedStops}
             </p>
-            <p className="text-sm text-[var(--text-tertiary)] mt-1">{kpis.completionPct}% del día</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 font-bold">{kpis.completionPct}% del día</p>
           </div>
-          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                <TrendingUp className="h-5 w-5 text-primary" />
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 lg:p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                <TrendingUp className="h-4 w-4 text-primary" />
               </span>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Distancia
+              </p>
             </div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Distancia
-            </p>
-            <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+            <p className="text-2xl lg:text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight">
               {kpis.totalKm.toFixed(1)}
             </p>
-            <p className="text-sm text-[var(--text-tertiary)] mt-1">km recorridos</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 font-bold">km hoy</p>
           </div>
         </div>
       </div>
 
-      {/* ── 2. Layout principal: Rutas | Mapa | Paradas ────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr_360px] gap-4">
-        {/* Routes list */}
-        <aside
-          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden flex flex-col max-h-[700px]"
-          aria-labelledby="routes-heading"
-        >
-          <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
-            <div>
-              <p
-                id="routes-heading"
-                className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"
-              >
-                Rutas de hoy
-              </p>
-              <p className="text-base font-extrabold text-[var(--text-primary)] mt-1">
-                {routesState.routes.length} {routesState.routes.length === 1 ? "ruta" : "rutas"}
-              </p>
-            </div>
-            {kpis.activeRoutes > 0 && (
-              <span className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/30">
-                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                {kpis.activeRoutes} activa{kpis.activeRoutes !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            <RoutesList
-              routes={routesState.routes}
-              selectedRouteId={selectedRouteId}
-              onSelectRoute={setSelectedRouteId}
-              loading={routesState.loading}
-            />
-          </div>
-        </aside>
-
-        {/* Live map */}
-        <section
-          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden flex flex-col h-[700px]"
-          aria-labelledby="map-heading"
-        >
-          <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
-            <div>
-              <p
-                id="map-heading"
-                className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"
-              >
-                Mapa en vivo
-              </p>
-              <p className="text-base font-extrabold text-[var(--text-primary)] mt-1">
-                {selectedRoute
-                  ? <>Ruta de {selectedRoute.driverName}</>
-                  : "Vista general"}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {selectedRouteId && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedRouteId(null)}
-                  className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-soft)] transition-colors"
-                >
-                  Vista general
-                </button>
+      {/* ── 2. Mobile tabs (< lg) ──────────────────────────────────── */}
+      <div className="lg:hidden bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          {(["rutas", "mapa", "paradas"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setMobileTab(t)}
+              className={cn(
+                "flex-1 inline-flex items-center justify-center gap-2 px-4 h-11 rounded-xl text-sm font-bold transition-colors capitalize",
+                mobileTab === t
+                  ? "bg-primary text-white"
+                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:brightness-95",
               )}
-              <span className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">
-                <MapPin className="h-3.5 w-3.5" />
-                {stopsState.stops.length} paradas
-              </span>
-            </div>
-          </div>
-          <div className="flex-1 min-h-0 p-4">
-            <LiveMap stops={stopsState.stops} trackingEvents={trackingState.events} />
-          </div>
-        </section>
-
-        {/* Stops timeline */}
-        <aside
-          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden flex flex-col max-h-[700px]"
-          aria-labelledby="stops-heading"
-        >
-          <div className="px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
-            <p
-              id="stops-heading"
-              className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"
             >
-              Paradas
-            </p>
-            <p className="text-base font-extrabold text-[var(--text-primary)] mt-1">
-              {selectedRoute
-                ? `${selectedRoute.completedStops}/${selectedRoute.totalStops} entregadas`
-                : "Seleccioná una ruta"}
-            </p>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {selectedRouteId ? (
-              <StopsTimeline
-                stops={stopsState.stops}
-                loading={stopsState.loading}
-                onMarkStop={stopsState.markStop}
-              />
-            ) : (
-              <div className="p-8 text-center">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-3">
-                  <MapPin className="h-6 w-6 text-[var(--text-tertiary)]" />
-                </span>
-                <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
-                  Sin ruta seleccionada
-                </p>
-                <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                  Hacé clic en una ruta de la izquierda para ver sus paradas con timeline.
-                </p>
+              {t === "rutas" && <Truck className="h-4 w-4" />}
+              {t === "mapa" && <MapPin className="h-4 w-4" />}
+              {t === "paradas" && <Package className="h-4 w-4" />}
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 3a. Layout desktop ─────────────────────────────────────── */}
+      <div className="hidden lg:block">
+        {!hasRoutes || viewMode === "map-focus" ? (
+          /* Mapa fullwidth alto cuando no hay rutas o se eligió "amplio" */
+          <div className="space-y-4">
+            {mapPanel}
+            {hasRoutes && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {routesPanel}
+                {stopsPanel}
               </div>
             )}
           </div>
-        </aside>
+        ) : (
+          /* Layout split 3-col cuando hay rutas y modo compacto */
+          <div className="grid grid-cols-[340px_1fr_360px] gap-4 h-[700px]">
+            <div className="overflow-hidden">{routesPanel}</div>
+            <div className="overflow-hidden">{mapPanel}</div>
+            <div className="overflow-hidden">{stopsPanel}</div>
+          </div>
+        )}
       </div>
 
-      {/* ── 3. Feed live de eventos ────────────────────────────────── */}
+      {/* ── 3b. Layout mobile (tabs) ───────────────────────────────── */}
+      <div className="lg:hidden">
+        {mobileTab === "rutas" && <div className="h-[600px]">{routesPanel}</div>}
+        {mobileTab === "mapa" && <div className="h-[500px]">{mapPanel}</div>}
+        {mobileTab === "paradas" && <div className="h-[600px]">{stopsPanel}</div>}
+      </div>
+
+      {/* ── 4. Feed live de eventos ────────────────────────────────── */}
       <section
         className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden"
         aria-labelledby="feed-heading"
@@ -499,7 +595,7 @@ export default function DeliveryTab() {
           )}
           {filteredEvents.length > 12 && (
             <p className="text-sm text-[var(--text-tertiary)] font-bold text-center mt-4">
-              Mostrando 12 de {filteredEvents.length} eventos · refresca para ver más
+              Mostrando 12 de {filteredEvents.length} eventos · refrescá para ver más
             </p>
           )}
         </div>
