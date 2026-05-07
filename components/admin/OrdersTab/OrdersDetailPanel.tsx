@@ -117,6 +117,10 @@ export function OrdersDetailPanel({
         label: "Confirmado · listo para preparar",
         sub: "Marcá cuando empieces a armar el pedido",
         primary: { label: "Empezar preparación", onClick: () => onPatchOrder(order.id, { status: "preparando" }), tone: "primary" as const },
+        // FIX 2026-05-07: entrega manual sin pasar por delivery (cliente vino al
+        // mostrador, dueño entregó él mismo). Antes obligaba a recorrer
+        // preparando → en_camino → entregado.
+        secondary: { label: "Entregado (manual)", onClick: () => onPatchOrder(order.id, { status: "entregado" }), tone: "success" as const },
       };
     }
     if (order.status === "preparando") {
@@ -124,6 +128,7 @@ export function OrdersDetailPanel({
         label: "Preparando · armando el pedido",
         sub: "Asigná un motorizado abajo y avanzá cuando salga",
         primary: { label: "Marcar en camino", onClick: () => onPatchOrder(order.id, { status: "en_camino" }), tone: "primary" as const },
+        secondary: { label: "Entregado (manual)", onClick: () => onPatchOrder(order.id, { status: "entregado" }), tone: "success" as const },
       };
     }
     if (order.status === "en_camino") {
@@ -239,9 +244,18 @@ export function OrdersDetailPanel({
                 <button
                   type="button"
                   onClick={actionBanner.secondary.onClick}
-                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold border border-[var(--data-error-500)]/40 text-[var(--data-error-500)] bg-white dark:bg-surface hover:bg-[var(--data-error-500)]/5 transition-colors"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold border bg-white dark:bg-surface transition-colors",
+                    actionBanner.secondary.tone === "success"
+                      ? "border-[var(--data-success-500)]/40 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/5"
+                      : "border-[var(--data-error-500)]/40 text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/5",
+                  )}
                 >
-                  <X className="h-4 w-4" strokeWidth={2} />
+                  {actionBanner.secondary.tone === "success" ? (
+                    <Check className="h-4 w-4" strokeWidth={2} />
+                  ) : (
+                    <X className="h-4 w-4" strokeWidth={2} />
+                  )}
                   {actionBanner.secondary.label}
                 </button>
               )}

@@ -154,14 +154,20 @@ const OrderCard = memo(function OrderCard({
 
   // Acción primaria por estado
   let primaryAction: { label: string; icon: typeof Check; onClick: () => void; variant: "primary" | "warning" | "neutral" } | null = null;
+  // FIX 2026-05-07: acción secundaria "Marcar entregado (manual)" en estados
+  // confirmado/preparando — útil cuando el cliente vino al mostrador o el dueño
+  // entregó sin pasar por delivery. Antes había que mover por en_camino primero.
+  let manualDeliverAction: { onClick: () => void } | null = null;
   if (order.status === "pendiente" && order.paymentMethod === "yape") {
     primaryAction = { label: "Confirmar Yape", icon: Check, onClick: onVerifyYape, variant: "primary" };
   } else if (order.status === "pendiente") {
     primaryAction = { label: "Confirmar", icon: Check, onClick: () => onUpdateStatus("confirmado"), variant: "primary" };
   } else if (order.status === "confirmado") {
     primaryAction = { label: "Preparando", icon: ChefHat, onClick: () => onUpdateStatus("preparando"), variant: "primary" };
+    manualDeliverAction = { onClick: () => onUpdateStatus("entregado") };
   } else if (order.status === "preparando") {
     primaryAction = { label: "En camino", icon: ArrowRight, onClick: () => onUpdateStatus("en_camino"), variant: "primary" };
+    manualDeliverAction = { onClick: () => onUpdateStatus("entregado") };
   } else if (order.status === "en_camino") {
     primaryAction = { label: "Entregado", icon: Check, onClick: () => onUpdateStatus("entregado"), variant: "primary" };
   }
@@ -331,6 +337,17 @@ const OrderCard = memo(function OrderCard({
               title="Marcar deuda como cobrada"
             >
               <Check className="h-3.5 w-3.5" /> Cobrado
+            </button>
+          )}
+          {manualDeliverAction && (
+            <button
+              type="button"
+              onClick={manualDeliverAction.onClick}
+              className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/20 border border-[var(--data-success-500)]/30 transition-colors"
+              title="Marcar entregado (entrega manual sin delivery)"
+              aria-label="Marcar como entregado manualmente"
+            >
+              <Check className="h-4 w-4" strokeWidth={2.5} />
             </button>
           )}
         </div>

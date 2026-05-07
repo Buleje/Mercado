@@ -49,10 +49,12 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
 };
 
 // Valid order status transitions — mirrors server-side VALID_TRANSITIONS
+// FIX 2026-05-07: confirmado/preparando pueden saltar a "entregado" directo
+// (entrega manual mostrador, cliente vino a recoger, sin delivery).
 export const VALID_TRANSITIONS: Record<string, OrderStatus[]> = {
   pendiente: ["confirmado", "cancelado"],
-  confirmado: ["preparando", "cancelado"],
-  preparando: ["en_camino", "cancelado"],
+  confirmado: ["preparando", "en_camino", "entregado", "cancelado"],
+  preparando: ["en_camino", "entregado", "cancelado"],
   en_camino: ["entregado", "cancelado"],
   entregado: [],
   cancelado: [],

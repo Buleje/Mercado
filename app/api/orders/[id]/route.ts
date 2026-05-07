@@ -17,10 +17,15 @@ const NOTIFIABLE_STATUSES = new Set(["confirmado", "preparando", "en_camino", "e
 
 // Valid order status transitions — prevents going backward (e.g. entregado → pendiente)
 // Mantener sincronizado con `components/admin/OrdersTab/types.ts:VALID_TRANSITIONS`.
+//
+// FIX 2026-05-07: agregar entrega manual directa desde confirmado y preparando.
+// Antes el dueño TENÍA que mover por "en_camino" antes de "entregado", aunque
+// el cliente vino al mostrador o lo entregó sin delivery. Ahora puede saltar
+// el paso "en_camino" — útil para negocios sin flota de repartidores.
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pendiente: ["confirmado", "cancelado"],
-  confirmado: ["preparando", "en_camino", "cancelado"],
-  preparando: ["en_camino", "cancelado"],
+  confirmado: ["preparando", "en_camino", "entregado", "cancelado"],
+  preparando: ["en_camino", "entregado", "cancelado"],
   en_camino: ["entregado", "cancelado"],
   entregado: [],    // Terminal state
   cancelado: [],    // Terminal state
