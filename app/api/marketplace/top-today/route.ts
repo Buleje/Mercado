@@ -58,11 +58,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (ranking.length === 0) {
-      return NextResponse.json({
-        items: [],
-        window,
-        updatedAt: now.toISOString(),
-      });
+      return NextResponse.json(
+        { items: [], window, updatedAt: now.toISOString() },
+        { headers: { "Cache-Control": "public, max-age=120, s-maxage=120, stale-while-revalidate=600" } },
+      );
     }
 
     const productIds = ranking
@@ -133,11 +132,18 @@ export async function GET(req: NextRequest) {
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
 
-    return NextResponse.json({
-      items,
-      window,
-      updatedAt: now.toISOString(),
-    });
+    return NextResponse.json(
+      {
+        items,
+        window,
+        updatedAt: now.toISOString(),
+      },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=120, s-maxage=120, stale-while-revalidate=600",
+        },
+      },
+    );
   } catch (err) {
     logger.error("[marketplace/top-today] failed", {
       error: err instanceof Error ? err.message : String(err),

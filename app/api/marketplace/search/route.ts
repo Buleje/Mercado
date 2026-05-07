@@ -293,23 +293,42 @@ export async function GET(req: NextRequest) {
     let fuzzyMatches: { productId: number; productName: string; category: string; image: string | null; similarity: number }[] = [];
 
     if (data.length === 0) {
-      // Sin resultados exactos → fuzzy + did-you-mean
-      [fuzzyMatches, didYouMean] = await Promise.all([
-        SearchSuggestionsDB.getProductFuzzyMatches(tenantId, q),
-        SearchSuggestionsDB.getDidYouMean(tenantId, q),
-      ]);
+      // Sin resultados exactos → fuzzy + did-you-mean.
+      // Wrap en try/catch: pg_trgm puede no estar instalado (P2010 "function does not exist").
+      try {
+        [fuzzyMatches, didYouMean] = await Promise.all([
+          SearchSuggestionsDB.getProductFuzzyMatches(tenantId, q),
+          SearchSuggestionsDB.getDidYouMean(tenantId, q),
+        ]);
+      } catch (pgErr: unknown) {
+        const msg = pgErr instanceof Error ? pgErr.message : String(pgErr);
+        // P2010 = Raw query failed / function does not exist (pg_trgm no instalado)
+        if (msg.includes("P2010") || msg.includes("does not exist") || msg.includes("similarity")) {
+          logger.warn("[search] pg_trgm fallback — extensión no disponible", { err: msg });
+          // fuzzyMatches / didYouMean quedan como arrays vacíos — degradación silenciosa.
+        } else {
+          throw pgErr; // error inesperado → propagar para el catch externo
+        }
+      }
     } else {
       // Con resultados → aplicar sponsored ranking
       finalData = await applyBoostsToProducts(tenantId, data);
     }
 
-    return NextResponse.json({
-      data: finalData,
-      total: finalData.length,
-      query: q,
-      ...(didYouMean.length > 0 && { didYouMean }),
-      ...(fuzzyMatches.length > 0 && { fuzzyMatches }),
-    });
+    return NextResponse.json(
+      {
+        data: finalData,
+        total: finalData.length,
+        query: q,
+        ...(didYouMean.length > 0 && { didYouMean }),
+        ...(fuzzyMatches.length > 0 && { fuzzyMatches }),
+      },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=30, s-maxage=30, stale-while-revalidate=120",
+        },
+      },
+    );
   } catch (err) {
     logger.error("marketplace/search: error inesperado", { requestId, err });
     const { payload, status } = toErrorPayload(err, traceId);

@@ -19,6 +19,7 @@
  *   - El cliente compra/navega vía <Link>, sin JS extra
  */
 
+import Image from "next/image";
 import Link from "next/link";
 import { ImageIcon, ChevronRight } from "@buleje/design-system/icons";
 
@@ -120,20 +121,20 @@ export default function PromoBannerRenderer({ banner, asLink = true, className =
   );
 }
 
-/** Estilos de imagen calculados desde imageAdjust. Se renderizan en un layer
- *  absoluto detrás del contenido para no interferir con el text overlay. */
-function adjustedImageStyle(banner: PromoBanner): React.CSSProperties {
+/** Props de imagen calculados desde imageAdjust para usar con next/image. */
+function adjustedImageProps(banner: PromoBanner): {
+  objectPosition: string;
+  objectFit: "cover" | "contain";
+  style?: React.CSSProperties;
+} {
   const adj = banner.imageAdjust;
   const x = adj?.position?.x ?? 50;
   const y = adj?.position?.y ?? 50;
-  const scale = adj?.scale ?? 100;
   const fit = adj?.fit ?? "cover";
   return {
-    backgroundImage: banner.imageUrl ? `url(${banner.imageUrl})` : undefined,
-    backgroundPosition: `${x}% ${y}%`,
-    backgroundRepeat: "no-repeat",
-    backgroundSize: fit === "contain" ? `${scale}% auto` : `${scale}% ${scale}%`,
-    backgroundColor: fit === "contain" ? banner.bgFrom : undefined,
+    objectPosition: `${x}% ${y}%`,
+    objectFit: fit,
+    style: fit === "contain" ? { backgroundColor: banner.bgFrom } : undefined,
   };
 }
 
@@ -153,16 +154,20 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
         className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-stretch px-4 sm:px-6 gap-3 sm:gap-4 border border-[var(--rule-soft)]"
         style={{ background: bgGradient }}
       >
-        {hasImage && (
+        {hasImage && banner.imageUrl && (
           <>
-            <div
-              aria-hidden
-              className="absolute inset-0 pointer-events-none"
-              style={adjustedImageStyle(banner)}
+            <Image
+              src={banner.imageUrl}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="pointer-events-none select-none"
+              style={{ objectFit: adjustedImageProps(banner).objectFit, objectPosition: adjustedImageProps(banner).objectPosition }}
             />
             <div
               aria-hidden
-              className="absolute inset-0 pointer-events-none"
+              className="absolute inset-0 pointer-events-none z-[1]"
               style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.35))" }}
             />
           </>
@@ -187,11 +192,15 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
         className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-center justify-center border border-[var(--rule-soft)]"
         style={{ background: bgGradient }}
       >
-        {hasImage && (
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={adjustedImageStyle(banner)}
+        {hasImage && banner.imageUrl && (
+          <Image
+            src={banner.imageUrl}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="pointer-events-none select-none"
+            style={{ objectFit: adjustedImageProps(banner).objectFit, objectPosition: adjustedImageProps(banner).objectPosition }}
           />
         )}
         {!banner.imageUrl && (
@@ -215,16 +224,20 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
       className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-center justify-between px-6 sm:px-10 border border-[var(--rule-soft)]"
       style={{ background: bgGradient }}
     >
-      {hasImage && (
+      {hasImage && banner.imageUrl && (
         <>
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={adjustedImageStyle(banner)}
+          <Image
+            src={banner.imageUrl}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="pointer-events-none select-none"
+            style={{ objectFit: adjustedImageProps(banner).objectFit, objectPosition: adjustedImageProps(banner).objectPosition }}
           />
           <div
             aria-hidden
-            className="absolute inset-0 pointer-events-none"
+            className="absolute inset-0 pointer-events-none z-[1]"
             style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.35))" }}
           />
         </>

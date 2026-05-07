@@ -239,12 +239,19 @@ export async function GET(req: NextRequest) {
     // Aplicar sponsored ranking (máx 3 por página al tope)
     const rankedData = await applyBoostsToProducts(tenantId, data);
 
-    return NextResponse.json({
-      data: rankedData,
-      total: rankedData.length,
-      nextCursor,
-      hasMore,
-    });
+    return NextResponse.json(
+      {
+        data: rankedData,
+        total: rankedData.length,
+        nextCursor,
+        hasMore,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+        },
+      },
+    );
   } catch (err) {
     logger.error("marketplace/catalog: error", { requestId, err });
     const { payload, status } = toErrorPayload(err, traceId);

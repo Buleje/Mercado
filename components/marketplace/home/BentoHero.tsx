@@ -13,6 +13,7 @@
  * Ubicacion: debajo del PromoBannerCarousel + Quick Access en /marketplace.
  */
 
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Truck, Wallet, Sparkles, Leaf, ChevronRight, type LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -81,12 +82,18 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
           SPAN_BY_INDEX[index],
           textCls,
         )}
-        style={
-          card.imageUrl
-            ? { backgroundImage: `url(${card.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-            : { background: `linear-gradient(135deg, ${card.bgFrom}, ${card.bgTo})` }
-        }
+        style={card.imageUrl ? undefined : { background: `linear-gradient(135deg, ${card.bgFrom}, ${card.bgTo})` }}
       >
+        {card.imageUrl && (
+          <Image
+            src={card.imageUrl}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 50vw, 25vw"
+            className="object-cover object-center pointer-events-none select-none"
+            priority={index === 0}
+          />
+        )}
         {/* Producto image (top) + badge */}
         <div className="flex items-start justify-between gap-2">
           <div className={cn(
@@ -94,8 +101,14 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
             isLarge ? "h-20 w-20 sm:h-28 sm:w-28" : "h-12 w-12 sm:h-14 sm:w-14",
           )}>
             {p.productImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.productImage} alt={p.productName} className="h-full w-full object-cover" loading="lazy" />
+              <Image
+                src={p.productImage}
+                alt={p.productName}
+                fill
+                sizes={isLarge ? "(max-width: 768px) 50vw, 25vw" : "15vw"}
+                className="object-cover"
+                priority={index === 0}
+              />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-[#0c1015]/30">
                 <Icon className="h-1/2 w-1/2" />
@@ -150,8 +163,15 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
           "transition-all duration-200 hover:-translate-y-0.5",
           SPAN_BY_INDEX[index],
         )}
-        style={{ backgroundImage: `url(${card.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }}
       >
+        <Image
+          src={card.imageUrl}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 50vw, 25vw"
+          className="object-cover object-center pointer-events-none select-none"
+          priority={index === 0}
+        />
         {card.ctaLabel && (
           <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/95 text-[#0c1015] px-2.5 py-1 text-[length:var(--ts-2xs)] sm:text-xs font-extrabold whitespace-nowrap shadow">
             {card.ctaLabel}
@@ -172,12 +192,18 @@ function BentoCard({ card, index }: { card: PromoBanner; index: number }) {
         SPAN_BY_INDEX[index],
         textCls,
       )}
-      style={
-        card.imageUrl
-          ? { backgroundImage: `url(${card.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-          : { background: `linear-gradient(135deg, ${card.bgFrom}, ${card.bgTo})` }
-      }
+      style={card.imageUrl ? undefined : { background: `linear-gradient(135deg, ${card.bgFrom}, ${card.bgTo})` }}
     >
+      {card.imageUrl && (
+        <Image
+          src={card.imageUrl}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 50vw, 25vw"
+          className="object-cover object-center pointer-events-none select-none"
+          priority={index === 0}
+        />
+      )}
       <div className="flex items-start justify-between gap-2">
         <Icon
           className={cn(
