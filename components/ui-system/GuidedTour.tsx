@@ -180,7 +180,7 @@ export default function GuidedTour({ tourId, steps, forceShow = false, onFinish 
       role="dialog"
       aria-modal="true"
       aria-labelledby="tour-title"
-      className="fixed inset-0 z-[100] motion-safe:animate-[fadeIn_0.2s]"
+      className="fixed inset-0 z-[100] motion-safe:animate-[fadeIn_0.2s] motion-reduce:animate-none"
     >
       {/* SVG mask with cutout */}
       <svg
@@ -214,7 +214,7 @@ export default function GuidedTour({ tourId, steps, forceShow = false, onFinish 
       {/* Halo animado alrededor del spotlight */}
       <div
         aria-hidden
-        className="absolute pointer-events-none motion-safe:animate-pulse"
+        className="absolute pointer-events-none motion-safe:animate-pulse motion-reduce:animate-none"
         style={{
           left: rect.left - PAD - 4,
           top: rect.top - PAD - 4,

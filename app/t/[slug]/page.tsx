@@ -7,6 +7,7 @@ import { ShoppingBag, Settings, ExternalLink, MapPin, Phone, Sparkles, Tag } fro
 import { prisma } from "@/lib/prisma";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { SettingsDB } from "@/lib/db/settings.db";
+import { logger } from "@/lib/logger";
 import TenantPageTracker from "./_components/TenantPageTracker";
 import VendorTrustBadges from "@/components/store/VendorTrustBadges";
 import StickyCouponBanner from "@/components/store/StickyCouponBanner";
@@ -23,6 +24,7 @@ interface TenantLandingProps {
  * La capa StorePageDB ya aplica caché in-process vía getOrSet.
  */
 async function loadPageData(slug: string) {
+  // eslint-disable-next-line no-restricted-properties -- Public SSR landing: lookup cross-tenant intentional por slug/id; no hay tenantId del request todavía (esta misma query lo resuelve). TenantsDB no expone método público de slug-resolution.
   const tenant = await prisma.tenant
     .findFirst({
       where: { OR: [{ id: slug }, { slug }] },
@@ -39,7 +41,7 @@ async function loadPageData(slug: string) {
         createdAt: true,
       },
     })
-    .catch(() => null);
+    .catch((err) => { logger.warn("[t/[slug]] tenant lookup failed", { err: String(err), slug }); return null; });
 
   if (!tenant) return null;
 
@@ -48,7 +50,7 @@ async function loadPageData(slug: string) {
     StorePageDB.listPublicFeatured(tenant.id, 24),
     StorePageDB.listPromotions(tenant.id, true),
     StorePageDB.countActiveExclusivePrices(tenant.id),
-    SettingsDB.get(tenant.id).catch(() => null),
+    SettingsDB.get(tenant.id).catch((err) => { logger.warn("[t/[slug]] settings load failed", { err: String(err), tenantId: tenant.id }); return null; }),
   ]);
 
   // Cadena de fallback para el nombre público de la tienda:
@@ -178,7 +180,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
     },
     enterprise: {
       label: "Enterprise",
-      className: "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400",
+      className: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-900)]/30 dark:text-amber-400",
     },
   };
   const badge = planBadge[tenant.plan] ?? planBadge.free;
@@ -340,7 +342,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               return (
                 <div
                   key={p.id}
-                  className="group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] shadow-sm hover:shadow-xl transition-shadow border border-[var(--rule-base)]"
+                  className="group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] shadow-sm hover:shadow-xl transition-all hover:-translate-y-0.5 border border-[var(--rule-base)]"
                 >
                   <div className="aspect-square bg-[var(--surface-sunken)] overflow-hidden">
                     {p.productImage && (
@@ -372,7 +374,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
                   <div className="p-3">
                     <p className="font-semibold text-sm truncate">{p.productName}</p>
-                    <p className="text-xs text-gray-500 mb-2">{p.productUnit}</p>
+                    <p className="text-xs text-[var(--text-secondary)] mb-2">{p.productUnit}</p>
                     <div className="flex items-baseline gap-2">
                       <span
                         className="font-extrabold text-lg"
@@ -381,7 +383,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                         {formatPrice(shownPrice)}
                       </span>
                       {isExclusive && (
-                        <span className="text-xs text-gray-400 line-through">
+                        <span className="text-xs text-[var(--text-tertiary)] line-through">
                           {formatPrice(p.productBasePrice)}
                         </span>
                       )}
@@ -461,9 +463,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             </div>
             <div className="min-w-0">
               <p className="font-bold text-lg leading-tight">Ver Tienda</p>
-              <p className="text-sm text-gray-500 mt-0.5">Catálogo completo</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Catálogo completo</p>
             </div>
-            <ExternalLink className="w-4 h-4 text-gray-400 ml-auto" />
+            <ExternalLink className="w-4 h-4 text-[var(--text-tertiary)] ml-auto" />
           </Link>
 
           <Link
@@ -475,9 +477,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             </div>
             <div className="min-w-0">
               <p className="font-bold text-lg leading-tight">Admin</p>
-              <p className="text-sm text-gray-500 mt-0.5">Panel de gestión</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Panel de gestión</p>
             </div>
-            <ExternalLink className="w-4 h-4 text-gray-400 ml-auto" />
+            <ExternalLink className="w-4 h-4 text-[var(--text-tertiary)] ml-auto" />
           </Link>
         </div>
 
@@ -493,7 +495,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             </h3>
             {(customization.whatsappPhone || tenant.ownerPhone) && (
               <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <Phone className="w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0" />
                 <a
                   href={`https://wa.me/${(customization.whatsappPhone ?? tenant.ownerPhone ?? "").replace(/\D/g, "")}`}
                   className="text-sm hover:underline"
@@ -504,13 +506,13 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             )}
             {customization.address && (
               <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-                <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0" />
                 <span className="text-sm">{customization.address}</span>
               </div>
             )}
             {customization.contactEmail && (
               <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-                <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <ExternalLink className="w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0" />
                 <a
                   href={`mailto:${customization.contactEmail}`}
                   className="text-sm hover:underline"
@@ -537,7 +539,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           </div>
         )}
 
-        <p className="text-center mt-6 text-xs text-gray-400 dark:text-gray-600 font-mono">
+        <p className="text-center mt-6 text-xs text-[var(--text-tertiary)] font-mono">
           /{tenant.slug}
         </p>
       </section>

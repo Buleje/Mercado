@@ -29,6 +29,8 @@ async function dismissModal(page) {
       localStorage.setItem("onboarding-completed-luis", "1");
       localStorage.setItem("onboarding-completed-buleje", "1");
       localStorage.setItem("onboarding-completed-tienda-3", "1");
+      // Bypass marketplace first-visit tour (key from MarketplaceFirstVisitTour.tsx)
+      localStorage.setItem("buleje-tour-marketplace-2026-04", "1");
     } catch {}
   });
   // Force-remove onboarding modal from DOM

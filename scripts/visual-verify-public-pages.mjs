@@ -23,6 +23,13 @@ async function main() {
   for (const p of PAGES) {
     try {
       const resp = await page.goto(`${BASE}${p.url}`, { waitUntil: "domcontentloaded", timeout: 45_000 });
+      // Bypass first-visit tour para que no bloquee el hero en el screenshot
+      await page.evaluate(() => {
+        try {
+          localStorage.setItem("buleje-tour-marketplace-2026-04", "1");
+          localStorage.setItem("onboarding-completed-main", "1");
+        } catch {}
+      });
       await page.waitForTimeout(3000);
       await page.screenshot({ path: `${OUT}/${p.name}.png`, fullPage: false });
       console.log(`[${resp?.status() ?? 0}] ${p.name}`);

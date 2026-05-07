@@ -16,6 +16,13 @@ async function main() {
 
   const url = `${BASE}/t/${SLUG}/tienda`;
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  // Bypass first-visit tour para screenshots limpios
+  await page.evaluate(() => {
+    try {
+      localStorage.setItem("buleje-tour-marketplace-2026-04", "1");
+      localStorage.setItem("onboarding-completed-main", "1");
+    } catch {}
+  });
   await page.waitForTimeout(4000);
 
   // Snapshot 1: above the fold (top banner + navbar)

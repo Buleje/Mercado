@@ -162,7 +162,7 @@ export async function getRefreshPayload(token: string): Promise<SessionPayload |
     };
     // MUST be a refresh token — reject access tokens used here
     if (payload.type !== "refresh") return null;
-    if (!["admin", "cajero", "almacenero", "owner", "manager", "analista"].includes(payload.role)) return null;
+    if (!["admin", "cajero", "almacenero", "owner", "manager", "analista", "superadmin"].includes(payload.role)) return null;
     if (payload.exp < Date.now()) return null;
     return {
       role: payload.role,
@@ -198,7 +198,7 @@ export async function getSessionPayload(token: string): Promise<SessionPayload |
     };
     // Reject refresh tokens — they must only be used via /api/auth/refresh
     if (payload.type === "refresh") return null;
-    if (!["admin", "cajero", "almacenero", "owner", "manager", "analista"].includes(payload.role)) return null;
+    if (!["admin", "cajero", "almacenero", "owner", "manager", "analista", "superadmin"].includes(payload.role)) return null;
     if (payload.exp < Date.now()) return null;
     return {
       role: payload.role,

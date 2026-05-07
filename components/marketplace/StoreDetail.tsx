@@ -774,6 +774,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
   const [customerPhone, setCustomerPhone]   = useState<string | null>(null);
   const [followed, setFollowed]             = useState(false);
   const [highlightedProductId, setHighlightedProductId] = useState<number | null>(null);
+  const [bannerError, setBannerError]       = useState(false);
 
   // Cart info for this specific store
   // useMarketplaceCart antes leía byStore/totalByStore para la sticky
@@ -883,7 +884,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
     }
   }, [slug, deferredSearch, catFilter, sortBy]);
 
-  useEffect(() => { fetchStore(); }, [fetchStore]);
+  useEffect(() => { fetchStore(); setBannerError(false); }, [fetchStore]);
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   useEffect(() => {
@@ -940,14 +941,15 @@ export default function StoreDetail({ slug }: { slug: string }) {
         <div className="mb-8">
           {/* ── BANNER PRINCIPAL ── */}
           <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary to-[#1a4a36] sm:rounded-3xl" style={{ minHeight: "200px" }}>
-            {store.banner && (
+            {store.banner && !bannerError && (
               <Image
                 src={store.banner}
-                alt={`Banner de ${store.name}`}
+                alt=""
                 fill
                 className="object-cover opacity-50"
                 priority
                 sizes="100vw"
+                onError={() => setBannerError(true)}
               />
             )}
             {/* Capa de gradiente sobre la imagen */}
