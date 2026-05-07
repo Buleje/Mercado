@@ -375,6 +375,7 @@ model SavedLocation {
 enum OrderStatus {
   pendiente
   confirmado
+  preparando
   en_camino
   entregado
   cancelado
@@ -651,6 +652,13 @@ model Settings {
 
   // ── StoreCustomizer ──
   storeThemeJson String? // JSON: StoreCustomizer theme data
+
+  // ── Loyalty rules (audit team H022 fix 2026-05-06) ──
+  // Antes vivían en localStorage del admin (se perdían al limpiar caché +
+  // no se sincronizaban entre dispositivos). Ahora persistidas en DB.
+  // Expand puro nullable — zero-downtime, sin backfill required.
+  loyaltyRulesJson   String? // JSON: { pointsPerSol, minOrderAmount, multiplier, ... }
+  loyaltyRewardsJson String? // JSON: array de rewards { id, label, costPoints, description, active }
 }
 
 // ─── Suppliers ──────────────────────────────────────────
@@ -2676,10 +2684,12 @@ model DeliveryAssignment {
   fee         Decimal         @db.Decimal(12, 2)
   tipAmount   Decimal         @default(0) @db.Decimal(12, 2)
   tipMessage  String?
-  pickedUpAt  DateTime?
-  deliveredAt DateTime?
-  notes       String?
-  tenantId    String
+  pickedUpAt      DateTime?
+  deliveredAt     DateTime?
+  routeStartedAt  DateTime?
+  proofPhotoUrl   String?
+  notes           String?
+  tenantId        String
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 

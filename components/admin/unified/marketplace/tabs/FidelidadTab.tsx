@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Gift, Zap, Star, CheckCircle, Eye, EyeOff, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos locales ────────────────────────────────────────────────────────────
 
@@ -42,9 +43,9 @@ interface TopCustomer {
 // ── Constantes ───────────────────────────────────────────────────────────────
 
 const TIER_CONFIG: Record<string, { label: string; className: string; minPoints: string }> = {
-  bronce: { label: "Bronce", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "0 - 499" },
+  bronce: { label: "Bronce", className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", minPoints: "0 - 499" },
   plata:  { label: "Plata",  className: "bg-gray-100 text-[var(--text-secondary)]",                minPoints: "500 - 999" },
-  oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "1000+" },
+  oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", minPoints: "1000+" },
 };
 
 const DEFAULT_LOYALTY_RULES: LoyaltyRules = {
@@ -87,25 +88,74 @@ export default function FidelidadTab() {
   const [newReward, setNewReward] = useState({ label: "", costPoints: "", description: "" });
 
   useEffect(() => {
-    setRulesState(readLocal<LoyaltyRules>(RULES_KEY, DEFAULT_LOYALTY_RULES));
-    setRewards(readLocal<LoyaltyReward[]>(REWARDS_KEY, DEFAULT_REWARDS));
+    let cancelled = false;
+    const savedTimer: ReturnType<typeof setTimeout> | null = null;
+    // FIX 2026-05-06 (audit team H022): cargar reglas desde DB primero,
+    // fallback a localStorage si endpoint falla (continuidad).
+    (async () => {
+      try {
+        const r = await fetch("/api/marketplace/loyalty/rules");
+        if (cancelled) return;
+        if (r.ok) {
+          const json = await r.json();
+          if (cancelled) return;
+          if (json.rules)   setRulesState({ ...DEFAULT_LOYALTY_RULES, ...json.rules });
+          else              setRulesState(readLocal<LoyaltyRules>(RULES_KEY, DEFAULT_LOYALTY_RULES));
+          if (json.rewards) setRewards(json.rewards as LoyaltyReward[]);
+          else              setRewards(readLocal<LoyaltyReward[]>(REWARDS_KEY, DEFAULT_REWARDS));
+          return;
+        }
+      } catch (err) {
+        console.warn("[FidelidadTab] rules fetch failed, using localStorage", err);
+      }
+      if (cancelled) return;
+      setRulesState(readLocal<LoyaltyRules>(RULES_KEY, DEFAULT_LOYALTY_RULES));
+      setRewards(readLocal<LoyaltyReward[]>(REWARDS_KEY, DEFAULT_REWARDS));
+    })();
+
     fetch("/api/loyalty/metrics")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (Array.isArray(d?.topCustomers)) setTopCustomers(d.topCustomers as TopCustomer[]); })
-      .catch((err) => { console.warn("[MarketplaceModule] fetch failed", err); })
-      .finally(() => setTopLoading(false));
+      .then((d) => {
+        if (cancelled) return;
+        if (Array.isArray(d?.topCustomers)) setTopCustomers(d.topCustomers as TopCustomer[]);
+      })
+      .catch((err) => { console.warn("[FidelidadTab] metrics fetch failed", err); })
+      .finally(() => { if (!cancelled) setTopLoading(false); });
+
+    return () => {
+      cancelled = true;
+      if (savedTimer) clearTimeout(savedTimer);
+    };
   }, []);
+
+  // Persistir en DB (con fallback a localStorage si endpoint falla)
+  const persistRulesAPI = async (next: LoyaltyRules, nextRewards?: LoyaltyReward[]) => {
+    try {
+      const body: Record<string, unknown> = { rules: next };
+      if (nextRewards) body.rewards = nextRewards;
+      const r = await fetch("/api/marketplace/loyalty/rules", {
+        method: "PUT",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    } catch (err) {
+      console.warn("[FidelidadTab] rules PUT failed, persisting to localStorage as fallback", err);
+      writeLocal(RULES_KEY, next);
+      if (nextRewards) writeLocal(REWARDS_KEY, nextRewards);
+    }
+  };
 
   const persistRules = (next: LoyaltyRules) => {
     setRulesState(next);
-    writeLocal(RULES_KEY, next);
+    void persistRulesAPI(next);
     setRulesSaved(true);
     setTimeout(() => setRulesSaved(false), 2000);
   };
 
   const persistRewards = (next: LoyaltyReward[]) => {
     setRewards(next);
-    writeLocal(REWARDS_KEY, next);
+    void persistRulesAPI(rules, next);
   };
 
   const addReward = () => {
@@ -163,7 +213,7 @@ export default function FidelidadTab() {
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">tu tienda</span>
           </div>
           {rulesSaved && (
-            <span className="text-xs text-[var(--data-success)] font-semibold flex items-center gap-1">
+            <span className="text-xs text-[var(--data-success-500)] font-semibold flex items-center gap-1">
               <CheckCircle className="h-3.5 w-3.5" /> Guardado
             </span>
           )}
@@ -190,7 +240,7 @@ export default function FidelidadTab() {
       {/* Top clientes */}
       <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Star className="h-4 w-4 text-[var(--data-warning)]" />
+          <Star className="h-4 w-4 text-[var(--data-warning-500)]" />
           <CardTitle className="text-sm">Top 10 clientes frecuentes</CardTitle>
         </div>
         {topLoading ? (
@@ -213,7 +263,7 @@ export default function FidelidadTab() {
                     <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.phone}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-extrabold text-[var(--data-success)]">S/ {c.totalSpent.toFixed(2)}</p>
+                    <p className="text-sm font-extrabold text-[var(--data-success-500)]">S/ {c.totalSpent.toFixed(2)}</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{c.points} pts</p>
                   </div>
                   {tierCfg && (
@@ -231,7 +281,7 @@ export default function FidelidadTab() {
       {/* Recompensas */}
       <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Gift className="h-4 w-4 text-[var(--data-warning)]" />
+          <Gift className="h-4 w-4 text-[var(--data-warning-500)]" />
           <CardTitle className="text-sm">Recompensas canjeables</CardTitle>
           <span className="text-xs text-[var(--text-secondary)]">· {rewards.filter((r) => r.active).length} activa(s)</span>
         </div>
@@ -242,7 +292,7 @@ export default function FidelidadTab() {
             rewards.map((r) => (
               <div key={r.id} className={cn("flex items-center gap-3 px-3 py-2 rounded-xl border",
                 r.active ? "border-[var(--rule-base)] bg-white" : "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-60")}>
-                <span className="h-9 w-9 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning)] flex items-center justify-center shrink-0">
+                <span className="h-9 w-9 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning-500)] flex items-center justify-center shrink-0">
                   <Gift className="h-4 w-4" />
                 </span>
                 <div className="flex-1 min-w-0">
@@ -252,11 +302,11 @@ export default function FidelidadTab() {
                 <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold whitespace-nowrap">{r.costPoints} pts</span>
                 <button onClick={() => persistRewards(rewards.map((x) => (x.id === r.id ? { ...x, active: !x.active } : x)))}
                   title={r.active ? "Desactivar" : "Activar"} className="p-1.5 rounded-lg hover:bg-gray-100 transition shrink-0">
-                  {r.active ? <Eye className="h-4 w-4 text-[var(--data-success)]" /> : <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
+                  {r.active ? <Eye className="h-4 w-4 text-[var(--data-success-500)]" /> : <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 </button>
                 <button onClick={() => persistRewards(rewards.filter((x) => x.id !== r.id))} title="Eliminar"
                   className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition shrink-0">
-                  <X className="h-4 w-4 text-[var(--data-error)]" />
+                  <X className="h-4 w-4 text-[var(--data-error-500)]" />
                 </button>
               </div>
             ))
@@ -330,7 +380,7 @@ export default function FidelidadTab() {
                 {data.transactions.map((tx) => (
                   <div key={tx.id} className="flex items-center justify-between text-xs py-1 border-b border-[var(--rule-soft)] last:border-0">
                     <div>
-                      <span className={tx.type === "earn" ? "text-[var(--data-success)] font-semibold" : "text-[var(--data-error)] font-semibold"}>
+                      <span className={tx.type === "earn" ? "text-[var(--data-success-500)] font-semibold" : "text-[var(--data-error-500)] font-semibold"}>
                         {tx.points > 0 ? "+" : ""}{tx.points} pts
                       </span>
                       <span className="text-[var(--text-tertiary)] ml-2">{tx.description}</span>
