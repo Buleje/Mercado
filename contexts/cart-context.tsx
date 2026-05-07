@@ -244,20 +244,22 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
       validProductIdsRef.current = null; // sin filtro en main (cross-store legacy)
       return;
     }
-    let aborted = false;
-    fetch(`/api/marketplace/products/check-exists?ids=&tenantSlug=${encodeURIComponent(s)}&listAll=1`, { cache: "no-store" })
-      .then(r => r.ok ? r.json() : null)
-      .catch(() => null);
-    // Cargar via /api/products (ya respeta tenant via Referer/proxy).
-    fetch("/api/products?active=true", { cache: "no-store" })
+    // FIX 2026-05-07 (P0 #5): se eliminó un fetch "fantasma" a
+    //   /api/marketplace/products/check-exists?ids=&listAll=1
+    // que descartaba el resultado, no tenía AbortController, y llamaba al
+    // endpoint con `ids` vacío (que retorna inmediatamente {existingIds:[]}).
+    // Solo gastaba conexiones y latencia. /api/products?active=true es la
+    // fuente real de validProductIdsRef.
+    const controller = new AbortController();
+    fetch("/api/products?active=true", { cache: "no-store", signal: controller.signal })
       .then(r => r.ok ? r.json() : null)
       .then((data: unknown) => {
-        if (aborted || !Array.isArray(data)) return;
+        if (!Array.isArray(data)) return;
         const ids = new Set<number>(data.map((p: { id?: number }) => p.id).filter((n): n is number => typeof n === "number"));
         validProductIdsRef.current = ids;
       })
-      .catch(() => { /* sin filtro si falla */ });
-    return () => { aborted = true; };
+      .catch(() => { /* sin filtro si falla o aborta */ });
+    return () => { controller.abort(); };
   }, [tenantSlug]);
 
   // Hydrate from localStorage when tenantSlug changes (and on mount).
