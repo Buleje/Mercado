@@ -78,11 +78,30 @@ type CustomerCtx = {
 
 const CustomerContext = createContext<CustomerCtx | null>(null);
 
-/** Lee la cookie active-tenant para aislar el customer por tenant. */
+/**
+ * Resolve el tenant slug del cliente actual.
+ *
+ * FIX 2026-05-07: antes solo leía la cookie active-tenant. Si el cliente
+ * entraba directo a /t/mi-pollo/tienda SIN haber abierto el admin antes
+ * (no hay cookie), retornaba "main" y la cuenta del cliente se guardaba/
+ * leía en el tenant equivocado. Resultado: la tienda parecía "redirigida
+ * a main" porque todos los datos del customer venían del tenant default.
+ *
+ * Orden de resolución (mismo patrón que settings-context.tsx, commit d8cbef10):
+ *   1. URL path /t/[slug]/... — fuente de verdad cuando navegas explícito.
+ *   2. Cookie active-tenant — set por el admin al loguearse.
+ *   3. "main" como default.
+ */
 function getTenantSlug(): string {
-  if (typeof document === "undefined") return "main";
-  const match = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : "main";
+  if (typeof window === "undefined") return "main";
+  // 1. Path
+  const pathMatch = window.location.pathname.match(/^\/t\/([^/]+)/);
+  if (pathMatch) return decodeURIComponent(pathMatch[1]);
+  // 2. Cookie
+  const cookieMatch = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
+  if (cookieMatch) return decodeURIComponent(cookieMatch[1]);
+  // 3. Default
+  return "main";
 }
 
 function getStorageKey(): string {
