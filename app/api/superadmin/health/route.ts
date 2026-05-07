@@ -171,63 +171,81 @@ async function getHealthData(): Promise<HealthResponse> {
     orderBy: { name: "asc" },
   });
 
-  const tenantHealths: TenantHealth[] = await Promise.all(
-    tenants.map(async (t) => {
-      const [products, orders, customers, ordersLast24h] = await Promise.all([
-        prisma.product.count({ where: { tenantId: t.id } }).catch(() => -1),
-        prisma.order.count({ where: { tenantId: t.id } }).catch(() => -1),
-        prisma.customer.count({ where: { tenantId: t.id } }).catch(() => -1),
-        prisma.order.count({
-          where: { tenantId: t.id, createdAt: { gte: twentyFourHoursAgo } },
-        }).catch(() => -1),
-      ]);
-
-      // Per-tenant isolation: check if this tenant's orders have cross-tenant items
-      let crossItems = 0;
-      try {
-        const result = await prisma.$queryRaw<{ count: bigint }[]>`
-          SELECT COUNT(*) as count FROM "OrderItem" oi
+  // SECURITY 2026-05-07 (audit perf P0-1): batch counts via groupBy en vez de
+  // N+1. Antes 50 tenants × 5 queries = 250 queries paralelas → riesgo pool
+  // exhaustion (Supabase max 60 conn). Ahora 5 groupBy + 1 raw SQL = 6 queries
+  // totales. Indexa el resultado por tenantId para lookup O(1) en el map.
+  const [productCounts, orderCounts, customerCounts, ordersLast24hRaw, crossItemsRaw] =
+    await Promise.all([
+      prisma.product.groupBy({ by: ["tenantId"], _count: { _all: true } }).catch(() => []),
+      prisma.order.groupBy({ by: ["tenantId"], _count: { _all: true } }).catch(() => []),
+      prisma.customer.groupBy({ by: ["tenantId"], _count: { _all: true } }).catch(() => []),
+      prisma.order
+        .groupBy({
+          by: ["tenantId"],
+          where: { createdAt: { gte: twentyFourHoursAgo } },
+          _count: { _all: true },
+        })
+        .catch(() => []),
+      prisma
+        .$queryRaw<{ tenantId: string; count: bigint }[]>`
+          SELECT o."tenantId" as "tenantId", COUNT(*) as count
+          FROM "OrderItem" oi
           JOIN "Order" o ON o.id = oi."orderId"
           JOIN "Product" p ON p.id = oi."productId"
-          WHERE o."tenantId" = ${t.id} AND o."tenantId" != p."tenantId"
-        `;
-        crossItems = Number(result[0]?.count ?? 0);
-      } catch { /* ignore */ }
+          WHERE o."tenantId" != p."tenantId"
+          GROUP BY o."tenantId"
+        `
+        .catch((): { tenantId: string; count: bigint }[] => []),
+    ]);
 
-      const checks: IsolationCheck[] = [
-        {
-          name: "Datos propios",
-          passed: products >= 0 && orders >= 0 && customers >= 0,
-          detail: `${products} productos, ${orders} pedidos, ${customers} clientes`,
-        },
-        {
-          name: "Sin items cross-tenant",
-          passed: crossItems === 0,
-          detail: crossItems === 0
-            ? "Todos los items pertenecen a esta tienda"
-            : `⚠️ ${crossItems} items referencian productos de otro tenant`,
-        },
-      ];
+  // Build O(1) lookup maps (default 0 si no hay rows en la tabla)
+  const productMap = new Map(productCounts.map((r) => [r.tenantId, r._count._all]));
+  const orderMap = new Map(orderCounts.map((r) => [r.tenantId, r._count._all]));
+  const customerMap = new Map(customerCounts.map((r) => [r.tenantId, r._count._all]));
+  const ordersLast24hMap = new Map(ordersLast24hRaw.map((r) => [r.tenantId, r._count._all]));
+  const crossItemsMap = new Map(crossItemsRaw.map((r) => [r.tenantId, Number(r.count)]));
 
-      const allPassed = checks.every((c) => c.passed);
-      const hasCritical = crossItems > 0;
+  const tenantHealths: TenantHealth[] = tenants.map((t) => {
+    const products = productMap.get(t.id) ?? 0;
+    const orders = orderMap.get(t.id) ?? 0;
+    const customers = customerMap.get(t.id) ?? 0;
+    const ordersLast24h = ordersLast24hMap.get(t.id) ?? 0;
+    const crossItems = crossItemsMap.get(t.id) ?? 0;
 
-      return {
-        tenantId: t.id,
-        slug: t.slug,
-        name: t.name || t.slug,
-        status: hasCritical ? "critical" as const : allPassed ? "healthy" as const : "warning" as const,
-        checks,
-        stats: {
-          products,
-          orders,
-          customers,
-          ordersLast24h,
-          errorsLast24h: 0, // Could integrate with Sentry API in the future
-        },
-      };
-    })
-  );
+    const checks: IsolationCheck[] = [
+      {
+        name: "Datos propios",
+        passed: products >= 0 && orders >= 0 && customers >= 0,
+        detail: `${products} productos, ${orders} pedidos, ${customers} clientes`,
+      },
+      {
+        name: "Sin items cross-tenant",
+        passed: crossItems === 0,
+        detail: crossItems === 0
+          ? "Todos los items pertenecen a esta tienda"
+          : `⚠️ ${crossItems} items referencian productos de otro tenant`,
+      },
+    ];
+
+    const allPassed = checks.every((c) => c.passed);
+    const hasCritical = crossItems > 0;
+
+    return {
+      tenantId: t.id,
+      slug: t.slug,
+      name: t.name || t.slug,
+      status: hasCritical ? "critical" as const : allPassed ? "healthy" as const : "warning" as const,
+      checks,
+      stats: {
+        products,
+        orders,
+        customers,
+        ordersLast24h,
+        errorsLast24h: 0, // Could integrate with Sentry API in the future
+      },
+    };
+  });
 
   const allIsolationPassed = isolationTests.every((t) => t.passed);
   const allTenantsHealthy = tenantHealths.every((t) => t.status === "healthy");

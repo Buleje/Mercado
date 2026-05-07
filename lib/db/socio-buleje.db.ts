@@ -936,7 +936,62 @@ export const SocioBulejeDB: ISocioBulejeDB = {
       pdb.socioMembership.count({ where: { tenantId } }),
     ]);
 
-    const members = await Promise.all(rows.map(hydrateWithBalance));
+    if (rows.length === 0) return { members: [], total };
+
+    // SECURITY 2026-05-07 (audit perf P0-3): batch hydration en vez de N+1.
+    // Antes 50 socios × 2 queries = 100 queries en burst → INP alto al paginar.
+    // Ahora 2 queries totales (raw DISTINCT ON + groupBy) y merge en JS.
+    const userIds = rows.map((r) => r.userId);
+
+    // Raw SQL: latest balanceAfter por userId (1 query DISTINCT ON)
+    const latestBalances = await prisma.$queryRaw<
+      { userId: string; balanceAfter: unknown }[]
+    >`
+      SELECT DISTINCT ON ("userId") "userId", "balanceAfter"
+      FROM "SocioCashbackEntry"
+      WHERE "tenantId" = ${tenantId} AND "userId" = ANY(${userIds}::text[])
+      ORDER BY "userId", "createdAt" DESC
+    `.catch(() => [] as { userId: string; balanceAfter: unknown }[]);
+
+    const latestByUserId = new Map(
+      latestBalances.map((r) => [r.userId, Number(r.balanceAfter ?? 0)]),
+    );
+
+    // Aggregate por userId+type (1 query groupBy)
+    const aggs = await (prisma as unknown as {
+      socioCashbackEntry: {
+        groupBy(args: {
+          by: ["userId", "type"];
+          where: { tenantId: string; userId: { in: string[] } };
+          _sum: { amountSoles: true };
+        }): Promise<Array<{ userId: string; type: string; _sum: { amountSoles: unknown } }>>;
+      };
+    }).socioCashbackEntry
+      .groupBy({
+        by: ["userId", "type"],
+        where: { tenantId, userId: { in: userIds } },
+        _sum: { amountSoles: true },
+      })
+      .catch(() => [] as Array<{ userId: string; type: string; _sum: { amountSoles: unknown } }>);
+
+    const earnedByUserId = new Map<string, number>();
+    const redeemedByUserId = new Map<string, number>();
+    for (const a of aggs) {
+      const sum = decimalToNumber(a._sum.amountSoles);
+      if (a.type === "earned" || a.type === "bonus") {
+        earnedByUserId.set(a.userId, (earnedByUserId.get(a.userId) ?? 0) + sum);
+      } else if (a.type === "redeemed" || a.type === "expired") {
+        redeemedByUserId.set(a.userId, (redeemedByUserId.get(a.userId) ?? 0) + Math.abs(sum));
+      }
+    }
+
+    const members: SocioMembershipWithBalance[] = rows.map((m) => ({
+      ...toMembershipRow(m),
+      cashbackBalance: latestByUserId.get(m.userId) ?? 0,
+      totalEarned: Number((earnedByUserId.get(m.userId) ?? 0).toFixed(2)),
+      totalRedeemed: Number((redeemedByUserId.get(m.userId) ?? 0).toFixed(2)),
+    }));
+
     return { members, total };
   },
 };

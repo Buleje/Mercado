@@ -53,22 +53,32 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ products: [] });
     }
 
-    // Para cada producto del tenant, buscar precios de OTROS stores
+    // SECURITY 2026-05-07 (audit perf P0-2): un solo findMany WHERE productId IN (...)
+    // en vez de N queries serializadas. Antes 100 productos × 1 query =100 queries.
+    // Ahora 1 query y pivot en JS.
+    const productIds = myProducts.map((sp) => sp.productId);
+    const allCompetitors = await prisma.storeProduct.findMany({
+      where: {
+        productId: { in: productIds },
+        isActive: true,
+        NOT: { storeId: myStore.id },
+      },
+      select: { productId: true, retailPrice: true },
+    });
+
+    // Index competitors by productId para lookup O(1)
+    const competitorsByProduct = new Map<number, number[]>();
+    for (const c of allCompetitors) {
+      const price = Number(c.retailPrice);
+      if (!(price > 0)) continue;
+      const arr = competitorsByProduct.get(c.productId) ?? [];
+      arr.push(price);
+      competitorsByProduct.set(c.productId, arr);
+    }
+
     const settled = await Promise.allSettled(
       myProducts.map(async (sp): Promise<PricingResult> => {
-        const competitors = await prisma.storeProduct.findMany({
-          where: {
-            productId: sp.productId,
-            isActive: true,
-            NOT: { storeId: myStore.id },
-          },
-          select: { retailPrice: true },
-        });
-
-        const prices = competitors
-          .map((c) => Number(c.retailPrice))
-          .filter((p) => p > 0);
-
+        const prices = competitorsByProduct.get(sp.productId) ?? [];
         const myPrice = Number(sp.retailPrice);
         const competitorCount = prices.length;
 
