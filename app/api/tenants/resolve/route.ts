@@ -25,7 +25,17 @@ export async function GET(req: NextRequest) {
     // Acepta tanto slug como id (un cliente podría pasar el CUID directamente).
     const tenant = await prisma.tenant.findFirst({
       where: { OR: [{ slug }, { id: slug }] },
-      select: { id: true, slug: true, name: true, plan: true, active: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        plan: true,
+        active: true,
+        // Branding público (usado por mapas live, headers white-label, etc.)
+        logoUrl: true,
+        primaryColor: true,
+        secondaryColor: true,
+      },
     });
 
     if (!tenant) {

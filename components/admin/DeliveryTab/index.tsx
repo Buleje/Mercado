@@ -1,7 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Truck,
@@ -16,13 +16,17 @@ import {
   TrendingUp,
   Maximize2,
   Minimize2,
+  Home,
+  Store,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { RoutesList } from "./RoutesList";
 import { StopsTimeline } from "./StopsTimeline";
+import { OrdenesEnVivoPanel } from "./OrdenesEnVivoPanel";
 import { useDeliveryRoutes, useRouteStops, useLiveTrackingFeed } from "./hooks";
 import { TRACKING_STATUS_LABELS } from "./types";
 import { TRACKING_STATUS_ICON } from "./status-icons";
+import { useTenant } from "@/contexts/tenant-context";
 
 const LiveMap = dynamic(
   () => import("./LiveMap").then((m) => ({ default: m.LiveMap })),
@@ -58,6 +62,13 @@ export default function DeliveryTab() {
   const stopsState = useRouteStops(selectedRouteId);
   const trackingState = useLiveTrackingFeed();
   const [feedFilter, setFeedFilter] = useState<"all" | "active" | "completed">("all");
+  const { branding } = useTenant();
+  const [lastUpdate, setLastUpdate] = useState<Date>(() => new Date());
+
+  // Tick para "última actualización" — se refresca cuando cambian eventos
+  useEffect(() => {
+    setLastUpdate(new Date());
+  }, [trackingState.events.length, routesState.routes.length]);
 
   // ── Layout adaptativo: si NO hay rutas, default = mapa grande sin sidebars
   const hasRoutes = routesState.routes.length > 0;
@@ -255,10 +266,47 @@ export default function DeliveryTab() {
         </div>
       </div>
       <div className={cn(
-        "flex-1 min-h-0 p-3",
+        "flex-1 min-h-0 p-3 relative",
         viewMode === "map-focus" ? "h-[640px]" : "h-[640px] lg:h-auto",
       )}>
-        <LiveMap stops={stopsState.stops} trackingEvents={trackingState.events} />
+        <LiveMap
+          stops={stopsState.stops}
+          trackingEvents={trackingState.events}
+          tenantName={branding.name}
+          tenantLogoUrl={branding.logoUrl}
+          primaryColor={branding.primaryColor}
+        />
+        {/* Leyenda flotante sobre el mapa */}
+        <div className="absolute bottom-6 left-6 z-[400] bg-[var(--surface-raised)]/95 backdrop-blur border border-[var(--rule-base)] rounded-xl shadow-lg p-3 max-w-[260px]">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
+            Leyenda
+          </p>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 border-2 border-primary text-xs">
+                <Store className="h-3 w-3 text-primary" />
+              </span>
+              <span>Tu tienda</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-xs">
+                🛵
+              </span>
+              <span>Repartidor en vivo</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white border-2 border-[var(--data-warning-500)]">
+                <Home className="h-3 w-3 text-[var(--data-warning-500)]" />
+              </span>
+              <span>Domicilio cliente</span>
+            </div>
+          </div>
+        </div>
+        {/* Indicador "última actualización" */}
+        <div className="absolute top-6 right-6 z-[400] inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-[var(--surface-raised)]/95 backdrop-blur border border-[var(--rule-base)] shadow-md text-xs font-bold text-[var(--text-secondary)]">
+          <span className="h-2 w-2 rounded-full bg-[var(--data-success-500)] animate-pulse" />
+          Live · {lastUpdate.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+        </div>
       </div>
     </section>
   );
@@ -469,7 +517,34 @@ export default function DeliveryTab() {
         {mobileTab === "paradas" && <div className="h-[600px]">{stopsPanel}</div>}
       </div>
 
-      {/* ── 4. Feed live de eventos ────────────────────────────────── */}
+      {/* ── 4. Órdenes en vivo (Uber Eats style) ───────────────────── */}
+      {trackingState.events.length > 0 && (
+        <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                <Truck className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Órdenes activas en mapa
+                </p>
+                <p className="text-base font-extrabold text-[var(--text-primary)] mt-1">
+                  {new Set(trackingState.events.map((e) => e.orderId)).size} pedidos rastreados
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="p-3">
+            <OrdenesEnVivoPanel
+              trackingEvents={trackingState.events}
+              stops={stopsState.stops}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* ── 5. Feed de eventos del día ─────────────────────────────── */}
       <section
         className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden"
         aria-labelledby="feed-heading"

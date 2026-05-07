@@ -10,18 +10,33 @@ import {
 import { getActiveTenantSlug, tenantFetch } from "@/lib/tenant-fetch";
 
 // ─── Types ──────────────────────────────────────────────────
+interface TenantBranding {
+  name: string | null;
+  logoUrl: string | null;
+  primaryColor: string | null;
+  secondaryColor: string | null;
+}
+
 interface TenantContextValue {
   tenantSlug: string;
   tenantId: string | null;
   isLoading: boolean;
+  branding: TenantBranding;
 }
 
 const DEFAULT_SLUG = "main";
+const EMPTY_BRANDING: TenantBranding = {
+  name: null,
+  logoUrl: null,
+  primaryColor: null,
+  secondaryColor: null,
+};
 
 const TenantCtx = createContext<TenantContextValue>({
   tenantSlug: DEFAULT_SLUG,
   tenantId: null,
   isLoading: true,
+  branding: EMPTY_BRANDING,
 });
 
 // ─── BroadcastChannel message type ──────────────────────────
@@ -29,6 +44,7 @@ interface TenantBroadcast {
   type: "tenant-resolved";
   slug: string;
   tenantId: string;
+  branding?: TenantBranding;
 }
 
 // ─── Provider ───────────────────────────────────────────────
@@ -44,6 +60,7 @@ export function TenantSlugProvider({
   const resolvedSlug = initialSlug ?? DEFAULT_SLUG;
   const [tenantSlug, setTenantSlug] = useState<string>(resolvedSlug);
   const [tenantId, setTenantId] = useState<string | null>(null);
+  const [branding, setBranding] = useState<TenantBranding>(EMPTY_BRANDING);
   const [isLoading, setIsLoading] = useState(true);
 
   // Keep tenantSlug in sync when initialSlug prop changes (derived state pattern)
@@ -63,6 +80,7 @@ export function TenantSlugProvider({
       channel.onmessage = (event: MessageEvent<TenantBroadcast>) => {
         if (event.data?.type === "tenant-resolved" && event.data.slug === slug) {
           setTenantId(event.data.tenantId);
+          if (event.data.branding) setBranding(event.data.branding);
           setIsLoading(false);
         }
       };
@@ -74,11 +92,18 @@ export function TenantSlugProvider({
       .then((data) => {
         if (data?.id) {
           setTenantId(data.id);
-          // Broadcast to other tabs of the same tenant
+          const nextBranding: TenantBranding = {
+            name: data.name ?? null,
+            logoUrl: data.logoUrl ?? null,
+            primaryColor: data.primaryColor ?? null,
+            secondaryColor: data.secondaryColor ?? null,
+          };
+          setBranding(nextBranding);
           channel?.postMessage({
             type: "tenant-resolved",
             slug,
             tenantId: data.id,
+            branding: nextBranding,
           } satisfies TenantBroadcast);
         }
       })
@@ -95,7 +120,7 @@ export function TenantSlugProvider({
   }, [initialSlug]);
 
   return (
-    <TenantCtx.Provider value={{ tenantSlug, tenantId, isLoading }}>
+    <TenantCtx.Provider value={{ tenantSlug, tenantId, isLoading, branding }}>
       {children}
     </TenantCtx.Provider>
   );
