@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Truck, MapPin, Clock, User, Package } from "@buleje/design-system/icons";
+import { Truck, MapPin, Clock, Package } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
   ROUTE_STATUS_COLORS,
@@ -16,6 +16,14 @@ interface RoutesListProps {
   loading: boolean;
 }
 
+const VEHICLE_EMOJI: Record<string, string> = {
+  moto: "🏍️",
+  auto: "🚗",
+  bicicleta: "🚴",
+  "a pie": "🚶",
+  motokar: "🛺",
+};
+
 export function RoutesList({
   routes,
   selectedRouteId,
@@ -24,36 +32,50 @@ export function RoutesList({
 }: RoutesListProps) {
   const sorted = useMemo(() => {
     return [...routes].sort((a, b) => {
-      // En curso primero, después planificadas por hora
       if (a.status === "in_progress" && b.status !== "in_progress") return -1;
       if (b.status === "in_progress" && a.status !== "in_progress") return 1;
-      return (
-        new Date(a.plannedStartAt).getTime() - new Date(b.plannedStartAt).getTime()
-      );
+      return new Date(a.plannedStartAt).getTime() - new Date(b.plannedStartAt).getTime();
     });
   }, [routes]);
 
   if (loading && routes.length === 0) {
     return (
-      <div className="p-4 text-sm text-slate-500">
-        <div className="animate-pulse">Cargando rutas del día…</div>
+      <div className="p-6 space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 animate-pulse"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-2.5 w-2.5 rounded-full bg-[var(--rule-base)]" />
+              <div className="h-3 w-20 rounded bg-[var(--rule-base)]" />
+            </div>
+            <div className="h-4 w-32 rounded bg-[var(--rule-base)] mb-2" />
+            <div className="h-2 w-full rounded-full bg-[var(--rule-base)]" />
+          </div>
+        ))}
       </div>
     );
   }
 
   if (sorted.length === 0) {
     return (
-      <div className="p-6 text-center">
-        <Truck className="mx-auto h-12 w-12 text-slate-300" />
-        <p className="mt-2 text-sm text-slate-500">
-          No hay rutas para hoy. Crea una desde el botón &ldquo;Nueva ruta&rdquo;.
+      <div className="p-8 text-center">
+        <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-3">
+          <Truck className="h-6 w-6 text-[var(--text-tertiary)]" />
+        </span>
+        <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
+          Sin rutas hoy
+        </p>
+        <p className="text-sm text-[var(--text-tertiary)] mt-1 max-w-xs mx-auto leading-snug">
+          Creá una ruta nueva para empezar a despachar pedidos del día.
         </p>
       </div>
     );
   }
 
   return (
-    <ul className="flex flex-col gap-2 p-2" role="list">
+    <ul className="flex flex-col gap-2 p-3" role="list">
       {sorted.map((route) => {
         const isSelected = route.id === selectedRouteId;
         const progressPct =
@@ -64,6 +86,9 @@ export function RoutesList({
           hour: "2-digit",
           minute: "2-digit",
         });
+        const initial = (route.driverName || "?").trim().charAt(0).toUpperCase();
+        const isLive = route.status === "in_progress";
+        const vehicleIcon = VEHICLE_EMOJI[route.vehicleType?.toLowerCase()] ?? "🚚";
 
         return (
           <li key={route.id}>
@@ -72,59 +97,81 @@ export function RoutesList({
               onClick={() => onSelectRoute(isSelected ? null : route.id)}
               aria-pressed={isSelected}
               className={cn(
-                "w-full rounded-xl border p-3 text-left transition",
-                "hover:border-primary/60 hover:bg-primary/5",
-                "focus:outline-none focus:ring-2 focus:ring-primary/60",
-                "dark:border-slate-700 dark:bg-slate-800/40",
+                "w-full rounded-xl border-2 p-4 text-left transition-all",
+                "focus:outline-none focus:ring-2 focus:ring-primary/30",
                 isSelected
-                  ? "border-primary bg-primary/10 dark:bg-primary/10"
-                  : "border-slate-200 bg-white",
+                  ? "border-primary bg-primary/5 shadow-sm"
+                  : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] hover:border-primary/40 hover:bg-primary/[0.03]",
               )}
             >
-              <div className="flex items-start justify-between gap-2">
+              {/* Header con status + tiempo */}
+              <div className="flex items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
                       "inline-flex h-2.5 w-2.5 rounded-full",
                       ROUTE_STATUS_COLORS[route.status],
+                      isLive && "animate-pulse",
                     )}
                     aria-hidden
                   />
-                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  <span className={cn(
+                    "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
+                    isLive ? "text-primary" : "text-[var(--text-secondary)]",
+                  )}>
                     {ROUTE_STATUS_LABELS[route.status]}
                   </span>
                 </div>
-                <span className="flex items-center gap-1 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--text-tertiary)] tabular-nums">
                   <Clock className="h-3.5 w-3.5" />
                   {plannedTime}
                 </span>
               </div>
 
-              <div className="mt-2 flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
-                <User className="h-4 w-4 text-slate-400" />
-                {route.driverName}
+              {/* Driver + vehicle */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className={cn(
+                  "h-10 w-10 rounded-xl flex items-center justify-center text-base font-extrabold shrink-0",
+                  isLive ? "bg-primary/10 text-primary" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
+                )}>
+                  {initial}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-extrabold text-[var(--text-primary)] truncate leading-tight">
+                    {route.driverName}
+                  </p>
+                  <p className="text-sm text-[var(--text-tertiary)] mt-0.5 flex items-center gap-1.5">
+                    <span className="text-base">{vehicleIcon}</span>
+                    <span className="capitalize">{route.vehicleType}</span>
+                    {route.optimizedByAi && (
+                      <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] uppercase">
+                        IA
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
 
-              <div className="mt-2 flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400">
-                <span className="flex items-center gap-1">
-                  <Package className="h-3.5 w-3.5" />
-                  {route.completedStops}/{route.totalStops}
+              {/* Stats: paradas + km */}
+              <div className="flex items-center justify-between gap-2 text-sm font-bold text-[var(--text-secondary)] mb-3">
+                <span className="inline-flex items-center gap-1.5">
+                  <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <span className="tabular-nums">{route.completedStops}/{route.totalStops}</span>
+                  <span className="text-[var(--text-tertiary)] font-normal">paradas</span>
                 </span>
                 {route.totalDistanceM != null && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {(route.totalDistanceM / 1000).toFixed(1)} km
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-[var(--text-tertiary)]" />
+                    <span className="tabular-nums">{(route.totalDistanceM / 1000).toFixed(1)} km</span>
                   </span>
-                )}
-                {route.vehicleType !== "moto" && (
-                  <span className="text-[length:var(--ts-2xs)] uppercase">{route.vehicleType}</span>
                 )}
               </div>
 
+              {/* Progress bar */}
               {route.totalStops > 0 && (
-                <div className="mt-3">
+                <div className="space-y-1">
                   <div
-                    className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"
+                    className="h-2 w-full overflow-hidden rounded-full bg-[var(--surface-raised)] border border-[var(--rule-soft)]"
                     role="progressbar"
                     aria-valuenow={progressPct}
                     aria-valuemin={0}
@@ -132,10 +179,20 @@ export function RoutesList({
                     aria-label={`Progreso de la ruta: ${progressPct}%`}
                   >
                     <div
-                      className="h-full rounded-full bg-primary transition-all"
+                      className={cn(
+                        "h-full rounded-full transition-all",
+                        progressPct === 100
+                          ? "bg-[var(--data-success-500)]"
+                          : isLive
+                            ? "bg-primary"
+                            : "bg-[var(--text-tertiary)]",
+                      )}
                       style={{ width: `${progressPct}%` }}
                     />
                   </div>
+                  <p className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)] text-right">
+                    {progressPct}% completado
+                  </p>
                 </div>
               )}
             </button>

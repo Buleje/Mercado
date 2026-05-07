@@ -168,7 +168,7 @@ export function LiveMap({ stops, trackingEvents, className }: LiveMapProps) {
           background: #f59e0b;
         }
         .delivery-stop-marker .stop-pin-delivered {
-          background: #00B4A6;
+          background: var(--accent);
         }
         .delivery-stop-marker .stop-pin-failed {
           background: #dc2626;
@@ -183,10 +183,10 @@ export function LiveMap({ stops, trackingEvents, className }: LiveMapProps) {
           width: 32px;
           height: 32px;
           font-size: 22px;
-          background: #00b4a6;
+          background: var(--accent);
           border-radius: 50%;
           border: 3px solid white;
-          box-shadow: 0 2px 8px rgba(0, 180, 166, 0.5);
+          box-shadow: 0 2px 8px color-mix(in oklab, var(--accent) 50%, transparent);
         }
       `}</style>
     </>
