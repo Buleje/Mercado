@@ -4166,3 +4166,26 @@ model PaymentApproval {
   @@index([status])
   @@index([conversationId])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EventDeadLetter — DLQ persistente para eventos de dominio fallidos.
+// Antes (audit P0-2): InMemoryDeadLetterQueue vivía en RAM y perdía eventos
+// en cada cold start de Vercel. Ahora persistido en Postgres para sobrevivir
+// reinicios. Indexes (tenantId, resolvedAt) y (eventType, resolvedAt) cubren
+// los queries de retry-cron y dashboards de superadmin.
+// ─────────────────────────────────────────────────────────────────────────────
+model EventDeadLetter {
+  id           String    @id @default(cuid())
+  tenantId     String
+  eventType    String
+  eventPayload Json
+  occurredAt   DateTime
+  failedAt     DateTime  @default(now())
+  attemptCount Int       @default(1)
+  lastError    String
+  handlerName  String
+  resolvedAt   DateTime?
+
+  @@index([tenantId, resolvedAt])
+  @@index([eventType, resolvedAt])
+}

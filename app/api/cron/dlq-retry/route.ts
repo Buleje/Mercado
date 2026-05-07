@@ -2,19 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { withCronAuth } from "@/lib/cron-auth";
 import { logger } from "@/lib/logger";
 import { runDlqRetries } from "@/lib/events/dlq/retry-cron";
-import { InMemoryDeadLetterQueue } from "@/lib/events/dlq/in-memory-dlq";
+import { PrismaDeadLetterQueue } from "@/lib/events/dlq/prisma-dlq";
 
 // GET /api/cron/dlq-retry
 //
-// Reintenta eventos que quedaron en el Dead Letter Queue.
-// Usa InMemoryDeadLetterQueue por default hasta que la tabla
-// DomainEventLog/EventDeadLetter esté migrada (SCHEMA-PROPOSAL
-// en lib/events/dlq/SCHEMA-PROPOSAL.prisma).
+// Reintenta eventos del Dead Letter Queue.
+// SECURITY 2026-05-07 (audit P0-2 production): migrado de InMemoryDeadLetterQueue
+// a PrismaDeadLetterQueue. Antes el DLQ vivía en RAM del proceso Vercel — cada
+// cold start o restart por deploy borraba todos los eventos pendientes de retry.
+// Eventos críticos (pagos, notificaciones, webhooks) se perdían silenciosamente.
 //
+// Tabla: EventDeadLetter (migration 20260507085127_add_event_dead_letter).
 // Sugerencia vercel.json: cada 5 minutos
 // Autorización: Bearer <CRON_SECRET>
 
-const dlq = new InMemoryDeadLetterQueue();
+const dlq = new PrismaDeadLetterQueue();
 
 async function handler(_req: NextRequest): Promise<NextResponse> {
   try {

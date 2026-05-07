@@ -3,18 +3,15 @@
  *
  * Implementacion Prisma del DeadLetterQueue — produccion.
  *
- * REQUIERE migration: 20260420_add_event_dead_letter
- * Hasta que la migration se ejecute, las lineas de acceso al delegate
- * usan @ts-expect-error para que el resto del modulo compile limpio.
- *
- * Instrucciones de activacion:
- *   1. Pegar el modelo de SCHEMA-PROPOSAL.prisma en prisma/schema.prisma
- *   2. Correr:  DATABASE_URL="$DIRECT_URL" npx prisma migrate dev --name add_event_dead_letter
- *   3. Quitar los comentarios @ts-expect-error de este archivo
+ * SECURITY 2026-05-07 (audit P0-2 production): activado en producción.
+ * Modelo EventDeadLetter agregado a schema.prisma + migration
+ * 20260507085127_add_event_dead_letter creada. Para aplicar a prod:
+ *   DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy
  */
 
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "node:crypto";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { logger } from "@/lib/logger";
 import type {
   DeadLetterQueue,
@@ -91,13 +88,12 @@ export class PrismaDeadLetterQueue implements DeadLetterQueue {
     const { tenantId, event, handlerName, error } = parsed.data;
 
     try {
-      // @ts-expect-error pending migration 20260420_add_event_dead_letter
       await prisma.eventDeadLetter.create({
         data: {
           id: randomUUID(),
           tenantId,
           eventType: event.type,
-          eventPayload: event as unknown as Record<string, unknown>,
+          eventPayload: event as unknown as Prisma.InputJsonValue,
           occurredAt: new Date(event.occurredAt),
           failedAt: new Date(),
           attemptCount: 1,
@@ -124,7 +120,6 @@ export class PrismaDeadLetterQueue implements DeadLetterQueue {
     const limit = Math.min(opts.limit ?? DEFAULT_LIST_LIMIT, 200);
 
     try {
-      // @ts-expect-error pending migration 20260420_add_event_dead_letter
       const rows: PrismaEventDeadLetter[] = await prisma.eventDeadLetter.findMany({
         where: {
           tenantId,
@@ -144,7 +139,6 @@ export class PrismaDeadLetterQueue implements DeadLetterQueue {
 
   async markResolved(id: string, reason?: string): Promise<void> {
     try {
-      // @ts-expect-error pending migration 20260420_add_event_dead_letter
       const current: PrismaEventDeadLetter | null = await prisma.eventDeadLetter.findUnique({
         where: { id },
       });
@@ -158,7 +152,6 @@ export class PrismaDeadLetterQueue implements DeadLetterQueue {
         ? `${current.lastError} | resolved: ${reason}`
         : current.lastError;
 
-      // @ts-expect-error pending migration 20260420_add_event_dead_letter
       await prisma.eventDeadLetter.update({
         where: { id },
         data: {
@@ -200,8 +193,7 @@ export class PrismaDeadLetterQueue implements DeadLetterQueue {
         result.succeeded++;
       } catch (err) {
         try {
-          // @ts-expect-error pending migration 20260420_add_event_dead_letter
-          await prisma.eventDeadLetter.update({
+              await prisma.eventDeadLetter.update({
             where: { id: entry.id },
             data: {
               attemptCount: { increment: 1 },
