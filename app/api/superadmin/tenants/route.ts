@@ -206,9 +206,20 @@ export async function GET(req: NextRequest) {
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
+// SECURITY 2026-05-07 (audit MT5): bloquear slugs que empiecen con "custom--".
+// Si se permite, un atacante puede registrar `custom--victima-com` y luego
+// apuntar DNS de victima.com → app. El middleware mintea synthetic slug
+// `custom--victima.com` que coincide con el slug del atacante → phishing.
+const RESERVED_SLUG_PREFIX = "custom--";
+
 const CreateTenantSchema = z.object({
   name: z.string().min(2).max(80),
-  slug: z.string().regex(SLUG_RE, "Solo letras minúsculas, números y guiones"),
+  slug: z
+    .string()
+    .regex(SLUG_RE, "Solo letras minúsculas, números y guiones")
+    .refine((s) => !s.startsWith(RESERVED_SLUG_PREFIX), {
+      message: `El prefijo "${RESERVED_SLUG_PREFIX}" está reservado por el sistema`,
+    }),
   plan: z.enum(["free", "pro", "business", "enterprise"]).default("free"),
   adminUsername: z.string().min(3).max(32).regex(/^[a-z0-9_.]+$/i, "Solo letras, números, punto o guión bajo"),
   adminPassword: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),

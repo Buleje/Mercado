@@ -24,10 +24,21 @@ interface TenantLandingProps {
  * La capa StorePageDB ya aplica caché in-process vía getOrSet.
  */
 async function loadPageData(slug: string) {
-  // eslint-disable-next-line no-restricted-properties -- Public SSR landing: lookup cross-tenant intentional por slug/id; no hay tenantId del request todavía (esta misma query lo resuelve). TenantsDB no expone método público de slug-resolution.
+  // SECURITY 2026-05-07 (audit MT5): si slug es synthetic `custom--{host}`,
+  // resolver al slug REAL via Tenant.customDomain. Si no hay match → null.
+  // Antes el synthetic slug se usaba como id directo y, si por casualidad
+  // coincidía con un slug registrado, daba acceso al tenant equivocado.
+  let lookupCondition: { OR: Array<{ id: string } | { slug: string } | { customDomain: string }> };
+  if (slug.startsWith("custom--")) {
+    const host = slug.slice("custom--".length);
+    lookupCondition = { OR: [{ customDomain: host }] };
+  } else {
+    lookupCondition = { OR: [{ id: slug }, { slug }] };
+  }
+  // eslint-disable-next-line no-restricted-properties -- Public SSR landing: lookup cross-tenant intentional por slug/id/customDomain; no hay tenantId del request todavía (esta misma query lo resuelve).
   const tenant = await prisma.tenant
     .findFirst({
-      where: { OR: [{ id: slug }, { slug }] },
+      where: lookupCondition,
       select: {
         id: true,
         slug: true,
