@@ -13,7 +13,7 @@
  * Tipografía: estándar admin (text-base/text-xl font-extrabold), sin italic.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, memo } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import {
   Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight, Store, Boxes, ChefHat,
@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/EmptyState";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { formatDate, parseGps, haversineKm } from "@/lib/admin-helpers";
-import { STATUS_LABELS } from "./types";
+import { STATUS_LABELS, VALID_TRANSITIONS } from "./types";
 import {
   DndContext,
   DragOverlay,
@@ -124,7 +124,7 @@ interface OrderCardProps {
   onMarkDeudaPaid: () => void;
 }
 
-function OrderCard({
+const OrderCard = memo(function OrderCard({
   order,
   selected,
   storeLat,
@@ -337,7 +337,7 @@ function OrderCard({
       </div>
     </article>
   );
-}
+});
 
 // ── Draggable wrapper ─────────────────────────────────────────────────────────
 function DraggableOrderCard(props: OrderCardProps) {
@@ -375,7 +375,7 @@ interface KanbanColumnProps extends ColumnConfig {
   onMarkDeudaPaid: (id: string) => void;
 }
 
-function KanbanColumn({
+const KanbanColumn = memo(function KanbanColumn({
   id,
   label,
   description,
@@ -401,7 +401,7 @@ function KanbanColumn({
   iconColor: string;
   isActiveTarget?: boolean;
 }) {
-  const total = orders.reduce((s, o) => s + o.total, 0);
+  const total = orders.reduce((s, o) => s + Number(o.total), 0);
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
     <div
@@ -486,7 +486,7 @@ function KanbanColumn({
       </div>
     </div>
   );
-}
+});
 
 export function OrdersKanban({
   activeOrders,
@@ -505,8 +505,11 @@ export function OrdersKanban({
   // Mobile: tab segmented control para mostrar 1 columna por vez
   const [mobileColumn, setMobileColumn] = useState<ColumnId>("pendiente");
 
-  // eslint-disable-next-line react-hooks/purity -- intencional para urgency
-  const nowMs = useMemo(() => Date.now(), []);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   // ── Drag & drop state ──────────────────────────────────────────────────────
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -527,6 +530,8 @@ export function OrdersKanban({
     if (!target) return;
     const order = activeOrders.find((o) => o.id === activeId);
     if (!order || order.status === target.id) return;
+    const allowed = VALID_TRANSITIONS[order.status] ?? [];
+    if (!allowed.includes(target.id as OrderStatus)) return;
     onUpdateStatus(activeId, target.id as OrderStatus);
   };
 

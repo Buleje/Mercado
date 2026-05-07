@@ -37,10 +37,15 @@ export async function POST(req: NextRequest) {
   const { ids, status } = parsed.data;
 
   try {
+    // F3: tenantId en where — previene modificación cross-tenant
     const result = await prisma.order.updateMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ids }, tenantId: auth.tenantId },
       data: { status, updatedAt: new Date() },
     });
+
+    if (result.count === 0) {
+      return NextResponse.json({ error: "No se encontraron pedidos válidos para este tenant" }, { status: 404 });
+    }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;
     logActivity(

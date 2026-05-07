@@ -120,7 +120,10 @@ export async function PATCH(
       // persiste cancelReason+cancelledAt. Mismo patrón atómico que el POST
       // (RED-005): UPDATE conditional con tenantId guard.
       if (parsed.data.status === "cancelado") {
-        prismaForTenant(auth.tenantId).$transaction(async (tx) => {
+        // F4: await — garantiza que el stock se repone antes de responder al cliente.
+        // Si la tx falla, el catch loggea el error pero la respuesta HTTP ya se
+        // preparó correctamente (el status del pedido sí cambió a cancelado).
+        await prismaForTenant(auth.tenantId).$transaction(async (tx) => {
           const items = await tx.orderItem.findMany({
             where: { orderId: id },
             select: { productId: true, quantity: true },

@@ -29,6 +29,16 @@ import {
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 
+// F1-XSS: helper modulo-level para escapar HTML antes de interpolar en Leaflet divIcon/bindPopup
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 interface Partner {
   id: string;
   name: string;
@@ -233,15 +243,15 @@ export default function DeliveryPartnersLiveMap() {
         const accNum = toNum(p.acceptanceRate);
         const popupHtml = `
           <div style="font-family:system-ui,sans-serif;min-width:180px;">
-            <div style="font-weight:800;font-size:14px;color:#1a1a1a;margin-bottom:4px;">${p.name}</div>
-            <div style="font-size:12px;color:#666;margin-bottom:6px;">${p.phone}</div>
+            <div style="font-weight:800;font-size:14px;color:#1a1a1a;margin-bottom:4px;">${escapeHtml(p.name)}</div>
+            <div style="font-size:12px;color:#666;margin-bottom:6px;">${escapeHtml(p.phone ?? "")}</div>
             <div style="display:flex;gap:6px;font-size:12px;color:#444;">
-              <span>⭐ ${ratingNum.toFixed(1)}</span>
-              <span>· ${Math.round(accNum * 100)}% aceptación</span>
+              <span>&#11088; ${ratingNum.toFixed(1)}</span>
+              <span>· ${Math.round(accNum * 100)}% aceptaci&#243;n</span>
             </div>
-            ${p.currentOrderId ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:700;">🔵 Pedido ${p.currentOrderId.slice(-8)}</div>` : ""}
-            ${p.pendingOffers > 0 ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;">🟡 ${p.pendingOffers} oferta pending</div>` : ""}
-            ${!p.currentOrderId && p.pendingOffers === 0 && p.isOnline ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;">🟢 Libre y disponible</div>` : ""}
+            ${p.currentOrderId ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:700;">Pedido ${escapeHtml(p.currentOrderId.slice(-8))}</div>` : ""}
+            ${p.pendingOffers > 0 ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;">${escapeHtml(String(p.pendingOffers))} oferta pending</div>` : ""}
+            ${!p.currentOrderId && p.pendingOffers === 0 && p.isOnline ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;">Libre y disponible</div>` : ""}
           </div>
         `;
         const existing = markersRef.current.get(p.id);
