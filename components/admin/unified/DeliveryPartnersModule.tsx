@@ -60,6 +60,23 @@ const TableSkeleton = () => (
   </div>
 );
 
+// ── Helpers ──
+
+/**
+ * Convierte un valor que puede venir como number, string (Prisma Decimal
+ * serializado), null o undefined a un number seguro. Evita el crash
+ * "x.toFixed is not a function" cuando el backend devuelve Decimal como
+ * string (mismo bug que totalSpent en /puntos).
+ */
+function toNum(v: number | string | null | undefined): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const parsed = parseFloat(v);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
 // ── Types ──
 interface DeliveryPartner {
   id: string;
@@ -67,8 +84,8 @@ interface DeliveryPartner {
   phone: string;
   zone: string;
   vehicleType: string;
-  fee: number;
-  rating: number;
+  fee: number | string;
+  rating: number | string;
   isActive: boolean;
   createdAt?: string;
 }
@@ -79,7 +96,7 @@ interface DeliveryAssignment {
   partnerId: string;
   partnerName: string;
   status: string;
-  fee: number;
+  fee: number | string;
   assignedAt: string;
   deliveredAt?: string;
   notes?: string;
@@ -102,10 +119,10 @@ const ZONAS = [
   "Pueblo Libre", "Ica Yanayacu", "Todos",
 ];
 const ASSIGNMENT_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
-  en_camino:  { label: "En camino",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-  entregado:  { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
-  cancelado:  { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
+  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
+  en_camino:  { label: "En camino",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  entregado:  { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  cancelado:  { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
 };
 const PERMISSION_TYPES = ["view", "edit", "admin", "delivery"];
 
@@ -193,7 +210,7 @@ function PartnerModal({
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+            <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
               <AlertCircle className="h-4 w-4 shrink-0" /> {error}
             </div>
           )}
@@ -366,7 +383,7 @@ function RepartidoresTab() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button>
@@ -418,19 +435,19 @@ function RepartidoresTab() {
                       <p className="text-xs text-[var(--text-secondary)] mt-0.5">{p.vehicleType}</p>
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)]">
-                      S/{p.fee.toFixed(2)}
+                      S/{toNum(p.fee).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-warning)]">
-                        <Star className="h-3.5 w-3.5 fill-[var(--data-warning)]" />
-                        {p.rating.toFixed(1)}
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-warning-500)]">
+                        <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)]" />
+                        {toNum(p.rating).toFixed(1)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={cn(
                         "inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
                         p.isActive
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                           : "bg-gray-100 text-[var(--text-secondary)]"
                       )}>
                         {p.isActive ? "Activo" : "Inactivo"}
@@ -447,7 +464,7 @@ function RepartidoresTab() {
                         </button>
                         <button
                           onClick={() => setConfirmDelete(p.id)}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error)] hover:bg-[var(--data-error-50)] transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -483,7 +500,7 @@ function RepartidoresTab() {
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
-                <AlertCircle className="h-5 w-5 text-[var(--data-error)]" />
+                <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div>
                 <CardTitle className="font-extrabold text-[var(--text-primary)]">¿Eliminar repartidor?</CardTitle>
@@ -500,7 +517,7 @@ function RepartidoresTab() {
               <button
                 onClick={() => handleDelete(confirmDelete)}
                 disabled={!!deleting}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error)] hover:bg-[var(--data-error)] transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
               >
                 {deleting ? "Eliminando..." : "Sí, eliminar"}
               </button>
@@ -567,7 +584,7 @@ function AsignacionesTab() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button>
@@ -614,7 +631,7 @@ function AsignacionesTab() {
                         {a.partnerName}
                       </td>
                       <td className="px-4 py-3 text-right text-[var(--text-secondary)]">
-                        S/{a.fee.toFixed(2)}
+                        S/{toNum(a.fee).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold", sc.className)}>
@@ -675,7 +692,7 @@ function AsignacionesTab() {
                   <option value="">Seleccionar repartidor...</option>
                   {partners.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} — {p.zone} — S/{p.fee.toFixed(2)}
+                      {p.name} — {p.zone} — S/{toNum(p.fee).toFixed(2)}
                     </option>
                   ))}
                 </select>
@@ -762,7 +779,7 @@ function PermisosTab() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
+        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
           <button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button>
@@ -794,7 +811,7 @@ function PermisosTab() {
                       <p className="text-xs text-[var(--text-tertiary)]">{p.userEmail}</p>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success)]">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
                         {p.permissionType}
                       </span>
                     </td>
@@ -1020,11 +1037,11 @@ function RankingTab() {
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Entregados</p>
-            <p className="mt-1 text-2xl font-extrabold text-[var(--data-success)]">{summary.totalDelivered}</p>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--data-success-500)]">{summary.totalDelivered}</p>
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pagado a riders</p>
-            <p className="mt-1 text-2xl font-extrabold text-[var(--accent)]">S/ {summary.totalEarnings.toFixed(0)}</p>
+            <p className="mt-1 text-2xl font-extrabold text-[var(--accent)]">S/ {toNum(summary.totalEarnings).toFixed(0)}</p>
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-center">
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Completion</p>
@@ -1080,15 +1097,15 @@ function RankingTab() {
                     </div>
                   </td>
                   <td className="py-2.5 pr-3 text-center">
-                    <span className="flex items-center justify-center gap-0.5 text-xs font-bold text-[var(--data-warning)]">
-                      <Star className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]" />
-                      {entry.rating.toFixed(1)}
+                    <span className="flex items-center justify-center gap-0.5 text-xs font-bold text-[var(--data-warning-500)]">
+                      <Star className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
+                      {toNum(entry.rating).toFixed(1)}
                     </span>
                   </td>
                   <td className="py-2.5 pr-3 text-center text-xs text-[var(--text-secondary)]">
                     {Math.round(entry.acceptanceRate * 100)}%
                   </td>
-                  <td className="py-2.5 pr-3 text-center text-xs font-bold text-[var(--data-success)]">
+                  <td className="py-2.5 pr-3 text-center text-xs font-bold text-[var(--data-success-500)]">
                     {entry.delivered}
                     {entry.inProgress > 0 && (
                       <span className="ml-1 text-[var(--text-tertiary)] font-normal">+{entry.inProgress}</span>
@@ -1104,17 +1121,17 @@ function RankingTab() {
                     </span>
                   </td>
                   <td className="py-2.5 pr-3 text-center text-xs font-bold text-[var(--accent)]">
-                    S/ {entry.totalEarnings.toFixed(0)}
+                    S/ {toNum(entry.totalEarnings).toFixed(0)}
                   </td>
                   <td className="py-2.5 text-center">
                     <span
                       className={cn(
                         "inline-flex items-center justify-center h-7 px-2.5 rounded-full text-xs font-extrabold",
                         entry.completionRate >= 0.85
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
+                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                           : entry.completionRate >= 0.5
-                            ? "bg-[var(--data-warning-100)] text-[var(--data-warning)]"
-                            : "bg-[var(--data-error-100)] text-[var(--data-error)]"
+                            ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+                            : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                       )}
                     >
                       {Math.round(entry.completionRate * 100)}%
@@ -1230,7 +1247,7 @@ function SolicitudesTab() {
                 className={cn(
                   "bg-white border-2 rounded-2xl p-4 transition-all",
                   isPending
-                    ? "border-[var(--data-warning)] bg-[var(--data-warning-50)]/30"
+                    ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)]/30"
                     : "border-[var(--rule-base)] opacity-70",
                 )}
               >
@@ -1241,7 +1258,7 @@ function SolicitudesTab() {
                         {data.name}
                       </h4>
                       {isPending ? (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-[var(--data-warning-100)] text-[var(--data-warning)]">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-[var(--data-warning-100)] text-[var(--data-warning-500)]">
                           Pendiente
                         </span>
                       ) : (
@@ -1254,8 +1271,8 @@ function SolicitudesTab() {
                           className={cn(
                             "px-2 py-0.5 rounded-full text-xs font-extrabold",
                             kycCheck.ok
-                              ? "bg-[var(--accent-soft)] text-[var(--data-success)]"
-                              : "bg-[var(--data-error-100)] text-[var(--data-error)]",
+                              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                              : "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
                           )}
                         >
                           {kycCheck.ok ? "KYC completo" : `KYC incompleto (${kycCheck.missing.length})`}
@@ -1304,14 +1321,14 @@ function SolicitudesTab() {
                         onClick={() => handleAction(app.id, "approve")}
                         disabled={isProcessing || !canApprove}
                         title={canApprove ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ThumbsUp className="h-3.5 w-3.5" /> Aprobar
                       </button>
                       <button
                         onClick={() => handleAction(app.id, "reject")}
                         disabled={isProcessing}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--data-error-100)] text-[var(--data-error)] disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--data-error-100)] text-[var(--data-error-500)] disabled:opacity-50 transition-colors"
                       >
                         <ThumbsDown className="h-3.5 w-3.5" /> Rechazar
                       </button>
@@ -1366,7 +1383,7 @@ function SolicitudesTab() {
                       ]}
                     />
                     {!kycCheck.ok && (
-                      <div className="sm:col-span-2 rounded-xl bg-[var(--data-error-100)] text-[var(--data-error)] px-3 py-2 text-xs font-bold">
+                      <div className="sm:col-span-2 rounded-xl bg-[var(--data-error-100)] text-[var(--data-error-500)] px-3 py-2 text-xs font-bold">
                         Faltan datos para aprobar: {kycCheck.missing.join(" · ")}
                       </div>
                     )}
@@ -1448,8 +1465,8 @@ export default function DeliveryPartnersModule() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Repartidores activos", value: kpis.activePartners,     color: "text-primary" },
-          { label: "Entregas hoy",          value: kpis.deliveriesToday,    color: "text-[var(--data-success)]" },
-          { label: "Pendientes",            value: kpis.pendingDeliveries,  color: "text-[var(--data-warning)]" },
+          { label: "Entregas hoy",          value: kpis.deliveriesToday,    color: "text-[var(--data-success-500)]" },
+          { label: "Pendientes",            value: kpis.pendingDeliveries,  color: "text-[var(--data-warning-500)]" },
         ].map(({ label, value, color }) => (
           <div
             key={label}

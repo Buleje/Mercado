@@ -88,7 +88,9 @@ export function ChartCard({
         <EmptyState text={emptyText} Icon={EmptyIcon} height={height} />
       ) : (
         <div
-          className={cn("w-full", chartClassName)}
+          // min-w-0 evita que el padre flex haga overflow y deje a Recharts
+          // medir width=-1 (warning "width and height should be greater than 0").
+          className={cn("w-full min-w-0", chartClassName)}
           style={height > 0 ? { height: `${height}px` } : undefined}
         >
           {children}
@@ -192,7 +194,7 @@ export const CHART_TOKENS = {
   axisFontWeight: 600,
   labelFontSize: 14,
   // Sincronizados con --data-* en app/globals.css (light theme).
-  brand: "#00B4A6",      // --data-5
+  brand: "var(--accent)",      // --data-5
   blue: "#0ea5e9",       // --data-6 (info)
   emerald: "#047857",    // --data-success
   violet: "#8b5cf6",     // --data-8
@@ -205,5 +207,5 @@ export const CHART_TOKENS = {
   primary:   "#0a0a0a",  // --data-1
   secondary: "#525252",  // --data-2
   tertiary:  "#a3a3a3",  // --data-3
-  accent:    "#00B4A6",  // --data-5 (brand teal)
+  accent:    "var(--accent)",  // --data-5 (brand teal)
 } as const;
