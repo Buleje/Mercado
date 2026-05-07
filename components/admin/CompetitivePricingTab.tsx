@@ -10,6 +10,8 @@ import {
   AlertCircle,
   BarChart2,
   HelpCircle,
+  DollarSign,
+  Target,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -33,8 +35,8 @@ const SUGGESTION_CONFIG: Record<
   Suggestion,
   { label: string; badge: string; icon: React.ElementType; kpiColor: string }
 > = {
-  Subir:     { label: "Subir precio",  badge: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", icon: TrendingUp,   kpiColor: "text-[var(--data-success)] dark:text-[var(--data-success)]" },
-  Bajar:     { label: "Bajar precio",  badge: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 icon: TrendingDown, kpiColor: "text-red-600 dark:text-red-400" },
+  Subir:     { label: "Subir precio",  badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: TrendingUp,   kpiColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+  Bajar:     { label: "Bajar precio",  badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",                 icon: TrendingDown, kpiColor: "text-[var(--data-error-600)] dark:text-red-400" },
   OK:        { label: "Precio OK",     badge: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",                icon: Minus,        kpiColor: "text-[var(--text-tertiary)]" },
   "Sin datos": { label: "Sin datos",   badge: "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]",                icon: HelpCircle,   kpiColor: "text-[var(--text-tertiary)]" },
 };
@@ -86,50 +88,55 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
   const maxVal = Math.max(...allValues) * 1.1;
 
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
-      <div className="flex items-center gap-2 mb-4">
-        <BarChart2 className="h-4 w-4 text-primary" />
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
-          Mi precio vs promedio (top {withData.length})
-        </CardTitle>
-        <div className="ml-auto flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-primary" /> Mi precio
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+      <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+        <div className="flex items-start gap-3">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <BarChart2 className="h-5 w-5" />
           </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-[#f4a261]" /> Promedio
+          <div>
+            <CardTitle className="font-display text-xl leading-tight">
+              Mi precio vs promedio
+            </CardTitle>
+            <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+              Top {withData.length} productos con datos de competencia
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 text-sm font-bold">
+          <span className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded-sm bg-primary" />
+            <span className="text-[var(--text-secondary)]">Mi precio</span>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded-sm bg-[var(--secondary)]" />
+            <span className="text-[var(--text-secondary)]">Promedio</span>
           </span>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {withData.map((p) => (
-          <div key={p.id} className="space-y-1">
-            <p className="text-xs font-semibold text-[var(--text-secondary)] truncate max-w-[200px]">
+          <div key={p.id} className="space-y-2">
+            <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">
               {p.name}
             </p>
-            <div className="flex items-center gap-2">
-              {/* Mi precio */}
-              <div className="flex-1 flex items-center gap-1">
-                <div
-                  className="h-5 bg-primary rounded-sm transition-all"
-                  style={{ width: `${(p.myPrice / maxVal) * 100}%` }}
-                />
-                <span className="text-xs font-mono text-[var(--text-secondary)] whitespace-nowrap">
-                  S/{p.myPrice.toFixed(2)}
-                </span>
-              </div>
+            <div className="flex items-center gap-3">
+              <div
+                className="h-6 bg-primary rounded-md transition-all"
+                style={{ width: `${(p.myPrice / maxVal) * 100}%` }}
+              />
+              <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
+                S/{p.myPrice.toFixed(2)}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Promedio */}
-              <div className="flex-1 flex items-center gap-1">
-                <div
-                  className="h-5 bg-[#f4a261] rounded-sm transition-all"
-                  style={{ width: `${(p.avgPrice! / maxVal) * 100}%` }}
-                />
-                <span className="text-xs font-mono text-[var(--text-secondary)] whitespace-nowrap">
-                  S/{p.avgPrice!.toFixed(2)}
-                </span>
-              </div>
+            <div className="flex items-center gap-3">
+              <div
+                className="h-6 bg-[var(--secondary)] rounded-md transition-all"
+                style={{ width: `${(p.avgPrice! / maxVal) * 100}%` }}
+              />
+              <span className="text-sm font-bold tabular-nums text-[var(--text-secondary)] whitespace-nowrap">
+                S/{p.avgPrice!.toFixed(2)}
+              </span>
             </div>
           </div>
         ))}
@@ -203,23 +210,32 @@ export default function CompetitivePricingTab() {
   // ── Estados obligatorios ──────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-gray-200 dark:bg-gray-800 rounded-xl" />
-          ))}
+      <div className="space-y-6 animate-pulse">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8">
+          <div className="h-7 w-64 bg-[var(--surface-sunken)] rounded-lg mb-4" />
+          <div className="grid grid-cols-3 gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-32 bg-[var(--surface-sunken)] rounded-xl" />
+            ))}
+          </div>
         </div>
-        <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-xl" />
+        <div className="h-64 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 p-4 bg-[var(--data-error-50)] dark:bg-[var(--data-error)]/20 border border-[var(--data-error)] dark:border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">
-        <AlertCircle className="h-4 w-4 shrink-0" />
-        {error}
-        <button type="button" onClick={load} className="ml-auto text-xs underline font-bold">
+      <div className="flex items-center gap-3 px-5 py-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-xl">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--data-error-500)]/15 shrink-0">
+          <AlertCircle className="h-4 w-4 text-[var(--data-error-500)]" />
+        </span>
+        <p className="text-sm font-bold text-[var(--data-error-500)] flex-1">{error}</p>
+        <button
+          type="button"
+          onClick={load}
+          className="text-sm font-bold text-[var(--data-error-500)] underline hover:no-underline"
+        >
           Reintentar
         </button>
       </div>
@@ -228,103 +244,139 @@ export default function CompetitivePricingTab() {
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-16 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
-        <BarChart2 className="h-10 w-10 mx-auto mb-3 opacity-30" />
-        <p className="font-semibold text-sm">Sin productos para analizar</p>
-        <p className="text-xs mt-1">Activa productos en el marketplace para ver el análisis</p>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+        <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+          <BarChart2 className="h-8 w-8 text-[var(--text-tertiary)]" />
+        </span>
+        <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+          Sin productos para analizar
+        </p>
+        <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+          Activá productos en el marketplace para ver el análisis competitivo de precios.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
-          <p className="text-xs font-bold text-[var(--text-tertiary)]">
-            Por debajo del mercado
-          </p>
-          <p className="text-3xl font-extrabold text-[var(--data-success)] dark:text-[var(--data-success)] mt-1">
-            {countBelow}
-          </p>
-          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-            productos con precio bajo
-          </p>
+    <div className="space-y-6">
+      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Target className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Precios competitivos
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                Comparación de tus precios vs el promedio del mercado. {products.length} {products.length === 1 ? "producto analizado" : "productos analizados"}.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+          >
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            Actualizar análisis
+          </button>
         </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
-          <p className="text-xs font-bold text-[var(--text-tertiary)]">
-            Por encima del mercado
-          </p>
-          <p className="text-3xl font-extrabold text-[var(--data-error)] dark:text-[var(--data-error)] mt-1">
-            {countAbove}
-          </p>
-          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-            productos con precio alto
-          </p>
-        </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
-          <p className="text-xs font-bold text-[var(--text-tertiary)]">
-            Oportunidad estimada
-          </p>
-          <p className="text-3xl font-extrabold text-primary font-mono mt-1">
-            S/{opportunityIncome.toFixed(2)}
-          </p>
-          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-            ingreso extra si subes precios bajos
-          </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
+              </span>
+            </div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Por debajo del mercado
+            </p>
+            <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
+              {countBelow}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              {countBelow === 1 ? "producto con precio bajo" : "productos con precio bajo"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-error-100)]">
+                <TrendingDown className="h-5 w-5 text-[var(--data-error-500)]" />
+              </span>
+            </div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Por encima del mercado
+            </p>
+            <p className="text-3xl font-extrabold tabular-nums text-[var(--data-error-500)] leading-tight mt-2">
+              {countAbove}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              {countAbove === 1 ? "producto con precio alto" : "productos con precio alto"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                <DollarSign className="h-5 w-5 text-primary" />
+              </span>
+            </div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Oportunidad estimada
+            </p>
+            <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-2">
+              S/{opportunityIncome.toFixed(2)}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              Ingreso extra si subís los precios bajos
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Gráfico */}
+      {/* ── 2. Gráfico comparativo ─────────────────────────────────── */}
       <PriceComparisonChart products={products} />
 
-      {/* Acciones y tabla */}
-      <div className="flex items-center justify-between">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
-          Análisis por producto ({products.length})
-        </CardTitle>
-        <button
-          type="button"
-          onClick={load}
-          className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
-          title="Actualizar"
-        >
-          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-        </button>
-      </div>
-
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl  overflow-hidden">
+      {/* ── 3. Tabla análisis por producto ─────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-6 sm:px-8 py-5 border-b border-[var(--rule-base)] flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <BarChart2 className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Análisis por producto
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">
+                Sugerencia automática basada en precio promedio del mercado
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider bg-[var(--surface-sunken)] text-[var(--text-tertiary)] tabular-nums shrink-0">
+            {products.length} {products.length === 1 ? "producto" : "productos"}
+          </span>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">
-                  Producto
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] whitespace-nowrap">
-                  Mi precio
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden sm:table-cell">
-                  Promedio
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">
-                  Mín
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">
-                  Máx
-                </th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden sm:table-cell">
-                  Competidores
-                </th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">
-                  Sugerencia
-                </th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">
-                  Acción
-                </th>
+                <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Producto</th>
+                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] whitespace-nowrap">Mi precio</th>
+                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Promedio</th>
+                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Mín</th>
+                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Máx</th>
+                <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Competidores</th>
+                <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Sugerencia</th>
+                <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-[var(--rule-soft)]">
               {products.map((p) => {
                 const cfg = SUGGESTION_CONFIG[p.suggestion];
                 const SugIcon = cfg.icon;
@@ -332,17 +384,13 @@ export default function CompetitivePricingTab() {
                   p.suggestion !== "OK" && p.suggestion !== "Sin datos" && p.avgPrice !== null;
 
                 return (
-                  <tr
-                    key={p.id}
-                    className="hover:bg-[var(--surface-sunken)]/50 transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-[var(--text-primary)] leading-tight max-w-[180px] truncate">
+                  <tr key={p.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
+                    <td className="px-4 py-4">
+                      <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight max-w-[200px] truncate">
                         {p.name}
                       </p>
-                      {/* Barra visual mobile */}
                       {p.avgPrice && p.minPrice !== null && p.maxPrice !== null && (
-                        <div className="mt-1.5 sm:hidden">
+                        <div className="mt-2 sm:hidden">
                           <PriceBar
                             myPrice={p.myPrice}
                             minPrice={p.minPrice}
@@ -352,15 +400,15 @@ export default function CompetitivePricingTab() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-[var(--text-primary)] whitespace-nowrap">
+                    <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
                       S/{p.myPrice.toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
+                    <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
                       {p.avgPrice !== null ? (
                         <div>
-                          <span>S/{p.avgPrice.toFixed(2)}</span>
+                          <p className="font-bold">S/{p.avgPrice.toFixed(2)}</p>
                           {p.minPrice !== null && p.maxPrice !== null && (
-                            <div className="mt-1">
+                            <div className="mt-2">
                               <PriceBar
                                 myPrice={p.myPrice}
                                 minPrice={p.minPrice}
@@ -371,51 +419,37 @@ export default function CompetitivePricingTab() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">—</span>
+                        <span className="text-[var(--text-tertiary)]">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
+                    <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
                       {p.minPrice !== null ? `S/${p.minPrice.toFixed(2)}` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
+                    <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
                       {p.maxPrice !== null ? `S/${p.maxPrice.toFixed(2)}` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-center text-[var(--text-secondary)] hidden sm:table-cell">
+                    <td className="px-4 py-4 text-center text-sm font-bold text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                       {p.competitorCount}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap",
-                          cfg.badge
-                        )}
-                      >
-                        <SugIcon className="h-3 w-3" />
+                    <td className="px-4 py-4 text-center">
+                      <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold whitespace-nowrap", cfg.badge)}>
+                        <SugIcon className="h-3.5 w-3.5" />
                         {cfg.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-4 text-center">
                       {canApply ? (
                         <button
                           type="button"
                           disabled={applying === p.id}
                           onClick={() => handleApplySuggestion(p)}
-                          className="
-                            inline-flex items-center gap-1 px-3 py-1.5
-                            rounded-lg text-xs font-bold
-                            bg-primary hover:bg-primary-dark
-                            text-white transition-colors
-                            disabled:opacity-50 disabled:cursor-not-allowed
-                            min-h-[32px]
-                          "
+                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold bg-primary hover:bg-primary-dark text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-24 justify-center"
                         >
-                          {applying === p.id ? (
-                            <RefreshCw className="h-3 w-3 animate-spin" />
-                          ) : null}
+                          {applying === p.id && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
                           Aplicar
                         </button>
                       ) : (
-                        <span className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">—</span>
+                        <span className="text-sm text-[var(--text-tertiary)] font-bold">—</span>
                       )}
                     </td>
                   </tr>
