@@ -1573,154 +1573,278 @@ function ProductosTab() {
 
   if (loading) return <TableSkeleton />;
 
+  // KPIs derivados
+  const kpiPublished = counts.active;
+  const kpiIssues = (counts["no-image"] ?? 0) + (counts["no-desc"] ?? 0);
+  const kpiLowStock = (counts["low-stock"] ?? 0) + (counts["no-stock"] ?? 0);
+
   return (
-    <div className="space-y-5">
-      {/* Header con sync + count */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-sm text-[var(--text-secondary)]">
-          <strong className="text-[var(--text-primary)]">{products.length}</strong> producto
-          {products.length !== 1 ? "s" : ""} en tu marketplace
-          {filter !== "all" || search.trim() ? (
-            <> · <strong className="text-[var(--text-primary)]">{filtered.length}</strong> visibles</>
-          ) : null}
-        </p>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
-          {syncing ? "Sincronizando..." : "Sincronizar inventario"}
-        </button>
+    <div className="space-y-6">
+      {/* ── 1. Hero card con KPIs + sync ──────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Package className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Mis productos en el marketplace
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                {products.length === 0
+                  ? "Aún no tenés productos publicados. Activá los del catálogo para mostrarlos."
+                  : `${products.length} ${products.length === 1 ? "producto" : "productos"} sincronizados desde tu catálogo. Editá precio y publicación inline.`}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+          >
+            <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
+            {syncing ? "Sincronizando..." : "Sincronizar inventario"}
+          </button>
+        </div>
+
+        {/* KPIs grandes */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Total
+            </p>
+            <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+              {products.length}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              En tu catálogo
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFilter("active")}
+            className="text-left rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5 transition-colors hover:bg-[var(--surface-base)]"
+          >
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Publicados
+            </p>
+            <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-2">
+              {kpiPublished}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              Visibles para clientes
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("no-image")}
+            disabled={kpiIssues === 0}
+            className={cn(
+              "text-left rounded-xl border p-5 transition-colors",
+              kpiIssues > 0
+                ? "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] hover:bg-[var(--data-warning-100)]"
+                : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] cursor-default",
+            )}
+          >
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Sin completar
+            </p>
+            <p className={cn(
+              "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+              kpiIssues > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
+            )}>
+              {kpiIssues}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              Sin foto o descripción
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("no-stock")}
+            disabled={kpiLowStock === 0}
+            className={cn(
+              "text-left rounded-xl border p-5 transition-colors",
+              kpiLowStock > 0
+                ? "border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] hover:brightness-95"
+                : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] cursor-default",
+            )}
+          >
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Stock crítico
+            </p>
+            <p className={cn(
+              "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+              kpiLowStock > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]",
+            )}>
+              {kpiLowStock}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] mt-1">
+              Bajo o agotado
+            </p>
+          </button>
+        </div>
       </div>
 
+      {/* ── 2. Banners de feedback ────────────────────────────────── */}
       {syncResult && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl text-sm text-[var(--data-success-500)]">
-          <CheckCircle className="h-4 w-4 shrink-0" />
-          {syncResult}
+        <div className="flex items-center gap-3 px-5 py-4 bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--data-success-500)]/15 shrink-0">
+            <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" />
+          </span>
+          <p className="text-sm font-bold text-[var(--data-success-500)] flex-1">{syncResult}</p>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-          <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
+        <div className="flex items-center gap-3 px-5 py-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-xl">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--data-error-500)]/15 shrink-0">
+            <AlertCircle className="h-4 w-4 text-[var(--data-error-500)]" />
+          </span>
+          <p className="text-sm font-bold text-[var(--data-error-500)] flex-1">{error}</p>
+          <button
+            type="button"
+            onClick={load}
+            className="text-sm font-bold text-[var(--data-error-500)] underline hover:no-underline"
+          >
+            Reintentar
+          </button>
         </div>
       )}
 
-      {/* P1: chips de filtro + búsqueda */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {FILTER_DEFS.map((f) => {
-            const isActive = filter === f.id;
-            const count = counts[f.id];
-            const hasIssues = ["no-image", "no-desc", "no-stock", "low-stock"].includes(f.id);
-            return (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
-                  isActive
-                    ? "bg-primary text-white"
-                    : hasIssues && count > 0
-                    ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:brightness-95"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
-                )}
-              >
-                {f.label}
-                <span
+      {/* ── 3. Filtros + búsqueda ─────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+            {FILTER_DEFS.map((f) => {
+              const isActive = filter === f.id;
+              const count = counts[f.id];
+              const hasIssues = ["no-image", "no-desc", "no-stock", "low-stock"].includes(f.id);
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setFilter(f.id)}
                   className={cn(
-                    "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold",
-                    isActive ? "bg-white/20" : "bg-white",
+                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                    isActive
+                      ? "bg-primary text-white border-primary"
+                      : hasIssues && count > 0
+                        ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30 hover:brightness-95"
+                        : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
                   )}
                 >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="sm:ml-auto relative">
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre, SKU o categoría…"
-            className="w-full sm:w-72 pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-          />
-          <Eye className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+                  {f.label}
+                  <span
+                    className={cn(
+                      "inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-extrabold tabular-nums",
+                      isActive ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+                    )}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="relative lg:ml-auto lg:w-80 shrink-0">
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre, SKU o categoría…"
+              className="w-full pl-11 pr-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+            <Eye className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+          </div>
         </div>
       </div>
 
-      {/* P2: barra bulk actions */}
+      {/* ── 4. Bulk actions bar ───────────────────────────────────── */}
       {selected.size > 0 && (
-        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-primary/10 border border-primary/30">
-          <p className="text-sm font-semibold text-primary">
-            {selected.size} producto{selected.size !== 1 ? "s" : ""} seleccionado{selected.size !== 1 ? "s" : ""}
-          </p>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-4 px-5 py-4 rounded-xl bg-primary/10 border border-primary/30 flex-wrap">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+              <CheckCircle className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-base font-extrabold text-primary leading-tight">
+                {selected.size} {selected.size === 1 ? "producto seleccionado" : "productos seleccionados"}
+              </p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+                Aplicá una acción en bloque
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
             <button
+              type="button"
               onClick={() => bulkSetActive(true)}
               disabled={bulking}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success-500)] text-white text-xs font-bold hover:brightness-95 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 h-11 rounded-xl bg-[var(--data-success-500)] text-white text-sm font-bold hover:brightness-95 transition disabled:opacity-50"
             >
-              <Eye className="h-3.5 w-3.5" /> Publicar
+              <Eye className="h-4 w-4" /> Publicar
             </button>
             <button
+              type="button"
               onClick={() => bulkSetActive(false)}
               disabled={bulking}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--text-secondary)] text-white text-xs font-bold hover:brightness-95 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 h-11 rounded-xl bg-[var(--text-secondary)] text-white text-sm font-bold hover:brightness-95 transition disabled:opacity-50"
             >
-              <EyeOff className="h-3.5 w-3.5" /> Despublicar
+              <EyeOff className="h-4 w-4" /> Despublicar
             </button>
             <button
+              type="button"
               onClick={() => setSelected(new Set())}
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[var(--text-secondary)] text-xs hover:bg-white"
+              className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-[var(--text-secondary)] text-sm font-bold hover:bg-[var(--surface-raised)] border border-[var(--rule-base)]"
             >
-              <X className="h-3.5 w-3.5" /> Limpiar
+              <X className="h-4 w-4" /> Limpiar
             </button>
           </div>
         </div>
       )}
 
+      {/* ── 5. Lista / Empty state ────────────────────────────────── */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)]">
-          <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+            <Package className="h-8 w-8 text-[var(--text-tertiary)]" />
+          </span>
+          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
             {products.length === 0 ? "Sin productos publicados" : "Sin resultados con este filtro"}
           </p>
-          <p className="text-xs mt-1">
+          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
             {products.length === 0
-              ? "Activa productos desde tu catálogo para mostrarlos en el marketplace."
-              : "Cambia el filtro o limpia la búsqueda."}
+              ? "Activá productos desde tu catálogo principal para mostrarlos en el marketplace."
+              : "Probá cambiando el filtro o limpiando la búsqueda."}
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
+            <table className="w-full">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="w-10 px-3 py-3">
+                  <th className="w-12 px-4 py-4">
                     <input
                       type="checkbox"
                       checked={allFilteredSelected}
                       onChange={toggleSelectAll}
                       aria-label="Seleccionar todo"
-                      className="h-4 w-4 rounded accent-primary cursor-pointer"
+                      className="h-5 w-5 rounded accent-primary cursor-pointer"
                     />
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Producto</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Salud</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Precio retail</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Mayorista</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Stock</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Publicado</th>
+                  <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Producto</th>
+                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Salud</th>
+                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Precio retail</th>
+                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mayorista</th>
+                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Stock</th>
+                  <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Publicado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtered.map((p) => {
                   const isSelected = selected.has(p.id);
                   return (
@@ -1728,21 +1852,21 @@ function ProductosTab() {
                       key={p.id}
                       className={cn(
                         "transition-colors",
-                        isSelected ? "bg-primary/5" : "hover:bg-gray-50",
+                        isSelected ? "bg-primary/5" : "hover:bg-[var(--surface-sunken)]",
                       )}
                     >
-                      <td className="px-3 py-3">
+                      <td className="px-4 py-4">
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelectOne(p.id)}
                           aria-label={`Seleccionar ${p.name}`}
-                          className="h-4 w-4 rounded accent-primary cursor-pointer"
+                          className="h-5 w-5 rounded accent-primary cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-[var(--surface-sunken)] overflow-hidden flex items-center justify-center shrink-0">
+                          <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] overflow-hidden flex items-center justify-center shrink-0">
                             {p.image ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -1752,22 +1876,22 @@ function ProductosTab() {
                                 onError={(e) => { e.currentTarget.style.display = "none"; }}
                               />
                             ) : (
-                              <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
+                              <Package className="h-5 w-5 text-[var(--text-tertiary)]" />
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-[var(--text-primary)] truncate">{p.name}</p>
-                            <p className="text-xs text-[var(--text-tertiary)] font-mono truncate">
+                            <p className="text-sm font-extrabold text-[var(--text-primary)] truncate leading-tight">{p.name}</p>
+                            <p className="text-xs text-[var(--text-tertiary)] font-mono truncate mt-0.5">
                               {p.sku || "sin SKU"}
                               {p.category && <span> · {p.category}</span>}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-4 text-center">
                         <CompletenessBadge product={p} />
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-4 text-right">
                         <InlineNumberCell
                           value={p.retailPrice}
                           onCommit={(n) => updatePrice(p.id, "retailPrice", n)}
@@ -1775,7 +1899,7 @@ function ProductosTab() {
                           ariaLabel={`Precio retail de ${p.name}`}
                         />
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-4 text-right">
                         <InlineNumberCell
                           value={p.wholesalePrice}
                           onCommit={(n) => updatePrice(p.id, "wholesalePrice", n)}
@@ -1783,9 +1907,9 @@ function ProductosTab() {
                           ariaLabel={`Precio mayorista de ${p.name}`}
                         />
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-4 text-right">
                         <span className={cn(
-                          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold",
+                          "inline-flex items-center justify-center min-w-10 px-3 py-1 rounded-full text-sm font-extrabold tabular-nums",
                           p.stock > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
                             : p.stock > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                             : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
@@ -1793,24 +1917,25 @@ function ProductosTab() {
                           {p.stock}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-4 text-center">
                         <button
+                          type="button"
                           onClick={() => toggleActive(p)}
                           disabled={toggling === p.id}
                           title={p.isActive ? "Despublicar del marketplace" : "Publicar en marketplace"}
                           className={cn(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors min-w-25 justify-center",
+                            "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors min-w-32 justify-center border",
                             p.isActive
-                              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]"
-                              : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30 hover:brightness-95"
+                              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:bg-[var(--surface-base)]",
                           )}
                         >
                           {toggling === p.id ? (
-                            <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                           ) : p.isActive ? (
-                            <><Eye className="h-3.5 w-3.5" /> Publicado</>
+                            <><Eye className="h-4 w-4" /> Publicado</>
                           ) : (
-                            <><EyeOff className="h-3.5 w-3.5" /> Inactivo</>
+                            <><EyeOff className="h-4 w-4" /> Inactivo</>
                           )}
                         </button>
                       </td>
