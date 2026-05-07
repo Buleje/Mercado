@@ -966,7 +966,7 @@ function AsignacionesTab() {
           onClick={() => setAssignModal({ open: false })}
         >
           <div
-            className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-md p-6 sm:p-7 space-y-5 shadow-2xl border border-[var(--rule-base)]"
+            className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-md p-6 sm:p-7 space-y-5 shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3">
