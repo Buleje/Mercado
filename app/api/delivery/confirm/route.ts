@@ -90,9 +90,11 @@ export async function POST(req: NextRequest) {
     });
 
     // Transacción: actualizar assignment + orden en paralelo atómico
+    // SECURITY 2026-05-07 (CRM-SEC F1): tenantId en ambos updates para evitar
+    // que admin de tenant A confirme entregas de tenant B con orderId conocido.
     const [updatedAssignment] = await prisma.$transaction([
       prisma.deliveryAssignment.update({
-        where: { orderId },
+        where: { orderId, tenantId: auth.tenantId },
         data: {
           status: "delivered",
           deliveredAt: new Date(),
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
         select: { id: true, status: true, deliveredAt: true },
       }),
       prisma.order.update({
-        where: { id: orderId },
+        where: { id: orderId, tenantId: auth.tenantId },
         data: { status: "entregado" },
       }),
     ]);
@@ -129,7 +131,7 @@ export async function POST(req: NextRequest) {
         assignment.order.customerPhone!,
         `⭐ ¡Hola ${customerName}! ¿Cómo fue tu entrega con ${assignment.partner.name}?\n\nCalifica aquí en 10 segundos 👉 ${ratingUrl}\n\nTu opinión nos ayuda a mejorar 🙏`,
         { tenantId: assignment.order.tenantId ?? "main", context: "delivery-confirm-rating" },
-      ).catch(() => {});
+      ).catch((err) => logger.warn("[crm-sec] op failed", { err: String(err) }));
     }
 
     // Fire-and-forget: log de actividad

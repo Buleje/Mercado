@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { createHmac } from "crypto";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { timingSafeCompare } from "@/lib/timing-safe";
 import { transcribeAudio } from "@/lib/voice/transcribe";
 import { extractOrderFromText } from "@/lib/voice/order-extractor";
 import {
@@ -53,9 +56,31 @@ export interface VoiceResponse {
  * ADR relacionado: ADR-046 (WhatsApp Concierge)
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  // SECURITY 2026-05-07 (CRM-SEC F3): rate-limit STRICT — audio Groq Whisper
+  // es costoso. Sin esto cualquiera puede inflar la factura llamando en loop.
+  const rl = applyRateLimit(req, "STRICT", "whatsapp-voice");
+  if (rl) return rl as unknown as NextResponse;
+
+  // Validar firma HMAC interna: solo el webhook whatsapp propio puede llamar
+  // este endpoint. Header X-Internal-Signature = HMAC-SHA256(body, CRON_SECRET).
+  const rawBody = await req.text();
+  const internalSecret = process.env.CRON_SECRET;
+  if (internalSecret) {
+    const signature = req.headers.get("x-internal-signature") ?? "";
+    const expected = createHmac("sha256", internalSecret)
+      .update(rawBody)
+      .digest("hex");
+    if (!timingSafeCompare(signature, expected)) {
+      logger.warn("[whatsapp/voice] firma interna inválida o ausente", {
+        hasHeader: Boolean(signature),
+      });
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+  }
+
   let body: unknown;
   try {
-    body = await req.json();
+    body = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
@@ -141,7 +166,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // ── Audit log — fire-and-forget (CLAUDE.md regla #7) ────────────────────────
-  logVoiceActivity(tenantId, from, transcription, draft.intent).catch(() => {});
+  logVoiceActivity(tenantId, from, transcription, draft.intent).catch((err) => logger.warn("[crm-sec] op failed", { err: String(err) }));
 
   logger.info("[whatsapp/voice] Pipeline completado", {
     tenantId,

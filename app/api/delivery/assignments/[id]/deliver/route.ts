@@ -104,11 +104,28 @@ export async function POST(
     );
   }
 
-  // Optimizar imagen
+  // SECURITY 2026-05-07 (CRM-SEC F5): validar magic bytes para evitar que un
+  // atacante suba un archivo malicioso con Content-Type falso (polyglot attack).
+  // JPEG: FF D8 FF | PNG: 89 50 4E 47 | WebP: RIFF????WEBP | HEIC: ftypheic @ offset 4
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+  const isJpeg = fileBuffer[0] === 0xFF && fileBuffer[1] === 0xD8 && fileBuffer[2] === 0xFF;
+  const isPng  = fileBuffer[0] === 0x89 && fileBuffer[1] === 0x50 && fileBuffer[2] === 0x4E && fileBuffer[3] === 0x47;
+  const isWebP = fileBuffer.slice(0, 4).toString("ascii") === "RIFF" &&
+                 fileBuffer.slice(8, 12).toString("ascii") === "WEBP";
+  const heicFtyp = fileBuffer.slice(4, 12).toString("ascii");
+  const isHeic = heicFtyp.startsWith("ftypheic") || heicFtyp.startsWith("ftypmif1") ||
+                 heicFtyp.startsWith("ftypmsf1") || heicFtyp.startsWith("ftypheis");
+  if (!isJpeg && !isPng && !isWebP && !isHeic) {
+    return NextResponse.json(
+      { error: "Archivo no reconocido como imagen válida (magic bytes inválidos)." },
+      { status: 415 },
+    );
+  }
+
+  // Optimizar imagen (fileBuffer ya leído arriba para magic bytes)
   let optimized: Buffer;
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    optimized = await sharp(buffer)
+    optimized = await sharp(fileBuffer)
       .rotate()
       .resize({ width: MAX_WIDTH, withoutEnlargement: true })
       .webp({ quality: 78 })

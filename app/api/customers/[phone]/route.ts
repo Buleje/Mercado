@@ -186,10 +186,21 @@ export async function PATCH(
       });
     }
     // Audit log — fire-and-forget
-    const detail = Object.keys(parsed.data).join(", ");
+    // SECURITY 2026-05-07 (CRM-SEC F4): Ley 29733 PE — minimización de PII.
+    // No loggear VALORES de campos sensibles; solo indicar que fueron tocados.
+    const PII_FIELDS = new Set([
+      "documento", "dni", "ruc", "direccion", "location",
+      "lat", "lng", "birthday", "fechaNacimiento",
+      "creditBalance", "creditLimit", "email",
+      "whatsappSecundario",
+    ]);
+    const safeDetail = Object.keys(parsed.data)
+      .filter((k) => (parsed.data as Record<string, unknown>)[k] !== undefined)
+      .map((k) => (PII_FIELDS.has(k) ? `${k}=[REDACTED]` : `${k}=${String((parsed.data as Record<string, unknown>)[k])}`))
+      .join(", ");
     // eslint-disable-next-line no-restricted-properties
     prisma.activityLog.create({
-      data: { action: "update", entity: "customer", entityId: normalized, detail: `Campos actualizados: ${detail}`, user: auth.username, tenantId: auth.tenantId },
+      data: { action: "update", entity: "customer", entityId: normalized, detail: `Campos actualizados: ${safeDetail}`, user: auth.username, tenantId: auth.tenantId },
     }).catch((err) => logger.error("[customers PATCH] activityLog failed", { error: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json({ ok: true });

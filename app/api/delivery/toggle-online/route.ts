@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
 const BodySchema = z.object({
@@ -33,8 +34,10 @@ export async function POST(req: NextRequest) {
 
     const { partnerId, isOnline } = parsed.data;
 
-    const partner = await prisma.deliveryPartner.findUnique({
-      where: { id: partnerId },
+    // SECURITY 2026-05-07 (CRM-SEC F2): findFirst con tenantId para evitar
+    // que admin A deshabilite partners de tenant B con partnerId conocido.
+    const partner = await prisma.deliveryPartner.findFirst({
+      where: { id: partnerId, tenantId: auth.tenantId },
       select: { id: true, name: true },
     });
 
@@ -45,11 +48,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const updated = await prisma.deliveryPartner.update({
-      where: { id: partnerId },
+    // updateMany preserva el scope tenantId aunque Prisma no soporte
+    // compound unique en deliveryPartner para where de update.
+    const updateResult = await prisma.deliveryPartner.updateMany({
+      where: { id: partnerId, tenantId: auth.tenantId },
       data: { isActive: isOnline },
-      select: { id: true, name: true, isActive: true },
     });
+
+    if (updateResult.count === 0) {
+      return NextResponse.json({ error: "No se pudo actualizar" }, { status: 404 });
+    }
+
+    const updated = { id: partner.id, name: partner.name, isActive: isOnline };
 
     logActivity(
       "Actualizar",
@@ -57,7 +67,7 @@ export async function POST(req: NextRequest) {
       `${partner.name} cambió a ${isOnline ? "online" : "offline"}`,
       partnerId,
       auth.username
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[crm-sec] op failed", { err: String(err) }));
 
     return NextResponse.json({
       id: updated.id,
