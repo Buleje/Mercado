@@ -1327,48 +1327,193 @@ function SolicitudesTab() {
     : apps;
 
   const pendingCount = apps.filter((a) => !a.readAt).length;
+  const reviewedCount = apps.length - pendingCount;
+  // Cuenta solicitudes pendientes con KYC completo (listas para aprobar)
+  const readyToApprove = apps.filter((a) => {
+    if (a.readAt) return false;
+    if (!a.kyc) return false;
+    const data = parseApplicationBody(a.body);
+    const vehicleType = a.partner?.vehicleType ?? data.vehicle;
+    return isKycComplete(a.kyc, vehicleType).ok;
+  }).length;
+  const incompleteCount = pendingCount - readyToApprove;
 
   return (
     <div className="space-y-6">
-      {/* Filter bar */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => setFilter("pending")}
-          className={cn(
-            "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-            filter === "pending"
-              ? "bg-primary text-white"
-              : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
-          )}
-        >
-          Pendientes {pendingCount > 0 && `(${pendingCount})`}
-        </button>
-        <button
-          onClick={() => setFilter("all")}
-          className={cn(
-            "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-            filter === "all"
-              ? "bg-primary text-white"
-              : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
-          )}
-        >
-          Todas
-        </button>
-        <button
-          onClick={fetchApps}
-          className="ml-auto p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
-        >
-          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-        </button>
+      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <FileText className="h-5 w-5" />
+            </span>
+            <div>
+              <CardTitle className="font-display text-xl leading-tight">
+                Solicitudes de repartidores
+              </CardTitle>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
+                {apps.length === 0
+                  ? "Aún no llegaron solicitudes. Los nuevos repartidores aparecerán acá para que las revises."
+                  : `${apps.length} ${apps.length === 1 ? "solicitud recibida" : "solicitudes recibidas"} · revisá KYC, aprobá o rechazá.`}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={fetchApps}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+          >
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            Actualizar
+          </button>
+        </div>
+
+        {apps.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+                  <FileText className="h-5 w-5 text-primary" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Total
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
+                {apps.length}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Recibidas</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFilter("pending")}
+              disabled={pendingCount === 0}
+              className={cn(
+                "text-left rounded-xl border p-5 transition-colors",
+                pendingCount > 0
+                  ? "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] hover:brightness-95"
+                  : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] cursor-default",
+              )}
+            >
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
+                  <Clock className="h-5 w-5 text-[var(--data-warning-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Pendientes
+              </p>
+              <p className={cn(
+                "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+                pendingCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
+              )}>
+                {pendingCount}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Por revisar</p>
+            </button>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                  <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Listas para aprobar
+              </p>
+              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
+                {readyToApprove}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">KYC completo</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-error-100)]">
+                  <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
+                </span>
+              </div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Incompletas
+              </p>
+              <p className={cn(
+                "text-3xl font-extrabold tabular-nums leading-tight mt-2",
+                incompleteCount > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]",
+              )}>
+                {incompleteCount}
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">Falta KYC</p>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* ── 2. Filtros ─────────────────────────────────────────────── */}
+      {apps.length > 0 && (
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-2">
+              Filtrar
+            </span>
+            <button
+              type="button"
+              onClick={() => setFilter("pending")}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                filter === "pending"
+                  ? "bg-primary text-white border-primary"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
+              )}
+            >
+              Pendientes
+              <span className={cn(
+                "inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-extrabold tabular-nums",
+                filter === "pending" ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+              )}>
+                {pendingCount}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter("all")}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                filter === "all"
+                  ? "bg-primary text-white border-primary"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
+              )}
+            >
+              Todas
+              <span className={cn(
+                "inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-extrabold tabular-nums",
+                filter === "all" ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+              )}>
+                {apps.length}
+              </span>
+            </button>
+            {reviewedCount > 0 && (
+              <span className="ml-auto text-sm text-[var(--text-tertiary)] font-bold">
+                {reviewedCount} {reviewedCount === 1 ? "ya revisada" : "ya revisadas"}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── 3. Lista / Empty state ─────────────────────────────────── */}
       {loading ? (
         <TableSkeleton />
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
-          <p className="text-sm text-[var(--text-secondary)] font-medium">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
+            <FileText className="h-8 w-8 text-[var(--text-tertiary)]" />
+          </span>
+          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
             {filter === "pending" ? "No hay solicitudes pendientes" : "No hay solicitudes"}
+          </p>
+          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
+            {filter === "pending"
+              ? "Cuando lleguen nuevos postulantes, aparecerán acá para que los revises."
+              : "Aún no se recibieron solicitudes de repartidores."}
           </p>
         </div>
       ) : (
@@ -1385,92 +1530,118 @@ function SolicitudesTab() {
               <div
                 key={app.id}
                 className={cn(
-                  "bg-white border-2 rounded-2xl p-4 transition-all",
+                  "bg-[var(--surface-raised)] border rounded-2xl p-5 sm:p-6 shadow-sm transition-all",
                   isPending
-                    ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)]/30"
-                    : "border-[var(--rule-base)] opacity-70",
+                    ? "border-2 border-[var(--data-warning-500)]/40"
+                    : "border-[var(--rule-base)] opacity-75",
                 )}
               >
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h4 className="font-extrabold text-[var(--text-primary)] text-base truncate">
-                        {data.name}
-                      </h4>
-                      {isPending ? (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-[var(--data-warning-100)] text-[var(--data-warning-500)]">
-                          Pendiente
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-gray-100 text-[var(--text-secondary)]">
-                          Revisado
-                        </span>
-                      )}
-                      {app.kyc ? (
-                        <span
-                          className={cn(
-                            "px-2 py-0.5 rounded-full text-xs font-extrabold",
-                            kycCheck.ok
-                              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
-                              : "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
-                          )}
-                        >
-                          {kycCheck.ok ? "KYC completo" : `KYC incompleto (${kycCheck.missing.length})`}
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-gray-100 text-[var(--text-secondary)]">
-                          Sin KYC (legacy)
-                        </span>
-                      )}
+                <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-xl font-extrabold shrink-0">
+                      {(data.name || "?").trim().charAt(0).toUpperCase()}
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
-                      {data.dni && (
-                        <span className="flex items-center gap-1 font-bold text-[var(--text-primary)]">
-                          DNI {data.dni}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                          {data.name}
+                        </p>
+                        {isPending ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)]">
+                            <Clock className="h-3.5 w-3.5" />
+                            Pendiente
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            Revisado
+                          </span>
+                        )}
+                        {app.kyc ? (
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
+                              kycCheck.ok
+                                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                : "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
+                            )}
+                          >
+                            {kycCheck.ok ? (
+                              <>
+                                <CheckCircle className="h-3.5 w-3.5" />
+                                KYC completo
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="h-3.5 w-3.5" />
+                                KYC incompleto ({kycCheck.missing.length})
+                              </>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                            Sin KYC (legacy)
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[var(--text-secondary)]">
+                        {data.dni && (
+                          <span className="flex items-center gap-1.5 font-bold text-[var(--text-primary)] tabular-nums">
+                            DNI {data.dni}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1.5">
+                          <Phone className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                          <span className="font-mono">{data.phone}</span>
                         </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {data.phone}
-                      </span>
-                      {(app.partner?.zone || data.zone) && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {app.partner?.zone || data.zone}
+                        {(app.partner?.zone || data.zone) && (
+                          <span className="flex items-center gap-1.5">
+                            <MapPin className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                            {app.partner?.zone || data.zone}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-base">{vehicleEmoji(vehicleType)}</span>
+                          {VEHICLE_LABELS[vehicleType] ?? vehicleType}
                         </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Truck className="h-3 w-3" /> {VEHICLE_LABELS[vehicleType] ?? vehicleType}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {AVAILABILITY_LABELS[data.availability] ?? data.availability}
-                      </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                          {AVAILABILITY_LABELS[data.availability] ?? data.availability}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-2 font-bold">
+                        Recibida:{" "}
+                        {new Date(app.createdAt).toLocaleDateString("es-PE", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
                     </div>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                      {new Date(app.createdAt).toLocaleDateString("es-PE", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
                   </div>
 
                   {isPending && (
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
+                        type="button"
                         onClick={() => handleAction(app.id, "approve")}
                         disabled={isProcessing || !canApprove}
                         title={canApprove ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
-                        <ThumbsUp className="h-3.5 w-3.5" /> Aprobar
+                        <ThumbsUp className="h-4 w-4" />
+                        {isProcessing ? "..." : "Aprobar"}
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleAction(app.id, "reject")}
                         disabled={isProcessing}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--data-error-100)] text-[var(--data-error-500)] disabled:opacity-50 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-bold bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
                       >
-                        <ThumbsDown className="h-3.5 w-3.5" /> Rechazar
+                        <ThumbsDown className="h-4 w-4" />
+                        Rechazar
                       </button>
                     </div>
                   )}
