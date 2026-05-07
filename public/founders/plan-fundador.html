@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es-PE">
+<head>
+<meta charset="UTF-8">
+<title>Plan Fundador Buleje · 10 cupos</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 12mm 14mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { font-family: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif; color: #0F1B2D; line-height: 1.42; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { padding: 0; font-size: 10.2pt; }
+
+  /* Header */
+  .hero { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #00B4A6; padding-bottom: 8px; margin-bottom: 12px; }
+  .brand { font-size: 11pt; letter-spacing: 0.18em; color: #00B4A6; font-weight: 700; text-transform: uppercase; }
+  .brand small { color: #5B6B82; font-weight: 500; letter-spacing: 0.06em; display: block; font-size: 8pt; margin-top: 2px; }
+  .badge { background: #0F1B2D; color: #fff; padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: 8.5pt; letter-spacing: 0.06em; }
+
+  /* Title */
+  h1 { font-size: 22pt; font-weight: 800; letter-spacing: -0.02em; color: #0F1B2D; line-height: 1.05; margin-bottom: 4px; }
+  h1 span { color: #00B4A6; }
+  .lede { font-size: 10pt; color: #3B4A63; margin-bottom: 10px; max-width: 92%; }
+
+  /* Price card */
+  .pricecard { display: flex; gap: 10px; margin-bottom: 12px; }
+  .price { flex: 1.4; background: linear-gradient(135deg, #003F3A 0%, #00B4A6 100%); color: #fff; padding: 10px 14px; border-radius: 10px; }
+  .price .num { font-size: 24pt; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+  .price .num small { font-size: 11pt; font-weight: 600; opacity: 0.9; }
+  .price .strike { text-decoration: line-through; opacity: 0.6; font-size: 9pt; margin-left: 6px; font-weight: 500; }
+  .price .label { font-size: 8.5pt; opacity: 0.92; margin-top: 2px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+  .price .save { background: #FFB800; color: #0F1B2D; padding: 2px 8px; border-radius: 999px; font-size: 8pt; font-weight: 700; display: inline-block; margin-top: 6px; }
+  .setup { flex: 1; background: #F4F7FB; border: 1px solid #DCE3ED; padding: 10px 12px; border-radius: 10px; }
+  .setup .num { font-size: 17pt; font-weight: 800; color: #0F1B2D; line-height: 1; }
+  .setup .num small { font-size: 10pt; color: #5B6B82; font-weight: 600; }
+  .setup .label { font-size: 8.5pt; color: #5B6B82; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+  .setup .desc { font-size: 8.5pt; color: #3B4A63; margin-top: 6px; }
+
+  /* Two cols */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+  .col h3 { font-size: 10pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding-bottom: 4px; margin-bottom: 6px; border-bottom: 1px solid #DCE3ED; }
+  .col h3.in { color: #00875A; border-color: #00875A; }
+  .col h3.out { color: #B7472A; border-color: #B7472A; }
+  ul { list-style: none; }
+  ul li { font-size: 9.2pt; padding: 2.5px 0 2.5px 16px; position: relative; color: #1E2D44; }
+  ul li::before { position: absolute; left: 0; top: 2.5px; font-size: 9pt; font-weight: 800; }
+  ul.in li::before { content: '✓'; color: #00875A; }
+  ul.out li::before { content: '✕'; color: #B7472A; }
+  ul li b { color: #0F1B2D; font-weight: 700; }
+
+  /* Why */
+  .why { background: #FFF8E6; border-left: 3px solid #FFB800; padding: 8px 12px; border-radius: 4px; margin-bottom: 10px; font-size: 9.2pt; }
+  .why b { color: #8A5A00; }
+
+  /* Footer */
+  .footer { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid #DCE3ED; font-size: 8.8pt; color: #5B6B82; }
+  .cta { background: #25D366; color: #fff; padding: 7px 14px; border-radius: 999px; font-weight: 700; font-size: 9.5pt; text-decoration: none; }
+  .micro { font-size: 7.6pt; color: #8A98AB; margin-top: 3px; }
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="brand">Buleje · Bodega San Martín
+      <small>ERP + E-commerce + POS · Pucallpa, Perú</small>
+    </div>
+    <div class="badge">10 cupos · Mayo 2026</div>
+  </header>
+
+  <h1>Plan <span>Fundador</span></h1>
+  <p class="lede">El sistema que una cadena moderna usaría para tu bodega — POS, inventario, pedidos online, WhatsApp con IA, facturación SUNAT y panel ERP — al precio de fundador, una sola vez.</p>
+
+  <div class="pricecard">
+    <div class="price">
+      <div class="num">S/100<small>/mes</small><span class="strike">S/180</span></div>
+      <div class="label">Mensualidad fundador · Para siempre</div>
+      <div class="save">Ahorras S/960 al año</div>
+    </div>
+    <div class="setup">
+      <div class="num">S/300<small> setup</small></div>
+      <div class="label">Pago único de implementación</div>
+      <div class="desc">Carga de productos, capacitación 1:1 (2h), configuración de Yape, dominio y branding inicial.</div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="col">
+      <h3 class="in">Qué incluye</h3>
+      <ul class="in">
+        <li><b>Panel admin completo</b> · 133 secciones (ventas, stock, clientes, fiado, reportes)</li>
+        <li><b>Tienda online propia</b> · subdominio + dominio personalizado opcional</li>
+        <li><b>POS móvil</b> · cobra desde el celular con Yape, efectivo o tarjeta</li>
+        <li><b>WhatsApp con IA</b> · responde pedidos solo, confirma con tu cliente</li>
+        <li><b>Pedidos en línea</b> · checkout completo + tracking en vivo</li>
+        <li><b>Catálogo ilimitado</b> · productos, variantes, fotos, categorías</li>
+        <li><b>Inventario en tiempo real</b> · stock, lotes, vencimientos, alertas</li>
+        <li><b>Fiado y deuda</b> · control de clientes a crédito con historial</li>
+        <li><b>Facturación electrónica</b> · boletas y facturas con SUNAT</li>
+        <li><b>Soporte directo</b> · WhatsApp con respuesta &lt;24h en horario hábil</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h3 class="out">Qué NO incluye</h3>
+      <ul class="out">
+        <li><b>Comisión por ventas</b> · cobro fijo, no porcentaje</li>
+        <li><b>Costos ocultos</b> · sin sorpresas, sin upsells obligatorios</li>
+        <li><b>Hardware</b> · POS físicos, impresoras térmicas y lectores se cotizan aparte</li>
+        <li><b>Pasarelas externas</b> · Stripe / Mercado Pago tienen su propia comisión</li>
+        <li><b>Marketing pagado</b> · Facebook/TikTok ads se cotizan en paquete aparte</li>
+        <li><b>Diseño 100% custom</b> · usás los layouts probados (Rappi-style + tu marca)</li>
+        <li><b>Migración de otros sistemas</b> · si vienes de otro ERP, +S/200 por carga masiva</li>
+        <li><b>Multi-sucursal</b> · 1 tienda. Sucursal extra: +S/40/mes</li>
+        <li><b>Repartidor con app propia</b> · disponible en plan Business (S/200/mes)</li>
+        <li><b>Garantía de uptime SLA contractual</b> · solo en plan Enterprise</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="why">
+    <b>Por qué Plan Fundador y por qué ahora.</b> Estoy abriendo solo 10 cupos para construir el primer núcleo de bodegas Buleje. A cambio del precio congelado de por vida, te pido feedback semanal durante 90 días para afinar el producto contigo. Cuando llegue al cupo 11, el precio sube a S/180/mes regular y este descuento desaparece.
+  </div>
+
+  <footer class="footer">
+    <div>
+      <div><b>Brandon Buleje</b> · Fundador · <b>+51 990 000 000</b> · brandon@buleje.pe</div>
+      <div class="micro">Activación en 48-72h tras pago de setup. Cancela cuando quieras, sin permanencia. IGV incluido.</div>
+    </div>
+    <a class="cta" href="https://wa.me/51990000000?text=Hola%20Brandon%2C%20quiero%20uno%20de%20los%2010%20cupos%20del%20Plan%20Fundador">Reservar cupo →</a>
+  </footer>
+
+</body>
+</html>
