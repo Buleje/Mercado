@@ -9,7 +9,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 const CreateSchema = z.object({
   tipo: z.enum(["completo", "categoria", "ubicacion"]).default("completo"),
   categoria: z.string().optional(),
-});
+}).strict();
 
 // POST — Iniciar un nuevo conteo físico
 export async function POST(req: NextRequest) {

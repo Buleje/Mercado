@@ -406,136 +406,147 @@ export async function POST(req: NextRequest) {
 
         const toolCalls = assistantMessage.tool_calls.slice(0, 5);
 
-        const stream = new ReadableStream({
-          async start(controller) {
-            try {
-              // Execute tools with progress events
-              for (const toolCall of toolCalls) {
-                const toolName = toolCall.function?.name;
+        // TransformStream pattern — Next 16 + undici compat (avoids
+        // "controller[kState].transformAlgorithm is not a function" on ReadableStream).
+        // Same pattern as /api/admin/sse/route.ts.
+        const tsStream = new TransformStream<Uint8Array, Uint8Array>();
+        const writer = tsStream.writable.getWriter();
+        let tsClosed = false;
 
-                // Send progress event
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ toolProgress: getToolLabel(toolName), tool: toolName })}\n\n`)
-                );
+        const send = (data: string) => {
+          if (tsClosed) return;
+          writer.write(encoder.encode(data)).catch(() => { tsClosed = true; });
+        };
 
-                const mapping = resolveToolCall(toolName);
-                let toolResult: string;
+        (async () => {
+          try {
+            // Execute tools with progress events
+            for (const toolCall of toolCalls) {
+              const toolName = toolCall.function?.name;
 
-                if (!mapping) {
-                  toolResult = JSON.stringify({ error: `Herramienta "${toolName}" no reconocida` });
+              // Send progress event
+              send(`data: ${JSON.stringify({ toolProgress: getToolLabel(toolName), tool: toolName })}\n\n`);
+
+              const mapping = resolveToolCall(toolName);
+              let toolResult: string;
+
+              if (!mapping) {
+                toolResult = JSON.stringify({ error: `Herramienta "${toolName}" no reconocida` });
+              } else {
+                let args: Record<string, unknown> = {};
+                try { args = JSON.parse(toolCall.function.arguments || "{}"); } catch { args = {}; }
+
+                // ── HITL gate (Excel Agentes IA práctica #10, TD-025) ──
+                if (isToolApprovalRequired(toolName)) {
+                  const approvalId = stashPendingApproval({
+                    tenantId: auth.tenantId,
+                    toolName,
+                    domain: mapping.domain,
+                    action: mapping.action,
+                    payload: args,
+                    conversationId: activeConversationId,
+                    requestedBy: auth.username,
+                  });
+                  toolResult = JSON.stringify({
+                    pendingApprovalId: approvalId,
+                    requiresApproval: true,
+                    message: `Acción "${toolName}" pendiente de aprobación humana. Un admin debe confirmarla antes de ejecutar.`,
+                  });
                 } else {
-                  let args: Record<string, unknown> = {};
-                  try { args = JSON.parse(toolCall.function.arguments || "{}"); } catch { args = {}; }
-
-                  // ── HITL gate (Excel Agentes IA práctica #10, TD-025) ──
-                  if (isToolApprovalRequired(toolName)) {
-                    const approvalId = stashPendingApproval({
-                      tenantId: auth.tenantId,
-                      toolName,
-                      domain: mapping.domain,
-                      action: mapping.action,
-                      payload: args,
-                      conversationId: activeConversationId,
-                      requestedBy: auth.username,
-                    });
-                    toolResult = JSON.stringify({
-                      pendingApprovalId: approvalId,
-                      requiresApproval: true,
-                      message: `Acción "${toolName}" pendiente de aprobación humana. Un admin debe confirmarla antes de ejecutar.`,
-                    });
-                  } else {
-                    const result = await orchestrator.executeSync({
-                      domain: mapping.domain,
-                      action: mapping.action,
-                      payload: args,
-                      tenantId: auth.tenantId,
-                      actorRole: auth.role, // SECURITY 2026-05-06 (audit AI #1)
-                    });
-                    toolResult = JSON.stringify(result.success ? result.data : { error: result.error });
-                  }
+                  const result = await orchestrator.executeSync({
+                    domain: mapping.domain,
+                    action: mapping.action,
+                    payload: args,
+                    tenantId: auth.tenantId,
+                    actorRole: auth.role, // SECURITY 2026-05-06 (audit AI #1)
+                  });
+                  toolResult = JSON.stringify(result.success ? result.data : { error: result.error });
                 }
-
-                capturedMessages.push({
-                  role: "tool" as const,
-                  content: toolResult,
-                  tool_call_id: toolCall.id,
-                });
               }
 
-              // Send "generating response" progress
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ toolProgress: "Generando respuesta...", tool: "_final" })}\n\n`)
-              );
-
-              // Second LLM call — stream the response via router (ADR-010)
-              const followUpRes = await callLLM("balanced", {
-                messages: capturedMessages as Parameters<typeof callLLM>[1]["messages"],
-                temperature: AI_TEMPERATURES.toolFollowup,
-                maxTokens: 1500,
-                stream: true,
-                label: "ai-assistant-followup",
+              capturedMessages.push({
+                role: "tool" as const,
+                content: toolResult,
+                tool_call_id: toolCall.id,
               });
-
-              if (!followUpRes.ok || !followUpRes.body) {
-                recordAIFailure("ai-assistant-followup", followUpRes.error ?? "unknown");
-                const fallback = generateRuleBasedResponse(userMessage, snapshot.metrics);
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: fallback })}\n\n`));
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                controller.close();
-                return;
-              }
-
-              recordAISuccess("ai-assistant");
-              if (followUpRes.usage) {
-                totalUsage.promptTokens += followUpRes.usage.promptTokens;
-                totalUsage.completionTokens += followUpRes.usage.completionTokens;
-                totalUsage.totalTokens += followUpRes.usage.totalTokens;
-                recordTokenUsage(auth.tenantId, followUpRes.usage.totalTokens);
-              }
-
-              // Pipe the Groq stream through
-              const reader = followUpRes.body.getReader();
-              const decoder = new TextDecoder();
-              let buffer = "";
-
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split("\n");
-                buffer = lines.pop() ?? "";
-
-                for (const line of lines) {
-                  const trimmed = line.trim();
-                  if (!trimmed || !trimmed.startsWith("data: ")) continue;
-                  const payload = trimmed.slice(6);
-                  if (payload === "[DONE]") {
-                    controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                    controller.close();
-                    return;
-                  }
-                  try {
-                    const json = JSON.parse(payload);
-                    const content = json.choices?.[0]?.delta?.content;
-                    if (content) {
-                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
-                    }
-                  } catch { /* skip */ }
-                }
-              }
-
-              controller.close();
-            } catch (err) {
-              controller.error(err);
             }
-          },
-        });
 
-        return new Response(stream, {
+            // Send "generating response" progress
+            send(`data: ${JSON.stringify({ toolProgress: "Generando respuesta...", tool: "_final" })}\n\n`);
+
+            // Second LLM call — stream the response via router (ADR-010)
+            const followUpRes = await callLLM("balanced", {
+              messages: capturedMessages as Parameters<typeof callLLM>[1]["messages"],
+              temperature: AI_TEMPERATURES.toolFollowup,
+              maxTokens: 1500,
+              stream: true,
+              label: "ai-assistant-followup",
+            });
+
+            if (!followUpRes.ok || !followUpRes.body) {
+              recordAIFailure("ai-assistant-followup", followUpRes.error ?? "unknown");
+              const fallback = generateRuleBasedResponse(userMessage, snapshot.metrics);
+              send(`data: ${JSON.stringify({ content: fallback })}\n\n`);
+              send("data: [DONE]\n\n");
+              tsClosed = true;
+              writer.close().catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
+              return;
+            }
+
+            recordAISuccess("ai-assistant");
+            if (followUpRes.usage) {
+              totalUsage.promptTokens += followUpRes.usage.promptTokens;
+              totalUsage.completionTokens += followUpRes.usage.completionTokens;
+              totalUsage.totalTokens += followUpRes.usage.totalTokens;
+              recordTokenUsage(auth.tenantId, followUpRes.usage.totalTokens);
+            }
+
+            // Pipe the Groq stream through
+            const reader = followUpRes.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split("\n");
+              buffer = lines.pop() ?? "";
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith("data: ")) continue;
+                const payload = trimmed.slice(6);
+                if (payload === "[DONE]") {
+                  send("data: [DONE]\n\n");
+                  tsClosed = true;
+                  writer.close().catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
+                  return;
+                }
+                try {
+                  const json = JSON.parse(payload);
+                  const content = json.choices?.[0]?.delta?.content;
+                  if (content) {
+                    send(`data: ${JSON.stringify({ content })}\n\n`);
+                  }
+                } catch { /* skip */ }
+              }
+            }
+
+            tsClosed = true;
+            writer.close().catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
+          } catch (err) {
+            tsClosed = true;
+            writer.abort(err).catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
+          }
+        })();
+
+        return new Response(tsStream.readable, {
           headers: {
             "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            Connection: "keep-alive",
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
           },
         });
       }
@@ -655,11 +666,11 @@ export async function POST(req: NextRequest) {
 
       // ── Save to conversation memory (fire-and-forget) ───────────────────
       if (activeConversationId) {
-        saveMessage(activeConversationId, "user", userMessage).catch(() => {});
+        saveMessage(activeConversationId, "user", userMessage).catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
         saveMessage(activeConversationId, "assistant", reply, {
           mode: "ai",
           tokensUsed: totalUsage.totalTokens,
-        }).catch(() => {});
+        }).catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
       }
 
       return NextResponse.json({
@@ -715,11 +726,11 @@ export async function POST(req: NextRequest) {
 
     // ── Save to conversation memory (fire-and-forget) ─────────────────────
     if (activeConversationId) {
-      saveMessage(activeConversationId, "user", userMessage).catch(() => {});
+      saveMessage(activeConversationId, "user", userMessage).catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
       saveMessage(activeConversationId, "assistant", directReply, {
         mode: "ai",
         tokensUsed: totalUsage.totalTokens,
-      }).catch(() => {});
+      }).catch((err) => logger.warn("[ai-assistant] op failed", { err: String(err) }));
     }
 
     return NextResponse.json({

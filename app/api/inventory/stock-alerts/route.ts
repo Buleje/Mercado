@@ -18,13 +18,41 @@ export async function GET(req: NextRequest) {
     sevenDaysAhead.setDate(sevenDaysAhead.getDate() + 7);
     const today = new Date();
 
-    // 1. SIN STOCK: products with stock = 0
-    const sinStockProducts = await prisma.product.findMany({
-      where: { tenantId, active: true, deletedAt: null, stock: 0 },
-      select: { id: true, name: true, category: true },
-      orderBy: { name: "asc" },
-      take: 100,
-    });
+    // 1+2+4 run in parallel — they share no input dependency.
+    // 3 (sinMovimiento) depends on allActiveProducts so stays sequential after.
+    const [sinStockProducts, allActiveProducts, porVencerBatches] = await Promise.all([
+      // 1. SIN STOCK: products with stock = 0
+      prisma.product.findMany({
+        where: { tenantId, active: true, deletedAt: null, stock: 0 },
+        select: { id: true, name: true, category: true },
+        orderBy: { name: "asc" },
+        take: 100,
+      }),
+      // 2. STOCK CRÍTICO + base para sinMovimiento
+      prisma.product.findMany({
+        where: { tenantId, active: true, deletedAt: null, stock: { gt: 0 } },
+        select: { id: true, name: true, stock: true, stockMin: true, category: true },
+        orderBy: { name: "asc" },
+      }),
+      // 4. POR VENCER — independent of 1 and 2
+      prisma.batch.findMany({
+        where: {
+          tenantId,
+          expiryDate: { lte: sevenDaysAhead, gte: today },
+          quantity: { gt: 0 },
+        },
+        select: {
+          id: true,
+          productName: true,
+          lote: true,
+          expiryDate: true,
+          quantity: true,
+          productId: true,
+        },
+        orderBy: { expiryDate: "asc" },
+        take: 100,
+      }),
+    ]);
 
     // Get last sale date for each sin-stock product
     const sinStockIds = sinStockProducts.map(p => p.id);
@@ -49,13 +77,6 @@ export async function GET(req: NextRequest) {
       category: p.category,
       lastSaleDate: lastSaleMap.get(p.id)?.toISOString() ?? null,
     }));
-
-    // 2. STOCK CRÍTICO: stock > 0 but below stockMin
-    const allActiveProducts = await prisma.product.findMany({
-      where: { tenantId, active: true, deletedAt: null, stock: { gt: 0 } },
-      select: { id: true, name: true, stock: true, stockMin: true, category: true },
-      orderBy: { name: "asc" },
-    });
 
     const stockCritico = allActiveProducts
       .filter(p => p.stockMin != null && p.stockMin > 0 && (p.stock ?? 0) <= p.stockMin)
@@ -129,25 +150,7 @@ export async function GET(req: NextRequest) {
 
     const sinMovimientoValor = sinMovimiento.reduce((sum, p) => sum + p.valorAtado, 0);
 
-    // 4. POR VENCER: batches expiring in next 7 days
-    const porVencerBatches = await prisma.batch.findMany({
-      where: {
-        tenantId,
-        expiryDate: { lte: sevenDaysAhead, gte: today },
-        quantity: { gt: 0 },
-      },
-      select: {
-        id: true,
-        productName: true,
-        lote: true,
-        expiryDate: true,
-        quantity: true,
-        productId: true,
-      },
-      orderBy: { expiryDate: "asc" },
-      take: 100,
-    });
-
+    // 4. POR VENCER — already fetched in Promise.all above
     const porVencer = porVencerBatches.map(b => ({
       batchId: b.id,
       productName: b.productName,
