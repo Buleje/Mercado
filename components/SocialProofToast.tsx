@@ -71,36 +71,41 @@ export default function SocialProofToast() {
     // Only show social proof after user has completed their first order
     if (hasFirstOrder !== true) return;
 
+    // SECURITY 2026-05-07 (audit bugs P0-1): cleanup correcto del setInterval.
+    // Antes el `return () => clearInterval(interval)` vivía DENTRO del callback
+    // del setTimeout — nunca era accesible al cleanup del useEffect, así que
+    // intervals quedaban huérfanos al cambiar `products`/`hasFirstOrder`.
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const show = () => {
+      if (userDismissedRef.current) return;
+      counterRef.current += 1;
+      startTransition(() => {
+        const n = generateNotification(counterRef.current, products);
+        if (!n) return;
+        setNotification(n);
+        setVisible(true);
+        setDismissed(false);
+      });
+      // Auto-hide after 5s
+      timerRef.current = setTimeout(() => {
+        setVisible(false);
+      }, 5000);
+    };
+
     // Don't show on first 10s of page load to avoid being annoying
     const initialDelay = setTimeout(() => {
-      const show = () => {
-        if (userDismissedRef.current) return;
-        counterRef.current += 1;
-        startTransition(() => {
-          const n = generateNotification(counterRef.current, products);
-          if (!n) return;
-          setNotification(n);
-          setVisible(true);
-          setDismissed(false);
-        });
-        // Auto-hide after 5s
-        timerRef.current = setTimeout(() => {
-          setVisible(false);
-        }, 5000);
-      };
-
       show();
       // Show every 25-40s
-      const interval = setInterval(() => {
+      intervalId = setInterval(() => {
         show();
       }, 25000 + Math.random() * 15000);
-
-      return () => clearInterval(interval);
     }, 10000);
 
     return () => {
       clearTimeout(initialDelay);
-      clearTimeout(timerRef.current!);
+      if (intervalId) clearInterval(intervalId);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [hasFirstOrder, products]);
 

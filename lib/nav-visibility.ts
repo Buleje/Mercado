@@ -106,12 +106,17 @@ export function writeNavVisibility(store: Store): void {
 /** Hook-friendly: suscribirse al cambio de visibilidad. */
 export function subscribeNavVisibility(cb: () => void): () => void {
   if (typeof window === "undefined") return () => {};
-  window.addEventListener(EVENT_NAME, cb);
-  window.addEventListener("storage", (e) => {
+  // SECURITY 2026-05-07 (audit bugs P0-2): el handler `storage` debe ser
+  // referenciable para poder removerse en el cleanup. Antes era una arrow
+  // anónima → cada subscribe agregaba un listener permanente.
+  const onStorage = (e: StorageEvent) => {
     if (e.key === STORAGE_KEY) cb();
-  });
+  };
+  window.addEventListener(EVENT_NAME, cb);
+  window.addEventListener("storage", onStorage);
   return () => {
     window.removeEventListener(EVENT_NAME, cb);
+    window.removeEventListener("storage", onStorage);
   };
 }
 
