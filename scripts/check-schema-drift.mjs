@@ -104,19 +104,37 @@ function parseSchema(schemaPath) {
   // Segundo pase: filtrar de cada model los nombres que en realidad son
   // relaciones (porque su tipo es un model). Reabrimos para hacerlo limpio.
   // Estrategia: re-parsear y descartar si el tipo aparece en `models` (post-loop).
-  const finalModels = new Map();
+  // Tambien capturar @@map("table_name") y @map("column_name") para
+  // resolver el nombre real en DB (Prisma soporta snake_case via map).
+  const finalModels = new Map();          // dbTableName -> Set<dbColName>
+  const modelToTable = new Map();         // PrismaModelName -> dbTableName
   let mode2 = null;
   let cur2 = null;
+  let curDbTable = null;
+  let curCols = null;
   for (const raw of lines) {
     const line = raw.trim();
     if (!line || line.startsWith("//")) continue;
     if (mode2 === null) {
       const m = line.match(/^model\s+(\w+)\s*\{/);
-      if (m) { mode2 = "model"; cur2 = m[1]; finalModels.set(cur2, new Set()); continue; }
+      if (m) {
+        mode2 = "model"; cur2 = m[1];
+        curDbTable = m[1];                // default = model name
+        curCols = new Set();
+        continue;
+      }
       continue;
     }
     if (mode2 === "model") {
-      if (line === "}") { mode2 = null; cur2 = null; continue; }
+      if (line === "}") {
+        finalModels.set(curDbTable, curCols);
+        modelToTable.set(cur2, curDbTable);
+        mode2 = null; cur2 = null; curDbTable = null; curCols = null;
+        continue;
+      }
+      // Capturar @@map("nombre_real")
+      const mapMatch = line.match(/^@@map\s*\(\s*"([^"]+)"\s*\)/);
+      if (mapMatch) { curDbTable = mapMatch[1]; continue; }
       if (line.startsWith("@@")) continue;
       const fm = line.match(/^(\w+)\s+([A-Za-z_]\w*)(\?|\[\])?\s*(.*)$/);
       if (!fm) continue;
@@ -125,11 +143,13 @@ function parseSchema(schemaPath) {
       if (/@relation\b/.test(rest)) continue;
       // Si type es modelo conocido → relación obj → skip
       if (models.has(type)) continue;
-      finalModels.get(cur2).add(name);
+      // Si tiene @map("col_real"), usar ese nombre en lugar del Prisma
+      const colMap = rest.match(/@map\s*\(\s*"([^"]+)"\s*\)/);
+      curCols.add(colMap ? colMap[1] : name);
     }
   }
 
-  return { models: finalModels, enums };
+  return { models: finalModels, enums, modelToTable };
 }
 
 async function fetchDbColumns(client) {
