@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { FiadosDB } from "@/lib/db/fiados.db";
+import { CustomersDB } from "@/lib/db/customers.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
-import { toNumOrZero } from "@/lib/decimal-utils";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateFiadoSchema = z.object({
@@ -18,16 +18,13 @@ const CreateFiadoSchema = z.object({
 
 /** Resolve a customer by phone (exact) or name (partial match). Returns phone (PK). */
 async function resolveCustomerId(tenantId: string, input: string): Promise<string | null> {
-  // SECURITY 2026-05-07 (X4): Customer SÍ tiene tenantId. El comentario anterior
-  // era incorrecto. findUnique({phone}) es @unique global y puede retornar un
-  // Customer de otro tenant. Usar findFirst con tenantId en ambas queries.
-  const byPhone = await prisma.customer.findFirst({
-    where: { phone: input, tenantId },
-    select: { phone: true },
-  });
+  // SECURITY 2026-05-07 (X4): Customer.phone es @unique global → siempre con
+  // tenantId scope. Usa CustomersDB para lookup exacto por phone (regla #1).
+  const byPhone = await CustomersDB.getByPhone(input, tenantId);
   if (byPhone) return byPhone.phone;
 
-  // Try name search (case-insensitive) — scoped a tenant
+  // Name search no esta en CustomersDB — fallback a query directa scoped.
+  // eslint-disable-next-line no-restricted-properties -- legacy: name search no centralizado en CustomersDB; refactor a CustomersDB.searchByName pendiente.
   const byName = await prisma.customer.findFirst({
     where: { name: { contains: input, mode: "insensitive" }, tenantId },
     select: { phone: true },
@@ -134,78 +131,52 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Scoring crediticio — bloquear si tiene 3+ fiados con status VENCIDO
-    const fiadosVencidos = await prisma.fiado.count({
-      where: {
-        customerId: resolvedPhone,
-        status: "VENCIDO",
-        tenantId: auth.tenantId,
-      },
-    });
-    if (fiadosVencidos >= 3) {
-      return NextResponse.json(
-        { error: `Cliente bloqueado: tiene ${fiadosVencidos} fiados vencidos sin pagar` },
-        { status: 400 },
-      );
+    // Lookup creditLimit del Customer (puede no existir aun; default 0 = sin tope)
+    const customer = await CustomersDB.getByPhone(resolvedPhone, auth.tenantId);
+    const creditLimitNum = customer?.creditLimit ?? 0;
+
+    // T4 cleanup (regla #1): scoring crediticio centralizado en FiadosDB.
+    // Antes 3 prisma.fiado.count/aggregate inlined en este handler.
+    const validation = await FiadosDB.validateForNewFiado(
+      auth.tenantId,
+      resolvedPhone,
+      parsed.data.total,
+      creditLimitNum,
+    );
+    if (validation) {
+      return NextResponse.json({ error: validation.error }, { status: validation.status });
     }
 
-    // Mejora 8: Bloqueo por morosidad — verificar fiados vencidos >60 dias
-    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
-    const fiadosMuyVencidos = await prisma.fiado.count({
-      where: {
-        tenantId: auth.tenantId,
-        customerId: resolvedPhone,
-        status: "ACTIVO",
-        fechaVence: { lt: sixtyDaysAgo },
-      },
-    });
-
-    if (fiadosMuyVencidos > 0) {
-      return NextResponse.json(
+    // Si el Customer no existe en este tenant, crearlo via CustomersDB.upsert.
+    if (!customer) {
+      await CustomersDB.upsert(
         {
-          error: `Cliente bloqueado: tiene ${fiadosMuyVencidos} fiado(s) vencido(s) hace mas de 60 dias. Debe regularizar antes de crear nuevos.`,
+          phone: resolvedPhone,
+          name: `Cliente ${resolvedPhone.slice(-4)}`,
+          location: "",
+          reference: "",
+          locations: [],
+          activeLocationId: null,
+          loyaltyPoints: 0,
+          loyaltyTier: "bronce",
+          totalSpent: 0,
+          creditBalance: 0,
+          creditLimit: 0,
+          tags: null,
+          notifOrderUpdates: true,
+          notifPromotions: true,
+          notifRestock: true,
         },
-        { status: 400 },
+        auth.tenantId,
       );
     }
 
-    // Verificar límite de crédito
-    const customer = await prisma.customer.findUnique({ where: { phone: resolvedPhone } });
-    // TD-018: customer.creditLimit es Decimal | null
-    const creditLimitNum = toNumOrZero(customer?.creditLimit);
-    if (creditLimitNum > 0) {
-      const fiadoActivo = await prisma.fiado.aggregate({
-        where: { customerId: resolvedPhone, status: "ACTIVO", tenantId: auth.tenantId },
-        _sum: { saldo: true },
-      });
-      const totalActivo = toNumOrZero(fiadoActivo._sum?.saldo);
-      if (totalActivo + parsed.data.total > creditLimitNum) {
-        return NextResponse.json(
-          {
-            error: `Cliente supera límite de crédito. Límite: S/${creditLimitNum.toFixed(2)}, Deuda actual: S/${totalActivo.toFixed(2)}, Disponible: S/${(creditLimitNum - totalActivo).toFixed(2)}`,
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    // Asegurar que el Customer existe (upsert)
-    await prisma.customer.upsert({
-      where: { phone: resolvedPhone },
-      create: { phone: resolvedPhone, name: `Cliente ${resolvedPhone.slice(-4)}`, tenantId: auth.tenantId },
-      update: {},
-    });
-
-    // Crear fiado DIRECTAMENTE con Prisma (bypass FiadosDB para evitar errores de mapeo)
-    const fiado = await prisma.fiado.create({
-      data: {
-        tenantId: auth.tenantId,
-        customerId: resolvedPhone,
-        total: parsed.data.total,
-        saldo: parsed.data.total,
-        descripcion: parsed.data.descripcion,
-        fechaVence: parsed.data.fechaVence ? new Date(parsed.data.fechaVence) : undefined,
-      },
+    const fiado = await FiadosDB.create({
+      tenantId: auth.tenantId,
+      customerId: resolvedPhone,
+      total: parsed.data.total,
+      descripcion: parsed.data.descripcion,
+      fechaVence: parsed.data.fechaVence ? new Date(parsed.data.fechaVence) : undefined,
     });
 
     logActivity(
@@ -214,19 +185,7 @@ export async function POST(req: NextRequest) {
       fiado.id, auth.username,
     ).catch((err) => logger.warn("[fiados] activity log failed", { err: String(err) }));
 
-    return NextResponse.json({
-      id: fiado.id,
-      tenantId: fiado.tenantId,
-      customerId: fiado.customerId,
-      total: Number(fiado.total),
-      saldo: Number(fiado.saldo),
-      descripcion: fiado.descripcion,
-      status: fiado.status,
-      fechaVence: fiado.fechaVence?.toISOString(),
-      createdAt: fiado.createdAt.toISOString(),
-      updatedAt: fiado.updatedAt.toISOString(),
-      cuotas: [],
-    }, { status: 201 });
+    return NextResponse.json(fiado, { status: 201 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const stack = e instanceof Error ? e.stack : undefined;

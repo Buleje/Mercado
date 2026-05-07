@@ -108,6 +108,71 @@ export const FiadosDB = {
     return mapFiado({ ...row, customer: { name: customer?.name || null } });
   },
 
+  /**
+   * Validaciones de scoring crediticio antes de crear un fiado nuevo.
+   * Devuelve `null` si todo OK, o `{error, details}` con razon humana.
+   *
+   * Reglas:
+   *  1. Bloqueo si tiene >= 3 fiados con status VENCIDO.
+   *  2. Bloqueo si tiene >= 1 fiado ACTIVO con fechaVence > 60 dias.
+   *  3. Bloqueo si suma de saldos ACTIVOs + monto solicitado > creditLimit.
+   *
+   * Centraliza el patron que estaba inlined en /api/fiados POST,
+   * cumpliendo regla critica #1 (no prisma directo en routes).
+   */
+  async validateForNewFiado(
+    tenantId: string,
+    customerId: string,
+    requestedAmount: number,
+    creditLimit: number,
+  ): Promise<{ error: string; status: number } | null> {
+    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+
+    const [vencidos, muyVencidos, activoAgg] = await Promise.all([
+      prisma.fiado.count({
+        where: { tenantId, customerId, status: "VENCIDO" },
+      }),
+      prisma.fiado.count({
+        where: {
+          tenantId,
+          customerId,
+          status: "ACTIVO",
+          fechaVence: { lt: sixtyDaysAgo },
+        },
+      }),
+      creditLimit > 0
+        ? prisma.fiado.aggregate({
+            where: { tenantId, customerId, status: "ACTIVO" },
+            _sum: { saldo: true },
+          })
+        : Promise.resolve({ _sum: { saldo: null } }),
+    ]);
+
+    if (vencidos >= 3) {
+      return {
+        error: `Cliente bloqueado: tiene ${vencidos} fiados vencidos sin pagar`,
+        status: 400,
+      };
+    }
+    if (muyVencidos > 0) {
+      return {
+        error: `Cliente bloqueado: tiene ${muyVencidos} fiado(s) vencido(s) hace mas de 60 dias. Debe regularizar antes de crear nuevos.`,
+        status: 400,
+      };
+    }
+    if (creditLimit > 0) {
+      const totalActivo = activoAgg._sum?.saldo ? Number(activoAgg._sum.saldo) : 0;
+      if (totalActivo + requestedAmount > creditLimit) {
+        return {
+          error: `Cliente supera limite de credito. Limite: S/${creditLimit.toFixed(2)}, Deuda actual: S/${totalActivo.toFixed(2)}, Disponible: S/${(creditLimit - totalActivo).toFixed(2)}`,
+          status: 400,
+        };
+      }
+    }
+
+    return null;
+  },
+
   async create(data: {
     tenantId: string;
     customerId: string;
