@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   Inbox,
 } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 import AdminTabShell from "@/app/admin/_components/_shared/AdminTabShell";
 import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
@@ -88,15 +89,21 @@ export default function WebhookQueuePage() {
     setReplayLoading(true);
     setReplayResult(null);
     try {
-      const res = await fetch("/api/billing/webhook-replay", {
-        headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET ?? ""}` },
+      // SECURITY 2026-05-07 (audit P0-1): usar proxy server-side /api/admin/webhook-replay
+      // que valida la sesión admin (cookie httpOnly) y llama al endpoint con CRON_SECRET
+      // server-side. Antes el cliente leía NEXT_PUBLIC_CRON_SECRET que terminaba en el
+      // bundle público — cualquier usuario podía disparar los crons.
+      const res = await fetch("/api/admin/webhook-replay", {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setReplayResult({ replayed: data.replayed ?? 0, failed: data.failed ?? 0 });
       await load();
     } catch {
-      setError("Error al ejecutar replay. Verifica el CRON_SECRET.");
+      setError("Error al ejecutar replay.");
     } finally {
       setReplayLoading(false);
     }

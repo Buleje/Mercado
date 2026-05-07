@@ -921,6 +921,9 @@ model CashMovement {
   cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
 
   @@index([cashRegisterId])
+  // SECURITY 2026-05-07 (audit DB P0-3): saleId queries de reconciliación POS hacían seq scan.
+  @@index([saleId])
+  @@index([cashRegisterId, createdAt])
 }
 
 // ─── Inventory Movements ────────────────────────────────
@@ -988,6 +991,10 @@ model Return {
   items ReturnItem[]
 
   @@index([tenantId])
+  // SECURITY 2026-05-07 (audit DB P0-2): FKs sin índice. Lookup devolución por venta/pedido = seq scan.
+  @@index([saleId])
+  @@index([orderId])
+  @@index([tenantId, createdAt])
 }
 
 model ReturnItem {
