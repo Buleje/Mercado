@@ -10,6 +10,7 @@ import type {
 import type { DbProduct } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { resolveTenantSlugToId } from "@/lib/resolve-tenant";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -93,14 +94,13 @@ export const ProductsDB = {
       orderBy: { id: "asc" },
     });
     if (rows.length === 0) {
-      const tenant = await prisma.tenant
-        .findUnique({ where: { slug: tenantId }, select: { id: true } })
-        .catch((err) => {
-          logger.warn("[products.db] tenant slug lookup failed", { error: String(err) });
-          return null;
-        });
-      if (tenant && tenant.id !== tenantId) {
-        resolvedId = tenant.id;
+      // FIX 2026-05-07 (audit N+1 tenant.findUnique): usar resolveTenantSlugToId
+      // que tiene cache 5min + dedupe in-flight. Antes 3 callers (products,
+      // settings, marketplace) hacían prisma.findUnique en paralelo para el
+      // mismo slug → 3x query en 89ms warning del query-monitor.
+      const resolved = await resolveTenantSlugToId(tenantId);
+      if (resolved && resolved !== tenantId) {
+        resolvedId = resolved;
         rows = await prisma.product.findMany({
           where: { deletedAt: null, tenantId: resolvedId },
           orderBy: { id: "asc" },

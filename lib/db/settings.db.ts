@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
+import { resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import type {
   Settings as PSettings,
 } from "@/lib/generated/prisma/client";
@@ -172,14 +173,10 @@ export const SettingsDB = {
         // El middleware `slug-routes.ts` envía el SLUG en `x-tenant-id`
         // (no el cuid). Si no encontramos por id, resolvemos slug → cuid.
         if (!row) {
-          const tenant = await prisma.tenant
-            .findUnique({ where: { slug: tid }, select: { id: true } })
-            .catch((err) => {
-              logger.warn("[settings.db] tenant slug lookup failed", { error: String(err) });
-              return null;
-            });
-          if (tenant) {
-            row = await prisma.settings.findUnique({ where: { tenantId: tenant.id } });
+          // FIX 2026-05-07 (audit N+1): usar resolveTenantSlugToId con cache+dedupe.
+          const resolvedId = await resolveTenantSlugToId(tid);
+          if (resolvedId && resolvedId !== tid) {
+            row = await prisma.settings.findUnique({ where: { tenantId: resolvedId } });
           }
         }
         if (!row) return { mode: "whatsapp", adminBypassLogin: false };

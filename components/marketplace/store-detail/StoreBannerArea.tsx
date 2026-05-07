@@ -15,6 +15,7 @@
  */
 
 import Image from "next/image";
+import { useState } from "react";
 import { m as motion } from "framer-motion";
 import { Store as StoreIcon, Sparkles } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -39,7 +40,11 @@ export default function StoreBannerArea({
   category,
   zone,
 }: StoreBannerAreaProps) {
-  const hasBanner = Boolean(banner && banner.trim().length > 0);
+  // FIX 2026-05-07: si el banner externo no carga (DNS, 404, CORS), caemos al
+  // BulejeBrandBanner default. Antes el alt text "Banner de Buleje" quedaba
+  // visible como texto raw — UX rota.
+  const [bannerError, setBannerError] = useState(false);
+  const hasBanner = Boolean(banner && banner.trim().length > 0) && !bannerError;
   const initial = name.trim().charAt(0).toUpperCase();
 
   return (
@@ -60,11 +65,12 @@ export default function StoreBannerArea({
         {hasBanner ? (
           <Image
             src={banner!}
-            alt={`Banner de ${name}`}
+            alt=""
             fill
             priority
             sizes="100vw"
             className="object-cover"
+            onError={() => setBannerError(true)}
           />
         ) : (
           <BulejeBrandBanner storeName={name} />
