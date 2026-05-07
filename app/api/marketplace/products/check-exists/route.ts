@@ -29,6 +29,10 @@ const MAX_IDS = 100;
 
 export async function GET(req: NextRequest) {
   const idsParam = req.nextUrl.searchParams.get("ids") ?? "";
+  // FIX 2026-05-07: opcional tenantSlug — si el storefront es tenant-scoped
+  // (/t/[slug]/tienda), filtra solo productos del tenant del slug. Sin el
+  // parámetro mantiene comportamiento cross-store (marketplace).
+  const tenantSlugParam = req.nextUrl.searchParams.get("tenantSlug")?.trim() ?? "";
   const productIds = idsParam
     .split(",")
     .map((s) => parseInt(s.trim(), 10))
@@ -41,12 +45,24 @@ export async function GET(req: NextRequest) {
   const capped = productIds.slice(0, MAX_IDS);
 
   try {
-    // Cross-store: ignora tenantId del request. Solo verifica existencia + active.
+    // Resolver slug → tenantId si vino el param. Sino cross-store.
+    let tenantIdFilter: string | null = null;
+    if (tenantSlugParam) {
+      // eslint-disable-next-line no-restricted-properties -- public lookup; defensa: solo retorna existing IDs, no datos sensibles.
+      const tenant = await prisma.tenant.findFirst({
+        where: { OR: [{ id: tenantSlugParam }, { slug: tenantSlugParam }] },
+        select: { id: true },
+      });
+      tenantIdFilter = tenant?.id ?? "__no-match__"; // no-match → arrays vacíos
+    }
+
+    // Cross-store si no hay tenantSlug; tenant-scoped si lo hay.
     const found = await prisma.product.findMany({
       where: {
         id: { in: capped },
         active: true,
         deletedAt: null,
+        ...(tenantIdFilter ? { tenantId: tenantIdFilter } : {}),
       },
       select: { id: true },
     });

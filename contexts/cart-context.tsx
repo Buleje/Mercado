@@ -267,15 +267,29 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
         // .github/instructions/state-management.instructions.md.
         const originalIds = new Set<number>(items.map((i: CartItem) => i.id));
         const idsQuery = items.map((i: CartItem) => i.id).join(",");
-        fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}`, { signal: controller.signal })
+        // FIX 2026-05-07: cuando el carrito está en un storefront tenant-scoped
+        // (no en /marketplace cross-store), pasamos tenantSlug para que la
+        // validación filtre productos del tenant correcto. Antes el endpoint
+        // siempre era cross-store → preservaba productos fantasma de otros
+        // tenants en el carrito y el checkout fallaba con invalid_product.
+        const isMarketplaceContext = typeof window !== "undefined"
+          && window.location.pathname.startsWith("/marketplace");
+        const tenantParam = !isMarketplaceContext && s !== "main"
+          ? `&tenantSlug=${encodeURIComponent(s)}`
+          : "";
+        fetch(`/api/marketplace/products/check-exists?ids=${idsQuery}${tenantParam}`, { signal: controller.signal })
           .then(r => r.ok ? r.json() : null)
           .then((data: { existingIds?: number[]; missingIds?: number[] } | null) => {
             if (!data || !Array.isArray(data.existingIds)) return;
             const existing = new Set<number>(data.existingIds);
 
-            // Guard: preservar carrito si TODOS "desaparecerían" (señal dudosa).
+            // Guard: preservar carrito si TODOS "desaparecerían" (señal dudosa)
+            // SOLO en modo cross-store (sin tenantSlug filter). Cuando el filter
+            // tenant-scoped está activo, "todos invalidos" es determinístico
+            // (productos de otro tenant) → SÍ debemos limpiarlos para que
+            // checkout no falle con invalid_product.
             const validOriginals = items.filter((item: CartItem) => existing.has(item.id));
-            if (validOriginals.length === 0 && items.length > 0) return;
+            if (validOriginals.length === 0 && items.length > 0 && !tenantParam) return;
 
             // BUGFIX 2026-05-05: leer state ACTUAL via ref. Si el usuario agregó
             // items mientras el fetch estaba in-flight, NO los borramos.
