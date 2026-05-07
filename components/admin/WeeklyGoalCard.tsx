@@ -9,6 +9,15 @@ interface WeeklyGoalCardProps {
   sales: Sale[];
 }
 
+const MAX_WEEKLY_GOAL = 50_000_000; // S/50M cap defensa contra inputs absurdos
+
+// FIX 2026-05-07: tenant-scoped localStorage key — mismo patrón que daily/monthly.
+function getWeeklyGoalKey(): string {
+  if (typeof window === "undefined") return "weekly-goal:main";
+  const m = window.location.pathname.match(/^\/t\/([^/]+)/);
+  return `weekly-goal:${m ? decodeURIComponent(m[1]) : "main"}`;
+}
+
 function getMonday(): Date {
   const now = new Date();
   const day = now.getDay();
@@ -23,13 +32,22 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
   const [goal, setGoal] = useState(5000);
   const [editing, setEditing] = useState(false);
   const [tempGoal, setTempGoal] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
 
+  // FIX 2026-05-07 (B1): tenant-scoped + migración soft del valor viejo.
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("weekly-goal");
+      const tenantKey = getWeeklyGoalKey();
+      const stored = localStorage.getItem(tenantKey) ?? localStorage.getItem("weekly-goal");
       if (stored) {
         const parsed = Number(stored);
-        if (parsed > 0) setGoal(parsed);
+        if (parsed > 0) {
+          setGoal(parsed);
+          if (!localStorage.getItem(tenantKey)) {
+            localStorage.setItem(tenantKey, String(parsed));
+            localStorage.removeItem("weekly-goal");
+          }
+        }
       }
     } catch { /* ignore */ }
   }, []);
@@ -51,19 +69,27 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
   const exceeded = weeklySales > goal;
   const extra = weeklySales - goal;
 
+  // FIX 2026-05-07 (B10): thresholds consistentes con daily/monthly (50/80/100)
   const barColor =
-    percentage >= 70
-      ? "bg-[var(--accent-soft)]"
-      : percentage >= 30
-      ? "bg-[var(--data-warning-500)]"
-      : "bg-[var(--data-error-500)]";
+    percentage >= 100 ? "bg-[var(--data-success-500)]" :
+    percentage >= 80  ? "bg-primary" :
+    percentage >= 50  ? "bg-[var(--data-warning-500)]" :
+    "bg-[var(--data-error-500)]";
 
+  // FIX 2026-05-07 (B8): validación visible con cap.
   const handleSave = () => {
     const val = Number(tempGoal);
-    if (val > 0) {
-      setGoal(val);
-      localStorage.setItem("weekly-goal", String(val));
+    if (!Number.isFinite(val) || val <= 0) {
+      setEditError("Ingresá un monto mayor a 0");
+      return;
     }
+    if (val > MAX_WEEKLY_GOAL) {
+      setEditError(`Máximo: S/${MAX_WEEKLY_GOAL.toLocaleString("es-PE")}`);
+      return;
+    }
+    setEditError(null);
+    setGoal(val);
+    try { localStorage.setItem(getWeeklyGoalKey(), String(val)); } catch { /* ignore */ }
     setEditing(false);
   };
 
@@ -89,30 +115,44 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
             Editar meta
           </button>
         ) : (
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-[var(--text-secondary)] mr-1">S/</span>
-            <input
-              type="number"
-              value={tempGoal}
-              onChange={(e) => setTempGoal(e.target.value)}
-              className="w-20 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] dark:border-zinc-600 bg-white dark:bg-zinc-700 text-[var(--text-primary)] dark:text-zinc-100 outline-none focus:border-primary"
-              onKeyDown={(e) => e.key === "Enter" && handleSave()}
-              autoFocus
-            />
-            <button onClick={handleSave} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
-              <Check className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => setEditing(false)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)]">
-              <X className="w-3.5 h-3.5" />
-            </button>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-[var(--text-secondary)] mr-1">S/</span>
+              <input
+                type="number"
+                value={tempGoal}
+                onChange={(e) => { setTempGoal(e.target.value); if (editError) setEditError(null); }}
+                onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                min={1}
+                max={MAX_WEEKLY_GOAL}
+                autoFocus
+                aria-invalid={!!editError}
+                aria-describedby={editError ? "weekly-goal-error" : undefined}
+                className={cn(
+                  "w-24 px-2 py-1 text-xs rounded-lg border bg-white dark:bg-zinc-700 text-[var(--text-primary)] dark:text-zinc-100 outline-none",
+                  editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-zinc-600 focus:border-primary",
+                )}
+              />
+              <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            {editError && (
+              <p id="weekly-goal-error" role="alert" className="text-xs font-semibold text-[var(--data-error-500)]">
+                {editError}
+              </p>
+            )}
           </div>
         )}
       </div>
 
-      {/* Progress bar */}
-      <div className="h-4 rounded-full bg-gray-100 dark:bg-zinc-700 overflow-hidden mb-2">
+      {/* Progress bar — D2: tokens DS en vez de gray-100 */}
+      <div className="h-4 rounded-full bg-[var(--surface-sunken)] overflow-hidden mb-2">
         <div
-          className={cn("h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out", exceeded ? "bg-[var(--accent-soft)]" : barColor)}
+          className={cn("h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out", barColor)}
           style={{ width: `${percentage}%` }}
         />
       </div>

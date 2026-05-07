@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/currency";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -66,6 +67,9 @@ interface AchCtx {
   // achievements de "caja perfecta" y "cliente feliz" dejen de estar en 0.
   perfectClosures: number;     // arqueos con difference=0 (consecutivos top-3)
   fiveStarReviews: number;     // reviews con rating=5
+  // FIX 2026-05-07 (C): nuevas medallas reales.
+  maxSaleAmount: number;       // mayor venta del period (todas las sales)
+  goodReviews: number;         // reviews con rating>=4 (3★ y 5★)
 }
 
 // ─── Constantes de logros ─────────────────────────────────────────────────────
@@ -103,6 +107,15 @@ const ACHIEVEMENTS_DEF: AchievementDef[] = [
     computeProgress: (c) => ({ current: c.fiveStarReviews, target: 5 }) },
   { id: "meta-cumplida",     Icon: Trophy,      name: "Meta Cumplida",     desc: "Alcanzar tu meta mensual",              category: "operacion",threshold: 1,    unit: "veces",
     computeProgress: (c) => ({ current: c.goalsAchievedThisMonth, target: 1 }) },
+  // FIX 2026-05-07 (C): 4 medallas nuevas con datos reales del negocio.
+  { id: "ticket-grande",     Icon: Coins,       name: "Ticket Grande",     desc: "Una venta de S/500 o más",              category: "ventas",   threshold: 500,  unit: "S/",
+    computeProgress: (c) => ({ current: c.maxSaleAmount, target: 500 }) },
+  { id: "racha-100",         Icon: Trophy,      name: "Racha Centenaria",  desc: "100 días seguidos vendiendo",           category: "rachas",   threshold: 100,  unit: "días",
+    computeProgress: (c) => ({ current: c.streak, target: 100 }) },
+  { id: "500-clientes",      Icon: Users,       name: "Imperio Vecinal",   desc: "Llegar a 500 clientes registrados",     category: "clientes", threshold: 500,  unit: "clientes",
+    computeProgress: (c) => ({ current: c.totalCustomers, target: 500 }) },
+  { id: "5-resenas-buenas",  Icon: Star,        name: "Reseñas Buenas",    desc: "Recibir 25 reseñas (4★ o 5★)",          category: "clientes", threshold: 25,   unit: "reseñas",
+    computeProgress: (c) => ({ current: c.goodReviews, target: 25 }) },
 ];
 
 const CATEGORY_LABELS: Record<AchievementCategory, string> = {
@@ -603,6 +616,7 @@ function LogrosTab() {
     totalOrders: 0, totalCustomers: 0, todayTotal: 0, streak: 0,
     collectedFiados: 0, goalsAchievedThisMonth: 0, earlyOpens: 0,
     perfectClosures: 0, fiveStarReviews: 0,
+    maxSaleAmount: 0, goodReviews: 0,
   });
   const [error, setError]   = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -611,9 +625,11 @@ function LogrosTab() {
   const [activeCategory, setActiveCategory] = useState<AchievementCategory | "all">("all");
   const fetchAbortRef = useRef<AbortController | null>(null);
 
-  // FIX 2026-05-07 (Logros): leer achievements de la key tenant-scoped.
-  // Migración soft del valor viejo si existe.
+  // FIX 2026-05-07 (A): persistencia backend via /api/admin/achievements.
+  // Estrategia: localStorage como cache instantáneo + server como fuente de
+  // verdad. El localStorage funciona offline; al volver, sincroniza con el server.
   useEffect(() => {
+    // 1. Carga inmediata desde localStorage (UX rápida)
     try {
       const tenantKey = getAchievementsKey();
       const stored = localStorage.getItem(tenantKey) ?? localStorage.getItem(LS_ACHIEVEMENTS);
@@ -626,6 +642,23 @@ function LogrosTab() {
         }
       }
     } catch { /* ignore */ }
+
+    // 2. Sync con backend (fuente de verdad)
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/achievements", { credentials: "include", cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json() as { achievements?: Record<string, string> };
+        const serverAch = data.achievements ?? {};
+        if (Object.keys(serverAch).length === 0) return;
+        // Merge: server prevalece para fechas, pero union de ids local+server.
+        setUnlocked((prev) => {
+          const merged = { ...prev, ...serverAch };
+          try { localStorage.setItem(getAchievementsKey(), JSON.stringify(merged)); } catch { /* ignore */ }
+          return merged;
+        });
+      } catch { /* silent — fallback al localStorage */ }
+    })();
   }, []);
 
   // FIX 2026-05-07 (Logros): cargar contexto desde APIs reales — antes
@@ -641,7 +674,8 @@ function LogrosTab() {
         fetch("/api/admin/dashboard", opts).catch(() => null),
         fetch("/api/goals", opts).catch(() => null),
         fetch("/api/sales?limit=200", opts).catch(() => null),
-        fetch("/api/fiados?status=pagado", opts).catch(() => null),
+        // FIX 2026-05-07: enum FiadoStatus es UPPERCASE (PAGADO no pagado).
+        fetch("/api/fiados?status=PAGADO", opts).catch(() => null),
         fetch("/api/cash-registers", opts).catch(() => null),
         fetch("/api/reviews?limit=100", opts).catch(() => null),
       ]);
@@ -685,6 +719,16 @@ function LogrosTab() {
       const fiveStarReviews = (Array.isArray(reviews) ? reviews : [])
         .filter((r) => Number(r.rating) === 5).length;
 
+      // FIX 2026-05-07 (C): goodReviews = reviews con rating >= 4.
+      const goodReviews = (Array.isArray(reviews) ? reviews : [])
+        .filter((r) => Number(r.rating) >= 4).length;
+
+      // FIX 2026-05-07 (C): maxSaleAmount = mayor venta individual del periodo.
+      const maxSaleAmount = sales.reduce(
+        (max, s) => Math.max(max, Number(s.total ?? 0)),
+        0,
+      );
+
       // FIX: earlyOpens = cash-registers abiertas antes de las 7am del tenant.
       const earlyOpens = cashList.filter((r) => {
         if (!r.openedAt) return false;
@@ -705,6 +749,8 @@ function LogrosTab() {
         earlyOpens,
         perfectClosures,
         fiveStarReviews,
+        maxSaleAmount,
+        goodReviews,
       };
       setCtx(newCtx);
       setLastUpdated(new Date());
@@ -733,6 +779,16 @@ function LogrosTab() {
         setUnlocked(next);
         setConfetti(true);
         setTimeout(() => setConfetti(false), 3500);
+
+        // FIX 2026-05-07 (A): persistir backend fire-and-forget. Si falla, el
+        // localStorage ya tiene los logros y el próximo mount los re-intentará.
+        // csrfHeaders requerido por el endpoint write.
+        void fetch("/api/admin/achievements", {
+          method: "PUT",
+          credentials: "include",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ achievements: next }),
+        }).catch(() => { /* silent — local persiste igual */ });
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
