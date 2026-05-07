@@ -5,10 +5,19 @@
 // SSRF en img-proxy y XSS via javascript: / data: URIs.
 // ═══════════════════════════════════════════════════════
 
+// Cubre instancias self-hosted de Supabase (dominio propio) además del cloud público.
+const SUPABASE_HOSTNAME = (() => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return null;
+  try { return new URL(url).hostname; } catch { return null; }
+})();
+
 export const HOSTNAME_ALLOWLIST = [
   "supabase.co",
+  "supabase.in",
   "images.unsplash.com",
   "cdn.jsdelivr.net",
+  ...(SUPABASE_HOSTNAME ? [SUPABASE_HOSTNAME] : []),
 ];
 
 /**

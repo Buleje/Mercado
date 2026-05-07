@@ -6,6 +6,7 @@ import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getOrSet, invalidate } from "@/lib/cache";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 
 // F6: Helpers de lock de conteo activo — TTL 1 hora
 export function conteoLockKey(tenantId: string) {
@@ -43,6 +44,8 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "inventory-conteo"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   try {
     const body = await req.json();

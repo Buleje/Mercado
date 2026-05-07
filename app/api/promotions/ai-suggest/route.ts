@@ -70,10 +70,20 @@ export async function POST(req: NextRequest) {
     .slice(0, 20)
     .map(([name, qty]) => `${name}: ${qty} unidades`);
 
+  // F2 — PII Ley 29733: anonimizar antes de enviar a LLM externo.
+  // Nombre y teléfono real no son necesarios para sugerir promociones;
+  // bastan stats agregadas. Se reemplaza por id opaco customer_0..9.
   const topCustomers = Object.entries(customerStats)
     .sort((a, b) => b[1].spent - a[1].spent)
     .slice(0, 10)
-    .map(([phone, s]) => `${s.name} (${phone}): ${s.orders} pedidos, S/${s.spent.toFixed(2)} gastado – favoritos: ${Object.entries(s.products).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, q]) => `${n}(${q})`).join(", ")}`);
+    .map(([, s], idx) => {
+      const topProducts = Object.entries(s.products)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([n, q]) => `${n}(${q})`)
+        .join(", ");
+      return `cliente_${idx}: ${s.orders} pedidos, S/${s.spent.toFixed(2)} gastado – favoritos: ${topProducts}`;
+    });
 
   const prompt = `Eres un experto en marketing para una bodega/tienda de abarrotes en Pucallpa, Perú llamada "Buleje".
 

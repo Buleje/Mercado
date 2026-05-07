@@ -7,6 +7,15 @@ import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 import { verifyTotpCode } from "@/lib/auth/totp";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import {
+  getPendingTotpPayload,
+  createSessionToken,
+  createRefreshToken,
+  SESSION,
+  REFRESH,
+  PENDING_TOTP_COOKIE,
+} from "@/lib/session";
+import type { AdminRole } from "@/lib/session";
 
 /**
  * POST /api/auth/totp/verify
@@ -29,14 +38,66 @@ const VerifyBodySchema = z.object({
   token: z.string().regex(/^\d{6}$/, "El token debe ser exactamente 6 dígitos"),
 });
 
+function makeAccessCookie() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict" as const,
+    maxAge: SESSION.MAX_AGE,
+    path: "/",
+  };
+}
+
+function makeRefreshCookie() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict" as const,
+    maxAge: REFRESH.MAX_AGE,
+    path: "/",
+  };
+}
+
 export async function POST(req: NextRequest) {
   // 1. Rate limit
   const rateLimited = applyRateLimit(req, verifyLimiter);
   if (rateLimited) return rateLimited;
 
-  // 2. Auth
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
+  // 2. Auth — dos caminos:
+  //    a) Flujo 2FA post-login: cookie `pending-totp` (role restringido).
+  //    b) Flujo enrollment panel: cookie de sesión normal (`requireAdmin`).
+  const pendingToken = req.cookies.get(PENDING_TOTP_COOKIE)?.value;
+  const pendingPayload = pendingToken
+    ? await getPendingTotpPayload(pendingToken)
+    : null;
+
+  // Determinar identidad y modo (post-login vs enrollment)
+  let authUsername: string;
+  let authTenantId: string;
+  let authName: string;
+  let authOriginalRole: AdminRole | undefined;
+  let isPostLoginFlow: boolean;
+
+  if (pendingPayload) {
+    // Camino a: viniendo del login con 2FA requerido
+    authUsername = pendingPayload.username;
+    authTenantId = pendingPayload.tenantId;
+    authName = pendingPayload.name;
+    authOriginalRole = pendingPayload.originalRole;
+    isPostLoginFlow = true;
+  } else {
+    // Camino b: enrollment desde panel (sesión ya activa)
+    const auth = await requireAdmin(req);
+    if (auth instanceof NextResponse) return auth;
+    authUsername = auth.username;
+    authTenantId = auth.tenantId;
+    authName = auth.name ?? "";
+    authOriginalRole = auth.role as AdminRole;
+    isPostLoginFlow = false;
+  }
+
+  // Objeto de contexto unificado para el resto del handler
+  const auth = { username: authUsername, tenantId: authTenantId, name: authName };
 
   // 3. Validación Zod safeParse
   let body: unknown;
@@ -125,6 +186,20 @@ export async function POST(req: NextRequest) {
       undefined,
       auth.tenantId,
     ).catch((err) => logger.error("[totp/verify] logActivity (verify_ok/activated) failed", { error: String(err) }));
+
+    // 8. Flujo post-login: emitir tokens de sesión completos + limpiar cookie temporal.
+    if (isPostLoginFlow && authOriginalRole) {
+      const [sessionToken, refreshToken] = await Promise.all([
+        createSessionToken(authOriginalRole, auth.username, auth.tenantId, auth.name),
+        createRefreshToken(authOriginalRole, auth.username, auth.tenantId, auth.name),
+      ]);
+      const response = NextResponse.json({ ok: true, activated: !wasAlreadyActive, loggedIn: true });
+      response.cookies.set(SESSION.COOKIE_NAME, sessionToken, makeAccessCookie());
+      response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
+      // Eliminar cookie temporal
+      response.cookies.set(PENDING_TOTP_COOKIE, "", { maxAge: 0, path: "/" });
+      return response;
+    }
 
     return NextResponse.json({ ok: true, activated: !wasAlreadyActive });
   } catch (err) {

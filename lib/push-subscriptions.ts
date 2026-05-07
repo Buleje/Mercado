@@ -50,6 +50,22 @@ export const PushSubscriptionsStore = {
     }));
   },
 
+  /**
+   * Busca una suscripción por endpoint exacto — O(1) vs O(N) scan.
+   * Usado por DELETE /api/notifications/subscribe para verificar ownership
+   * sin cargar todas las subs del tenant en memoria.
+   */
+  async findByEndpoint(endpoint: string): Promise<StoredSubscription | null> {
+    const row = await prisma.pushSubscription.findFirst({ where: { endpoint } });
+    if (!row) return null;
+    return {
+      endpoint: row.endpoint,
+      keys: { p256dh: row.p256dh, auth: row.auth },
+      phone: row.phone ?? undefined,
+      createdAt: row.createdAt.toISOString(),
+    };
+  },
+
   // SECURITY 2026-05-06 (audit notifs #2): tenant-scoped + match exacto.
   // Antes `contains: clean` daba match parcial (cliente "999123" recibía
   // push destinada a "5599991234") + sin tenantId permitía leak cross-tenant.

@@ -4,6 +4,7 @@ import { getAllPages, createPage } from "@/lib/cms-db/pages";
 import { PageSchema } from "@/lib/cms/types";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 
 // ═══════════════════════════════════════════════════════
 // GET /api/cms/pages - List all pages
@@ -32,6 +33,8 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "cms-pages"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   try {
     const body = await req.json();

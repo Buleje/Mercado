@@ -230,6 +230,14 @@ export default function DeliveryAppDashboard() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [locationStatus, setLocationStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
+  // F2: partnerId via session cookie — NO localStorage (XSS-safe, server-validated).
+  const [partnerId, setPartnerId] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/api/delivery/me", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { partnerId?: string } | null) => setPartnerId(d?.partnerId ?? null))
+      .catch(() => setPartnerId(null));
+  }, []);
 
   // Pull-to-refresh
   const [pullStartY, setPullStartY] = useState(0);
@@ -253,18 +261,18 @@ export default function DeliveryAppDashboard() {
   const activeAssignments = assignments.filter((a) => a.status !== "delivered");
   const deliveredAssignments = assignments.filter((a) => a.status === "delivered");
 
-  // PartnerId mock — en producción vendría del login del repartidor
-  const PARTNER_ID = typeof window !== "undefined"
-    ? (localStorage.getItem("delivery-partner-id") ?? "current")
-    : "current";
-
   const loadAssignments = useCallback(async () => {
+    if (!partnerId) {
+      setLoading(false);
+      setError("Sesión no válida, iniciá sesión otra vez.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const today = new Date().toISOString().split("T")[0];
       const res = await fetch(
-        `/api/delivery/assignments?partnerId=${PARTNER_ID}&date=${today}`
+        `/api/delivery/assignments?partnerId=${partnerId}&date=${today}`
       );
       if (!res.ok) throw new Error("Error al cargar pedidos");
       const data = await res.json();
@@ -274,7 +282,7 @@ export default function DeliveryAppDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [PARTNER_ID]);
+  }, [partnerId]);
 
   useEffect(() => {
     loadAssignments();

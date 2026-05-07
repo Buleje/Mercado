@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 
 // ── Validación PUT ────────────────────────────────────────────────────────────
 
@@ -88,8 +89,10 @@ export async function PUT(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
+  const blocked = await requireActiveSubscription(tenantId);
+  if (blocked) return blocked;
 
-  const rawBody = await req.json().catch(() => null);
+  const rawBody = await req.json().catch((err) => { logger.warn("[security] op failed", { err: String(err) }); return null; });
   const parsed = ConfigPutSchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json(
@@ -150,7 +153,7 @@ export async function PUT(req: NextRequest) {
       `ruc=${data.ruc} isProduction=${data.isProduction} tokenUpdated=${!!data.nubefactToken}`,
       config.id,
       auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[security] op failed", { err: String(err) }));
 
     // Devolver config enmascarando el token
     const tokenMasked = `${"*".repeat(tokenToSave.length - 4)}${tokenToSave.slice(-4)}`;

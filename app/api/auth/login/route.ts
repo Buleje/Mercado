@@ -1,7 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { SettingsDB } from "@/lib/jsondb";
-import { createSessionToken, createRefreshToken, SESSION, REFRESH } from "@/lib/session";
+import { createSessionToken, createRefreshToken, createPendingTotpToken, SESSION, REFRESH, PENDING_TOTP_COOKIE } from "@/lib/session";
 import type { AdminRole } from "@/lib/session";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +11,7 @@ import fs from "fs/promises";
 import path from "path";
 import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
+import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 
 type LegacyAdminUser = { id: string; username: string; password: string; role: AdminRole; name: string };
 
@@ -171,6 +172,34 @@ export async function POST(req: Request) {
     cacheStore.del(lockKey);
 
     const matchedTenantId = u.tenantId;
+
+    // F2 — SECURITY 2026-05-07: verificar si el usuario tiene 2FA activo.
+    // Si totpEnabledAt está seteado, NO emitir tokens de sesión completos —
+    // en su lugar emitir cookie temporal `pending-totp` (5 min, rol restringido)
+    // y retornar { requires2FA: true } para que el frontend redirija a /login/2fa.
+    const totpRecord = await AdminTotpDB.getByUsername(matchedTenantId, u.username).catch((err) => { logger.warn("[security] op failed", { err: String(err) }); return null; });
+    if (totpRecord?.totpEnabledAt) {
+      const pendingToken = await createPendingTotpToken(
+        u.username,
+        matchedTenantId,
+        u.name,
+        u.role as AdminRole,
+      );
+      const res = NextResponse.json({ requires2FA: true });
+      res.cookies.set(PENDING_TOTP_COOKIE, pendingToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 300, // 5 minutos
+        path: "/",
+      });
+      logger.info("[auth/login] 2FA required — pending-totp cookie emitida", {
+        username: u.username,
+        tenantId: matchedTenantId,
+      });
+      return res;
+    }
+
     const [token, refreshToken] = await Promise.all([
       createSessionToken(u.role as AdminRole, u.username, matchedTenantId, u.name),
       createRefreshToken(u.role as AdminRole, u.username, matchedTenantId, u.name),

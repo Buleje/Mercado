@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const daysParam = url.searchParams.get("days");
   const days = Math.min(Math.max(parseInt(daysParam || "30", 10) || 30, 7), 365);
+  const limitParam = parseInt(url.searchParams.get("limit") ?? "100", 10);
+  const take = Math.min(Math.max(1, isNaN(limitParam) ? 100 : limitParam), 500);
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const tenantId = auth.tenantId;
@@ -79,7 +81,9 @@ export async function GET(request: NextRequest) {
         // Inactive = no activity after cutoff OR never purchased
         return (la && la < cutoff) || (!la && c.daysSinceLast >= days);
       })
-      .sort((a, b) => b.daysSinceLast - a.daysSinceLast);
+      .sort((a, b) => b.daysSinceLast - a.daysSinceLast)
+      // Cap result set: default 100, max 500 — prevent bulk PII leak
+      .slice(0, take);
 
     return inactive;
   }));
@@ -87,6 +91,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     days,
+    limit: take,
     total: data.length,
     customers: data,
   }, {

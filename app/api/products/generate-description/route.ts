@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { aiCostGuard } from "@/lib/ai/cost-control";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 
 /**
  * POST /api/products/generate-description
@@ -40,6 +41,8 @@ export async function POST(req: NextRequest) {
   // Auth admin/almacenero
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   try {
     const body = await req.json();

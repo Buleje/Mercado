@@ -215,3 +215,75 @@ export const REFRESH = {
   COOKIE_NAME: REFRESH_COOKIE_NAME,
   MAX_AGE: Math.floor(REFRESH_DURATION_MS / 1000),
 } as const;
+
+// ── Pending 2FA token ─────────────────────────────────────────────────────────
+
+export const PENDING_TOTP_COOKIE = "pending-totp";
+const PENDING_TOTP_DURATION_MS = 5 * 60 * 1000; // 5 minutos
+
+/**
+ * Emite un token de corta vida (5 min) que solo autoriza POST a
+ * /api/auth/totp/verify. El rol "pending-totp" es rechazado por
+ * requireAdmin, así que no da acceso al panel.
+ */
+export async function createPendingTotpToken(
+  username: string,
+  tenantId: string,
+  name: string,
+  role: AdminRole,
+): Promise<string> {
+  const payload = JSON.stringify({
+    role: "pending-totp",
+    username,
+    tenantId,
+    name,
+    originalRole: role,
+    type: "pending-totp",
+    exp: Date.now() + PENDING_TOTP_DURATION_MS,
+  });
+  const encoded = b64Encode(payload);
+  const rawSig = await signHmac(getSecret(), encoded);
+  const sig = btoa(String.fromCharCode(...rawSig));
+  return `${encoded}.${sig}`;
+}
+
+export interface PendingTotpPayload {
+  username: string;
+  tenantId: string;
+  name: string;
+  originalRole: AdminRole;
+}
+
+/**
+ * Verifica y decodifica un token pending-totp.
+ * Retorna null si es inválido, expirado, o no es del tipo correcto.
+ */
+export async function getPendingTotpPayload(
+  token: string,
+): Promise<PendingTotpPayload | null> {
+  try {
+    const dotIdx = token.lastIndexOf(".");
+    if (dotIdx < 0) return null;
+    const encoded = token.slice(0, dotIdx);
+    const sig = token.slice(dotIdx + 1);
+    if (!(await verifyHmac(getSecret(), encoded, sig))) return null;
+    const payload = JSON.parse(b64Decode(encoded)) as {
+      exp: number;
+      type?: string;
+      username: string;
+      tenantId: string;
+      name: string;
+      originalRole: AdminRole;
+    };
+    if (payload.type !== "pending-totp") return null;
+    if (payload.exp < Date.now()) return null;
+    return {
+      username: payload.username,
+      tenantId: payload.tenantId,
+      name: payload.name,
+      originalRole: payload.originalRole,
+    };
+  } catch {
+    return null;
+  }
+}

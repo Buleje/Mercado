@@ -19,6 +19,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { sunatEventBus } from "@/lib/sunat/sale-events";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 
 const BodySchema = z.object({
   saleId: z.string().min(1),
@@ -32,8 +33,10 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
+  const blocked = await requireActiveSubscription(tenantId);
+  if (blocked) return blocked;
 
-  const rawBody = await req.json().catch(() => null);
+  const rawBody = await req.json().catch((err) => { logger.warn("[security] op failed", { err: String(err) }); return null; });
   const parsed = BodySchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json(

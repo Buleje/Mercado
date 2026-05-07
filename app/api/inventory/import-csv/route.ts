@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 
 const CsvRowSchema = z.object({
   barcode: z.string().min(1).max(50),
@@ -24,6 +25,8 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "inventory-import-csv"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  const blocked = await requireActiveSubscription(auth.tenantId);
+  if (blocked) return blocked;
 
   try {
     const raw = await req.json();

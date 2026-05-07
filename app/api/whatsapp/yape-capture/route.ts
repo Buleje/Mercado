@@ -436,9 +436,19 @@ export async function POST(req: NextRequest) {
       customerPhone: resolved.customerPhone.slice(-6),
     });
   } else {
+    // F1 — cap defensivo: evita approvals con montos absurdos por convs manipuladas
+    const MAX_YAPE_AMOUNT_PEN = 5_000;
+    const safeAmount = Math.min(resolved.expectedAmount, MAX_YAPE_AMOUNT_PEN);
+    if (resolved.expectedAmount > MAX_YAPE_AMOUNT_PEN) {
+      logger.warn("[whatsapp/yape-capture] expectedAmount cap aplicado", {
+        requested: resolved.expectedAmount,
+        capped: safeAmount,
+        conversationId: resolved.conversationId,
+      });
+    }
     const created = await PaymentApprovalDb.create({
       customerPhone: resolved.customerPhone,
-      expectedAmount: resolved.expectedAmount,
+      expectedAmount: safeAmount,
       imageUrl: resolved.imageUrl,
       conversationId: resolved.conversationId,
     });

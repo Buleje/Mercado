@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { OrdersDB, NotificationLogsDB, ReviewsDB, normalizePhone } from "@/lib/jsondb";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 type TimelineEvent = {
   id: string;
@@ -17,6 +18,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
 ) {
+  const rl = await applyRateLimit(req, "MODERATE", "customers-timeline");
+  if (rl) return rl;
+
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -27,11 +31,13 @@ export async function GET(
     OrdersDB.getByCustomerPhone(auth.tenantId, normalized),
     NotificationLogsDB.getByRecipient(normalized, auth.tenantId),
     ReviewsDB.getAll(auth.tenantId).then(all => all.filter(r => r.phone === normalized)),
+    // eslint-disable-next-line no-restricted-properties -- legacy: timeline aggregate de 5 fuentes; refactor a CustomersTimelineDB pendiente.
     prisma.sale.findMany({
       where: { tenantId: auth.tenantId, customerPhone: normalized },
       include: { items: true },
       orderBy: { createdAt: "desc" },
     }),
+    // eslint-disable-next-line no-restricted-properties -- legacy: idem aggregate timeline.
     prisma.customerNotification.findMany({
       where: { tenantId: auth.tenantId, customerPhone: normalized },
       orderBy: { createdAt: "desc" },

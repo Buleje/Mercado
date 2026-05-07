@@ -1,82 +1,66 @@
 /**
  * lib/auth/otp-store.ts
  *
- * In-memory OTP store for phone verification.
+ * OTP store respaldado por cacheStore (Redis-aware cuando REDIS_URL está
+ * configurado, fallback a MemoryStore en dev/single-instance).
  *
- * Acceptable for MVP — will migrate to Redis when multi-region deployment
- * requires shared state across Vercel instances.
+ * Migrado desde Map module-level (problema: se resetea por instancia Vercel
+ * en multi-region → mismo OTP usable 2× en instancias distintas).
  *
- * Cada entrada expira a los 5 minutos y se invalida tras el primer uso exitoso.
- * El contador de intentos fallidos se incrementa en cada verificacion incorrecta;
- * al alcanzar MAX_ATTEMPTS la entrada se elimina para forzar un nuevo envio.
+ * cacheStore.get/set/del son síncronos (write-through MemoryStore + fire-and-
+ * forget hacia Redis). No se necesita await en los llamadores.
  */
 
-const OTP_TTL_MS = 5 * 60 * 1000; // 5 minutos
-const MAX_ATTEMPTS = 5; // intentos de verificacion antes de invalidar
+import { cacheStore } from "@/lib/cache";
 
-interface OtpEntry {
-  code: string;
-  expiresAt: number;
-  attempts: number;
-}
+const OTP_TTL_SEC = 300; // 5 minutos
+const MAX_ATTEMPTS = 5;
 
-// Module-level Map — persiste mientras la instancia Node este viva.
-const otpStore = new Map<string, OtpEntry>();
-
-// Limpia entradas expiradas de forma oportunista en cada operacion.
-function purgeExpired(): void {
-  const now = Date.now();
-  for (const [key, entry] of otpStore) {
-    if (now >= entry.expiresAt) otpStore.delete(key);
-  }
-}
+const otpKey = (phone: string) => `otp:code:${phone}`;
+const attemptsKey = (phone: string) => `otp:attempts:${phone}`;
 
 /**
- * Guarda un codigo OTP para el numero de telefono normalizado.
+ * Guarda un código OTP para el número de teléfono normalizado.
  * Sobreescribe cualquier entrada previa (el endpoint /send ya aplica
- * rate limit antes de llegar aqui).
+ * rate limit antes de llegar aquí). Resetea el contador de intentos.
  */
 export function storeOtp(phone: string, code: string): void {
-  purgeExpired();
-  otpStore.set(phone, {
-    code,
-    expiresAt: Date.now() + OTP_TTL_MS,
-    attempts: 0,
-  });
+  cacheStore.set(otpKey(phone), code, OTP_TTL_SEC);
+  cacheStore.set(attemptsKey(phone), 0, OTP_TTL_SEC);
 }
 
 /**
- * Verifica el codigo OTP para el telefono dado.
+ * Verifica el código OTP para el teléfono dado.
  *
- * - Devuelve `"ok"` si el codigo es correcto y no ha expirado.
- * - Devuelve `"expired"` si no existe entrada o ya expiro.
- * - Devuelve `"invalid"` si el codigo no coincide (incrementa intentos).
- * - Devuelve `"max_attempts"` si se supero el limite de intentos y
- *   la entrada fue eliminada.
+ * - Devuelve `"ok"` si el código es correcto y no ha expirado.
+ * - Devuelve `"expired"` si no existe entrada o ya expiró.
+ * - Devuelve `"invalid"` si el código no coincide (incrementa intentos).
+ * - Devuelve `"max_attempts"` si se superó el límite de intentos.
  *
- * En caso de exito elimina la entrada (single-use).
+ * En caso de éxito elimina la entrada (single-use).
  */
 export function verifyOtp(
   phone: string,
   code: string,
 ): "ok" | "expired" | "invalid" | "max_attempts" {
-  purgeExpired();
-  const entry = otpStore.get(phone);
+  const stored = cacheStore.get<string>(otpKey(phone));
+  if (!stored) return "expired";
 
-  if (!entry || Date.now() >= entry.expiresAt) {
-    return "expired";
+  const attempts = cacheStore.get<number>(attemptsKey(phone)) ?? 0;
+  if (attempts >= MAX_ATTEMPTS) {
+    // Limpiar entradas agotadas
+    cacheStore.del(otpKey(phone));
+    cacheStore.del(attemptsKey(phone));
+    return "max_attempts";
   }
 
-  if (entry.code !== code) {
-    entry.attempts += 1;
-    if (entry.attempts >= MAX_ATTEMPTS) {
-      otpStore.delete(phone);
-      return "max_attempts";
-    }
+  if (stored !== code) {
+    cacheStore.set(attemptsKey(phone), attempts + 1, OTP_TTL_SEC);
     return "invalid";
   }
 
-  // Codigo correcto — consumir la entrada (single-use)
-  otpStore.delete(phone);
+  // Código correcto — consumir la entrada (single-use)
+  cacheStore.del(otpKey(phone));
+  cacheStore.del(attemptsKey(phone));
   return "ok";
 }

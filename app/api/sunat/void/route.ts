@@ -17,6 +17,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { voidInvoice } from "@/lib/sunat/nubefact-client";
 import { buildBaja } from "@/lib/sunat/invoice-builder";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 
 // ── Validación ────────────────────────────────────────────────────────────────
 
@@ -32,8 +33,10 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
+  const blocked = await requireActiveSubscription(tenantId);
+  if (blocked) return blocked;
 
-  const rawBody = await req.json().catch(() => null);
+  const rawBody = await req.json().catch((err) => { logger.warn("[security] op failed", { err: String(err) }); return null; });
   const parsed = VoidSchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json(
@@ -118,7 +121,7 @@ export async function POST(req: NextRequest) {
       `baja ${invoice.series}-${String(invoice.number).padStart(8, "0")} motivo="${motivo}"`,
       invoice.id,
       auth.username,
-    ).catch(() => {});
+    ).catch((err) => logger.warn("[security] op failed", { err: String(err) }));
 
     return NextResponse.json({
       invoiceId: updated.id,

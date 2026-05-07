@@ -81,14 +81,29 @@ export async function POST(
       return NextResponse.json({ error: "Live no encontrada" }, { status: 404 });
     }
 
+    // F3 — validar que productId pertenece al live: evita contaminación
+    // de analytics del vendor con productIds arbitrarios del cliente.
+    const { eventType, productId } = parsed.data;
+    if (eventType === "product_click" && productId != null) {
+      // sessionResult.products es LiveProductRow[] — campo productId (int), no id (UUID row)
+      const validProductIds =
+        sessionResult.products?.map((p: { productId: number }) => p.productId) ?? [];
+      if (!validProductIds.includes(productId)) {
+        return NextResponse.json(
+          { error: "Producto no asociado a este live" },
+          { status: 400 },
+        );
+      }
+    }
+
     // Fire-and-forget: tracking no puede romper la UX del viewer
     LiveSessionsDB.trackViewerEvent({
       tenantId: sessionResult.session.tenantId,
       sessionId: id,
       userId: parsed.data.userId ?? null,
       anonymousId: parsed.data.anonymousId ?? null,
-      eventType: parsed.data.eventType,
-      productId: parsed.data.productId ?? null,
+      eventType,
+      productId: productId ?? null,
     }).catch((err: unknown) => {
       logger.warn("[api/lives/event] tracking failed (swallowed)", {
         err: String(err),

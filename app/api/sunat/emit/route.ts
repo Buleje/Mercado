@@ -22,6 +22,7 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { DomainEvents } from "@/lib/domain-events";
 import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 
 // ── Validación de entrada ─────────────────────────────────────────────────────
 
@@ -41,6 +42,8 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
+  const blocked = await requireActiveSubscription(tenantId);
+  if (blocked) return blocked;
 
   // Parsear body
   const rawBody = await req.json().catch((err: unknown) => {

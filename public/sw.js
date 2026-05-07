@@ -27,7 +27,7 @@ if (self.location && self.location.hostname === "localhost") {
   self.addEventListener("fetch", () => {});
 } else {
 
-const CACHE_NAME = "buleje-v13";
+const CACHE_NAME = "buleje-v14";
 const CATALOG_CACHE = "buleje-catalog-v2";
 // FIX 2026-05-06: removidos /offline (no existe — solo /offline.html) y /admin
 // (redirige 30x → cache.addAll lo rechaza como "illegal path"). cache.addAll

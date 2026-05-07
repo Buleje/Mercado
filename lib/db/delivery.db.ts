@@ -554,6 +554,106 @@ export const DeliveryRoutesDB = {
   },
 };
 
+// ─── DeliveryNotifyDB ─────────────────────────────────────────────────────────
+
+/**
+ * Mensajes WhatsApp por estado de delivery.
+ * Extraído de app/api/delivery/me/assignments/[id]/route.ts (F3).
+ */
+const DELIVERY_STATUS_MESSAGE: Record<string, { title: string; body: string }> = {
+  picked_up: {
+    title: "Tu pedido fue recogido",
+    body: "El repartidor pasó a buscar tu pedido y va camino a la tienda.",
+  },
+  in_transit: {
+    title: "Tu pedido esta en camino",
+    body: "El repartidor salió hacia tu dirección. Llega en pocos minutos.",
+  },
+  delivered: {
+    title: "Tu pedido fue entregado",
+    body: "Listo. Esperamos que lo disfrutes.",
+  },
+  cancelled: {
+    title: "Tu pedido fue cancelado",
+    body: "El repartidor canceló el pedido. Buscamos otra solución.",
+  },
+};
+
+export const DeliveryNotifyDB = {
+  /**
+   * Notifica al cliente sobre un cambio de estado del delivery.
+   * Migrado desde notifyCustomerOfStatusChange() en el route handler (F3 sprint cleanup).
+   *
+   * Incluye:
+   *  - Idempotency: no duplica si ya existe tracking entry reciente (< 5 min).
+   *  - Crea DeliveryTracking entry para el historial.
+   *  - Envía WhatsApp queued (fire-and-forget, no rompe el flujo).
+   *
+   * TODO: cuando DeliveryTracking migre a Prisma schema, reemplazar
+   *       prisma.deliveryTracking.findFirst / create por DeliveryTrackingDB.add.
+   */
+  async notifyCustomerOnStatusChange(
+    tenantId: string,
+    orderId: string,
+    status: string,
+  ): Promise<void> {
+    const msg = DELIVERY_STATUS_MESSAGE[status];
+    if (!msg) return;
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true, customerName: true, customerPhone: true, tenantId: true },
+    });
+    if (!order || order.tenantId !== tenantId) return;
+
+    // Idempotency: skip si ya hay tracking entry reciente para este orderId+status.
+    const recent = await prisma.deliveryTracking.findFirst({
+      where: {
+        orderId, status,
+        createdAt: { gt: new Date(Date.now() - 5 * 60_000) },
+      },
+      select: { id: true },
+    });
+
+    if (!recent) {
+      await prisma.deliveryTracking.create({
+        data: {
+          id: `dt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          tenantId: order.tenantId,
+          orderId,
+          status,
+          description: msg.body,
+          actorType: "driver",
+        },
+      });
+    }
+
+    if (order.customerPhone) {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.buleje.pe";
+      const trackUrl = `${baseUrl}/tracking/${orderId}`;
+      const wa = [
+        msg.title,
+        "",
+        `Hola ${order.customerName ?? ""}, ${msg.body}`,
+        "",
+        "Mira el seguimiento en tiempo real:",
+        trackUrl,
+      ].join("\n");
+      const { sendWhatsAppQueued } = await import("@/lib/whatsapp");
+      await sendWhatsAppQueued(order.customerPhone, wa, {
+        tenantId: order.tenantId,
+        context: `delivery-status-${status}-${orderId}`,
+      }).catch((err) =>
+        logger.error("[DeliveryNotifyDB] whatsapp failed", {
+          error: String(err),
+          orderId,
+          tenantId,
+        }),
+      );
+    }
+  },
+};
+
 // ─── DeliveryRouteStopsDB ─────────────────────────────────────────────────────
 
 export const DeliveryRouteStopsDB = {
