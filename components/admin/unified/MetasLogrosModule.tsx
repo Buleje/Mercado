@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
   Target, Trophy, Flame, TrendingUp, TrendingDown, Pencil, Check, X, Calendar,
   Award, Rocket, Zap, Coins, Users, Star, Landmark, Sunrise, Smile,
-  Lock, Sparkles, ShoppingCart, BarChart3,
+  Lock, Sparkles, ShoppingCart, BarChart3, RefreshCw, AlertTriangle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -107,7 +107,28 @@ const CATEGORY_LABELS: Record<AchievementCategory, string> = {
 
 const LS_ACHIEVEMENTS = "achievements";
 const LS_STREAK       = "daily-streak";
-const LS_MONTHLY_GOAL = "monthly-goal";
+const LS_MONTHLY_GOAL = "monthly-goal"; // legacy global — usar getMonthlyGoalKey() en su lugar
+const MAX_MONTHLY_GOAL = 100_000_000; // S/100M cap defensa contra inputs absurdos
+const REFRESH_INTERVAL_MS = 30_000;
+
+// FIX 2026-05-07: tenant-scoped localStorage key — mismo patrón que daily.
+function getMonthlyGoalKey(): string {
+  if (typeof window === "undefined") return "monthly-goal:main";
+  const m = window.location.pathname.match(/^\/t\/([^/]+)/);
+  const slug = m ? decodeURIComponent(m[1]) : "main";
+  return `monthly-goal:${slug}`;
+}
+
+// FIX 2026-05-07: type guard para validar shape de cada sale.
+// SaleRecord tiene campos opcionales; este guard exige que los críticos
+// existan y sean del tipo correcto para no inflar NaN al sumar.
+function isValidSale(s: unknown): s is SaleRecord & { total: number; createdAt: string } {
+  if (!s || typeof s !== "object") return false;
+  const o = s as Record<string, unknown>;
+  return typeof o.total === "number"
+    && Number.isFinite(o.total)
+    && typeof o.createdAt === "string";
+}
 
 // ─── Confetti ─────────────────────────────────────────────────────────────────
 
@@ -141,24 +162,77 @@ function SemaMesTab() {
   const [monthlyGoal, setMonthlyGoal] = useState(50000);
   const [editing, setEditing]         = useState(false);
   const [tempGoal, setTempGoal]       = useState("");
+  const [editError, setEditError]     = useState<string | null>(null);
   const [sales, setSales]             = useState<SaleRecord[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const fetchAbortRef = useRef<AbortController | null>(null);
 
+  // FIX 2026-05-07 (B1): tenant-scoped key
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(LS_MONTHLY_GOAL);
+      // Migración soft: si hay valor en la key vieja "monthly-goal" pero no en
+      // la tenant-scoped, migrarlo y borrar el global.
+      const tenantKey = getMonthlyGoalKey();
+      const stored = localStorage.getItem(tenantKey) ?? localStorage.getItem(LS_MONTHLY_GOAL);
       const n = stored ? Number(stored) : NaN;
-      if (Number.isFinite(n) && n > 0) setMonthlyGoal(n);
+      if (Number.isFinite(n) && n > 0) {
+        setMonthlyGoal(n);
+        if (!localStorage.getItem(tenantKey)) {
+          localStorage.setItem(tenantKey, String(n));
+          localStorage.removeItem(LS_MONTHLY_GOAL);
+        }
+      }
     } catch { /* ignore */ }
-
-    void (async () => {
-      try {
-        const res = await fetch("/api/sales?limit=1000", { credentials: "include" });
-        if (!res.ok) return;
-        const data = await res.json();
-        setSales(Array.isArray(data) ? data : []);
-      } catch { /* silent */ }
-    })();
   }, []);
+
+  // FIX 2026-05-07 (B2 + B4 + B5): fetch con AbortController, validación
+  // de shape, cache: 'no-store'. Nada de race en unmount, nada de NaN.
+  const fetchSales = useCallback(async () => {
+    fetchAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    fetchAbortRef.current = ctrl;
+    try {
+      const res = await fetch("/api/sales?limit=1000", {
+        credentials: "include",
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}`);
+      }
+      const raw: unknown = await res.json();
+      const list = Array.isArray(raw) ? raw : [];
+      setSales(list.filter(isValidSale) as SaleRecord[]);
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      setError(e instanceof Error ? e.message : "Error al cargar ventas");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // FIX 2026-05-07 (B3): polling 30s con visibility-pause como en daily.
+  useEffect(() => {
+    void fetchSales();
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!interval) interval = setInterval(() => void fetchSales(), REFRESH_INTERVAL_MS); };
+    const stop = () => { if (interval) { clearInterval(interval); interval = null; } };
+    if (typeof document !== "undefined" && document.visibilityState === "visible") start();
+    const onVis = () => {
+      if (document.visibilityState === "visible") { void fetchSales(); start(); }
+      else stop();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
+      fetchAbortRef.current?.abort();
+    };
+  }, [fetchSales]);
 
   // ─── Stats mensuales + comparativos ─────────────────────────────────────
   const stats = useMemo(() => {
@@ -228,14 +302,42 @@ function SemaMesTab() {
   }, [sales, monthlyGoal]);
 
   const pct = Math.min(100, monthlyGoal > 0 ? (stats.monthTotal / monthlyGoal) * 100 : 0);
-  const barColor = pct >= 70 ? "bg-[var(--accent-soft)]" : pct >= 30 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
+  // FIX 2026-05-07 (B10): thresholds consistentes con DailyGoalTracker (50/80/100)
+  const barColor =
+    pct >= 100 ? "bg-[var(--data-success-500)]" :
+    pct >= 80  ? "bg-primary" :
+    pct >= 50  ? "bg-[var(--data-warning-500)]" :
+    "bg-[var(--data-error-500)]";
+  const remaining = Math.max(0, monthlyGoal - stats.monthTotal);
 
+  // FIX 2026-05-07 (F1): alerta urgente — > 70% del mes Y < 50% de meta.
+  const isUrgent = useMemo(() => {
+    if (pct >= 100) return null;
+    const monthFraction = stats.today / stats.daysInMonth;
+    const remainingDays = Math.max(1, stats.daysInMonth - stats.today);
+    if (monthFraction > 0.7 && pct < 50) {
+      return {
+        ratePerDay: Math.round(remaining / remainingDays),
+        remainingDays,
+      };
+    }
+    return null;
+  }, [pct, stats.today, stats.daysInMonth, remaining]);
+
+  // FIX 2026-05-07 (B8): validación visible con cap.
   const handleSave = () => {
     const val = Number(tempGoal);
-    if (Number.isFinite(val) && val > 0) {
-      setMonthlyGoal(val);
-      try { localStorage.setItem(LS_MONTHLY_GOAL, String(val)); } catch { /* ignore */ }
+    if (!Number.isFinite(val) || val <= 0) {
+      setEditError("Ingresá un monto mayor a 0");
+      return;
     }
+    if (val > MAX_MONTHLY_GOAL) {
+      setEditError(`Máximo: S/${MAX_MONTHLY_GOAL.toLocaleString("es-PE")}`);
+      return;
+    }
+    setEditError(null);
+    setMonthlyGoal(val);
+    try { localStorage.setItem(getMonthlyGoalKey(), String(val)); } catch { /* ignore */ }
     setEditing(false);
   };
 
@@ -251,6 +353,30 @@ function SemaMesTab() {
 
   return (
     <div className="space-y-4">
+      {/* Header: estado de carga + refresh manual + lastUpdated */}
+      <div className="flex items-center justify-end gap-2 text-xs text-[var(--text-tertiary)]">
+        {error && (
+          <span className="text-[var(--data-error-500)] font-semibold flex items-center gap-1">
+            ⚠ {error}
+          </span>
+        )}
+        {lastUpdated && !error && (
+          <span>Actualizado {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
+        )}
+        <button
+          type="button"
+          onClick={() => void fetchSales()}
+          disabled={loading}
+          aria-label="Refrescar datos"
+          className={cn(
+            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-primary hover:bg-[var(--accent-soft)] transition-colors",
+            loading && "opacity-50 cursor-not-allowed",
+          )}
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+        </button>
+      </div>
+
       {/* Card semanal con datos reales */}
       <WeeklyGoalCard sales={sales as never} />
 
@@ -261,6 +387,19 @@ function SemaMesTab() {
         <KPISimple label="Mejor día"       value={bestDayLabel}                       sub={stats.bestDayValue > 0 ? formatCurrency(stats.bestDayValue) : "—"} icon={Star}       />
         <KPISimple label="Días con meta"   value={`${stats.metDaysCount}/${stats.today}`}                              sub={`Meta diaria ${formatCurrency(stats.dailyTarget, { decimals: 0 })}`} icon={Target} />
       </div>
+
+      {/* FIX F1: alerta urgente si vas tarde */}
+      {isUrgent && !loading && !error && (
+        <div className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-[var(--data-error-500)]" strokeWidth={2.5} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-extrabold text-[var(--data-error-500)]">Te queda poco mes</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Necesitás vender <span className="font-bold text-[var(--text-primary)]">{formatCurrency(isUrgent.ratePerDay, { decimals: 0 })}</span> por día durante los próximos {isUrgent.remainingDays} días para alcanzar la meta. Activá una promo o llamá a clientes habituales.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Card mensual */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 space-y-4">
@@ -273,33 +412,47 @@ function SemaMesTab() {
           </div>
           {!editing ? (
             <button
-              onClick={() => { setTempGoal(String(monthlyGoal)); setEditing(true); }}
-              className="flex items-center gap-1 text-xs font-semibold text-[var(--text-tertiary)] hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
+              onClick={() => { setTempGoal(String(monthlyGoal)); setEditing(true); setEditError(null); }}
+              className="flex items-center gap-1 text-xs font-semibold text-[var(--text-tertiary)] hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-[var(--surface-sunken)]"
             >
               <Pencil className="w-3 h-3" /> Editar
             </button>
           ) : (
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-[var(--text-secondary)] mr-1">S/</span>
-              <input
-                type="number"
-                value={tempGoal}
-                onChange={(e) => setTempGoal(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                autoFocus
-                className="w-24 px-2 py-1 text-xs rounded-lg border border-[var(--rule-base)] bg-white outline-none focus:border-primary"
-              />
-              <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
-                <Check className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => setEditing(false)} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]">
-                <X className="w-3.5 h-3.5" />
-              </button>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-[var(--text-secondary)] mr-1">S/</span>
+                <input
+                  type="number"
+                  value={tempGoal}
+                  onChange={(e) => { setTempGoal(e.target.value); if (editError) setEditError(null); }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                  min={1}
+                  max={MAX_MONTHLY_GOAL}
+                  autoFocus
+                  aria-invalid={!!editError}
+                  aria-describedby={editError ? "monthly-goal-error" : undefined}
+                  className={cn(
+                    "w-28 px-2 py-1 text-xs rounded-lg border bg-white outline-none",
+                    editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
+                  )}
+                />
+                <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {editError && (
+                <p id="monthly-goal-error" role="alert" className="text-xs font-semibold text-[var(--data-error-500)]">
+                  {editError}
+                </p>
+              )}
             </div>
           )}
         </div>
 
-        <div className="h-4 rounded-full bg-gray-100 overflow-hidden">
+        <div className="h-4 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
           <div className={cn("h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out", barColor)} style={{ width: `${pct}%` }} />
         </div>
         <div className="flex items-center justify-between flex-wrap gap-2 text-sm">
@@ -363,8 +516,8 @@ function SemaMesTab() {
                     "aspect-square rounded flex items-center justify-center text-xs font-semibold border transition-colors",
                     isToday          ? "ring-2 ring-primary ring-offset-1 border-transparent" : "border-transparent",
                     hit              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30" :
-                    isPast && day > 0 ? "bg-[var(--data-error-50)] text-[var(--data-error-500)]" :
-                    "bg-gray-50 text-[var(--text-tertiary)]"
+                    isPast && day > 0 ? "bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]" :
+                    "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                   )}
                 >
                   {day}
@@ -377,10 +530,10 @@ function SemaMesTab() {
               <span className="inline-block w-3 h-3 rounded bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30" /> Cumplió
             </span>
             <span className="flex items-center gap-1 text-[var(--text-secondary)]">
-              <span className="inline-block w-3 h-3 rounded bg-[var(--data-error-50)]" /> No cumplió
+              <span className="inline-block w-3 h-3 rounded bg-[var(--data-error-500)]/10" /> No cumplió
             </span>
             <span className="flex items-center gap-1 text-[var(--text-secondary)]">
-              <span className="inline-block w-3 h-3 rounded bg-gray-50" /> Próximo
+              <span className="inline-block w-3 h-3 rounded bg-[var(--surface-sunken)]" /> Próximo
             </span>
           </div>
         </div>
