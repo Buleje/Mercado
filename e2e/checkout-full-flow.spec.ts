@@ -44,23 +44,58 @@ const SEL = {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Navega a la tienda, agrega el primer producto visible y abre el CartSidebar. */
+/** Navega a la tienda, agrega el primer producto visible y abre el CartSidebar.
+ *
+ * Flujo real: click en tarjeta de producto → abre QuickAddModal (role="dialog"
+ * aria-label="Agregar …") → click en "Agregar S/X.XX" → modal cierra → badge.
+ *
+ * NOTA: supprimimos FirstVisitCouponModal (STORAGE_KEY "first-visit-coupon-shown")
+ * vía localStorage ANTES de navegar; de lo contrario ese dialog intercepta el
+ * locator `[role="dialog"]` ya que aparece a los 5 s de cargar /tienda.
+ */
 async function agregarProductoYAbrirSidebar(page: Page): Promise<void> {
+  // Suprimir modal de cupón de bienvenida y limpiar carrito previo
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("first-visit-coupon-shown", "true");
+      localStorage.removeItem("cart");
+      localStorage.removeItem("buleje-cart");
+    } catch { /* silent */ }
+  });
+
   await page.goto("/tienda", { waitUntil: "domcontentloaded", timeout: 30_000 });
 
-  // Esperar al menos un botón "Agregar" en el catálogo
-  const btnAgregar = page
+  // Paso 1: click en el botón "Agregar al carrito" de la primera tarjeta.
+  // En /tienda este botón abre el QuickAddModal (UX intencional via QuickAddProvider).
+  const btnTarjeta = page
     .locator('button[aria-label^="Agregar"]')
     .first();
-  await btnAgregar.waitFor({ state: "visible", timeout: 20_000 });
-  await btnAgregar.click();
+  await btnTarjeta.waitFor({ state: "visible", timeout: 20_000 });
+  await btnTarjeta.click();
 
-  // Esperar a que el badge del carrito aparezca (span con aria-live="polite" hijo de cart-button)
+  // Paso 2: esperar el QuickAddModal.
+  // Selector discriminador: aria-label empieza con "Agregar " (producto) — no el
+  // FirstVisitCouponModal (aria-labelledby="welcome-coupon-title", sin aria-label).
+  const quickAddDialog = page.locator('[role="dialog"][aria-label^="Agregar"]');
+  await quickAddDialog.waitFor({ state: "visible", timeout: 10_000 });
+
+  // Paso 3: click en el CTA principal — texto dinámico "Agregar S/X.XX"
+  // No tiene data-testid; localizamos por rol + regex de precio.
+  const btnAgregarModal = quickAddDialog.getByRole("button", {
+    name: /^Agregar\s+S\//i,
+  });
+  await btnAgregarModal.waitFor({ state: "visible", timeout: 8_000 });
+  await btnAgregarModal.click();
+
+  // Paso 4: esperar a que el modal cierre (setTimeout 350 ms en handleAdd)
+  await quickAddDialog.waitFor({ state: "hidden", timeout: 5_000 });
+
+  // Paso 5: verificar badge del carrito (span[aria-live="polite"] dentro de cart-button)
   const cartBtn = page.locator(SEL.cartButton);
   const cartBadge = cartBtn.locator('span[aria-live="polite"]');
   await expect(cartBadge).toBeVisible({ timeout: 8_000 });
 
-  // Abrir el sidebar
+  // Paso 6: abrir el sidebar
   await cartBtn.click();
   await expect(page.locator(SEL.cartSidebar)).toBeVisible({ timeout: 8_000 });
 }

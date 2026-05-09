@@ -19,6 +19,7 @@
 import { Prisma } from "@/lib/generated/prisma/client";
 import { calculateHash, buildHashData } from "./hash-chain";
 import { logger } from "@/lib/logger";
+import { cacheStore } from "@/lib/cache";
 
 /**
  * Tables that contain personal data subject to Ley 29733.
@@ -39,31 +40,47 @@ const SENSITIVE_MODELS = new Set([
   "Cotizacion",
 ]);
 
-/** Map Prisma operation to a human-readable action */
+/**
+ * Ley 29733 art. 23-25: la norma exige registrar MODIFICACIONES sobre datos
+ * personales (creación, actualización, eliminación), NO lecturas.
+ * Auditar reads en storefront de alto tráfico saturaría ActivityLog con
+ * entradas sin valor legal y degradaría performance.
+ *
+ * executeRaw/executeRawUnsafe se tratan como write porque pueden contener
+ * UPDATE/DELETE/INSERT. queryRaw/queryRawUnsafe se tratan como read (pass-through).
+ */
+const WRITE_OPS = new Set([
+  "create",
+  "createMany",
+  "createManyAndReturn",
+  "update",
+  "updateMany",
+  "upsert",
+  "delete",
+  "deleteMany",
+  "executeRaw",
+  "executeRawUnsafe",
+]);
+
+/** Map Prisma write operation to a human-readable action */
 function resolveAction(
   operation: string,
-): "READ" | "CREATE" | "UPDATE" | "DELETE" | null {
+): "CREATE" | "UPDATE" | "DELETE" | "RAW_WRITE" | null {
   if (
-    operation === "findMany" ||
-    operation === "findFirst" ||
-    operation === "findUnique" ||
-    operation === "findFirstOrThrow" ||
-    operation === "findUniqueOrThrow" ||
-    operation === "count" ||
-    operation === "aggregate" ||
-    operation === "groupBy"
-  ) {
-    return "READ";
-  }
-  if (operation === "create" || operation === "createMany") return "CREATE";
+    operation === "create" ||
+    operation === "createMany" ||
+    operation === "createManyAndReturn"
+  )
+    return "CREATE";
   if (
     operation === "update" ||
     operation === "updateMany" ||
     operation === "upsert"
-  ) {
+  )
     return "UPDATE";
-  }
   if (operation === "delete" || operation === "deleteMany") return "DELETE";
+  if (operation === "executeRaw" || operation === "executeRawUnsafe")
+    return "RAW_WRITE";
   return null;
 }
 
@@ -143,39 +160,49 @@ async function writeAuditEntry(
 }
 
 /**
- * In-memory cache for the latest hash per tenant with TTL.
+ * Shared cache for the latest hash per tenant.
  *
- * Multi-instance risk (Vercel Fluid Compute): each warm instance has its own
- * Map, so two concurrent requests on different instances can produce diverging
- * chains if they both read "GENESIS" before the first write propagates.
+ * Key format : `audit:lasthash:{tenantId}`
+ * TTL        : 60 s (HASH_CACHE_TTL_SEC)
+ * Backend    : cacheStore from lib/cache.ts
+ *   - With REDIS_URL set  → RedisStore (ioredis/Upstash) — shared across ALL
+ *     Vercel instances, eliminates cross-instance chain divergence.
+ *   - Without REDIS_URL   → MemoryStore (single-process, safe for local dev).
  *
- * Mitigation:
- *  1. TTL_MS = 60 s — after expiry, the instance re-reads the true latest
- *     hash from the DB, healing any drift within ~60 s of the last write.
- *  2. invalidateHashCache(tenantId) is called synchronously after every
- *     successful write so the SAME instance doesn't serve a stale hash.
- *
- * Ideal fix (P1): replace with Upstash Redis so all instances share one hash.
- * The structure here (`latestHashCache.set/get/delete`) is intentionally
- * identical to Redis semantics to make that migration a 1-line change.
+ * Graceful degradation: if cacheStore.get/set throws (Redis down), we log a
+ * warning and fall through to DB — the chain never breaks, just one extra DB
+ * read per write cycle until Redis recovers.
  */
-const HASH_CACHE_TTL_MS = 60_000; // 60 seconds
+const HASH_CACHE_TTL_SEC = 60;
 
-interface CacheEntry {
-  hash: string;
-  expiresAt: number; // performance.now() epoch
-}
-
-const latestHashCache = new Map<string, CacheEntry>();
-
-/** Called after each successful audit write to keep same-instance cache fresh. */
-function invalidateHashCache(tenantId: string): void {
-  latestHashCache.delete(tenantId);
+function hashCacheKey(tenantId: string): string {
+  return `audit:lasthash:${tenantId}`;
 }
 
 /**
- * Get the previous hash for the chain. First checks in-memory cache (with TTL),
- * then falls back to a DB query for the latest entry.
+ * Update the shared cache with the freshly written hash.
+ * del() first to evict any stale value, then set() the fresh one.
+ * Called after every successful audit INSERT.
+ */
+function updateHashCache(tenantId: string, newHash: string): void {
+  try {
+    cacheStore.del(hashCacheKey(tenantId));
+    cacheStore.set(hashCacheKey(tenantId), newHash, HASH_CACHE_TTL_SEC);
+  } catch (e) {
+    // Non-fatal: next read falls back to DB
+    logger.warn("[audit/updateHashCache] cache update failed — next read will hit DB", {
+      err: e instanceof Error ? e.message : String(e),
+      tenantId,
+    });
+  }
+}
+
+/**
+ * Get the previous hash for the chain.
+ * Resolution order:
+ *   1. Shared cache (Redis when REDIS_URL is set, in-memory otherwise)
+ *   2. DB query (source of truth — also re-populates cache on hit)
+ *   3. "GENESIS" (first entry ever for this tenant)
  */
 async function getPreviousHash(
   prismaClient: {
@@ -183,9 +210,19 @@ async function getPreviousHash(
   },
   tenantId: string,
 ): Promise<string> {
-  const entry = latestHashCache.get(tenantId);
-  if (entry && performance.now() < entry.expiresAt) return entry.hash;
+  // 1. Cache hit — synchronous, sub-millisecond
+  let cached: string | null = null;
+  try {
+    cached = cacheStore.get<string>(hashCacheKey(tenantId));
+  } catch (e) {
+    logger.warn("[audit/getPreviousHash] cacheStore.get failed — falling back to DB", {
+      err: e instanceof Error ? e.message : String(e),
+      tenantId,
+    });
+  }
+  if (cached !== null) return cached;
 
+  // 2. DB fallback
   try {
     const rows = (await prismaClient.$queryRawUnsafe(
       `SELECT "detail" FROM "ActivityLog"
@@ -195,14 +232,17 @@ async function getPreviousHash(
     )) as Array<{ detail: string }>;
 
     if (rows.length > 0) {
-      const parsed = JSON.parse(rows[0].detail) as {
-        hash?: string;
-      };
+      const parsed = JSON.parse(rows[0].detail) as { hash?: string };
       if (parsed.hash) {
-        latestHashCache.set(tenantId, {
-          hash: parsed.hash,
-          expiresAt: performance.now() + HASH_CACHE_TTL_MS,
-        });
+        // Re-populate cache so subsequent reads (any instance) are fast
+        try {
+          cacheStore.set(hashCacheKey(tenantId), parsed.hash, HASH_CACHE_TTL_SEC);
+        } catch (e) {
+          logger.warn("[audit/getPreviousHash] cacheStore.set failed — cache not populated", {
+            err: e instanceof Error ? e.message : String(e),
+            tenantId,
+          });
+        }
         return parsed.hash;
       }
     }
@@ -213,6 +253,7 @@ async function getPreviousHash(
     );
   }
 
+  // 3. GENESIS — no prior entries for this tenant
   return "GENESIS";
 }
 
@@ -229,6 +270,13 @@ export const complianceAuditExtension = Prisma.defineExtension({
     $allOperations({ model, operation, args, query }) {
       // Only intercept sensitive models
       if (!model || !SENSITIVE_MODELS.has(model)) {
+        return query(args);
+      }
+
+      // Early return for read operations — zero audit overhead (WRITE_OPS set above).
+      // Reads no generan entrada en ActivityLog: Ley 29733 art. 23-25 solo exige
+      // registrar modificaciones, no consultas. Performance overhead ≈0 (Set.has O(1)).
+      if (!WRITE_OPS.has(operation)) {
         return query(args);
       }
 
@@ -260,10 +308,7 @@ export const complianceAuditExtension = Prisma.defineExtension({
             const entityId = extractEntityId(typedArgs);
 
             // Build detail string
-            const detail =
-              action === "READ"
-                ? `Queried ${model}`
-                : `${action} on ${model}${entityId ? ` (${entityId})` : ""}`;
+            const detail = `${action} on ${model}${entityId ? ` (${entityId})` : ""}`;
 
             // Get previous hash and compute new one
             // We need to access the raw client — use globalThis
@@ -298,14 +343,9 @@ export const complianceAuditExtension = Prisma.defineExtension({
             const hashData = buildHashData(entryData);
             const hash = calculateHash(hashData, previousHash);
 
-            // Invalidate stale cache entry before setting the fresh one.
-            // This ensures the SAME instance doesn't serve the old hash on the
-            // next write (avoids same-instance chain divergence).
-            invalidateHashCache(tenantId);
-            latestHashCache.set(tenantId, {
-              hash,
-              expiresAt: performance.now() + HASH_CACHE_TTL_MS,
-            });
+            // Update shared cache (del stale + set fresh) so THIS instance and
+            // all other Vercel instances see the new hash on the next write.
+            updateHashCache(tenantId, hash);
 
             await writeAuditEntry(globalPrisma, {
               ...entryData,

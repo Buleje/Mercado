@@ -15,7 +15,6 @@ import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
-import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, ComposedChart } from "recharts";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import ClienteFormModal from "./clientes/ClienteFormModal";
@@ -23,6 +22,10 @@ import ClienteFormModal from "./clientes/ClienteFormModal";
 import dynamic from "next/dynamic";
 import { csrfHeaders } from "@/lib/csrf-client";
 const FiadoFormModal = dynamic(() => import("./fiados/FiadoFormModal"), { ssr: false });
+const FiadoTendenciaCobroChart = dynamic(() => import("./FiadoTendenciaCobroChart"), {
+  ssr: false,
+  loading: () => <div className="h-[248px] animate-pulse bg-[var(--color-muted)] rounded-xl" />,
+});
 const FiadoModals = dynamic(() => import("./fiados/FiadoModals"), { ssr: false });
 const FiadoStats = dynamic(() => import("./fiados/FiadoStats"), { ssr: false });
 
@@ -225,77 +228,6 @@ function FiadoReliabilityBadge({ customerId, fiados }: { customerId: string; fia
     >
       {score.label}
     </span>
-  );
-}
-
-// ── Mejora 16: Gráfica de cobro mensual ──────────────────────────────────────
-
-function FiadoTendenciaCobro() {
-  const [chartData, setChartData] = useState<Array<{ mes: string; cobrados: number; nuevos: number; neto: number }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/analytics/fiado-analytics")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.tendencia12m && Array.isArray(data.tendencia12m)) {
-          const last6 = data.tendencia12m.slice(-6);
-          setChartData(last6.map((m: { mes?: string; month?: string; cobrados?: number; collected?: number; nuevos?: number; created?: number }) => {
-            const cobrados = m.cobrados ?? m.collected ?? 0;
-            const nuevos = m.nuevos ?? m.created ?? 0;
-            return {
-              mes: m.mes ?? m.month ?? "",
-              cobrados: Math.round(cobrados),
-              nuevos: Math.round(nuevos),
-              neto: Math.round(cobrados - nuevos),
-            };
-          }));
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
-        <div className="h-[200px] bg-gray-100 rounded-xl" />
-      </div>
-    );
-  }
-
-  if (chartData.length === 0) {
-    return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
-        <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Sin datos de fiados para mostrar grafica</p>
-      </div>
-    );
-  }
-
-  const lastNeto = chartData[chartData.length - 1]?.neto ?? 0;
-
-  return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-bold text-[var(--text-secondary)]">Tendencia de Cobro</p>
-        <StatusBadge
-          variant={lastNeto >= 0 ? "success" : "error"}
-          label={lastNeto >= 0 ? "Recuperando más de lo que prestas" : "Prestando mas de lo que cobras"}
-        />
-      </div>
-      <ResponsiveContainer minWidth={0} width="100%" height={200}>
-        <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-          <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `S/${v}`} />
-          <Tooltip formatter={(value: unknown, name: unknown) => { const v = Number(value); const n = String(name); return [`S/${v.toLocaleString("es-PE")}`, n === "cobrados" ? "Cobrados" : n === "nuevos" ? "Nuevos" : "Neto"]; }} />
-          <Legend formatter={(value: unknown) => { const v = String(value); return v === "cobrados" ? "Cobrados" : v === "nuevos" ? "Nuevos" : "Neto"; }} />
-          <Bar dataKey="cobrados" fill="var(--data-success)" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="nuevos" fill="var(--text-tertiary)" radius={[4, 4, 0, 0]} />
-          <Line type="monotone" dataKey="neto" stroke="var(--data-success)" strokeWidth={2} dot={{ r: 3 }} />
-        </ComposedChart>
-      </ResponsiveContainer>
-    </div>
   );
 }
 
