@@ -5,7 +5,6 @@
  * por `store.isPublished: true` para no exponer tiendas en draft.
  * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
  */
-export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { connection } from "next/server";

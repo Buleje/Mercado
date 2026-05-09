@@ -16,7 +16,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
 
 export async function GET(
   _req: NextRequest,

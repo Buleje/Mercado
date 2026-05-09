@@ -6,7 +6,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { verifyChain, type AuditEntry } from "@/lib/audit/hash-chain";
 import { logger } from "@/lib/logger";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit, applyRateLimitWithTenant } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 
 /**
@@ -43,9 +43,11 @@ interface DetailJson {
 }
 
 export async function GET(req: NextRequest) {
-  // 1. Rate limit — endpoint costoso (full table scan de ActivityLog)
-  const rl = await applyRateLimit(req, "STRICT", "compliance-verify-chain");
-  if (rl) return rl;
+  // 1. Rate limit IP — STRICT (10 req / 15 min). Endpoint costoso (full
+  // table scan de ActivityLog). Validamos antes que query/auth para no gastar
+  // ciclos en payloads malformados.
+  const rlIp = await applyRateLimit(req, "STRICT", "compliance-verify-chain");
+  if (rlIp) return rlIp;
 
   // 2. Validar query param
   const { searchParams } = req.nextUrl;
@@ -84,6 +86,18 @@ export async function GET(req: NextRequest) {
     }
     actorUsername = auth.username;
   }
+
+  // 3.5. Round 8 fix M002 — segunda barrera por tenantId (independiente de IP).
+  // Limita 30 verificaciones/hora por tenant aunque atacante rote IPs.
+  // Solo aplicable POST-auth para que tenantId sea confiable (no header).
+  const rlTenant = applyRateLimitWithTenant(
+    req,
+    "STRICT",
+    tenantId,
+    "compliance-verify-chain",
+    { maxReqs: 30, windowSec: 60 * 60 },
+  );
+  if (rlTenant) return rlTenant;
 
   logger.info("[compliance/verify-chain] Iniciando verificación", { tenantId, actor: actorUsername });
 

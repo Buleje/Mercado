@@ -155,6 +155,8 @@ vi.mock("@/lib/prisma", () => ({
     },
     customer: {
       findUnique: mockCustomerFindUnique,
+      // Round 8: handler usa findFirst tras refactor checkout (74603411). Reusar mismo mock.
+      findFirst:  mockCustomerFindUnique,
     },
     customerNotification: {
       create: mockCustomerNotifCreate,
@@ -186,6 +188,7 @@ vi.mock("@/lib/tenant", () => ({
     },
     customer: {
       findUnique: mockCustomerFindUnique,
+      findFirst:  mockCustomerFindUnique,
     },
     customerNotification: {
       create: mockCustomerNotifCreate,

@@ -193,7 +193,7 @@ describe("HOTFIX-C3 — customer-lookup tenantId filter", () => {
     });
   });
 
-  it("retorna customer con datos si pertenece al tenant del request", async () => {
+  it("retorna customer con flags (no PII) si pertenece al tenant del request", async () => {
     prismaMocks.customerFindFirst.mockResolvedValue({
       name: "Juan",
       tipoDocumento: "DNI",
@@ -210,7 +210,9 @@ describe("HOTFIX-C3 — customer-lookup tenantId filter", () => {
     const res = await GET(req);
     const json = await res.json();
     expect(res.status).toBe(200);
-    expect(json.customer).toEqual({ name: "Juan", dni: "12345678" });
+    // Round 8: el endpoint devuelve flags (no PII) — auto-fill sin exponer
+    // name+dni reales en bundle público. Updated 2026-05-09.
+    expect(json.customer).toEqual({ exists: true, hasDni: true });
   });
 
   it("retorna null si no hay tenantId en el request", async () => {

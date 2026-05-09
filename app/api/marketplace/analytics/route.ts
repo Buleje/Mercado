@@ -11,7 +11,6 @@ import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/marketplace/analytics

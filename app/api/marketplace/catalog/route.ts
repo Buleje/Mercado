@@ -13,7 +13,6 @@ import { logger } from "@/lib/logger";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/marketplace/catalog

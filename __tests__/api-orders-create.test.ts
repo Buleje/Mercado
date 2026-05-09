@@ -159,6 +159,7 @@ vi.mock("@/lib/prisma", () => ({
     },
     customer: {
       findUnique: mockCustomerFindUnique,
+      findFirst:  mockCustomerFindUnique,
     },
     customerNotification: {
       create: mockCustomerNotifCreate,
@@ -191,6 +192,7 @@ vi.mock("@/lib/tenant", () => ({
     },
     customer: {
       findUnique: mockCustomerFindUnique,
+      findFirst:  mockCustomerFindUnique,
     },
     customerNotification: {
       create: mockCustomerNotifCreate,

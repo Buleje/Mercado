@@ -1,9 +1,7 @@
-export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
-import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { invalidateByPrefix } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";

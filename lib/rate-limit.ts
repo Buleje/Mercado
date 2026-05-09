@@ -485,6 +485,58 @@ export function applyRateLimit(
   return null;
 }
 
+/**
+ * Round 8 (2026-05-09 — security M002): doble barrera independiente IP + tenantId.
+ *
+ * Use cases: endpoints sensibles donde un atacante podría rotar IPs (botnet,
+ * proxy rotativo) para vaciar el bucket por IP. La segunda barrera por
+ * tenantId tiene ventana más larga y es independiente — limita el daño
+ * agregado al recurso aunque la fuente cambie.
+ *
+ * Caller MUST pass a tenantId verificado (auth.tenantId), NO el header
+ * x-tenant-id falsificable.
+ *
+ * @example
+ *   const rl = applyRateLimitWithTenant(req, "STRICT", auth.tenantId, "verify-chain");
+ *   if (rl) return rl;
+ */
+export function applyRateLimitWithTenant(
+  req: { headers: { get(name: string): string | null } },
+  preset: keyof typeof RateLimitPresets,
+  tenantId: string,
+  keyPrefix: string,
+  tenantOpts?: { maxReqs: number; windowSec: number },
+): Response | null {
+  // Bucket 1: por IP (ventana corta, presets normales)
+  const ipResult = applyRateLimit(req, preset, keyPrefix);
+  if (ipResult) return ipResult;
+
+  // Bucket 2: por tenantId (default 30 req/hora — independiente de IP)
+  const { maxReqs, windowSec } = tenantOpts ?? { maxReqs: 30, windowSec: 60 * 60 };
+  const result = rateLimit(`${keyPrefix}:tenant:${tenantId}`, maxReqs, windowSec);
+
+  if (!result.allowed) {
+    const retryAfter = Math.ceil((result.resetAt - Date.now()) / 1000);
+    return new Response(
+      JSON.stringify({
+        error: "Too many requests",
+        message: "Límite por tenant excedido. Intenta más tarde.",
+        retryAfter,
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": retryAfter.toString(),
+          "X-RateLimit-Scope": "tenant",
+        },
+      },
+    );
+  }
+
+  return null;
+}
+
 /** Create rate limit headers to include in successful responses */
 export function createRateLimitHeaders(
   result: RateLimitResult,

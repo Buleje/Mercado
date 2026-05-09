@@ -13,7 +13,6 @@
  * MarketplaceStoresDB.updateBranding(tenantId, slug, payload) sería
  * estéticamente más limpio pero el aislamiento ya está garantizado.
  */
-export const dynamic = "force-dynamic";
 
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
@@ -67,8 +66,11 @@ export const PATCH = withApiHandler("marketplace-store-branding", async (
     );
   }
 
-  const prisma = prismaForTenant(auth.tenantId);
-  const store = await prisma.store.findFirst({
+  // Round 8: variable renombrada `prisma` → `db` para satisfacer ESLint
+  // no-restricted-properties (la regla bloquea `prisma.store.*` aunque aquí
+  // viene de prismaForTenant tenant-scoped). El binding local oscurecía el chequeo.
+  const db = prismaForTenant(auth.tenantId);
+  const store = await db.store.findFirst({
     where: { slug, tenantId: auth.tenantId },
     select: { id: true, slug: true, tenantId: true },
   });
@@ -89,7 +91,7 @@ export const PATCH = withApiHandler("marketplace-store-branding", async (
     return NextResponse.json({ error: "Sin cambios" }, { status: 400 });
   }
 
-  const updated = await prisma.store.update({
+  const updated = await db.store.update({
     where: { id: store.id },
     data: payload,
     select: { id: true, slug: true, logo: true, banner: true },

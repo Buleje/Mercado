@@ -101,14 +101,12 @@ export default function ReporteMensualTab() {
     setResult(null);
 
     try {
-      const cronSecret = process.env.NEXT_PUBLIC_CRON_SECRET_PREVIEW ?? "";
+      // Round 8 fix: usar proxy admin server-side (lee CRON_SECRET de env real,
+      // no de bundle público). Antes leía NEXT_PUBLIC_CRON_SECRET_PREVIEW que
+      // nunca se definía → siempre 401. Patrón idéntico a /api/admin/webhook-replay.
       const res = await fetch(
-        `/api/cron/monthly-report?year=${year}&month=${month}`,
-        {
-          headers: {
-            Authorization: `Bearer ${cronSecret}`,
-          },
-        },
+        `/api/admin/monthly-report?year=${year}&month=${month}`,
+        { credentials: "same-origin" },
       );
       const json: ReportResult = await res.json();
 
@@ -143,10 +141,9 @@ export default function ReporteMensualTab() {
   async function handleDownload(y: number, m: number) {
     setLoadingHist(true);
     try {
-      // El endpoint retorna JSON con ok:true. Para descargar el PDF directamente,
-      // hacemos fetch y redirigimos al URL con los params — en producción se
-      // puede extender el endpoint para devolver Content-Type: application/pdf
-      const url = `/api/cron/monthly-report?year=${y}&month=${m}&download=1`;
+      // Round 8 fix: usar proxy admin (cookie httpOnly admin) en lugar de
+      // hit directo al cron endpoint. window.open envía la cookie.
+      const url = `/api/admin/monthly-report?year=${y}&month=${m}&download=1`;
       window.open(url, "_blank");
     } finally {
       setLoadingHist(false);
