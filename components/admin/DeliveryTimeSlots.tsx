@@ -175,7 +175,7 @@ export default function DeliveryTimeSlots() {
                 <button
                   onClick={() => setMaxOrders(slot.id, -1)}
                   disabled={!slot.active || slot.maxOrders <= 1}
-                  className="w-6 h-6 rounded-md bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-6 h-6 rounded-md bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   aria-label="Reducir"
                 >
                   <Minus size={11} />
@@ -192,7 +192,7 @@ export default function DeliveryTimeSlots() {
                 <button
                   onClick={() => setMaxOrders(slot.id, 1)}
                   disabled={!slot.active || slot.maxOrders >= 50}
-                  className="w-6 h-6 rounded-md bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-6 h-6 rounded-md bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   aria-label="Aumentar"
                 >
                   <Plus size={11} />

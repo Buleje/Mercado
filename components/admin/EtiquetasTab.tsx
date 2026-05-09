@@ -217,9 +217,9 @@ export default function EtiquetasTab() {
             <div>
               <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-foreground mb-2">Copias por producto</label>
               <div className="flex flex-wrap items-center gap-3">
-                <button onClick={() => setConfig(c => ({ ...c, copies: Math.max(1, c.copies - 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground font-bold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-accent">−</button>
+                <button onClick={() => setConfig(c => ({ ...c, copies: Math.max(1, c.copies - 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground font-bold flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-accent">−</button>
                 <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground w-6 text-center">{config.copies}</span>
-                <button onClick={() => setConfig(c => ({ ...c, copies: Math.min(10, c.copies + 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground font-bold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-accent">+</button>
+                <button onClick={() => setConfig(c => ({ ...c, copies: Math.min(10, c.copies + 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground font-bold flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-accent">+</button>
               </div>
             </div>
 
@@ -246,7 +246,7 @@ export default function EtiquetasTab() {
 
           {/* Preview */}
           {selected.size > 0 && (
-            <div className="bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
               <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2">Vista previa (#1)</p>
               {(() => {
                 const p = products.find(pr => pr.id === Array.from(selected)[0]);
@@ -286,7 +286,7 @@ export default function EtiquetasTab() {
           </div>
 
           {/* Select all bar */}
-          <div className="flex items-center justify-between bg-gray-50 dark:bg-surface rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5">
+          <div className="flex items-center justify-between bg-[var(--surface-alt)] dark:bg-surface rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5">
             <label className="flex flex-wrap items-center gap-2.5 cursor-pointer">
               <button onClick={toggleAll} className="text-[var(--text-secondary)] dark:text-foreground">
                 {allFiltered ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
@@ -336,7 +336,7 @@ export default function EtiquetasTab() {
               {filtered.map(p => {
                 const sel = selected.has(p.id);
                 return (
-                  <div key={p.id} onClick={() => toggleSelect(p.id)} className={cn("flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 cursor-pointer transition-colors", sel ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-gray-50 dark:hover:bg-accent/50")}>
+                  <div key={p.id} onClick={() => toggleSelect(p.id)} className={cn("flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 cursor-pointer transition-colors", sel ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-[var(--surface-alt)] dark:hover:bg-accent/50")}>
                     <button className="shrink-0">
                       {sel ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />}
                     </button>

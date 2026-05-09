@@ -195,7 +195,7 @@ export default function CustomerHeatmap() {
                         </button>
                       </div>
                     </div>
-                    <div className="relative h-6 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div className="relative h-6 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                       <div
                         className={cn(
                           "flex h-full items-center justify-end pr-2 transition-all duration-[var(--dur-slow)]",
@@ -211,7 +211,7 @@ export default function CustomerHeatmap() {
                       </div>
                     </div>
                     {isExpanded && (
-                      <div className="mt-2 flex flex-wrap gap-1.5 rounded-lg bg-gray-50 p-3">
+                      <div className="mt-2 flex flex-wrap gap-1.5 rounded-lg bg-[var(--surface-alt)] p-3">
                         {z.customers.map((name, i) => (
                           <span
                             key={i}

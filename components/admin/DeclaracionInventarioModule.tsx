@@ -263,9 +263,9 @@ export default function DeclaracionInventarioModule() {
       {/* Mejora 18: Resumen ejecutivo siempre visible */}
       {resumenLoading ? (
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6  animate-pulse">
-          <div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-1/3 mb-3" />
-          <div className="h-8 bg-gray-200 dark:bg-white/10 rounded w-1/2 mb-2" />
-          <div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-2/3" />
+          <div className="h-4 bg-[var(--rule-soft)] dark:bg-white/10 rounded w-1/3 mb-3" />
+          <div className="h-8 bg-[var(--rule-soft)] dark:bg-white/10 rounded w-1/2 mb-2" />
+          <div className="h-3 bg-[var(--rule-soft)] dark:bg-white/10 rounded w-2/3" />
         </div>
       ) : resumen ? (() => {
         const valorTotal = resumen.valorCosto ?? 0;
@@ -368,7 +368,7 @@ export default function DeclaracionInventarioModule() {
               <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-secondary)]">Tu contador puede usar este archivo para la declaracion ante SUNAT</span>
             </button>
             <button onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] dark:hover:bg-white/10 transition-colors">
               <Printer className="h-4 w-4" /> Imprimir
             </button>
           </div>
@@ -441,7 +441,7 @@ export default function DeclaracionInventarioModule() {
               </div>
             );
           })() : (
-            <div className="bg-gray-50 dark:bg-white/5 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+            <div className="bg-[var(--surface-alt)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
               <p className="text-xs text-[var(--text-tertiary)]">Primera declaracion -- sin datos anteriores para comparar</p>
             </div>
           )}
@@ -456,7 +456,7 @@ export default function DeclaracionInventarioModule() {
               return (
                 <div key={category} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
                   {/* Category header */}
-                  <div className="px-4 py-3 bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between">
+                  <div className="px-4 py-3 bg-[var(--surface-alt)] dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Layers className="h-4 w-4 text-primary" />
                       <span className="font-bold text-sm text-[var(--text-primary)]">{category}</span>
@@ -508,7 +508,7 @@ export default function DeclaracionInventarioModule() {
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-hidden">
         <button
           onClick={() => setShowHistorial(!showHistorial)}
-          className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" />
@@ -560,7 +560,7 @@ export default function DeclaracionInventarioModule() {
                           <td className="px-4 py-2 text-center">
                             <button
                               onClick={() => setComparingIdx(comparingIdx === realIdx ? null : realIdx)}
-                              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-primary transition-colors"
+                              className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-primary transition-colors"
                               title="Comparar"
                             >
                               <Eye className="h-3.5 w-3.5" />
@@ -580,7 +580,7 @@ export default function DeclaracionInventarioModule() {
       {/* Empty state when no data yet */}
       {!data && !loading && !error && (
         <div className="text-center py-16 px-4">
-          <div className="h-16 w-16 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+          <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center mx-auto mb-4">
             <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
           </div>
           <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin declaraciones</CardTitle>

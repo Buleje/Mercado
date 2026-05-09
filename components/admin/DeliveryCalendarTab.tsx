@@ -151,7 +151,7 @@ export default function DeliveryCalendarTab() {
       <div className="flex items-center gap-2">
         <button
           onClick={() => setWeekOffset(w => w - 1)}
-          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition"
         >
           <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
@@ -171,7 +171,7 @@ export default function DeliveryCalendarTab() {
                     ? "bg-primary text-white"
                     : isToday
                     ? "bg-primary/10 text-primary border border-primary/30"
-                    : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                    : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
                 )}
               >
                 <span className="capitalize text-[length:var(--ts-2xs)] font-semibold">{day}</span>
@@ -188,7 +188,7 @@ export default function DeliveryCalendarTab() {
         </div>
         <button
           onClick={() => setWeekOffset(w => w + 1)}
-          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition"
         >
           <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
@@ -242,7 +242,7 @@ export default function DeliveryCalendarTab() {
                     return (
                       <div
                         key={s.id}
-                        className="flex items-start gap-2 text-xs bg-gray-50 dark:bg-surface rounded-xl px-3 py-2.5 group"
+                        className="flex items-start gap-2 text-xs bg-[var(--surface-alt)] dark:bg-surface rounded-xl px-3 py-2.5 group"
                       >
                         <span className={cn("mt-1 w-2 h-2 rounded-full shrink-0", stCfg.dot)} />
                         <div className="flex-1 min-w-0">
@@ -311,7 +311,7 @@ export default function DeliveryCalendarTab() {
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">
                 Asignar pedido — {SLOT_CONFIG[assigningSlot].label}
               </CardTitle>
-              <button onClick={() => setAssigningSlot(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface">
+              <button onClick={() => setAssigningSlot(null)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">
                 <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             </div>

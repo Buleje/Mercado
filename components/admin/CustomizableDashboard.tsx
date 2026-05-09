@@ -272,7 +272,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
                 <button
                   onClick={() => moveUp(index)}
                   disabled={index === 0}
-                  className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
+                  className="p-0.5 rounded hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
                   aria-label="Subir"
                 >
                   <ChevronUp className="h-3 w-3" />
@@ -280,7 +280,7 @@ export function CustomizableDashboard({ tenantId = "main" }: CustomizableDashboa
                 <button
                   onClick={() => moveDown(index)}
                   disabled={index === widgets.length - 1}
-                  className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
+                  className="p-0.5 rounded hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 disabled:opacity-30 transition-colors"
                   aria-label="Bajar"
                 >
                   <ChevronDown className="h-3 w-3" />

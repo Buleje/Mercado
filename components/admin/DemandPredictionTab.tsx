@@ -296,7 +296,7 @@ export default function DemandPredictionTab() {
                   <div key={i} className="flex flex-wrap items-center gap-3 text-sm">
                     <span className="flex-1 truncate font-medium">{p.productName}</span>
                     <span className="font-extrabold text-primary">{p.estimatedDemand} uds</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${p.confidence === "alta" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : p.confidence === "media" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-gray-100 text-[var(--text-secondary)]"}`}>{p.confidence}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${p.confidence === "alta" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : p.confidence === "media" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>{p.confidence}</span>
                   </div>
                 ))}
               </div>

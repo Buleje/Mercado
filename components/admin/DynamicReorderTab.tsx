@@ -138,7 +138,7 @@ export default function DynamicReorderTab() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+              <tr className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                 <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Producto</th>
                 <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Stock</th>
                 <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Venta/día</th>
@@ -153,7 +153,7 @@ export default function DynamicReorderTab() {
               {filtered.map(p => {
                 const cfg = STATUS_CONFIG[p.status];
                 return (
-                  <tr key={p.id} onClick={() => setDetail(p)} className="border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface cursor-pointer transition-colors">
+                  <tr key={p.id} onClick={() => setDetail(p)} className="border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface cursor-pointer transition-colors">
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{p.name}</p>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{p.sku} · {p.category}</p>
@@ -190,7 +190,7 @@ export default function DynamicReorderTab() {
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.name}</CardTitle>
-              <button onClick={() => setDetail(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
+              <button onClick={() => setDetail(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
@@ -230,7 +230,7 @@ export default function DynamicReorderTab() {
       )}
 
       {/* Methodology */}
-      <div className="bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+      <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
         <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm mb-2">Metodología del cálculo</CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-[var(--text-secondary)] dark:text-muted">
           <div><strong>ROP (Punto de Reorden):</strong> Venta diaria × Lead Time + Stock Seguridad. Ajustado dinámicamente según tendencia de ventas.</div>

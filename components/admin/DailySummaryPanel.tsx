@@ -61,7 +61,7 @@ export default function DailySummaryPanel() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
+        <div className="h-8 w-48 bg-[var(--rule-soft)] dark:bg-gray-800 rounded-lg animate-pulse" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-24 bg-[var(--surface-sunken)]/40 rounded-xl animate-pulse" />
@@ -174,7 +174,7 @@ export default function DailySummaryPanel() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Hourly Sales Chart */}
         {hours.length > 0 && (
-          <div className="sm:col-span-2 rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
+          <div className="sm:col-span-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)]/50 dark:bg-gray-900/30 p-3">
             <div className="flex items-center gap-1.5 mb-2.5">
               <TrendingUp className="h-4 w-4 text-primary" />
               <span className="text-xs font-bold text-[var(--text-secondary)]">Ventas por hora</span>
@@ -203,7 +203,7 @@ export default function DailySummaryPanel() {
                           ? "bg-primary"
                           : hasSales
                           ? "bg-primary/40 group-hover:bg-primary/70"
-                          : "bg-gray-200 dark:bg-gray-700"
+                          : "bg-[var(--rule-soft)] dark:bg-gray-700"
                       }`}
                       style={{ height: `${Math.max(pct, 2)}%` }}
                     />
@@ -221,7 +221,7 @@ export default function DailySummaryPanel() {
         )}
 
         {/* Top Products */}
-        <div className="rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)]/50 dark:bg-gray-900/30 p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
             <Package className="h-4 w-4 text-primary" />
             <span className="text-xs font-bold text-[var(--text-secondary)]">Top productos</span>
@@ -249,7 +249,7 @@ export default function DailySummaryPanel() {
         </div>
 
         {/* Payment Methods */}
-        <div className="rounded-xl border border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30 p-3">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)]/50 dark:bg-gray-900/30 p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
             <CreditCard className="h-4 w-4 text-[var(--text-secondary)]" />
             <span className="text-xs font-bold text-[var(--text-secondary)]">Métodos de pago</span>
@@ -272,7 +272,7 @@ export default function DailySummaryPanel() {
                         S/{amount.toFixed(2)}
                       </span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-[var(--rule-soft)] dark:bg-gray-700 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
                         style={{ width: `${pct}%` }}
@@ -329,7 +329,7 @@ function AlertCard({
       className={`rounded-xl p-3 border ${
         alert
           ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 bg-[var(--data-error-50)]/50 dark:bg-[var(--data-error-500)]/5"
-          : "border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-900/30"
+          : "border-[var(--rule-base)] bg-[var(--surface-alt)]/50 dark:bg-gray-900/30"
       }`}
     >
       <Icon className={`h-4 w-4 ${color} mb-1`} />

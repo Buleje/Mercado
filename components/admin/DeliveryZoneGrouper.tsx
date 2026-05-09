@@ -96,7 +96,7 @@ export default function DeliveryZoneGrouper() {
             {orders.length} pedido{orders.length !== 1 ? "s" : ""} por entregar
           </p>
         </div>
-        <button onClick={load} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+        <button onClick={load} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
           <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
         </button>
       </div>
@@ -134,7 +134,7 @@ export default function DeliveryZoneGrouper() {
                   <div className="border-t border-[var(--rule-soft)] dark:border-card-border divide-y divide-gray-50 dark:divide-card-border">
                     {group.orders.map((order, i) => (
                       <div key={order.id} className="px-3.5 py-2.5 flex items-center gap-3">
-                        <span className="h-6 w-6 rounded-full bg-gray-100 dark:bg-accent flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] shrink-0">
+                        <span className="h-6 w-6 rounded-full bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] shrink-0">
                           {i + 1}
                         </span>
                         <div className="flex-1 min-w-0">

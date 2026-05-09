@@ -77,7 +77,7 @@ export function EmptyState({
               "min-h-11 px-4 py-2 rounded-xl text-sm font-semibold transition-colors",
               isPrimary
                 ? "bg-primary text-white hover:bg-primary/90"
-                : "bg-gray-100 dark:bg-surface text-[var(--text-primary)] dark:text-foreground hover:bg-gray-200 dark:hover:bg-card-border",
+                : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--rule-soft)] dark:hover:bg-card-border",
             ].join(" ");
 
             if (action.href) {

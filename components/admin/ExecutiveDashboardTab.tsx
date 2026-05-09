@@ -226,12 +226,12 @@ export default function ExecutiveDashboardTab() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <AdminTooltip content="Recargar todos los KPIs del dashboard">
-            <button onClick={load} aria-label="Actualizar datos" className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+            <button onClick={load} aria-label="Actualizar datos" className="p-2 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface hover:bg-[var(--rule-soft)] dark:hover:bg-accent transition-colors">
               <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
           </AdminTooltip>
           {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
-            <button key={p} onClick={() => setPeriod(p)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", period === p ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
+            <button key={p} onClick={() => setPeriod(p)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", period === p ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent")}>
               {PERIOD_LABELS[p]}
             </button>
           ))}
@@ -306,7 +306,7 @@ export default function ExecutiveDashboardTab() {
               <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group min-w-0" title={`${r.label}: ${fmt(r.value)}`}>
                 <div className="w-full flex flex-col justify-end rounded-t overflow-hidden" style={{ height: 96 }}>
                   <div
-                    className={cn("w-full rounded-t transition-all duration-[var(--dur-base)] group-hover:opacity-80", r.value > 0 ? "bg-primary" : "bg-gray-100 dark:bg-surface")}
+                    className={cn("w-full rounded-t transition-all duration-[var(--dur-base)] group-hover:opacity-80", r.value > 0 ? "bg-primary" : "bg-[var(--surface-sunken)] dark:bg-surface")}
                     style={{ height: `${(r.value / maxChart) * 96}px`, minHeight: 2 }}
                   />
                 </div>
@@ -365,7 +365,7 @@ export default function ExecutiveDashboardTab() {
                           <span className="text-[var(--text-tertiary)] dark:text-muted">Meta: {h.target}</span>
                           <span className="font-bold text-[var(--text-secondary)] dark:text-foreground">{pct.toFixed(0)}%</span>
                         </div>
-                        <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full transition-all", h.status === "ok" ? "bg-[var(--accent-soft)]" : h.status === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${pct}%` }} />
                         </div>
                       </>

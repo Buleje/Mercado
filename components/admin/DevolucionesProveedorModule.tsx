@@ -296,7 +296,7 @@ export default function DevolucionesProveedorModule() {
             onClick={fetchDevoluciones}
             disabled={loading}
             aria-label="Recargar devoluciones"
-            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
           >
             <RefreshCw className={cn("h-4 w-4 text-[var(--text-secondary)]", loading && "animate-spin")} />
           </button>
@@ -389,7 +389,7 @@ export default function DevolucionesProveedorModule() {
             <CardTitle className="font-semibold text-[var(--text-primary)] text-sm">Nueva devolución</CardTitle>
             <button
               onClick={() => setMostrarFormulario(false)}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
@@ -400,7 +400,7 @@ export default function DevolucionesProveedorModule() {
             <div className="space-y-1">
               <label className="text-xs font-medium text-[var(--text-secondary)]">Proveedor *</label>
               {loadingProveedores ? (
-                <div className="h-10 bg-gray-100 rounded-xl animate-pulse" />
+                <div className="h-10 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
               ) : (
                 <select
                   value={proveedorId}
@@ -492,7 +492,7 @@ export default function DevolucionesProveedorModule() {
           <div className="flex justify-end gap-2 pt-1">
             <button
               onClick={() => setMostrarFormulario(false)}
-              className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors min-h-[44px]"
+              className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-lg transition-colors min-h-[44px]"
             >
               Cancelar
             </button>
@@ -580,7 +580,7 @@ export default function DevolucionesProveedorModule() {
 
                 {/* Detalle expandido */}
                 {expandedId === dev.id && (
-                  <div className="border-t border-[var(--rule-soft)] px-4 py-3 space-y-3 bg-gray-50/50">
+                  <div className="border-t border-[var(--rule-soft)] px-4 py-3 space-y-3 bg-[var(--surface-alt)]/50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <p className="text-xs font-medium text-[var(--text-secondary)] mb-1">Motivo</p>
@@ -641,7 +641,7 @@ export default function DevolucionesProveedorModule() {
               setShowReportes(v => !v);
             }
           }}
-          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+          className="w-full flex items-center justify-between px-4 py-3 bg-[var(--surface-alt)] hover:bg-[var(--surface-sunken)] transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-2">
             <BarChart2 className="h-4 w-4 text-primary" />
@@ -719,7 +719,7 @@ export default function DevolucionesProveedorModule() {
                             <span className="text-xs text-[var(--text-primary)] truncate">{motivo}</span>
                             <span className="text-xs font-bold text-[var(--text-primary)] ml-2">{total}</span>
                           </div>
-                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                             <div
                               className="h-full bg-secondary rounded-full transition-all"
                               style={{ width: `${(total / max) * 100}%` }}
@@ -745,7 +745,7 @@ export default function DevolucionesProveedorModule() {
                             <span className="text-xs text-[var(--text-primary)] truncate">{proveedor}</span>
                             <span className="text-xs font-bold text-[var(--text-primary)] ml-2">{total}</span>
                           </div>
-                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                             <div
                               className="h-full bg-primary rounded-full transition-all"
                               style={{ width: `${(total / max) * 100}%` }}

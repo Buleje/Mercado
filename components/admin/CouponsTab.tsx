@@ -269,7 +269,7 @@ export default function CouponsTab() {
                     </button>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" checked={rule.enabled} onChange={() => toggleRule(rule.id)} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-[var(--color-card)] after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      <div className="w-11 h-6 bg-[var(--rule-soft)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-[var(--color-card)] after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                   </div>
                 </div>
@@ -288,7 +288,7 @@ export default function CouponsTab() {
           </CardTitle>
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {generatedLogs.map(log => (
-              <div key={log.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-surface rounded-xl text-sm">
+              <div key={log.id} className="flex items-center justify-between p-3 bg-[var(--surface-alt)] dark:bg-surface rounded-xl text-sm">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{log.customer}</p>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
@@ -328,7 +328,7 @@ export default function CouponsTab() {
                   "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
                   couponScope === "tienda"
                     ? "bg-[var(--accent-soft)] text-white "
-                    : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+                    : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent"
                 )}
               >
                 <Ticket className="h-4 w-4" />
@@ -341,7 +341,7 @@ export default function CouponsTab() {
                   "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
                   couponScope === "plataforma"
                     ? "bg-[var(--accent-600,var(--accent))] text-white "
-                    : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+                    : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent"
                 )}
               >
                 <Sparkles className="h-4 w-4" />
@@ -390,7 +390,7 @@ export default function CouponsTab() {
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
             <button onClick={handleCreate} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition"><Check className="h-4 w-4" />Crear</button>
-            <button onClick={() => setShowForm(false)} className="flex flex-wrap items-center gap-2 bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-gray-200 transition"><X className="h-4 w-4" />Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="flex flex-wrap items-center gap-2 bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-[var(--rule-soft)] transition"><X className="h-4 w-4" />Cancelar</button>
           </div>
         </div>
       )}
@@ -451,7 +451,7 @@ export default function CouponsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Configurar Regla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
               </div>
-              <button onClick={() => setShowRuleConfig(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowRuleConfig(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -490,7 +490,7 @@ export default function CouponsTab() {
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary" />
                 </div>
               )}
-              <div className="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
+              <div className="flex flex-wrap items-center gap-3 p-3 bg-[var(--surface-alt)] dark:bg-surface rounded-xl">
                 <input type="checkbox" id="ruleAutoSend" checked={editingRule.config.autoSend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, autoSend: e.target.checked } })}
                   className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                 <label htmlFor="ruleAutoSend" className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground cursor-pointer flex-1">
@@ -499,7 +499,7 @@ export default function CouponsTab() {
               </div>
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3">
-              <button onClick={() => setShowRuleConfig(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+              <button onClick={() => setShowRuleConfig(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors">Cancelar</button>
               <button onClick={saveRuleConfig} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Guardar</button>
             </div>
           </div>
@@ -515,7 +515,7 @@ export default function CouponsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Enviar cupon por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
               </div>
-              <button onClick={() => setWhatsappCoupon(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 transition-colors">
+              <button onClick={() => setWhatsappCoupon(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -553,7 +553,7 @@ export default function CouponsTab() {
               </button>
             </div>
             <div className="px-5 py-3 border-t border-[var(--rule-soft)] dark:border-card-border">
-              <button onClick={() => setWhatsappCoupon(null)} className="w-full py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cerrar</button>
+              <button onClick={() => setWhatsappCoupon(null)} className="w-full py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors">Cerrar</button>
             </div>
           </div>
         </div>
@@ -568,7 +568,7 @@ export default function CouponsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Constructor de Plantilla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Define el patrón de códigos automáticos</p>
               </div>
-              <button onClick={() => setShowTemplateBuilder(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowTemplateBuilder(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -581,7 +581,7 @@ export default function CouponsTab() {
                   Variables: <span className="font-mono">{"{MMDD}"}</span> (mes/día), <span className="font-mono">{"{RND3}"}</span> (3 dígitos random)
                 </p>
               </div>
-              <div className="bg-gray-50 dark:bg-surface p-4 rounded-xl">
+              <div className="bg-[var(--surface-alt)] dark:bg-surface p-4 rounded-xl">
                 <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2">Plantillas sugeridas:</p>
                 <div className="space-y-1">
                   {["BDAY{MMDD}{RND3}", "NEW{RND3}", "REACT{MMDD}", "GIFT{RND3}", "VIP{MMDD}{RND3}"].map(p => (

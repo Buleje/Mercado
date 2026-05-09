@@ -135,7 +135,7 @@ function CustomerSegmentBadge({ totalSpent, orderCount }: { totalSpent: number; 
   if (orderCount === 0) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Nuevo</span>;
   if (totalSpent > 1000) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-50)] text-[var(--data-warning-500)] border border-[var(--data-warning-500)]">VIP</span>;
   if (totalSpent > 500) return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">Premium</span>;
-  return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]">Regular</span>;
+  return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]">Regular</span>;
 }
 
 // ── Mejora 11: Productos favoritos del cliente ──────────────────────────────
@@ -452,7 +452,7 @@ function FamilyAccountSection({ phone, customer }: { phone: string; customer: Cu
       </div>
 
       {familyMembers.map((m, i) => (
-        <div key={i} className="flex items-center gap-2 bg-gray-50 dark:bg-surface rounded-lg px-3 py-2 mb-1.5">
+        <div key={i} className="flex items-center gap-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-3 py-2 mb-1.5">
           <div className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ backgroundColor: getAvatarColor(m.nombre) }}>
             {getInitials(m.nombre)}
           </div>
@@ -713,7 +713,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Cliente 360°</SectionTitle>
         </div>
         {onClose && (
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         )}
@@ -795,7 +795,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <button
           onClick={() => setObsExpanded(!obsExpanded)}
-          className="w-full px-4 sm:px-5 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="w-full px-4 sm:px-5 py-3 flex items-center justify-between hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
         >
           <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
             <FileText className="h-4 w-4 text-[var(--data-warning-500)]" />
@@ -811,7 +811,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => handleObservacionesChange(e.target.value)}
               placeholder="Prefiere delivery lunes, Alergico al mani, etc."
               rows={3}
-              className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             <div className="flex items-center gap-2 text-xs">
               {savingObs && <span className="text-[var(--text-tertiary)] flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Guardando...</span>}
@@ -1044,7 +1044,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               onChange={e => setNewTag(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(newTag); } }}
               placeholder="Nueva etiqueta (Enter para agregar)"
-              className="flex-1 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-1.5 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
@@ -1106,7 +1106,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
               {topProducts.map((p, i) => (
                 <div key={p.name} className="flex items-center gap-2">
                   <span className="text-xs font-extrabold text-[var(--text-tertiary)] w-4 text-right">{i + 1}</span>
-                  <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
+                  <div className="flex-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-full h-5 overflow-hidden">
                     <div
                       className="h-full bg-primary/20 dark:bg-primary/30 rounded-full transition-all"
                       style={{ width: `${Math.min((p.count / (topProducts[0]?.count ?? 1)) * 100, 100)}%` }}
@@ -1177,7 +1177,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     const st = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.pendiente;
                     const Icon = st.Icon;
                     return (
-                      <tr key={o.id} className="border-t border-gray-50 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                      <tr key={o.id} className="border-t border-gray-50 dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                         <td className="py-2 font-mono text-xs text-[var(--text-secondary)] dark:text-muted pr-2">#{o.id.slice(-6).toUpperCase()}</td>
                         <td className="py-2 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(o.createdAt)}</td>
                         <td className="py-2 text-xs text-[var(--text-secondary)] dark:text-muted">{o.items.length} prod.</td>
@@ -1270,7 +1270,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           onChange={e => setNotes(e.target.value)}
           placeholder="Ej: Cliente prefiere pago con Yape. Pide factura."
           rows={3}
-          className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <div className="flex items-center justify-between mt-2">
           <AnimatePresence>

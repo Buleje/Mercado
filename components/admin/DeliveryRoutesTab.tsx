@@ -149,7 +149,7 @@ function DeliveryMap({ routes, onStatusChange }: DeliveryMapProps) {
     <div
       ref={containerRef}
       style={{ height: 280, width: "100%" }}
-      className="rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border  bg-gray-100"
+      className="rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border  bg-[var(--surface-sunken)]"
     />
   );
 }
@@ -342,8 +342,8 @@ export default function DeliveryRoutesTab() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => { setLoadingData(true); loadRoutes(); }} disabled={loadingData} title="Actualizar rutas" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
-          <button onClick={() => setView("routes")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "routes" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Rutas</button>
-          <button onClick={() => setView("zones")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "zones" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Zonas</button>
+          <button onClick={() => setView("routes")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "routes" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Rutas</button>
+          <button onClick={() => setView("zones")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "zones" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Zonas</button>
         </div>
       </div>
 
@@ -467,10 +467,10 @@ export default function DeliveryRoutesTab() {
           {[1,2,3].map(i => (
             <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 animate-pulse">
               <div className="flex flex-wrap items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gray-200 dark:bg-surface" />
+                <div className="h-10 w-10 rounded-xl bg-[var(--rule-soft)] dark:bg-surface" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 dark:bg-surface rounded w-28" />
-                  <div className="h-3 bg-gray-100 dark:bg-surface/50 rounded w-40" />
+                  <div className="h-4 bg-[var(--rule-soft)] dark:bg-surface rounded w-28" />
+                  <div className="h-3 bg-[var(--surface-sunken)] dark:bg-surface/50 rounded w-40" />
                 </div>
               </div>
             </div>
@@ -482,7 +482,7 @@ export default function DeliveryRoutesTab() {
         <>
           <div className="flex items-center gap-2 flex-wrap">
             {["all", "en-ruta", "pendiente", "completada", "cancelada"].map(s => (
-              <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{s === "all" ? "Todas" : STATUS_LABELS[s]}</button>
+              <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterStatus === s ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{s === "all" ? "Todas" : STATUS_LABELS[s]}</button>
             ))}
             {riderKpis.length > 0 && (
               <select value={filterRider} onChange={e => setFilterRider(e.target.value)} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground font-semibold">
@@ -533,7 +533,7 @@ export default function DeliveryRoutesTab() {
                 </div>
                 {r.status === "en-ruta" && (
                   <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
-                    <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                       <div className="h-full bg-[var(--accent-soft)] rounded-full animate-pulse" style={{ width: "60%" }} />
                     </div>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Estimado: ~{r.estimatedTime - 15} min restantes</p>
@@ -556,7 +556,7 @@ export default function DeliveryRoutesTab() {
                     {r.status === "en-ruta" && (
                       <button onClick={() => updateRouteStatus(r.id, "completada")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors">Marcar entregado</button>
                     )}
-                    <button onClick={() => updateRouteStatus(r.id, "cancelada")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors">Cancelar</button>
+                    <button onClick={() => updateRouteStatus(r.id, "cancelada")} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors">Cancelar</button>
                   </div>
                 )}
               </div>
@@ -569,7 +569,7 @@ export default function DeliveryRoutesTab() {
         <div className="space-y-3">
           {zones.map(z => (
             <div key={z.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-              <button onClick={() => setExpandedZone(expandedZone === z.id ? null : z.id)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
+              <button onClick={() => setExpandedZone(expandedZone === z.id ? null : z.id)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className={cn("h-4 w-4 rounded-full", z.color)} />
                   <div className="text-left">
@@ -583,7 +583,7 @@ export default function DeliveryRoutesTab() {
                 <div className="px-5 pb-4 border-t border-[var(--rule-soft)] dark:border-card-border pt-3">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {z.neighborhoods.map(n => (
-                      <span key={n} className="px-3 py-1.5 bg-gray-50 dark:bg-surface rounded-lg text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{n}</span>
+                      <span key={n} className="px-3 py-1.5 bg-[var(--surface-alt)] dark:bg-surface rounded-lg text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{n}</span>
                     ))}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-xs text-[var(--text-secondary)] dark:text-muted">

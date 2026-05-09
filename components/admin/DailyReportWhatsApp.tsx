@@ -181,7 +181,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
 
       {/* Vista previa del mensaje */}
       {showPreview && previewText && (
-        <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface p-4 space-y-2">
+        <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface p-4 space-y-2">
           <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">Vista previa del mensaje</p>
           <textarea
             readOnly

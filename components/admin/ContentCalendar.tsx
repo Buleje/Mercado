@@ -210,7 +210,7 @@ export default function ContentCalendar() {
           "min-h-[80px] rounded-lg border p-1.5 transition",
           isCurrentMonth
             ? "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]"
-            : "border-[var(--rule-soft)] bg-gray-50/50",
+            : "border-[var(--rule-soft)] bg-[var(--surface-alt)]/50",
           dragOver === ymd && "border-primary bg-primary/5",
           "cursor-pointer hover:border-primary/40"
         )}
@@ -291,7 +291,7 @@ export default function ContentCalendar() {
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition",
               view === "month"
                 ? "border-primary bg-primary text-white"
-                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
             )}
           >
             <CalendarDays className="h-3.5 w-3.5" />
@@ -303,7 +303,7 @@ export default function ContentCalendar() {
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition",
               view === "week"
                 ? "border-primary bg-primary text-white"
-                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
             )}
           >
             <List className="h-3.5 w-3.5" />
@@ -334,13 +334,13 @@ export default function ContentCalendar() {
       {view === "month" && (
         <>
           <div className="flex items-center justify-between">
-            <button onClick={prevMonth} className="rounded-lg border border-[var(--rule-base)] p-1.5 hover:bg-gray-50">
+            <button onClick={prevMonth} className="rounded-lg border border-[var(--rule-base)] p-1.5 hover:bg-[var(--surface-alt)]">
               <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
             <span className="font-semibold text-[var(--text-primary)]">
               {MONTH_NAMES[month]} {year}
             </span>
-            <button onClick={nextMonth} className="rounded-lg border border-[var(--rule-base)] p-1.5 hover:bg-gray-50">
+            <button onClick={nextMonth} className="rounded-lg border border-[var(--rule-base)] p-1.5 hover:bg-[var(--surface-alt)]">
               <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
           </div>
@@ -415,7 +415,7 @@ export default function ContentCalendar() {
                   type="date"
                   value={form.date}
                   onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
@@ -425,7 +425,7 @@ export default function ContentCalendar() {
                 <select
                   value={form.type}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as EntryType }))}
-                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 >
                   {ENTRY_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -440,7 +440,7 @@ export default function ContentCalendar() {
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   placeholder="Ej: Oferta arroz 5kg"
-                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
@@ -452,14 +452,14 @@ export default function ContentCalendar() {
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                   rows={2}
                   placeholder="Detalles adicionales..."
-                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
             </div>
             <div className="flex gap-3 border-t border-[var(--rule-soft)] p-5">
               <button
                 onClick={() => setShowForm(false)}
-                className="flex-1 rounded-lg border border-[var(--rule-base)] py-2 text-sm text-[var(--text-secondary)] hover:bg-gray-50"
+                className="flex-1 rounded-lg border border-[var(--rule-base)] py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
               >
                 Cancelar
               </button>

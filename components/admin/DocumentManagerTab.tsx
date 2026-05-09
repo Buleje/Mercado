@@ -63,7 +63,7 @@ const CATEGORY_META: Record<DocCategory, { label: string; color: string }> = {
   contrato:    { label: "Contrato",    color: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
   comprobante: { label: "Comprobante", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
   recibo:      { label: "Recibo",      color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
-  otro:        { label: "Otro",        color: "bg-gray-200 text-[var(--text-primary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]" },
+  otro:        { label: "Otro",        color: "bg-[var(--rule-soft)] text-[var(--text-primary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]" },
 };
 
 const STATUS_META: Record<DocStatus, { label: string; color: string; icon: typeof FileCheck }> = {
@@ -229,7 +229,7 @@ export default function DocumentManagerTab() {
           <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Agregar
           </button>
-          <button onClick={() => exportToCSV(filtered.map(d => ({ nombre: d.name, categoria: d.category, estado: d.status, fecha_carga: d.uploadDate, vencimiento: d.expiryDate || "\u2014", tamano: d.size, relacionado: d.relatedTo, notas: d.notes })), "documentos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(d => ({ nombre: d.name, categoria: d.category, estado: d.status, fecha_carga: d.uploadDate, vencimiento: d.expiryDate || "\u2014", tamano: d.size, relacionado: d.relatedTo, notas: d.notes })), "documentos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -285,7 +285,7 @@ export default function DocumentManagerTab() {
             <input value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notas" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">Cancelar</button>
             <button onClick={addDoc} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90">Guardar</button>
           </div>
         </div>
@@ -311,7 +311,7 @@ export default function DocumentManagerTab() {
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Documento</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Categoria</th>
@@ -332,7 +332,7 @@ export default function DocumentManagerTab() {
                 const isContratoPorVencer = d.isContrato && (d.status === "por-vencer" || d.status === "vencido");
                 return (
                   <tr key={d.id} className={cn(
-                    "hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors",
+                    "hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30 transition-colors",
                     isContratoPorVencer && "bg-[var(--data-warning-50)]/30 dark:bg-amber-950/10"
                   )}>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">

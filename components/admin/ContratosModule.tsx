@@ -606,8 +606,8 @@ const ESTADO_STYLES: Record<ContratoEstado, string> = {
   VIGENTE: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
   POR_VENCER: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
   VENCIDO: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
-  ANULADO: "bg-gray-200 dark:bg-gray-800 text-[var(--text-tertiary)]",
-  BORRADOR: "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)]",
+  ANULADO: "bg-[var(--rule-soft)] dark:bg-gray-800 text-[var(--text-tertiary)]",
+  BORRADOR: "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]",
 };
 
 const TIPO_LABELS: Record<string, string> = {
@@ -1300,7 +1300,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all",
                 activeTab === tab.id
                   ? "bg-primary text-white "
-                  : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-white/5"
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5"
               )}
             >
               <Icon className="h-4 w-4" />
@@ -1492,8 +1492,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <option value="VENCIDO">Vencidos</option>
                   </select>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => setViewMode("cards")} className={cn("p-2 rounded-lg transition-colors", viewMode === "cards" ? "bg-primary text-white" : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)]")}><LayoutGrid className="h-4 w-4" /></button>
-                    <button onClick={() => setViewMode("list")} className={cn("p-2 rounded-lg transition-colors", viewMode === "list" ? "bg-primary text-white" : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)]")}><List className="h-4 w-4" /></button>
+                    <button onClick={() => setViewMode("cards")} className={cn("p-2 rounded-lg transition-colors", viewMode === "cards" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]")}><LayoutGrid className="h-4 w-4" /></button>
+                    <button onClick={() => setViewMode("list")} className={cn("p-2 rounded-lg transition-colors", viewMode === "list" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]")}><List className="h-4 w-4" /></button>
                   </div>
                 </div>
 
@@ -1540,8 +1540,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)] dark:border-white/5">
                               <p className="text-sm font-bold text-primary">{formatCurrency(c.montoTotal || 0)}</p>
                               <div className="flex gap-1">
-                                <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-primary transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
-                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
+                                <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-primary transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
+                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
                               </div>
                             </div>
                           </div>
@@ -1568,14 +1568,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           {paginated.map(c => {
                             const estado = getEstado(c);
                             return (
-                              <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer transition-colors">
+                              <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-gray-50 dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 cursor-pointer transition-colors">
                                 <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.número}</td>
                                 <td className="px-4 py-3">
                                   <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
                                   <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDocumento}</p>
                                 </td>
                                 <td className="px-4 py-3 hidden sm:table-cell">
-                                  <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
+                                  <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
                                 </td>
                                 <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(c.montoTotal || 0)}</td>
                                 <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">{formatDatePeru(c.fechaContrato || c.createdAt)}</td>
@@ -1584,8 +1584,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex gap-1">
-                                    <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)]" title="PDF"><Printer className="h-4 w-4" /></button>
-                                    <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-[var(--text-tertiary)]" title="Word"><Download className="h-4 w-4" /></button>
+                                    <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)]" title="PDF"><Printer className="h-4 w-4" /></button>
+                                    <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)]" title="Word"><Download className="h-4 w-4" /></button>
                                   </div>
                                 </td>
                               </tr>
@@ -1602,8 +1602,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-[var(--text-secondary)]">{filteredContratos.length} contrato{filteredContratos.length !== 1 ? "s" : ""} — Pag. {page}/{totalPages}</p>
                     <div className="flex gap-1">
-                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                     </div>
                   </div>
                 )}
@@ -1645,11 +1645,11 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             onClick={() => setWizardStep(i)}
                             className={cn(
                               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
-                              wizardStep === i ? "bg-primary text-white" : wizardStep > i ? "bg-primary/10 text-primary" : "bg-gray-100 dark:bg-white/5 text-[var(--text-tertiary)]"
+                              wizardStep === i ? "bg-primary text-white" : wizardStep > i ? "bg-primary/10 text-primary" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-tertiary)]"
                             )}
                           >
                             <span className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold",
-                              wizardStep === i ? "bg-white/20 text-white" : wizardStep > i ? "bg-primary text-white" : "bg-gray-200 dark:bg-white/10 text-[var(--text-secondary)]"
+                              wizardStep === i ? "bg-white/20 text-white" : wizardStep > i ? "bg-primary text-white" : "bg-[var(--rule-soft)] dark:bg-white/10 text-[var(--text-secondary)]"
                             )}>
                               {wizardStep > i ? <CheckCircle className="h-3 w-3" /> : i + 1}
                             </span>
@@ -1671,7 +1671,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             <span className="text-xs font-bold text-[var(--text-secondary)]">Progreso del contrato</span>
                             <span className="text-xs font-bold text-[var(--text-primary)]">{filledRequired} de {totalRequired} campos completados ({progress}%)</span>
                           </div>
-                          <div className="relative h-3 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+                          <div className="relative h-3 bg-[var(--rule-soft)] dark:bg-white/10 rounded-full overflow-hidden">
                             <div
                               className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", progress === 100 ? "bg-[var(--accent-soft)]" : progress >= 60 ? "bg-primary" : "bg-secondary")}
                               style={{ width: `${progress}%` }}
@@ -1946,7 +1946,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           {/* Data Summary */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {selectedTemplate.fields.filter(f => wizardData[f.key]).map(f => (
-                              <div key={f.key} className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg">
+                              <div key={f.key} className="p-2 bg-[var(--surface-alt)] dark:bg-white/5 rounded-lg">
                                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">{f.label}</p>
                                 <p className="text-sm text-[var(--text-secondary)] truncate">{wizardData[f.key]}</p>
                               </div>
@@ -1966,7 +1966,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <div className="flex items-center justify-between">
                       <button
                         onClick={() => wizardStep > 0 ? setWizardStep(s => s - 1) : setSelectedTemplate(null)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors"
                       >
                         <ArrowLeft className="h-4 w-4" />
                         {wizardStep === 0 ? "Cancelar" : "Anterior"}
@@ -2022,7 +2022,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <button
                       onClick={() => setEditorPreview(!editorPreview)}
                       className={cn("flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors",
-                        editorPreview ? "bg-primary text-white" : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)]"
+                        editorPreview ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]"
                       )}
                     >
                       <Eye className="h-3.5 w-3.5" /> {editorPreview ? "Editando" : "Preview"}
@@ -2056,7 +2056,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           value={editorText}
                           onChange={e => setEditorText(e.target.value)}
                           rows={20}
-                          className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-gray-50 dark:bg-white/5 text-sm text-[var(--text-primary)] font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                          className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-alt)] dark:bg-white/5 text-sm text-[var(--text-primary)] font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                           placeholder="Escribe o edita las clausulas del contrato..."
                         />
                       </div>
@@ -2104,7 +2104,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.número}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">{TIPO_LABELS[selected.tipo] || selected.tipo}</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -2129,13 +2129,13 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <span className={cn("px-3 py-1 rounded-lg text-xs font-bold", ESTADO_STYLES[getEstado(selected)])}>
                     {getEstado(selected)}
                   </span>
-                  <span className="px-3 py-1 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)]">
+                  <span className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]">
                     {TIPO_LABELS[selected.tipo] || selected.tipo}
                   </span>
                 </div>
 
                 {/* Parties */}
-                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center">
                       <User className="h-5 w-5 text-secondary" />
@@ -2162,7 +2162,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     return (
                       <div className="pt-3 border-t border-[var(--rule-base)] dark:border-white/10 space-y-1.5">
                         <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Vigencia</p>
-                        <div className="relative h-2.5 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="relative h-2.5 bg-[var(--rule-soft)] dark:bg-white/10 rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${progreso}%` }} />
                         </div>
                         <div className="flex items-center justify-between text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
@@ -2181,7 +2181,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Clausulas</h4>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {selected.clausulas.map((c, i) => (
-                        <div key={i} className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl text-sm text-[var(--text-secondary)] text-justify leading-relaxed">
+                        <div key={i} className="p-3 bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl text-sm text-[var(--text-secondary)] text-justify leading-relaxed">
                           {c}
                         </div>
                       ))}
@@ -2197,11 +2197,11 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <div>
                       <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
                         <Clock className="h-4 w-4" /> Historial de Versiones
-                        <span className="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">{versions.length}</span>
+                        <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-white/10 px-2 py-0.5 rounded-full">{versions.length}</span>
                       </h4>
                       <div className="space-y-1">
                         {versions.map(v => (
-                          <div key={v.version} className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg text-xs flex items-center justify-between">
+                          <div key={v.version} className="p-2 bg-[var(--surface-alt)] dark:bg-white/5 rounded-lg text-xs flex items-center justify-between">
                             <span className="font-bold text-[var(--text-secondary)]">v{v.version}</span>
                             <span className="text-[var(--text-tertiary)]">{new Date(v.savedAt).toLocaleString("es-PE")}</span>
                           </div>
@@ -2222,10 +2222,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => downloadTxt(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
+                    <button onClick={() => downloadTxt(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors">
                       <FileText className="h-3.5 w-3.5" /> Texto (.txt)
                     </button>
-                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 transition-colors">
+                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors">
                       <ClipboardCopy className="h-3.5 w-3.5" /> Copiar
                     </button>
                   </div>

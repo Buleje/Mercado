@@ -326,7 +326,7 @@ export default function CustomerGeoMap({ className }: Props) {
               "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
               showStats
                 ? "bg-primary text-white"
-                : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
             )}
           >
             {showStats ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -341,7 +341,7 @@ export default function CustomerGeoMap({ className }: Props) {
                 "flex items-center gap-1.5 rounded-l-lg px-3 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "markers"
                   ? "bg-primary text-white"
-                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-gray-50"
+                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
               )}
             >
               <MapPin className="h-3.5 w-3.5" />
@@ -353,7 +353,7 @@ export default function CustomerGeoMap({ className }: Props) {
                 "flex items-center gap-1.5 rounded-r-lg px-3 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "heat"
                   ? "bg-primary text-white"
-                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-gray-50"
+                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
               )}
             >
               <Flame className="h-3.5 w-3.5" />
@@ -431,7 +431,7 @@ export default function CustomerGeoMap({ className }: Props) {
                   <span className="w-32 truncate text-xs text-[var(--text-secondary)]">
                     {zone}
                   </span>
-                  <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-gray-100">
+                  <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                     <div
                       className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
                       style={{ width: `${Math.max(pct, 3)}%` }}

@@ -253,7 +253,7 @@ export default function EInvoiceTab() {
         </button>
         <button
           onClick={() => exportToCSV(docs.map(d => ({ serie: d.serie, número: d.number, fecha: d.date, tipo: TYPE_META[d.type].label, estado: STATUS_META[d.status].label, cliente: d.clientName, ruc: d.clientRUC, subtotal: d.subtotal, igv: d.igv, total: d.total })), "e-facturacion")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -342,7 +342,7 @@ export default function EInvoiceTab() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
+                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface">
                   <th className="px-2 sm:px-4 py-2 sm:py-3">Serie-Nro</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3">Tipo</th>
@@ -356,7 +356,7 @@ export default function EInvoiceTab() {
                 {filtered.map(d => {
                   const StatusIcon = STATUS_META[d.status].icon;
                   return (
-                    <tr key={d.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
+                    <tr key={d.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20 transition-colors">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono font-bold text-[var(--text-primary)] dark:text-foreground">{d.serie}-{d.number}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)]">{d.date}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
@@ -427,7 +427,7 @@ export default function EInvoiceTab() {
             </div>
             <div>
               <p className="text-xs text-[var(--text-tertiary)] mb-1">Respuesta SUNAT</p>
-              <p className="text-sm text-[var(--text-primary)] dark:text-foreground bg-gray-50 dark:bg-surface rounded-xl p-3 font-mono text-xs">{detail.sunatResponse}</p>
+              <p className="text-sm text-[var(--text-primary)] dark:text-foreground bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 font-mono text-xs">{detail.sunatResponse}</p>
             </div>
             {detail.pdfUrl && (
               <a
@@ -541,7 +541,7 @@ export default function EInvoiceTab() {
               <button
                 onClick={() => setEmitForm(null)}
                 disabled={emitLoading}
-                className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors disabled:opacity-50"
+                className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>

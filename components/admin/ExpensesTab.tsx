@@ -160,7 +160,7 @@ export default function ExpensesTab() {
             <div key={s.category} className={cn("bg-white dark:bg-card border rounded-xl p-3 text-center", s.category === maxCat?.category ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border")}>
               <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground">S/{Number(s.total).toFixed(0)}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">{s.category} ({s.count})</p>
-              {totalAll > 0 && <div className="mt-1 h-1 bg-gray-100 dark:bg-surface rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
+              {totalAll > 0 && <div className="mt-1 h-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
             </div>
           ))}
         </div>

@@ -1325,45 +1325,45 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         {/* Header skeleton */}
         <div className="flex items-center justify-between">
           <div className="space-y-1.5">
-            <div className="h-5 w-32 bg-gray-200 dark:bg-surface rounded-lg" />
-            <div className="h-3 w-44 bg-gray-200 dark:bg-surface rounded" />
+            <div className="h-5 w-32 bg-[var(--rule-soft)] dark:bg-surface rounded-lg" />
+            <div className="h-3 w-44 bg-[var(--rule-soft)] dark:bg-surface rounded" />
           </div>
           <div className="flex flex-wrap gap-2">
-            <div className="h-8 w-48 bg-gray-200 dark:bg-surface rounded-lg" />
-            <div className="h-8 w-24 bg-gray-200 dark:bg-surface rounded-lg" />
+            <div className="h-8 w-48 bg-[var(--rule-soft)] dark:bg-surface rounded-lg" />
+            <div className="h-8 w-24 bg-[var(--rule-soft)] dark:bg-surface rounded-lg" />
           </div>
         </div>
         {/* KPI cards skeleton */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-2">
-              <div className="h-3 w-16 bg-gray-200 dark:bg-surface rounded" />
-              <div className="h-7 w-24 bg-gray-200 dark:bg-surface rounded" />
-              <div className="h-3 w-20 bg-gray-200 dark:bg-surface rounded" />
+              <div className="h-3 w-16 bg-[var(--rule-soft)] dark:bg-surface rounded" />
+              <div className="h-7 w-24 bg-[var(--rule-soft)] dark:bg-surface rounded" />
+              <div className="h-3 w-20 bg-[var(--rule-soft)] dark:bg-surface rounded" />
             </div>
           ))}
         </div>
         {/* Orders list skeleton */}
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
-          <div className="h-4 w-28 bg-gray-200 dark:bg-surface rounded" />
+          <div className="h-4 w-28 bg-[var(--rule-soft)] dark:bg-surface rounded" />
           {[1, 2, 3, 4, 5].map(i => (
             <div key={i} className="flex flex-wrap items-center gap-2 sm:gap-4">
-              <div className="h-10 w-10 bg-gray-200 dark:bg-surface rounded-xl shrink-0" />
+              <div className="h-10 w-10 bg-[var(--rule-soft)] dark:bg-surface rounded-xl shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-3.5 bg-gray-200 dark:bg-surface rounded w-1/2" />
-                <div className="h-3 bg-gray-200 dark:bg-surface rounded w-1/3" />
+                <div className="h-3.5 bg-[var(--rule-soft)] dark:bg-surface rounded w-1/2" />
+                <div className="h-3 bg-[var(--rule-soft)] dark:bg-surface rounded w-1/3" />
               </div>
-              <div className="h-6 w-20 bg-gray-200 dark:bg-surface rounded-full" />
-              <div className="h-8 w-8 bg-gray-200 dark:bg-surface rounded-lg shrink-0" />
+              <div className="h-6 w-20 bg-[var(--rule-soft)] dark:bg-surface rounded-full" />
+              <div className="h-8 w-8 bg-[var(--rule-soft)] dark:bg-surface rounded-lg shrink-0" />
             </div>
           ))}
         </div>
         {/* Chart skeleton */}
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
-          <div className="h-4 w-36 bg-gray-200 dark:bg-surface rounded mb-4" />
+          <div className="h-4 w-36 bg-[var(--rule-soft)] dark:bg-surface rounded mb-4" />
           <div className="flex flex-wrap items-end gap-2 h-32">
             {[40, 70, 55, 85, 60, 90, 75].map((h, i) => (
-              <div key={i} className="flex-1 bg-gray-200 dark:bg-surface rounded-t" style={{ height: `${h}%` }} />
+              <div key={i} className="flex-1 bg-[var(--rule-soft)] dark:bg-surface rounded-t" style={{ height: `${h}%` }} />
             ))}
           </div>
         </div>
@@ -1462,7 +1462,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             </button>
           )}
           <div className="relative">
-            <button onClick={()=>setShowExport(v=>!v)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors" title="Exportar CSV">
+            <button onClick={()=>setShowExport(v=>!v)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors" title="Exportar CSV">
               <Download className="h-3.5 w-3.5" />
             </button>
             {showExport && (
@@ -1475,14 +1475,14 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   { key:"pdf", label:"Reporte PDF" },
                 ].map(opt => (
                   <button key={opt.key} onClick={()=>handleExport(opt.key)}
-                    className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+                    className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
                     {opt.label}
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <button onClick={load} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors" title="Actualizar">
+          <button onClick={load} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors" title="Actualizar">
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
           </button>
           {/* N2 — WA daily summary */}
@@ -1514,7 +1514,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
               onClick={() => setAutoRefresh(v => !v)}
               className={cn(
                 "px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold uppercase transition-colors",
-                autoRefresh ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-tertiary)] dark:bg-surface dark:text-muted"
+                autoRefresh ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:bg-surface dark:text-muted"
               )}
             >
               {autoRefresh ? "En vivo" : "Auto"}
@@ -1556,7 +1556,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
 
       {/* Auto-refresh countdown bar */}
       {autoRefresh && lastUpdated && (
-        <div className="h-0.5 w-full bg-gray-100 dark:bg-accent mb-3 rounded-full overflow-hidden">
+        <div className="h-0.5 w-full bg-[var(--surface-sunken)] dark:bg-accent mb-3 rounded-full overflow-hidden">
           <div 
             className="h-full bg-[var(--data-success-500)] rounded-full"
             style={{
@@ -1575,11 +1575,11 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
             {([
               { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", delta: st.dVentas },
               { label: "Utilidad", value: fmt(st.utilidad), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", delta: st.dUtilidad },
-              { label: "Margen", value: `${Number(st.margen).toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-gray-50 dark:bg-surface", delta: st.dMargen },
+              { label: "Margen", value: `${Number(st.margen).toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--surface-alt)] dark:bg-surface", delta: st.dMargen },
               { label: "Tickets", value: String(st.tickets), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", delta: st.dTickets },
               { label: "Clientes", value: String(st.clientesAtendidos), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", delta: st.dClientes },
-              { label: "Stock Alerta", value: String(st.stockCritico.length + st.agotados.length), accent: (st.stockCritico.length + st.agotados.length) > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-gray-50 dark:bg-surface" },
-              { label: "Balance Caja", value: fmt(st.ventas - st.totalPurch), accent: (st.ventas - st.totalPurch) >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-gray-50 dark:bg-surface" },
+              { label: "Stock Alerta", value: String(st.stockCritico.length + st.agotados.length), accent: (st.stockCritico.length + st.agotados.length) > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--surface-alt)] dark:bg-surface" },
+              { label: "Balance Caja", value: fmt(st.ventas - st.totalPurch), accent: (st.ventas - st.totalPurch) >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]", bg: "bg-[var(--surface-alt)] dark:bg-surface" },
             ] as { label: string; value: string; accent: string; bg: string; delta?: number | null }[]).map(k => (
               <div key={k.label} className={cn("rounded-xl px-3 py-2.5", k.bg)}>
                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted font-medium truncate">{k.label}</div>
@@ -1624,7 +1624,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     { label: "Uds. Vendidas", value: String(st.uds), accent: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
                     { label: "Cancelados", value: String(st.cancelados), accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
                   ].map(k => (
-                    <div key={k.label} className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
+                    <div key={k.label} className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
                       <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{k.label}</div>
                       <div className={cn("text-sm font-bold tabular-nums truncate", k.accent)}>{k.value}</div>
                     </div>
@@ -1643,7 +1643,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     { label: "Utilidad Bruta", value: fmt(st.utilidad), accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
                     { label: "Margen", value: `${Number(st.margen).toFixed(1)}%`, accent: st.margen >= 25 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
                   ].map(k => (
-                    <div key={k.label} className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
+                    <div key={k.label} className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
                       <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{k.label}</div>
                       <div className={cn("text-sm font-bold tabular-nums truncate", k.accent)}>{k.value}</div>
                     </div>
@@ -1677,13 +1677,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <div className="space-y-2">
                       {st.topRev.slice(0, 6).map((p, i) => (
                         <div key={p.id} className="flex flex-wrap items-center gap-2">
-                          <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0", i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-gray-100 dark:bg-accent text-[var(--text-tertiary)]")}>{i+1}</span>
+                          <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0", i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-tertiary)]")}>{i+1}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
                               <span className="text-xs text-[var(--text-secondary)] truncate">{p.name}</span>
                               <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground ml-1 shrink-0">{fmt(p.revenue)}</span>
                             </div>
-                            <div className="h-1 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
+                            <div className="h-1 bg-[var(--surface-sunken)] dark:bg-accent rounded-full overflow-hidden">
                               <div className="h-full rounded-full" style={{width:`${(p.revenue/maxRev)*100}%`,background:i<3?"#111827":"#d1d5db"}} />
                             </div>
                           </div>
@@ -1710,11 +1710,11 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Inventario</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
-                  <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
+                  <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Valor stock</div>
                     <div className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] tabular-nums truncate">{fmt(st.stockVal)}</div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
+                  <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Sin stock</div>
                     <div className={cn("text-sm font-bold tabular-nums", st.agotados.length > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")}>{st.agotados.length}</div>
                   </div>
@@ -1750,11 +1750,11 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Clientes</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
-                  <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
+                  <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Atendidos</div>
                     <div className="text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] tabular-nums">{st.clientesAtendidos}</div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
+                  <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Nuevos</div>
                     <div className="text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] tabular-nums">{st.newCust}</div>
                   </div>
@@ -1773,13 +1773,13 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     <div className="space-y-1.5">
                       {top.map((c,i) => (
                         <div key={c.name+i} className="flex flex-wrap items-center gap-2">
-                          <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0", i < 3 ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "bg-gray-100 dark:bg-accent text-[var(--text-tertiary)]")}>{i+1}</span>
+                          <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0", i < 3 ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-tertiary)]")}>{i+1}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
                               <span className="text-xs text-[var(--text-secondary)] truncate">{c.name}</span>
                               <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground ml-1 shrink-0">{fmt(c.total)}</span>
                             </div>
-                            <div className="h-1 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
+                            <div className="h-1 bg-[var(--surface-sunken)] dark:bg-accent rounded-full overflow-hidden">
                               <div className="h-full rounded-full bg-[var(--text-primary)]" style={{width:`${(c.total/mx)*100}%`}} />
                             </div>
                           </div>
@@ -1795,11 +1795,11 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">Compras</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
-                  <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
+                  <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Total compras</div>
                     <div className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums truncate">{fmt(st.totalPurch)}</div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
+                  <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Deuda pend.</div>
                     <div className={cn("text-sm font-bold tabular-nums truncate", st.debt > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]")}>{fmt(st.debt)}</div>
                   </div>
@@ -1815,7 +1815,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                               <span className="text-xs text-[var(--text-secondary)] truncate">{s.name}</span>
                               <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground ml-1 shrink-0">{fmt(s.total)}</span>
                             </div>
-                            <div className="h-1 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
+                            <div className="h-1 bg-[var(--surface-sunken)] dark:bg-accent rounded-full overflow-hidden">
                               <div className="h-full rounded-full bg-[var(--text-primary)]" style={{width:`${(s.total/mx)*100}%`}} />
                             </div>
                           </div>
@@ -1874,7 +1874,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
           value={dashSearch}
           onChange={e => { setDashSearch(e.target.value); if (section !== "ventas" && e.target.value) setSection("ventas"); }}
           placeholder="Buscar pedido, cliente…"
-          className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-accent/50 text-[var(--text-primary)] dark:text-foreground placeholder-gray-300 focus:outline-none focus:border-primary/40 focus:bg-white dark:focus:bg-card transition-colors"
+          className="w-full pl-8 pr-8 py-2 text-xs rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-accent/50 text-[var(--text-primary)] dark:text-foreground placeholder-gray-300 focus:outline-none focus:border-primary/40 focus:bg-white dark:focus:bg-card transition-colors"
         />
         {dashSearch && (
           <button onClick={() => setDashSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] font-bold text-sm">×</button>
@@ -1999,14 +1999,14 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 ins.type === "danger" ? "bg-[var(--data-error-50)]/60 border-[var(--data-error-500)]" :
                 ins.type === "warning" ? "bg-[var(--data-warning-50)]/60 border-[var(--data-warning-500)]" :
                 ins.type === "success" ? "bg-[var(--accent-soft)]/60 border-[var(--data-success-500)]/30" :
-                "bg-gray-50/60 border-[var(--rule-soft)]"
+                "bg-[var(--surface-alt)]/60 border-[var(--rule-soft)]"
               )}>
                 <div className={cn(
                   "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
                   ins.type === "danger" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
                   ins.type === "warning" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" :
                   ins.type === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                  "bg-gray-100 text-[var(--text-secondary)]"
+                  "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                 )}>
                   <ins.icon className="h-4 w-4" />
                 </div>
@@ -2031,7 +2031,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
         <div className="flex gap-1.5 flex-wrap" style={{marginBottom:"16px"}}>
           {st.alerts.map((a,i) => (
             <div key={i} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap",
-              a.type==="danger"?"bg-[var(--data-error-50)] text-[var(--data-error-500)]":a.type==="warning"?"bg-[var(--data-warning-50)] text-[var(--data-warning-500)]":"bg-gray-50 text-[var(--text-secondary)]"
+              a.type==="danger"?"bg-[var(--data-error-50)] text-[var(--data-error-500)]":a.type==="warning"?"bg-[var(--data-warning-50)] text-[var(--data-warning-500)]":"bg-[var(--surface-alt)] text-[var(--text-secondary)]"
             )}>
               <AlertCircle className="h-3 w-3 shrink-0" />{a.msg}
             </div>
@@ -2135,7 +2135,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                               {pct.toFixed(0)}%
                             </span>
                           </div>
-                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-2 bg-[var(--rule-soft)] dark:bg-gray-700 rounded-full overflow-hidden">
                             <div
                               className={cn(
                                 "h-full rounded-full transition-all duration-[var(--dur-slow)]",
@@ -2191,7 +2191,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     </div>
                     <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Metas del mes</CardTitle>
                   </div>
-                  <button onClick={() => setEditingMonthlyGoals(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
+                  <button onClick={() => setEditingMonthlyGoals(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
                 <div className="px-3 sm:px-6 py-5 space-y-4">
                   <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Define tus objetivos para {new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" })}</p>
@@ -2258,7 +2258,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
-                  <button onClick={() => setEditingMonthlyGoals(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
+                  <button onClick={() => setEditingMonthlyGoals(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">Cancelar</button>
                   <button onClick={saveMonthlyGoals} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--text-primary)] hover:opacity-90 transition-colors ">Guardar metas</button>
                 </div>
               </div>
@@ -2276,7 +2276,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     </div>
                     <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Histórico de metas</CardTitle>
                   </div>
-                  <button onClick={() => setShowGoalHistory(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
+                  <button onClick={() => setShowGoalHistory(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
                 <div className="overflow-y-auto flex-1 px-3 sm:px-6 py-5">
                   {(() => {
@@ -2292,7 +2292,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           const date = new Date(monthKey + "-01");
                           const monthLabel = date.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
                           return (
-                            <div key={monthKey} className="bg-gray-50 dark:bg-surface rounded-xl p-4 border border-[var(--rule-soft)] dark:border-card-border">
+                            <div key={monthKey} className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 border border-[var(--rule-soft)] dark:border-card-border">
                               <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 capitalize">{monthLabel}</h4>
                               <div className="grid sm:grid-cols-2 gap-3 text-xs">
                                 <div>
@@ -2546,7 +2546,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                       <button onClick={() => setEditingGoal(true)} className="text-[var(--text-tertiary)] hover:text-primary transition-colors"><Edit3 className="h-3 w-3" /></button>
                     </div>
                   </div>
-                  <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                  <div className="h-3 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all duration-[var(--dur-slow)] ${pct >= 100 ? "bg-[var(--accent-soft)]" : pct >= 60 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"}`} style={{ width: `${pct}%` }} />
                   </div>
                   {pct >= 100 && <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold mt-1.5 text-center">¡Meta alcanzada!</p>}
@@ -2723,7 +2723,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                           return (
                             <div key={v.id} className={cn(
                               "p-2 rounded-lg border-2 transition-all",
-                              isWinner ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface"
+                              isWinner ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface"
                             )}>
                               <div className="flex items-center gap-1.5 mb-1">
                                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{v.name}</span>
@@ -2771,7 +2771,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                     </div>
                     <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Nueva Prueba A/B</CardTitle>
                   </div>
-                  <button onClick={() => setShowABTestModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
+                  <button onClick={() => setShowABTestModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
                 <div className="px-3 sm:px-6 py-5 space-y-4">
                   <div>
@@ -2826,7 +2826,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                   </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border">
-                  <button onClick={() => setShowABTestModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
+                  <button onClick={() => setShowABTestModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">Cancelar</button>
                   <button onClick={() => {
                     const newTest: ABTest = {
                       id: Date.now().toString(),
@@ -3018,7 +3018,7 @@ function DBadge({ children, color }: { children: React.ReactNode; color: "green"
   const m: Record<string,string> = {
     green:"bg-[var(--accent-soft)] text-[var(--data-success-500)]", red:"bg-red-50 text-[var(--data-error-600)]",
     amber:"bg-amber-50 text-[var(--data-warning-600)]", blue:"bg-[var(--accent-soft)] text-[var(--data-success-500)]",
-    purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-gray-100 text-[var(--text-secondary)]",
+    purple:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]", gray:"bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
   };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }

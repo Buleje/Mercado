@@ -285,7 +285,7 @@ export default function DocumentosEmitidosTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface/30">
+                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface/30">
                   <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Tipo</th>
                   <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">N Documento</th>
                   <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
@@ -299,7 +299,7 @@ export default function DocumentosEmitidosTab() {
                 {documentos.map((doc) => {
                   const badge = TIPO_BADGES[doc.tipo] || TIPO_BADGES.ticket;
                   return (
-                    <tr key={`${doc.fuente}-${doc.id}`} className="border-b border-gray-50 dark:border-card-border/50 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                    <tr key={`${doc.fuente}-${doc.id}`} className="border-b border-gray-50 dark:border-card-border/50 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
                       <td className="px-3 py-2.5">
                         <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", badge.bg, badge.text)}>
                           {badge.label}
@@ -329,7 +329,7 @@ export default function DocumentosEmitidosTab() {
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => window.print()}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-[var(--text-secondary)] dark:text-muted transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/10 text-[var(--text-secondary)] dark:text-muted transition-colors"
                             title="Imprimir"
                           >
                             <Printer className="h-3.5 w-3.5" />

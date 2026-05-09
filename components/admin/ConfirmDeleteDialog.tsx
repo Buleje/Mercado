@@ -86,18 +86,18 @@ export function ConfirmDeleteDialog({
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors disabled:opacity-40"
+                className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors disabled:opacity-40"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border">
+            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border">
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent transition-colors disabled:opacity-40"
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent transition-colors disabled:opacity-40"
               >
                 {cancelText}
               </button>

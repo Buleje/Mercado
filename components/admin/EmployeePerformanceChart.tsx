@@ -229,7 +229,7 @@ function ComparisonBars({
                   style={{ height: `${thisH}px` }}
                 />
                 <div
-                  className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-t transition-all duration-[var(--dur-slow)]"
+                  className="flex-1 bg-[var(--rule-soft)] dark:bg-gray-600 rounded-t transition-all duration-[var(--dur-slow)]"
                   style={{ height: `${prevH}px` }}
                 />
               </div>

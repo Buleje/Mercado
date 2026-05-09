@@ -176,7 +176,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {customerName ?? customerPhone}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         </div>
@@ -290,7 +290,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(p.fechaCreacion)}</span>
                       </div>
                       {p.cuotasPendientes.length > 0 && (
-                        <div className="bg-gray-50 dark:bg-card rounded-lg p-2 space-y-1">
+                        <div className="bg-[var(--surface-alt)] dark:bg-card rounded-lg p-2 space-y-1">
                           {p.cuotasPendientes.map((c) => (
                             <div key={c.id} className="flex justify-between text-xs">
                               <span className="text-[var(--text-secondary)] dark:text-muted">Cuota #{c.número}</span>

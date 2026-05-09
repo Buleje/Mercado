@@ -444,7 +444,7 @@ export default function ExcelProductImporter() {
                 "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                 columnMap.nombre && columnMap.precio
                   ? "bg-primary text-white hover:bg-[#235c43]"
-                  : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
+                  : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               )}
             >
               Previsualizar datos
@@ -538,7 +538,7 @@ export default function ExcelProductImporter() {
                 "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                 validCount > 0
                   ? "bg-primary text-white hover:bg-[#235c43]"
-                  : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
+                  : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               )}
             >
               Importar {validCount} producto{validCount !== 1 ? "s" : ""}

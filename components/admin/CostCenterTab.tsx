@@ -108,7 +108,7 @@ export default function CostCenterTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Distribución y seguimiento de gastos operativos por centro</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(filteredAllocations.map(a => ({ centro: centerName(a.centerId), fecha: a.date, concepto: a.concept, categoria: a.category, monto: a.amount, referencia: a.reference, notas: a.notes })), "centros-costo")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filteredAllocations.map(a => ({ centro: centerName(a.centerId), fecha: a.date, concepto: a.concept, categoria: a.category, monto: a.amount, referencia: a.reference, notas: a.notes })), "centros-costo")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           {view === "asignaciones" && (
@@ -122,7 +122,7 @@ export default function CostCenterTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Centros activos", value: String(globalStats.centerCount), color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-gray-50 dark:bg-surface/50" },
+          { label: "Centros activos", value: String(globalStats.centerCount), color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
           { label: "Presupuesto total", value: fmt(globalStats.totalBudget), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Total asignado", value: fmt(globalStats.totalAllocated), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Disponible", value: fmt(globalStats.totalBudget - globalStats.totalAllocated), color: globalStats.totalBudget >= globalStats.totalAllocated ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: globalStats.totalBudget >= globalStats.totalAllocated ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
@@ -135,7 +135,7 @@ export default function CostCenterTab() {
       </div>
 
       {/* View toggle */}
-      <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1 w-fit">
+      <div className="flex flex-wrap gap-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-xl p-1 w-fit">
         {([["centros", "Centros"], ["asignaciones", "Asignaciones"]] as const).map(([v, label]) => (
           <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}>
             {label}
@@ -164,7 +164,7 @@ export default function CostCenterTab() {
                   <span className="text-[var(--text-secondary)] dark:text-muted">Asignado</span>
                   <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.totalAllocated)} / {fmt(c.budgetMonthly)}</span>
                 </div>
-                <div className="w-full h-2.5 bg-gray-200 dark:bg-surface rounded-full overflow-hidden">
+                <div className="w-full h-2.5 bg-[var(--rule-soft)] dark:bg-surface rounded-full overflow-hidden">
                   <div className={cn("h-full rounded-full transition-all", c.pct > 100 ? "bg-[var(--data-error-500)]" : c.pct > 85 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(c.pct, 100)}%` }} />
                 </div>
                 <p className={cn("text-xs font-semibold", c.budgetMonthly - c.totalAllocated >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
@@ -239,7 +239,7 @@ export default function CostCenterTab() {
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+                <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
                   <tr>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Fecha</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Centro</th>
@@ -252,7 +252,7 @@ export default function CostCenterTab() {
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {filteredAllocations.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">Sin asignaciones.</td></tr>}
                   {filteredAllocations.map(a => (
-                    <tr key={a.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30">
+                    <tr key={a.id} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] whitespace-nowrap">{fmtDate(a.date)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">{centerName(a.centerId)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-foreground">{a.concept}</td>
@@ -263,7 +263,7 @@ export default function CostCenterTab() {
                   ))}
                 </tbody>
                 {filteredAllocations.length > 0 && (
-                  <tfoot className="bg-gray-50 dark:bg-surface/50 border-t border-[var(--rule-base)] dark:border-card-border">
+                  <tfoot className="bg-[var(--surface-alt)] dark:bg-surface/50 border-t border-[var(--rule-base)] dark:border-card-border">
                     <tr>
                       <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-extrabold text-[var(--text-secondary)] dark:text-muted uppercase">Total</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(filteredAllocations.reduce((s, a) => s + a.amount, 0))}</td>

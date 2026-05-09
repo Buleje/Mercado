@@ -119,7 +119,7 @@ export default function CustomKPITab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Define y monitorea tus métricas clave de negocio</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={load} disabled={loading} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface text-[var(--text-tertiary)]">
+          <button onClick={load} disabled={loading} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface text-[var(--text-tertiary)]">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(kpis.map(k => ({ nombre: k.name, valor: k.currentValue, meta: k.target, unidad: k.unit, tendencia: k.trend, cambio: k.changePercent, categoria: k.category })), "kpis")}
@@ -136,7 +136,7 @@ export default function CustomKPITab() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 h-40 animate-pulse bg-gray-100 dark:bg-surface" />
+            <div key={i} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 h-40 animate-pulse bg-[var(--surface-sunken)] dark:bg-surface" />
           ))}
         </div>
       ) : kpis.length === 0 ? (
@@ -159,7 +159,7 @@ export default function CustomKPITab() {
             return (
               <div key={k.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 relative group">
                 <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openEdit(k)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)]"><Pencil className="h-3 w-3" /></button>
+                  <button onClick={() => openEdit(k)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-[var(--text-tertiary)]"><Pencil className="h-3 w-3" /></button>
                   <button onClick={() => remove(k.id)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-3 w-3" /></button>
                 </div>
 
@@ -185,7 +185,7 @@ export default function CustomKPITab() {
 
                 {/* Barra progreso hacia meta */}
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                  <div className="flex-1 h-1.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                     <div className={cn("h-full rounded-full transition-all", isGood ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")}
                       style={{ width: `${progress}%` }} />
                   </div>
@@ -247,7 +247,7 @@ export default function CustomKPITab() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>
               <button onClick={save} disabled={saving || !form.name.trim()} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
                 {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar
               </button>

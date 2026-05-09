@@ -11,7 +11,7 @@ const SEGMENT_CONFIG: Record<SegmentLabel, { label: string; icon: React.ElementT
   regular:   { label: "Regular",    icon: Star,          color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)]",        bg: "bg-[var(--data-info-50)] dark:bg-sky-950/30",          border: "border-[var(--data-info-500)] dark:border-[var(--data-info-500)]",        barColor: "bg-[var(--data-info-500)]" },
   nuevo:     { label: "Nuevo",      icon: UserPlus,      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",barColor: "bg-[var(--accent-soft)]" },
   en_riesgo: { label: "En Riesgo",  icon: AlertTriangle, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30",      border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]",   barColor: "bg-[var(--data-warning-500)]" },
-  dormido:   { label: "Dormido",    icon: Moon,          color: "text-[var(--text-tertiary)]",      bg: "bg-gray-50 dark:bg-surface",            border: "border-[var(--rule-base)] dark:border-card-border",  barColor: "bg-gray-400" },
+  dormido:   { label: "Dormido",    icon: Moon,          color: "text-[var(--text-tertiary)]",      bg: "bg-[var(--surface-alt)] dark:bg-surface",            border: "border-[var(--rule-base)] dark:border-card-border",  barColor: "bg-gray-400" },
 };
 
 const TIER_COLORS: Record<string, string> = {
@@ -84,10 +84,10 @@ export default function CustomerSegmentationTab() {
           <Users className="h-6 w-6 text-primary" />Segmentación de Clientes
         </SectionTitle>
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={() => setView("tabla")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "tabla" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+          <button onClick={() => setView("tabla")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "tabla" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
             <BarChart3 className="h-3.5 w-3.5 inline mr-1" />Tabla
           </button>
-          <button onClick={() => setView("rfm")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "rfm" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+          <button onClick={() => setView("rfm")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "rfm" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
             <TrendingUp className="h-3.5 w-3.5 inline mr-1" />RFM
           </button>
           <div className="relative">
@@ -137,7 +137,7 @@ export default function CustomerSegmentationTab() {
 
       {/* Segment pills */}
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setActiveSegment("all")} className={cn("px-3 py-1.5 rounded-full text-sm font-bold border transition", activeSegment === "all" ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}>
+        <button onClick={() => setActiveSegment("all")} className={cn("px-3 py-1.5 rounded-full text-sm font-bold border transition", activeSegment === "all" ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface")}>
           Todos · {totalCustomers}
         </button>
         {(Object.keys(SEGMENT_CONFIG) as SegmentLabel[]).map(seg => {
@@ -188,7 +188,7 @@ export default function CustomerSegmentationTab() {
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+              <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                 <tr>
                   <th className="text-left px-4 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
                   <th className="text-left px-4 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Segmento</th>
@@ -206,7 +206,7 @@ export default function CustomerSegmentationTab() {
                   const cfg = SEGMENT_CONFIG[c.segment];
                   const Icon = cfg.icon;
                   return (
-                    <tr key={c.phone} className="hover:bg-gray-50 dark:hover:bg-surface transition">
+                    <tr key={c.phone} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition">
                       <td className="px-4 py-3">
                         <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{c.name}</p>
                         <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
@@ -217,7 +217,7 @@ export default function CustomerSegmentationTab() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={cn("px-2 py-0.5 rounded-full text-xs font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
+                        <span className={cn("px-2 py-0.5 rounded-full text-xs font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{c.orderCount}</td>
                       <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">S/{Number(c.totalSpent).toFixed(2)}</td>
@@ -252,7 +252,7 @@ export default function CustomerSegmentationTab() {
                     <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
+                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>{c.loyaltyTier}</span>
                     <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold border", cfg.bg, cfg.color, cfg.border)}>
                       <cfg.icon className="h-3 w-3" />{cfg.label}
                     </span>
@@ -269,7 +269,7 @@ export default function CustomerSegmentationTab() {
                         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{metric.label}</span>
                         <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{metric.value}</span>
                       </div>
-                      <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                      <div className="h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                         <div className={cn("h-full rounded-full transition-all", metric.color)} style={{ width: `${metric.value}%` }} />
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{metric.desc}</p>

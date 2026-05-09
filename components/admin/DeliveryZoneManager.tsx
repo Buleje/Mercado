@@ -196,7 +196,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
             </button>
             <button
               onClick={handleCancel}
-              className="p-1.5 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-1.5 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 transition-colors"
               aria-label="Cancelar"
             >
               <X size={13} />

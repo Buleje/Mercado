@@ -54,7 +54,7 @@ type Cotizacion = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<CotizacionStatus, { label: string; color: string; bg: string }> = {
-  BORRADOR:   { label: "Borrador",   color: "text-[var(--text-primary)]",      bg: "bg-gray-100" },
+  BORRADOR:   { label: "Borrador",   color: "text-[var(--text-primary)]",      bg: "bg-[var(--surface-sunken)]" },
   ENVIADA:    { label: "Enviada",    color: "text-[var(--data-success-500)]",      bg: "bg-[var(--accent-soft)]" },
   ACEPTADA:   { label: "Aceptada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
   RECHAZADA:  { label: "Rechazada",  color: "text-[var(--data-error-500)]",        bg: "bg-[var(--data-error-100)]" },
@@ -150,9 +150,9 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
     return (
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded-xl" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-[var(--rule-soft)] rounded-xl" />)}
         </div>
-        <div className="h-48 bg-gray-200 rounded-xl" />
+        <div className="h-48 bg-[var(--rule-soft)] rounded-xl" />
       </div>
     );
   }
@@ -198,7 +198,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
   const emptyCot = (msg: string) => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center mb-3">
+      <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mb-3">
         <BarChart3 className="h-6 w-6 text-[var(--text-tertiary)]" />
       </div>
       <p className="text-sm font-medium text-[var(--text-secondary)]">{msg}</p>
@@ -571,7 +571,7 @@ export default function CotizacionesModule() {
       </AdminModuleHeader>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-[var(--surface-sunken)] rounded-xl p-1 w-fit">
         {([["dashboard", "Dashboard"], ["lista", "Lista"], ["nueva", "Nueva Cotización"]] as const).map(([id, label]) => (
           <button
             key={id}
@@ -586,7 +586,7 @@ export default function CotizacionesModule() {
             {id === "dashboard" && <BarChart3 className="h-3.5 w-3.5" />}
             {label}
             {id === "lista" && cotizaciones.length > 0 && (
-              <span className="bg-gray-200 text-xs px-1.5 rounded-full">{cotizaciones.length}</span>
+              <span className="bg-[var(--rule-soft)] text-xs px-1.5 rounded-full">{cotizaciones.length}</span>
             )}
           </button>
         ))}
@@ -654,7 +654,7 @@ export default function CotizacionesModule() {
           {/* Mejora nueva: Funnel de conversión */}
           {!loading && cotizaciones.length > 0 && (() => {
             const stages = [
-              { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-gray-200", text: "text-[var(--text-primary)]" },
+              { id: "BORRADOR", label: "Borrador", count: cotizaciones.filter(c => c.status === "BORRADOR").length, bg: "bg-[var(--rule-soft)]", text: "text-[var(--text-primary)]" },
               { id: "ENVIADA", label: "Enviada", count: cotizaciones.filter(c => c.status === "ENVIADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
               { id: "ACEPTADA", label: "Aceptada", count: cotizaciones.filter(c => c.status === "ACEPTADA").length, bg: "bg-[var(--accent-soft)]", text: "text-[var(--data-success-500)]" },
               { id: "CONVERTIDA", label: "Convertida", count: cotizaciones.filter(c => c.status === "CONVERTIDA").length, bg: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]" },
@@ -719,7 +719,7 @@ export default function CotizacionesModule() {
                     "shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
                     statusFilter === s
                       ? "bg-primary text-white"
-                      : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
                   )}
                 >
                   {s === "" ? "Todos" : STATUS_META[s].label}
@@ -799,7 +799,7 @@ export default function CotizacionesModule() {
               </div>
             ) : cotizaciones.length === 0 ? (
               <div className="text-center py-16 px-4">
-                <div className="h-16 w-16 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-4">
                   <FileText className="h-8 w-8 text-[var(--text-tertiary)]" />
                 </div>
                 <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin cotizaciones</CardTitle>
@@ -810,10 +810,10 @@ export default function CotizacionesModule() {
               <>
                 {/* Mejora 13 (R3): Toggle Lista/Cards */}
                 <div className="flex items-center gap-1 px-4 pt-2">
-                  <button onClick={() => setCotViewMode("lista")} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", cotViewMode === "lista" ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)]")}>
+                  <button onClick={() => setCotViewMode("lista")} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", cotViewMode === "lista" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
                     <List className="h-3.5 w-3.5 inline mr-1" />Lista
                   </button>
-                  <button onClick={() => setCotViewMode("cards")} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", cotViewMode === "cards" ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)]")}>
+                  <button onClick={() => setCotViewMode("cards")} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", cotViewMode === "cards" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
                     <Bookmark className="h-3.5 w-3.5 inline mr-1" />Cards
                   </button>
                 </div>
@@ -823,7 +823,7 @@ export default function CotizacionesModule() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 py-2">
                     {paginated.map(c => {
                       const meta = STATUS_META[c.status];
-                      const headerColor = c.status === "BORRADOR" ? "bg-gray-100" : c.status === "ENVIADA" ? "bg-[var(--accent-soft)]" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]";
+                      const headerColor = c.status === "BORRADOR" ? "bg-[var(--surface-sunken)]" : c.status === "ENVIADA" ? "bg-[var(--accent-soft)]" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]";
                       const diasValidez = Math.max(0, Math.ceil((new Date(c.validoHasta).getTime() - Date.now()) / 86400000));
                       return (
                         <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-lg cursor-pointer transition-all group">
@@ -865,7 +865,7 @@ export default function CotizacionesModule() {
                           <tr
                             key={c.id}
                             onClick={() => openDetail(c)}
-                            className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors group"
+                            className="border-b border-gray-50 hover:bg-[var(--surface-alt)] cursor-pointer transition-colors group"
                           >
                             <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                               {/* Mejora 17: Preview al hover */}
@@ -904,10 +904,10 @@ export default function CotizacionesModule() {
                       {cotizaciones.length} cotizaci{cotizaciones.length !== 1 ? "ones" : "ón"} — Pág. {page}/{totalPages}
                     </p>
                     <div className="flex gap-1">
-                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                         <ChevronLeft className="h-4 w-4" />
                       </button>
-                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                         <ChevronRight className="h-4 w-4" />
                       </button>
                     </div>
@@ -928,11 +928,11 @@ export default function CotizacionesModule() {
               <div key={s} className="flex items-center gap-2">
                 <div className={cn(
                   "h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
-                  step >= s ? "bg-primary text-white" : "bg-gray-200 text-[var(--text-secondary)]"
+                  step >= s ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
                 )}>
                   {s}
                 </div>
-                {s < 3 && <div className={cn("w-8 h-0.5", step > s ? "bg-primary" : "bg-gray-200")} />}
+                {s < 3 && <div className={cn("w-8 h-0.5", step > s ? "bg-primary" : "bg-[var(--rule-soft)]")} />}
               </div>
             ))}
             <span className="text-sm text-[var(--text-secondary)] ml-2">
@@ -995,7 +995,7 @@ export default function CotizacionesModule() {
                   </button>
                   <button
                     onClick={() => setShowTemplateList(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                   >
                     <List className="h-3.5 w-3.5" /> Gestionar ({templates.length})
                   </button>
@@ -1036,7 +1036,7 @@ export default function CotizacionesModule() {
                                   <button
                                     key={p.id}
                                     onClick={() => selectProduct(idx, p)}
-                                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex justify-between"
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-alt)] flex justify-between"
                                   >
                                     <span className="truncate">{p.name}</span>
                                     <span className="text-[var(--text-tertiary)] ml-2">{formatCurrency(p.price)}</span>
@@ -1077,7 +1077,7 @@ export default function CotizacionesModule() {
               </button>
 
               {/* Totals */}
-              <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+              <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-1">
                 <div className="flex justify-between text-sm text-[var(--text-secondary)]">
                   <span>Subtotal</span><span>{formatCurrency(computedSubtotal)}</span>
                 </div>
@@ -1090,7 +1090,7 @@ export default function CotizacionesModule() {
               </div>
 
               <div className="flex gap-2 justify-between pt-2">
-                <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Atrás
                 </button>
                 <button onClick={() => setStep(3)} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
@@ -1103,7 +1103,7 @@ export default function CotizacionesModule() {
           {/* Step 3: Confirmar */}
           {step === 3 && (
             <div className="space-y-6">
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+              <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-2">
                 <p className="text-sm"><span className="font-bold text-[var(--text-primary)]">Cliente:</span> {clienteNombre} {clienteRuc ? `(RUC: ${clienteRuc})` : ""}</p>
                 <p className="text-sm"><span className="font-bold text-[var(--text-primary)]">Items:</span> {items.filter(i => i.descripcion.trim()).length}</p>
                 <p className="text-sm"><span className="font-bold text-[var(--text-primary)]">Total:</span> <span className="font-bold text-primary">{formatCurrency(computedTotal)}</span></p>
@@ -1134,7 +1134,7 @@ export default function CotizacionesModule() {
               {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
               <div className="flex gap-2 justify-between pt-1">
-                <button onClick={() => setStep(2)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                <button onClick={() => setStep(2)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Atrás
                 </button>
                 <button
@@ -1174,13 +1174,13 @@ export default function CotizacionesModule() {
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cotización #{String(selected.número).padStart(4, "0")}</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
                 {/* Info */}
-                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center">
                       <User className="h-5 w-5 text-secondary" />
@@ -1212,7 +1212,7 @@ export default function CotizacionesModule() {
                     <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Items</h4>
                     <div className="space-y-2">
                       {(selected.items ?? []).map((item, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <div key={i} className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.descripcion}</p>
                             <p className="text-xs text-[var(--text-tertiary)]">{item.cantidad} x {formatCurrency(item.precioUnit)} {item.descuento > 0 ? `(-${item.descuento}%)` : ""}</p>
@@ -1241,10 +1241,10 @@ export default function CotizacionesModule() {
                       return (
                         <div key={idx} className="flex gap-3 items-start">
                           <div className="flex flex-col items-center">
-                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs", isDone ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-tertiary)]")}>
+                            <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs", isDone ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>
                               {isDone ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                             </div>
-                            {idx < 3 && <div className={cn("w-0.5 h-6", isDone ? "bg-[var(--accent-soft)]" : "bg-gray-200")} />}
+                            {idx < 3 && <div className={cn("w-0.5 h-6", isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--rule-soft)]")} />}
                           </div>
                           <div className="pb-3">
                             <p className={cn("text-xs font-bold", isDone ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{step.label}</p>
@@ -1380,7 +1380,7 @@ export default function CotizacionesModule() {
                     <Copy className="h-4 w-4" /> Duplicar
                   </button>
                   <button onClick={handlePrint}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                     <Printer className="h-4 w-4" /> Imprimir PDF
                   </button>
                   <button
@@ -1407,7 +1407,7 @@ export default function CotizacionesModule() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => setShowSaveTemplate(false)}
-                        className="flex-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                        className="flex-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                       >
                         Cancelar
                       </button>
@@ -1450,7 +1450,7 @@ export default function CotizacionesModule() {
               <div className="w-full max-w-md bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Seleccionar plantilla</CardTitle>
-                  <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
+                  <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)]">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1462,7 +1462,7 @@ export default function CotizacionesModule() {
                       <button
                         key={tpl.id}
                         onClick={() => handleLoadTemplate(tpl)}
-                        className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all"
+                        className="w-full text-left p-3 bg-[var(--surface-alt)] rounded-lg hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all"
                       >
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -1508,7 +1508,7 @@ export default function CotizacionesModule() {
               <div className="w-full max-w-md bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Plantillas guardadas</CardTitle>
-                  <button onClick={() => setShowTemplateList(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
+                  <button onClick={() => setShowTemplateList(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)]">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1520,7 +1520,7 @@ export default function CotizacionesModule() {
                     {templates.map(tpl => (
                       <div
                         key={tpl.id}
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                        className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl"
                       >
                         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                           <Bookmark className="h-4 w-4 text-primary" />
