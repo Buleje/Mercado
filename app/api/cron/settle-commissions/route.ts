@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { timingSafeCompare } from "@/lib/timing-safe";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { withCronHealth } from "@/lib/cron/with-cron-health";
 
 /**
  * GET /api/cron/settle-commissions
@@ -13,14 +13,7 @@ import { toNumOrZero } from "@/lib/decimal-utils";
  *
  * Authorization: Bearer <CRON_SECRET>
  */
-export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization") ?? "";
-
-  if (!secret || !timingSafeCompare(auth, `Bearer ${secret}`)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronHealth("settle-commissions", async (req: NextRequest) => {
   const traceId = newTraceId();
 
   try {
@@ -62,4 +55,4 @@ export async function GET(req: NextRequest) {
     logger.error("[cron/settle-commissions] Failed", { error: err, traceId });
     return NextResponse.json(payload, { status });
   }
-}
+});

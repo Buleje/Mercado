@@ -15,24 +15,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { runSunatWorker } from "@/lib/sunat/invoice-worker";
 import { logger } from "@/lib/logger";
+import { withCronHealth } from "@/lib/cron/with-cron-health";
 
-export async function GET(req: NextRequest) {
-  // Verificar CRON_SECRET
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) {
-    logger.error("[cron/sunat-retry] CRON_SECRET no configurado");
-    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
-  }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    logger.warn("[cron/sunat-retry] Intento no autorizado", {
-      ip: req.headers.get("x-forwarded-for") ?? "unknown",
-    });
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronHealth("sunat-retry", async (req: NextRequest) => {
   // Obtener todos los tenants con configuración SUNAT activa
   const configs = await prisma.tenantSunatConfig.findMany({
     select: { tenantId: true },
@@ -77,4 +62,4 @@ export async function GET(req: NextRequest) {
     ...totals,
     results,
   });
-}
+});

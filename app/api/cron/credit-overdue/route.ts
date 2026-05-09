@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { checkOverdue } from "@/lib/credit/installment-manager";
 import { prisma } from "@/lib/prisma";
-import { withCronAuth } from "@/lib/cron-auth";
+import { withCronHealth } from "@/lib/cron/with-cron-health";
 
 // ── GET /api/cron/credit-overdue ──────────────────────────────────────────────
 // Cron diario. Protegido por CRON_SECRET con timing-safe compare + fail-closed
 // si el secret no está configurado (FIX 2026-05-06: antes era fail-open).
 
-export const GET = withCronAuth("credit-overdue", async () => {
+export const GET = withCronHealth("credit-overdue", async () => {
   logger.info("[cron/credit-overdue] Starting overdue check");
 
   try {
