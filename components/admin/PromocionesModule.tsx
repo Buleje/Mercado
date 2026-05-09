@@ -116,7 +116,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
   return (
     <div className={cn(
       "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] border-l-4 p-4 ",
-      "transition-all hover:shadow-sm",
+      "transition-all hover:shadow-[var(--shadow-sm)]",
       statusColor,
       !promo.activa && "opacity-60",
     )}>

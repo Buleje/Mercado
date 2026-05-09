@@ -79,7 +79,7 @@ export default function ManualDeliveryModal({
       onClick={onCancel}
     >
       <div
-        className="relative w-full max-w-lg bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] rounded-3xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-lg bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] rounded-3xl shadow-[var(--shadow-xl)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -174,7 +174,7 @@ export default function ManualDeliveryModal({
           <button
             type="button"
             onClick={handleConfirm}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 px-4 rounded-xl text-sm font-extrabold bg-[var(--data-success-500)] text-white hover:opacity-90 shadow-md shadow-[var(--data-success-500)]/30 transition-all active:scale-[0.99]"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 px-4 rounded-xl text-sm font-extrabold bg-[var(--data-success-500)] text-white hover:opacity-90 shadow-[var(--shadow-md)] shadow-[var(--data-success-500)]/30 transition-all active:scale-[0.99]"
           >
             <Check className="h-4 w-4" strokeWidth={2.5} />
             Confirmar entrega

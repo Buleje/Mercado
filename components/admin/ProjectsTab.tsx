@@ -138,7 +138,7 @@ export default function ProjectsTab() {
           const st = STATUS_META[p.status];
           const StIcon = st.icon;
           return (
-            <div key={p.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3 hover:shadow-lg transition-shadow">
+            <div key={p.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3 hover:shadow-[var(--shadow-lg)] transition-shadow">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{p.name}</p>

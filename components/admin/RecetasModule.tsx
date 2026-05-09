@@ -617,7 +617,7 @@ export default function RecetasModule() {
                         <div
                           key={r.id}
                           className={cn(
-                            "relative text-left bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4  hover:shadow-lg hover:scale-[1.01] transition-all group",
+                            "relative text-left bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4  hover:shadow-[var(--shadow-lg)] hover:scale-[1.01] transition-all group",
                             !r.activa && "opacity-60"
                           )}
                         >

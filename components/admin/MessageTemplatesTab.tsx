@@ -205,7 +205,7 @@ export default function MessageTemplatesTab() {
           {filtered.map(t => {
             const chCfg = CHANNEL_CONFIG[t.channel];
             return (
-              <div key={t.id} onClick={() => setSelectedId(t.id)} className={cn("bg-white dark:bg-card rounded-xl border p-4 cursor-pointer transition-all hover:shadow-sm", selectedId === t.id ? "border-primary" : "border-[var(--rule-base)] dark:border-card-border")}>
+              <div key={t.id} onClick={() => setSelectedId(t.id)} className={cn("bg-white dark:bg-card rounded-xl border p-4 cursor-pointer transition-all hover:shadow-[var(--shadow-sm)]", selectedId === t.id ? "border-primary" : "border-[var(--rule-base)] dark:border-card-border")}>
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <button onClick={e => { e.stopPropagation(); handleStar(t.id); }} className="shrink-0">

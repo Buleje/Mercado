@@ -550,7 +550,7 @@ function SaleCompleteModal({
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header — success + titulo + total */}
         <div className="px-6 pt-8 pb-6 text-center relative overflow-hidden">
           <SaleConfetti />
@@ -1656,7 +1656,7 @@ export default function POSView() {
                 {showMoreTools && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setShowMoreTools(false)} />
-                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 z-20 min-w-[220px] space-y-1 shadow-lg">
+                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-2 z-20 min-w-[220px] space-y-1 shadow-[var(--shadow-lg)]">
                       <button
                         onClick={() => { setShowWhatsAppOrder(true); setShowMoreTools(false); }}
                         className="w-full flex items-center gap-2 text-xs font-bold text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] px-3 py-2 rounded-lg transition-colors"
@@ -1765,7 +1765,7 @@ export default function POSView() {
                     className={cn(
                       "snap-start shrink-0 flex flex-col items-center justify-center gap-1.5 w-[92px] h-[80px] rounded-xl border transition-all duration-[var(--dur-fast)]",
                       active
-                        ? "bg-primary text-white border-primary shadow-sm"
+                        ? "bg-primary text-white border-primary shadow-[var(--shadow-sm)]"
                         : "bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10"
                     )}
                   >
@@ -1808,7 +1808,7 @@ export default function POSView() {
                       onClick={() => !outOfStock && addToCart(p)}
                       disabled={outOfStock}
                       className={cn(
-                        "bg-white dark:bg-card rounded-xl border p-2 text-left transition-all hover:shadow-sm relative",
+                        "bg-white dark:bg-card rounded-xl border p-2 text-left transition-all hover:shadow-[var(--shadow-sm)] relative",
                         inCart ? "border-primary ring-1 ring-primary/20" : "border-[var(--rule-soft)] hover:border-gray-200 dark:border-card-border",
                         outOfStock && "opacity-40 cursor-not-allowed"
                       )}

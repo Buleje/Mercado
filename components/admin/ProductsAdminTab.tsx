@@ -1284,7 +1284,7 @@ export default function ProductsAdminTab() {
               <div
                 key={p.id}
                 className={cn(
-                  "group relative bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border overflow-hidden transition-all hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5",
+                  "group relative bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border overflow-hidden transition-all hover:border-primary/40 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5",
                   p.active === false && "opacity-60"
                 )}
               >
@@ -1314,10 +1314,10 @@ export default function ProductsAdminTab() {
                       <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-gray-700/90 text-white backdrop-blur-sm">Oculto</span>
                     )}
                     {p.badge && p.active !== false && (
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-primary text-white shadow-sm">{p.badge}</span>
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-primary text-white shadow-[var(--shadow-sm)]">{p.badge}</span>
                     )}
                     {cat?.emoji && p.active !== false && !p.badge && (
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/90 dark:bg-card/90 text-[var(--text-secondary)] backdrop-blur-sm shadow-sm">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/90 dark:bg-card/90 text-[var(--text-secondary)] backdrop-blur-sm shadow-[var(--shadow-sm)]">
                         {cat.emoji} {cat.label}
                       </span>
                     )}
@@ -1328,7 +1328,7 @@ export default function ProductsAdminTab() {
                     <div className="absolute top-2.5 right-2.5">
                       <span
                         className={cn(
-                          "text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm backdrop-blur-sm",
+                          "text-xs font-bold px-2.5 py-1 rounded-lg shadow-[var(--shadow-sm)] backdrop-blur-sm",
                           stockLevel === "out" && "bg-[var(--data-error-500)] text-white",
                           stockLevel === "low" && "bg-[var(--data-warning-500)] text-white",
                           stockLevel === "ok" && "bg-white/90 dark:bg-card/90 text-[var(--text-primary)]"
@@ -1343,7 +1343,7 @@ export default function ProductsAdminTab() {
                   <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/40 to-transparent pt-12 pb-3 px-3 flex items-end justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setModal({ product: p })}
-                      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white dark:bg-[var(--color-card)] text-primary font-bold text-xs hover:bg-white/90 transition-colors shadow-md"
+                      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white dark:bg-[var(--color-card)] text-primary font-bold text-xs hover:bg-white/90 transition-colors shadow-[var(--shadow-md)]"
                       title="Editar"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -1351,21 +1351,21 @@ export default function ProductsAdminTab() {
                     </button>
                     <button
                       onClick={() => handleDuplicateProduct(p)}
-                      className="h-9 w-9 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      className="h-9 w-9 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-[var(--shadow-md)]"
                       title="Duplicar"
                     >
                       <Copy className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleToggleActive(p)}
-                      className="h-9 w-9 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      className="h-9 w-9 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-[var(--shadow-md)]"
                       title={p.active === false ? "Mostrar" : "Ocultar"}
                     >
                       {p.active === false ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                     </button>
                     <button
                       onClick={() => setDeleteTarget(p)}
-                      className="h-9 w-9 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--data-error-500)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      className="h-9 w-9 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--data-error-500)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-[var(--shadow-md)]"
                       title="Eliminar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

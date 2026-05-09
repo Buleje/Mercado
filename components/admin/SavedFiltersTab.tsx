@@ -208,7 +208,7 @@ export default function SavedFiltersTab() {
       ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         {filtered.map(f => (
-          <div key={f.id} className={cn("bg-white dark:bg-card rounded-xl border p-3 sm:p-5 transition-shadow hover:shadow-sm", f.isDefault ? "border-primary/50 dark:border-primary/50" : "border-[var(--rule-base)] dark:border-card-border")}>
+          <div key={f.id} className={cn("bg-white dark:bg-card rounded-xl border p-3 sm:p-5 transition-shadow hover:shadow-[var(--shadow-sm)]", f.isDefault ? "border-primary/50 dark:border-primary/50" : "border-[var(--rule-base)] dark:border-card-border")}>
             <div className="flex items-start justify-between mb-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Filter className="h-4 w-4 text-primary shrink-0" />

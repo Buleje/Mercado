@@ -1045,21 +1045,21 @@ export default function PrestamosModule() {
           <div className="space-y-6">
             {/* KPI Cards — mejorado con iconos prominentes */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  hover:shadow-sm transition-shadow p-3">
+              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Landmark className="h-4 w-4 text-[var(--data-info-500)]" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total prestado</p>
                 </div>
                 <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{formatCurrency(totalPrestado)}</p>
               </div>
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  hover:shadow-sm transition-shadow p-3">
+              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <DollarSign className="h-4 w-4 text-secondary" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Por cobrar</p>
                 </div>
                 <p className={cn("text-2xl font-extrabold font-mono", porCobrar > totalPrestado * 0.5 ? "text-secondary" : "text-[var(--data-error-500)]")}>{formatCurrency(porCobrar)}</p>
               </div>
-              <div className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl  hover:shadow-sm transition-shadow p-3", cuotasVencidas > 3 ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]")}>
+              <div className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", cuotasVencidas > 3 ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]")}>
                 <div className="flex items-center gap-2 mb-1">
                   <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Cuotas vencidas</p>
@@ -1068,7 +1068,7 @@ export default function PrestamosModule() {
                   {cuotasVencidas}
                 </p>
               </div>
-              <div className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl  hover:shadow-sm transition-shadow p-3", tasaRecuperacion > 80 ? "border-[var(--data-success-500)]/30" : "border-[var(--rule-base)]")}>
+              <div className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", tasaRecuperacion > 80 ? "border-[var(--data-success-500)]/30" : "border-[var(--rule-base)]")}>
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="h-4 w-4 text-[var(--data-success-500)]" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Tasa recuperacion</p>

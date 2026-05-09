@@ -96,7 +96,7 @@ export default function ResumenGlobal({ onNavigate }: { onNavigate?: (tab: strin
               key={c.label}
               onClick={() => onNavigate?.(c.tab)}
               className={cn(
-                "bg-white dark:bg-[var(--color-card)] border rounded-xl p-3 sm:p-4 text-left transition-all hover:shadow-sm hover:scale-[1.01]",
+                "bg-white dark:bg-[var(--color-card)] border rounded-xl p-3 sm:p-4 text-left transition-all hover:shadow-[var(--shadow-sm)] hover:scale-[1.01]",
                 c.alert ? "border-[var(--data-error-500)] bg-[var(--data-error-50)]/50" : "border-[var(--rule-base)]",
               )}
             >

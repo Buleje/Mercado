@@ -158,7 +158,7 @@ export default function SharedCalendarTab() {
             const tc = TYPE_CONFIG[e.type];
             const d = new Date(e.date + "T00:00:00");
             return (
-              <div key={e.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex flex-wrap items-center gap-2 sm:gap-4 hover:shadow-sm transition-shadow">
+              <div key={e.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex flex-wrap items-center gap-2 sm:gap-4 hover:shadow-[var(--shadow-sm)] transition-shadow">
                 <div className="text-center shrink-0 w-12">
                   <p className="text-xs font-bold text-[var(--text-tertiary)]">{DAYS_ES[d.getDay()]}</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{d.getDate()}</p>

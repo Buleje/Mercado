@@ -246,7 +246,7 @@ function OverviewCard({ section, completionPct, onClick }: {
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border-2 border-[var(--rule-soft)] dark:border-card-border text-left transition-all bg-white dark:bg-card hover:shadow-lg hover:border-gray-200 dark:hover:border-gray-600"
+      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border-2 border-[var(--rule-soft)] dark:border-card-border text-left transition-all bg-white dark:bg-card hover:shadow-[var(--shadow-lg)] hover:border-gray-200 dark:hover:border-gray-600"
     >
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", section.color)}>
         {section.icon}

@@ -193,7 +193,7 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
   const meta = STATUS_META[nc.status];
   return (
     <m.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-      className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl p-4 cursor-pointer transition-all hover:shadow-sm",
+      className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl p-4 cursor-pointer transition-all hover:shadow-[var(--shadow-sm)]",
         selected ? "border-primary ring-2 ring-primary/20" : "border-[var(--rule-base)]")}>
       <div className="flex items-start gap-3">
         <button onClick={(e) => { e.stopPropagation(); onToggle(); }}
@@ -286,7 +286,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
         "w-full text-left rounded-xl border-2 p-4 transition-all duration-[var(--dur-base)] relative overflow-hidden",
         isSelected
           ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-          : cn(style.bg, style.border, "hover:shadow-lg")
+          : cn(style.bg, style.border, "hover:shadow-[var(--shadow-lg)]")
       )}>
       {/* Color accent strip */}
       <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" :
@@ -1067,7 +1067,7 @@ export default function NotasCreditoModule() {
                   ) : col.map(nc => (
                     <m.div key={nc.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       onClick={() => setSelected(nc)}
-                      className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-lg p-3 cursor-pointer hover:shadow-sm hover:border-primary/40 transition-all">
+                      className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-lg p-3 cursor-pointer hover:shadow-[var(--shadow-sm)] hover:border-primary/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{nc.número}</span>
                         <span className="text-sm font-extrabold text-[var(--text-primary)]">{formatCurrency(nc.total)}</span>

@@ -41,7 +41,7 @@ const ACCENT_CLASSES: Record<
     badge: "bg-[var(--accent-soft)] text-[var(--accent)]",
     icon: "text-[var(--accent)]",
     iconBg: "bg-[var(--accent-soft)]",
-    button: "bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.02] hover:shadow-lg",
+    button: "bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.02] hover:shadow-[var(--shadow-lg)]",
   },
   enterprise: {
     ring:
@@ -51,7 +51,7 @@ const ACCENT_CLASSES: Record<
     icon: "text-[var(--text-primary)]",
     iconBg: "bg-indigo-50 dark:bg-indigo-500/10",
     button:
-      "bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.02] hover:shadow-lg",
+      "bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.02] hover:shadow-[var(--shadow-lg)]",
   },
   max: {
     ring:
@@ -61,7 +61,7 @@ const ACCENT_CLASSES: Record<
     icon: "text-[var(--data-warning-600)] dark:text-amber-400",
     iconBg: "bg-amber-50 dark:bg-[var(--data-warning-500)]/10",
     button:
-      "bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.02] hover:shadow-lg",
+      "bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.02] hover:shadow-[var(--shadow-lg)]",
   },
 };
 
@@ -143,7 +143,7 @@ export default function PlanTierSelector({
       {/* ── Header ───────────────────────────────────────────────── */}
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-canvas)] to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="flex items-start gap-4">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-md">
+          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-[var(--shadow-md)]">
             <Crown className="h-5 w-5" strokeWidth={2.25} />
           </span>
           <div className="min-w-0 flex-1">
@@ -194,12 +194,12 @@ export default function PlanTierSelector({
               className={cn(
                 "relative rounded-2xl border-2 bg-[var(--surface-canvas)] p-5 transition-all flex flex-col",
                 accent.ring,
-                isCurrent && "shadow-md",
-                !isCurrent && "hover:-translate-y-0.5 hover:shadow-md",
+                isCurrent && "shadow-[var(--shadow-md)]",
+                !isCurrent && "hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]",
               )}
             >
               {isCurrent && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] px-3 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white shadow-sm">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] px-3 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white shadow-[var(--shadow-sm)]">
                   <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
                   Activo
                 </span>

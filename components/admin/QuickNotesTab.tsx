@@ -202,7 +202,7 @@ export default function QuickNotesTab() {
               const colors = COLOR_MAP[note.color];
               const isEditing = editingId === note.id;
               return (
-                <div key={note.id} className={cn("rounded-xl border p-4 transition-shadow hover:shadow-sm", colors.bg, colors.border, colors.darkBg, colors.darkBorder)}>
+                <div key={note.id} className={cn("rounded-xl border p-4 transition-shadow hover:shadow-[var(--shadow-sm)]", colors.bg, colors.border, colors.darkBg, colors.darkBorder)}>
                   {isEditing ? (
                     <>
                       <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full text-sm font-bold text-[var(--text-primary)] dark:text-foreground bg-transparent outline-none mb-2" />

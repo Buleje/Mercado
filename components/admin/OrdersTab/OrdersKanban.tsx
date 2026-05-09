@@ -350,7 +350,7 @@ const OrderCard = memo(function OrderCard({
               onClick={primaryAction.onClick}
               className={cn(
                 "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-extrabold uppercase tracking-[var(--ls-wider)] transition-all",
-                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] shadow-sm shadow-[var(--accent)]/25 hover:shadow-md hover:shadow-[var(--accent)]/35 active:scale-[0.99]",
+                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] shadow-[var(--shadow-sm)] shadow-[var(--accent)]/25 hover:shadow-[var(--shadow-md)] hover:shadow-[var(--accent)]/35 active:scale-[0.99]",
               )}
             >
               <primaryAction.icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
@@ -478,7 +478,7 @@ const KanbanColumn = memo(function KanbanColumn({
       className={cn(
         "flex flex-col min-h-0 rounded-2xl border-2 p-3 transition-all",
         isOver
-          ? "scale-[1.01] shadow-lg ring-4 ring-offset-0"
+          ? "scale-[1.01] shadow-[var(--shadow-lg)] ring-4 ring-offset-0"
           : isActiveTarget
           ? "border-dashed"
           : "border-[var(--rule-base)] bg-[var(--surface-sunken)]",
@@ -662,7 +662,7 @@ export function OrdersKanban({
               className={cn(
                 "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
                 isActive
-                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
+                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-[var(--shadow-sm)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
               )}
             >
@@ -732,7 +732,7 @@ export function OrdersKanban({
       {/* Drag overlay — preview de la card flotante */}
       <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }}>
         {draggedOrder ? (
-          <div className="rotate-2 scale-105 shadow-2xl ring-2 ring-[var(--accent)] rounded-2xl">
+          <div className="rotate-2 scale-105 shadow-[var(--shadow-xl)] ring-2 ring-[var(--accent)] rounded-2xl">
             <OrderCard
               order={draggedOrder}
               selected={false}

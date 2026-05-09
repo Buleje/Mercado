@@ -186,7 +186,7 @@ export default function MorningSummaryModal() {
                   </p>
                   <h2
                     id="morning-summary-title"
-                    className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm"
+                    className="text-2xl font-extrabold tracking-tight text-white drop-shadow-[var(--shadow-sm)]"
                   >
                     ¡{greetingText}!
                   </h2>

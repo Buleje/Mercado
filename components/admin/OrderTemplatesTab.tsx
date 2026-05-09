@@ -327,7 +327,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
   return (
     <div className={cn(
       "rounded-xl border bg-white dark:bg-card overflow-hidden transition-shadow",
-      "border-[var(--rule-base)] dark:border-card-border  hover:shadow-sm"
+      "border-[var(--rule-base)] dark:border-card-border  hover:shadow-[var(--shadow-sm)]"
     )}>
       {/* Cabecera */}
       <div className="flex items-center gap-3 px-4 py-3">

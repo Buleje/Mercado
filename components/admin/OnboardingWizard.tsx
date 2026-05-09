@@ -405,7 +405,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div
-                className="flex-shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm"
+                className="flex-shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center shadow-[var(--shadow-sm)]"
                 style={{
                   background:
                     "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
@@ -505,7 +505,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+              className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold text-white shadow-[var(--shadow-sm)] transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
               style={{
                 background:
                   "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",
@@ -529,7 +529,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
                   const first = STEPS.find((s) => !status[s.id]);
                   if (first) handleNavigate(first.href);
                 }}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold text-white shadow-sm transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+                className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold text-white shadow-[var(--shadow-sm)] transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
                 style={{
                   background:
                     "linear-gradient(135deg, var(--accent) 0%, var(--data-success-600) 100%)",

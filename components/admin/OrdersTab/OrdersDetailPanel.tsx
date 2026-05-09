@@ -164,7 +164,7 @@ export function OrdersDetailPanel({
       aria-label={`Detalle del pedido de ${order.customer.name}`}
     >
       <div
-        className="relative w-full max-w-3xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] rounded-3xl shadow-2xl flex flex-col max-h-[calc(100vh-3rem)] overflow-hidden"
+        className="relative w-full max-w-3xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[calc(100vh-3rem)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ─── 1. HEADER — patrón estándar admin (CardTitle DS, sin italic) ── */}
