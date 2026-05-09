@@ -370,7 +370,7 @@ export default function MarketplaceNavbar() {
                 size={36}
                 strokeWidth={1.75}
                 textSize={18}
-                className="text-[var(--accent)] dark:text-white"
+                className="text-[var(--accent-600)] dark:text-white"
               />
             </Link>
 
@@ -668,7 +668,7 @@ export default function MarketplaceNavbar() {
                   size={28}
                   strokeWidth={1.75}
                   textSize={16}
-                  className="text-[var(--accent)] dark:text-white"
+                  className="text-[var(--accent-600)] dark:text-white"
                 />
               </span>
               <button

@@ -7,6 +7,7 @@ import { OrdersDB } from "@/lib/db/orders.db";
 import { notifyYapeApproved } from "@/lib/whatsapp/notify-yape-result";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
@@ -33,6 +34,19 @@ export async function POST(
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
+  // Round 10 M004: envolver TODO el handler para que las escrituras a Order
+  // (state machine confirmado) y PaymentApproval queden con superadmin actor.
+  return runWithAuditContext(req, `superadmin:${auth.username}`, () =>
+    handleApprove(req, id, auth.username),
+  );
+}
+
+async function handleApprove(
+  _req: NextRequest,
+  id: string,
+  reviewerUsername: string,
+): Promise<NextResponse> {
+  const auth = { username: reviewerUsername };
 
   const approval = await PaymentApprovalDb.getById(id);
   if (!approval) {

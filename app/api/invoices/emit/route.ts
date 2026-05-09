@@ -15,6 +15,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod/v4";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 const EmitSchema = z.object({
   orderId: z.string().min(1),
@@ -36,7 +37,22 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json().catch(() => null);
+  // Round 10 M004: audit log de SunatInvoice + Order updates con actor + IP.
+  return runWithAuditContext(req, auth.username, () => emitHandler(req, start, requestId, auth));
+}
+
+async function emitHandler(
+  req: NextRequest,
+  start: number,
+  requestId: string,
+  auth: { tenantId: string; username: string; role?: string },
+) {
+
+  const body = await req.json().catch((err) => {
+    // Body no-JSON → 400 abajo con mensaje claro.
+    void err;
+    return null;
+  });
   if (!body) {
     return NextResponse.json({ error: "Body inválido" }, { status: 400 });
   }
@@ -207,7 +223,11 @@ export async function POST(req: NextRequest) {
       auth.username,
       requestId,
       auth.tenantId,
-    ).catch(() => {});
+    ).catch((err) => {
+      logger.error("[invoices/emit] logActivity failed", {
+        err: err instanceof Error ? err.message : String(err),
+      });
+    });
 
     logger.info("[invoices/emit] comprobante emitido OK", {
       requestId,
@@ -271,7 +291,11 @@ export async function POST(req: NextRequest) {
       auth.username,
       requestId,
       auth.tenantId,
-    ).catch(() => {});
+    ).catch((err) => {
+      logger.error("[invoices/emit] error-logActivity failed", {
+        err: err instanceof Error ? err.message : String(err),
+      });
+    });
 
     return NextResponse.json({ error: mensaje }, { status: 500 });
   }

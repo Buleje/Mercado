@@ -8,6 +8,7 @@ import { OrdersDB } from "@/lib/db/orders.db";
 import { notifyYapeRejected } from "@/lib/whatsapp/notify-yape-result";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
@@ -36,6 +37,19 @@ export async function POST(
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
+  // Round 10 M004: audit log captura superadmin actor + IP en escrituras
+  // PaymentApproval rejected + Order cancelado.
+  return runWithAuditContext(req, `superadmin:${auth.username}`, () =>
+    handleReject(req, id, auth.username),
+  );
+}
+
+async function handleReject(
+  req: NextRequest,
+  id: string,
+  reviewerUsername: string,
+): Promise<NextResponse> {
+  const auth = { username: reviewerUsername };
 
   let body: unknown;
   try {

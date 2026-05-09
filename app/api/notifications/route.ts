@@ -3,6 +3,7 @@ import { z } from "zod";
 import { NotificationLogsDB, OrdersDB, SettingsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // SECURITY 2026-05-06 (audit notifs #4): Zod schema en lugar de validación
 // manual. Antes `body.message` arbitrario se persistía en NotificationLog.
@@ -25,7 +26,11 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json().catch(() => null);
+  const raw = await req.json().catch((err) => {
+    // Body no-JSON o vacío → safeParse fallará después con error explícito.
+    void err;
+    return null;
+  });
   const parsed = NotifPostSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
@@ -54,13 +59,16 @@ export async function POST(req: NextRequest) {
   const phone = body.phone.replace(/[^0-9]/g, "");
   const whatsappUrl = `https://wa.me/${phone.startsWith("51") ? phone : "51" + phone}?text=${encodeURIComponent(message)}`;
 
-  const log = await NotificationLogsDB.add({
-    type,
-    recipient: phone,
-    message,
-    status: "sent",
-    orderId: order.id,
-  }, auth.tenantId);
+  // Round 10 M004 PoC: audit log captura admin actor + IP real.
+  const log = await runWithAuditContext(req, auth.username, () =>
+    NotificationLogsDB.add({
+      type,
+      recipient: phone,
+      message,
+      status: "sent",
+      orderId: order.id,
+    }, auth.tenantId),
+  );
 
   return NextResponse.json({ ...log, whatsappUrl }, { status: 201 });
 }

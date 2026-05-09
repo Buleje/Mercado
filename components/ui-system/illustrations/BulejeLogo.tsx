@@ -90,7 +90,15 @@ export function BulejeWordmark({
   delete (rest as { strokeWidth?: number }).strokeWidth;
   const tSize = textSize ?? Math.round(size * 0.55);
   return (
-    <span className={cn("inline-flex items-center gap-2", className)} {...rest}>
+    // Round 10 fix: inline style con --accent-600 (más oscuro que --accent)
+    // garantiza contraste WCAG AA 4.5:1+ sobre fondo blanco. La clase
+    // text-[var(--accent-600)] no se generaba en Tailwind 4 JIT (turbopack
+    // bug). dark:text-white sigue funcionando vía className override.
+    <span
+      className={cn("inline-flex items-center gap-2", className)}
+      style={{ color: "var(--accent-600, var(--accent))" }}
+      {...rest}
+    >
       <BulejeMark size={size} />
       {showText && (
         <span

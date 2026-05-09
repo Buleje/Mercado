@@ -17,6 +17,7 @@ import { createNotification } from "@/lib/create-notification";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { cacheStore } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -234,17 +235,24 @@ export async function POST(req: NextRequest) {
       resolvedScheduledFor = when;
     }
 
-    const order = await MarketplaceOrdersDB.createFromCart({
-      storeSlug,
-      customerName,
-      customerPhone,
-      customerAddress,
-      notes,
-      paymentMethod,
-      couponCode,
-      loyaltyRedeemPoints,
-      items,
-    });
+    // Round 10 M004: audit log de Order/Customer create con phone+IP. Si el
+    // checkout es anónimo (sin phone), el actor queda como "anonymous".
+    const order = await runWithAuditContext(
+      req,
+      customerPhone || "anonymous",
+      () =>
+        MarketplaceOrdersDB.createFromCart({
+          storeSlug,
+          customerName,
+          customerPhone,
+          customerAddress,
+          notes,
+          paymentMethod,
+          couponCode,
+          loyaltyRedeemPoints,
+          items,
+        }),
+    );
 
     // F2: persistir idempotency en cache — doble-click en los próximos 300s devuelve este orderId
     if (idemKey && customerPhone) {

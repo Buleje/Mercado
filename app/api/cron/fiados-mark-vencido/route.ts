@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { logger } from "@/lib/logger";
 import { trackCronExecution } from "@/lib/cron/health-tracker";
+import { withAuditContext } from "@/lib/audit/audit-context";
 
 /**
  * GET /api/cron/fiados-mark-vencido
@@ -26,17 +27,22 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
 
-    // eslint-disable-next-line no-restricted-properties -- cron multi-tenant: corre sobre todos los tenants en una sola pasada (idempotente, no requiere tenantId scope).
-    const result = await prisma.fiado.updateMany({
-      where: {
-        status: "ACTIVO",
-        fechaVence: { lt: now, not: null },
-      },
-      data: {
-        status: "VENCIDO",
-        updatedAt: now,
-      },
-    });
+    // Round 10 M004: audit log de Fiado.updateMany con actor "cron"
+    // (en vez de "system" hardcoded). Trazable en auditoría SBS.
+    const result = await withAuditContext(
+      { ipAddress: null, userId: "cron:fiados-mark-vencido", requestId: null },
+      () =>
+        prisma.fiado.updateMany({
+          where: {
+            status: "ACTIVO",
+            fechaVence: { lt: now, not: null },
+          },
+          data: {
+            status: "VENCIDO",
+            updatedAt: now,
+          },
+        }),
+    );
 
     logger.info("[cron/fiados-mark-vencido] success", {
       transitioned: result.count,

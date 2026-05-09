@@ -84,7 +84,7 @@ export default function CheckoutShell({
                 size={30}
                 strokeWidth={1.75}
                 textSize={17}
-                className="text-[var(--accent)] dark:text-white"
+                className="text-[var(--accent-600)] dark:text-white"
               />
             </Link>
 

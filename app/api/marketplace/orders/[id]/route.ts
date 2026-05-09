@@ -13,6 +13,7 @@ import { sendPushToPhone } from "@/lib/push-sender";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { PrismaOrderRepository } from "@/lib/db/adapters/prisma-order-repository";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 const orderRepo = new PrismaOrderRepository();
 
@@ -57,11 +58,19 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  ctx: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
+  // Round 10 M004: audit log de status transitions con admin actor + IP.
+  return runWithAuditContext(req, auth.username, () => patchHandler(req, ctx, auth));
+}
 
+async function patchHandler(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+  auth: { tenantId: string; username: string },
+) {
   const { id } = await params;
 
   let raw: unknown;
