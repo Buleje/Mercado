@@ -50,13 +50,13 @@ export default function RecentlyViewed({ maxItems = 6 }: RecentlyViewedProps) {
       {/* Header */}
       <div className="flex items-end justify-between gap-4 mb-6">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mb-2">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
             <Clock className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
             Vuelve a ver
           </span>
           <h2
             id="recently-viewed-heading"
-            className="text-2xl sm:text-3xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white"
+            className="text-2xl sm:text-3xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] dark:text-white"
           >
             Productos que miraste
           </h2>
@@ -65,7 +65,7 @@ export default function RecentlyViewed({ maxItems = 6 }: RecentlyViewedProps) {
         <button
           type="button"
           onClick={clear}
-          className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+          className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 transition-colors"
           aria-label="Limpiar historial de productos vistos"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" />
@@ -96,18 +96,18 @@ export default function RecentlyViewed({ maxItems = 6 }: RecentlyViewedProps) {
                   aria-label={`Volver a ver ${item.name}`}
                 >
                   {/* Thumbnail con ilustracion fallback */}
-                  <div className="aspect-square bg-gray-50 dark:bg-gray-950 flex items-center justify-center text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors border-b border-gray-100 dark:border-gray-800">
+                  <div className="aspect-square bg-gray-50 dark:bg-gray-950 flex items-center justify-center text-[var(--text-primary)] dark:text-gray-200 group-hover:text-primary transition-colors border-b border-gray-100 dark:border-gray-800">
                     <Ill size={72} strokeWidth={1.5} />
                   </div>
 
                   <div className="p-3">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2">
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-white leading-tight line-clamp-2">
                       {item.name}
                     </p>
-                    <p className="mt-1 text-[length:var(--ts-2xs)] text-gray-500 dark:text-gray-400 line-clamp-1">
+                    <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-gray-400 line-clamp-1">
                       {item.storeName}
                     </p>
-                    <p className="mt-1.5 text-base font-extrabold text-gray-900 dark:text-white">
+                    <p className="mt-1.5 text-base font-extrabold text-[var(--text-primary)] dark:text-white">
                       S/{(Number(item.price) || 0).toFixed(2)}
                     </p>
                     <span className="mt-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-primary">
@@ -126,10 +126,10 @@ export default function RecentlyViewed({ maxItems = 6 }: RecentlyViewedProps) {
               href="/marketplace/mi-cuenta/historial"
               className="group flex flex-col items-center justify-center gap-2 w-full aspect-square rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-all text-center px-4"
             >
-              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 group-hover:text-primary transition-colors leading-snug">
+              <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-gray-400 group-hover:text-primary transition-colors leading-snug">
                 Ver historial completo
               </span>
-              <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-primary transition-colors" aria-hidden="true" />
+              <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" aria-hidden="true" />
             </Link>
           </div>
         </div>

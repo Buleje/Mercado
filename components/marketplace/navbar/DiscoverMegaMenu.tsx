@@ -133,7 +133,7 @@ export default function DiscoverMegaMenu({
   if (variant === "mobile") {
     return (
       <div className="space-y-1">
-        <div className="flex items-center gap-2 px-3 pb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-2 px-3 pb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-gray-400">
           <Compass className="h-3 w-3" strokeWidth={1.75} aria-hidden />
           Descubrí
         </div>
@@ -146,14 +146,14 @@ export default function DiscoverMegaMenu({
               onClick={() => {
                 onNavigate?.();
               }}
-              className="flex items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
+              className="flex items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
             >
-              <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+              <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-[var(--text-primary)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
                 <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
               </span>
               <span className="flex-1">
                 <span className="block">{it.title}</span>
-                <span className="mt-0.5 block text-[length:var(--ts-2xs)] font-normal leading-snug text-gray-500 dark:text-gray-400">
+                <span className="mt-0.5 block text-[length:var(--ts-2xs)] font-normal leading-snug text-[var(--text-secondary)] dark:text-gray-400">
                   {it.description}
                 </span>
               </span>
@@ -187,8 +187,8 @@ export default function DiscoverMegaMenu({
         className={cn(
           "relative inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors",
           open
-            ? "text-gray-900 dark:text-white"
-            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white",
+            ? "text-[var(--text-primary)] dark:text-white"
+            : "text-[var(--text-secondary)] dark:text-gray-400 hover:text-[var(--text-primary)] dark:hover:text-white",
         )}
       >
         <Compass className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
@@ -223,14 +223,14 @@ export default function DiscoverMegaMenu({
                   }}
                   className="group flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900"
                 >
-                  <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 group-hover:border-primary/40 group-hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 transition-colors">
+                  <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-[var(--text-primary)] group-hover:border-primary/40 group-hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 transition-colors">
                     <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-sm font-semibold text-gray-900 dark:text-white">
+                    <span className="block text-sm font-semibold text-[var(--text-primary)] dark:text-white">
                       {it.title}
                     </span>
-                    <span className="mt-0.5 block text-xs leading-snug text-gray-500 dark:text-gray-400">
+                    <span className="mt-0.5 block text-xs leading-snug text-[var(--text-secondary)] dark:text-gray-400">
                       {it.description}
                     </span>
                   </span>

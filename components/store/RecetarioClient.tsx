@@ -167,14 +167,14 @@ function RecetaCard({
             {/* Floating badges on image — mas grandes, mejor contraste */}
             <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
               {receta.categoria && (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-800">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-primary)]">
                   {receta.categoria}
                 </span>
               )}
               {dif && (() => {
                 const DIcon = dif.Icon;
                 return (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-[length:var(--ts-2xs)] font-bold text-gray-800">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
                     <DIcon className="h-3 w-3" strokeWidth={1.75} aria-hidden /> {dif.label}
                   </span>
                 );
@@ -184,12 +184,12 @@ function RecetaCard({
             {/* Tiempo + porciones bottom */}
             <div className="absolute bottom-3 left-3 flex items-center gap-2 flex-wrap">
               {receta.tiempoMinutos && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-gray-800 text-[length:var(--ts-xs)] font-bold tabular-nums">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-[var(--text-primary)] text-[length:var(--ts-xs)] font-bold tabular-nums">
                   <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden /> {receta.tiempoMinutos} min
                 </span>
               )}
               {receta.porciones && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-gray-800 text-[length:var(--ts-xs)] font-bold tabular-nums">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/95 backdrop-blur text-[var(--text-primary)] text-[length:var(--ts-xs)] font-bold tabular-nums">
                   <Users className="h-3 w-3" strokeWidth={1.75} aria-hidden /> {receta.porciones}
                 </span>
               )}
@@ -274,7 +274,7 @@ function CategoriaCard({
         />
       </div>
       <div className="px-4 py-3.5">
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 tabular-nums">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] tabular-nums">
           {count} receta{count !== 1 ? "s" : ""}
         </p>
         <p className="mt-1 font-extrabold text-sm text-[var(--text-primary)] tracking-tight">
@@ -434,7 +434,7 @@ export default function RecetarioClient() {
                   onClick={() => setViewMode("grid")}
                   className={cn(
                     "p-2 transition-colors",
-                    viewMode === "grid" ? "bg-primary text-white" : "text-gray-400 hover:text-gray-600"
+                    viewMode === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                   )}
                   aria-label="Vista de galeria"
                 >
@@ -444,7 +444,7 @@ export default function RecetarioClient() {
                   onClick={() => setViewMode("list")}
                   className={cn(
                     "p-2 transition-colors",
-                    viewMode === "list" ? "bg-primary text-white" : "text-gray-400 hover:text-gray-600"
+                    viewMode === "list" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                   )}
                   aria-label="Vista de lista"
                 >
@@ -558,7 +558,7 @@ export default function RecetarioClient() {
         <section className="border-t border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
             <div className="mb-6">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Explorá
               </p>
               <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
@@ -607,7 +607,7 @@ export default function RecetarioClient() {
               value={suggestion}
               onChange={e => setSuggestion(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSuggestion()}
-              className="flex-1 h-12 px-5 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              className="flex-1 h-12 px-5 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
             />
             <button
               onClick={handleSuggestion}
@@ -710,7 +710,7 @@ function RecetaListItem({
               {receta.descripcion}
             </p>
           )}
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+          <div className="flex items-center gap-3 mt-2 text-xs text-[var(--text-tertiary)]">
             {receta.tiempoMinutos && (
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {receta.tiempoMinutos} min

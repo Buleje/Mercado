@@ -41,8 +41,8 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
       <div className="space-y-10">
         {/* Monto */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">1. Monto</h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          <h2 className="text-lg font-bold text-[var(--text-primary)] dark:text-white">1. Monto</h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-gray-400">
             Desde S/ 10 hasta S/ 1000.
           </p>
           <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
@@ -57,7 +57,7 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
                     "rounded-xl border p-3 text-center transition-colors",
                     isActive
                       ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
-                      : "border-gray-200 bg-white text-gray-900 hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:hover:border-gray-600",
+                      : "border-gray-200 bg-white text-[var(--text-primary)] hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:hover:border-gray-600",
                   ].join(" ")}
                   aria-pressed={isActive}
                 >
@@ -68,11 +68,11 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
           </div>
 
           <div className="mt-4 flex items-center gap-3 rounded-xl border border-dashed border-gray-300 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
-            <label htmlFor="custom-amount" className="shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <label htmlFor="custom-amount" className="shrink-0 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300">
               Personalizado
             </label>
             <div className="flex flex-1 items-center gap-1">
-              <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">S/</span>
+              <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-gray-400">S/</span>
               <input
                 id="custom-amount"
                 type="number"
@@ -82,7 +82,7 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
                 onChange={(e) => handleCustom(e.target.value)}
                 placeholder="Monto"
                 inputMode="numeric"
-                className="flex-1 bg-transparent text-lg font-bold text-gray-900 outline-none placeholder:text-gray-300 dark:text-white dark:placeholder:text-gray-600"
+                className="flex-1 bg-transparent text-lg font-bold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] dark:text-white dark:placeholder:text-[var(--text-secondary)]"
               />
             </div>
           </div>
@@ -90,8 +90,8 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
 
         {/* Diseno */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">2. Disenio</h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          <h2 className="text-lg font-bold text-[var(--text-primary)] dark:text-white">2. Disenio</h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-gray-400">
             Elegi el estilo que se muestra al destinatario.
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -114,7 +114,7 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
                     <GiftCardArtwork design={d.id} className="h-full w-full" />
                   </div>
                   <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-xs font-semibold text-gray-900 dark:text-white">
+                    <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-white">
                       {d.label}
                     </span>
                     {isActive && (
@@ -148,18 +148,18 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
             <GiftCardArtwork design={design} className="h-full w-full" />
           </div>
           <div className="border-t border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-            <div className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            <div className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-[var(--text-tertiary)] dark:text-gray-500">
               Vista previa
             </div>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Monto</span>
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+              <span className="text-sm text-[var(--text-secondary)] dark:text-gray-400">Monto</span>
+              <span className="text-2xl font-bold text-[var(--text-primary)] dark:text-white">
                 S/ {amount || 0}
               </span>
             </div>
           </div>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400">
           Sin vencimiento. Se canjea en cualquier bodega del marketplace.
         </p>
       </aside>

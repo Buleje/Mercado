@@ -57,7 +57,7 @@ function AnswerItem({
 
   return (
     <div className="flex items-start gap-3 pt-3 border-t border-gray-100 dark:border-gray-800 first:border-t-0 first:pt-0">
-      <CornerDownRight className="h-4 w-4 text-gray-300 dark:text-gray-600 mt-1 shrink-0" />
+      <CornerDownRight className="h-4 w-4 text-[var(--text-tertiary)] dark:text-gray-600 mt-1 shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <span
@@ -65,12 +65,12 @@ function AnswerItem({
               "inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0",
               answer.isVendor
                 ? "bg-primary text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
+                : "bg-gray-100 dark:bg-gray-800 text-[var(--text-primary)] dark:text-gray-300",
             )}
           >
             {answer.isVendor ? <Store className="h-3.5 w-3.5" /> : initials(answer.userName)}
           </span>
-          <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+          <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-white truncate">
             {answer.userName}
           </span>
           {answer.isVendor && (
@@ -78,12 +78,12 @@ function AnswerItem({
               Respuesta del vendedor
             </span>
           )}
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-[var(--text-secondary)] dark:text-gray-400">
             · {relativeTime(answer.createdAt)}
           </span>
         </div>
 
-        <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+        <p className="mt-2 text-sm text-[var(--text-primary)] dark:text-gray-300 leading-relaxed whitespace-pre-line">
           {answer.body}
         </p>
 
@@ -94,7 +94,7 @@ function AnswerItem({
             "mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors",
             voted
               ? "bg-primary/10 text-primary cursor-default"
-              : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white",
+              : "text-[var(--text-secondary)] dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[var(--text-primary)] dark:hover:text-white",
           )}
         >
           <ThumbsUp className={cn("h-3 w-3", voted && "fill-current")} />
@@ -116,7 +116,7 @@ export default function QuestionCard({ question, onAnswerHelpful }: QuestionCard
           <MessageCircle className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2 flex-wrap text-xs text-[var(--text-secondary)] dark:text-gray-400">
             <span className="inline-flex items-center gap-1">
               <User className="h-3 w-3" />
               {question.userName}
@@ -124,7 +124,7 @@ export default function QuestionCard({ question, onAnswerHelpful }: QuestionCard
             <span>·</span>
             <span>{relativeTime(question.createdAt)}</span>
           </div>
-          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white leading-snug">
+          <p className="mt-1 text-sm font-semibold text-[var(--text-primary)] dark:text-white leading-snug">
             {question.question}
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function QuestionCard({ question, onAnswerHelpful }: QuestionCard
       )}
 
       {answerCount === 0 && (
-        <p className="mt-3 pl-0 sm:pl-12 text-xs text-gray-500 dark:text-gray-400 italic">
+        <p className="mt-3 pl-0 sm:pl-12 text-xs text-[var(--text-secondary)] dark:text-gray-400 italic">
           Aún nadie responde esta pregunta.
         </p>
       )}

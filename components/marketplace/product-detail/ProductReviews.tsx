@@ -135,11 +135,11 @@ export default function ProductReviews({ productId, productName }: ProductReview
           <MessageSquare className="h-5 w-5 text-primary" />
           <h2
             id={`reviews-heading-${productId}`}
-            className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
+            className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] dark:text-white"
           >
             Opiniones de la comunidad
             {total > 0 && (
-              <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+              <span className="ml-2 text-sm font-normal text-[var(--text-secondary)] dark:text-gray-400">
                 ({total})
               </span>
             )}
@@ -162,7 +162,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
       {/* Filtros + Sort */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="inline-flex items-center gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 overflow-x-auto">
-          <Filter className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 mx-2 shrink-0" />
+          <Filter className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-gray-400 mx-2 shrink-0" />
           {(["all", "with_photos", "helpful", "verified"] as ReviewFilter[]).map((f) => (
             <button
               key={f}
@@ -170,8 +170,8 @@ export default function ProductReviews({ productId, productName }: ProductReview
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors",
                 filter === f
-                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white",
+                  ? "bg-white dark:bg-gray-900 text-[var(--text-primary)] dark:text-white shadow-sm"
+                  : "text-[var(--text-secondary)] dark:text-gray-400 hover:text-[var(--text-primary)] dark:hover:text-white",
               )}
             >
               {FILTER_LABELS[f]}
@@ -180,7 +180,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
         </div>
 
         <div className="inline-flex items-center gap-2">
-          <ArrowDownUp className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+          <ArrowDownUp className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-gray-400" />
           <label htmlFor={`rv-sort-${productId}`} className="sr-only">
             Ordenar reseñas
           </label>
@@ -188,7 +188,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
             id={`rv-sort-${productId}`}
             value={sort}
             onChange={(e) => setSort(e.target.value as ReviewSort)}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1.5 text-xs font-medium text-[var(--text-primary)] dark:text-gray-300 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           >
             {(Object.keys(SORT_LABELS) as ReviewSort[]).map((s) => (
               <option key={s} value={s}>
@@ -202,14 +202,14 @@ export default function ProductReviews({ productId, productName }: ProductReview
       {/* Lista */}
       <div id={`reviews-list-${productId}`}>
         {loading && reviews.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="flex items-center justify-center py-12 text-[var(--text-secondary)] dark:text-gray-400">
             <Loader2 className="h-5 w-5 animate-spin mr-2" />
             <span className="text-sm">Cargando reseñas…</span>
           </div>
         ) : reviews.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 py-12 text-center">
-            <MessageSquare className="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600" />
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+            <MessageSquare className="mx-auto h-8 w-8 text-[var(--text-tertiary)] dark:text-gray-600" />
+            <p className="mt-3 text-sm text-[var(--text-secondary)] dark:text-gray-400">
               No hay reseñas que coincidan con este filtro.
             </p>
             {filter !== "all" && (
@@ -234,7 +234,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
             <button
               onClick={handleLoadMore}
               disabled={loadingMore}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
               Ver más reseñas

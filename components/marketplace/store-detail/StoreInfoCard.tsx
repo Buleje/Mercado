@@ -31,15 +31,15 @@ function InfoRow({ icon, label, children }: InfoRowProps) {
     <div className="flex items-start gap-3">
       <span
         aria-hidden
-        className="mt-0.5 flex-shrink-0 text-gray-400 dark:text-gray-500"
+        className="mt-0.5 flex-shrink-0 text-[var(--text-tertiary)] dark:text-gray-500"
       >
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-0.5">
+        <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] dark:text-gray-500 mb-0.5">
           {label}
         </p>
-        <div className="text-sm text-gray-700 dark:text-gray-300">
+        <div className="text-sm text-[var(--text-primary)] dark:text-gray-300">
           {children}
         </div>
       </div>
@@ -62,7 +62,7 @@ export default function StoreInfoCard({
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 space-y-6">
       {/* Kicker */}
-      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 dark:text-gray-500">
+      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-gray-500">
         Información
       </p>
 
@@ -95,7 +95,7 @@ export default function StoreInfoCard({
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-gray-900 dark:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-400"
+              className="font-medium text-[var(--text-primary)] dark:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-400"
             >
               {whatsappNumber}
             </a>
@@ -109,7 +109,7 @@ export default function StoreInfoCard({
           >
             <a
               href={`tel:${phone.replace(/\D/g, "")}`}
-              className="font-medium text-gray-900 dark:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-400"
+              className="font-medium text-[var(--text-primary)] dark:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-400"
             >
               {phone}
             </a>
@@ -125,7 +125,7 @@ export default function StoreInfoCard({
               href={`https://instagram.com/${instagram.replace("@", "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-gray-900 dark:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-400"
+              className="font-medium text-[var(--text-primary)] dark:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-400"
             >
               {instagram.startsWith("@") ? instagram : `@${instagram}`}
             </a>
@@ -135,17 +135,17 @@ export default function StoreInfoCard({
 
       {/* Mapa placeholder */}
       <div className="mt-2 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/60 p-4 flex flex-col items-center gap-3">
-        <div className="text-gray-500 dark:text-gray-400">
+        <div className="text-[var(--text-secondary)] dark:text-gray-400">
           <MapaUcayaliAutentico size={100} strokeWidth={1.5} />
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+        <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 text-center">
           {zone ?? "Pucallpa"}, Ucayali
         </p>
         <a
           href={`https://www.google.com/maps/search/${encodeURIComponent(address ?? zone ?? "Pucallpa")}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-semibold text-gray-600 dark:text-gray-400 underline underline-offset-2 hover:text-gray-900 dark:hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-400"
+          className="text-xs font-semibold text-[var(--text-secondary)] dark:text-gray-400 underline underline-offset-2 hover:text-[var(--text-primary)] dark:hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-400"
         >
           Ver en mapa
         </a>

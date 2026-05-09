@@ -100,10 +100,10 @@ export default function AskQuestionModal({
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success/10 text-success">
               <CheckCircle2 className="h-7 w-7" />
             </div>
-            <h3 className="mt-4 text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="mt-4 text-lg font-bold text-[var(--text-primary)] dark:text-white">
               Pregunta enviada
             </h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-gray-400">
               {storeName} recibirá tu consulta y responderá por este mismo canal.
             </p>
             <button
@@ -120,7 +120,7 @@ export default function AskQuestionModal({
                 <MessageCircle className="h-5 w-5 text-primary" />
                 <h2
                   id="ask-modal-title"
-                  className="text-lg font-bold text-gray-900 dark:text-white"
+                  className="text-lg font-bold text-[var(--text-primary)] dark:text-white"
                 >
                   Hacer una pregunta
                 </h2>
@@ -128,7 +128,7 @@ export default function AskQuestionModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="Cerrar"
               >
                 <X className="h-4 w-4" />
@@ -136,14 +136,14 @@ export default function AskQuestionModal({
             </header>
 
             <div className="px-5 py-4 space-y-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400">
                 Tu pregunta será visible públicamente. {storeName} y otros compradores podrán responder.
               </p>
 
               <div>
                 <label
                   htmlFor="qa-q"
-                  className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5"
+                  className="block text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 mb-1.5"
                 >
                   Pregunta
                 </label>
@@ -155,15 +155,15 @@ export default function AskQuestionModal({
                   rows={3}
                   maxLength={500}
                   placeholder="Ej. ¿Hay delivery a Yarinacocha el mismo día?"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
                 />
-                <p className="mt-1 text-xs text-gray-400">{question.length} / 500</p>
+                <p className="mt-1 text-xs text-[var(--text-tertiary)]">{question.length} / 500</p>
               </div>
 
               <div>
                 <label
                   htmlFor="qa-name"
-                  className="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5"
+                  className="block text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 mb-1.5"
                 >
                   Tu nombre
                 </label>
@@ -174,7 +174,7 @@ export default function AskQuestionModal({
                   onChange={(e) => setName(e.target.value)}
                   maxLength={80}
                   placeholder="Ej. Ana L."
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
                 />
               </div>
 
@@ -190,7 +190,7 @@ export default function AskQuestionModal({
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 Cancelar
               </button>

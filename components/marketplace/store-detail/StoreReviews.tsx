@@ -28,7 +28,7 @@ function StarRow({ filled, total = 5 }: { filled: number; total?: number }) {
           className={cn(
             "h-3.5 w-3.5",
             i < filled
-              ? "fill-gray-700 text-gray-700 dark:fill-gray-200 dark:text-gray-200"
+              ? "fill-gray-700 text-[var(--text-primary)] dark:fill-gray-200 dark:text-gray-200"
               : "fill-gray-200 text-gray-200 dark:fill-gray-700 dark:text-gray-700"
           )}
         />
@@ -40,10 +40,10 @@ function StarRow({ filled, total = 5 }: { filled: number; total?: number }) {
 function RatingBar({ stars, count, percentage, maxCount }: { stars: number; count: number; percentage: number; maxCount: number }) {
   return (
     <div className="flex items-center gap-3 text-sm">
-      <span className="w-4 text-right text-gray-500 dark:text-gray-400 tabular-nums text-xs font-medium">
+      <span className="w-4 text-right text-[var(--text-secondary)] dark:text-gray-400 tabular-nums text-xs font-medium">
         {stars}
       </span>
-      <Star className="h-3 w-3 fill-gray-400 text-gray-400 flex-shrink-0" aria-hidden />
+      <Star className="h-3 w-3 fill-gray-400 text-[var(--text-tertiary)] flex-shrink-0" aria-hidden />
       <div
         className="flex-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden"
         role="progressbar"
@@ -57,7 +57,7 @@ function RatingBar({ stars, count, percentage, maxCount }: { stars: number; coun
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <span className="w-8 text-right text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+      <span className="w-8 text-right text-xs text-[var(--text-tertiary)] dark:text-gray-500 tabular-nums">
         {count}
       </span>
     </div>
@@ -77,25 +77,25 @@ function ReviewCard({ review }: { review: MockStoreReview }) {
       <div className="flex items-start gap-3">
         {/* Avatar */}
         <div
-          className="flex-shrink-0 w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400"
+          className="flex-shrink-0 w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] dark:text-gray-400"
           aria-hidden
         >
           {review.authorInitials}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+            <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-white">
               {review.authorName}
             </span>
             {review.verified && (
-              <span className="text-[length:var(--ts-2xs)] font-medium text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 rounded-full px-2 py-0.5">
+              <span className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] dark:text-gray-500 border border-gray-200 dark:border-gray-700 rounded-full px-2 py-0.5">
                 Compra verificada
               </span>
             )}
           </div>
           <time
             dateTime={review.date}
-            className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 block"
+            className="text-xs text-[var(--text-tertiary)] dark:text-gray-500 mt-0.5 block"
           >
             {date}
           </time>
@@ -105,14 +105,14 @@ function ReviewCard({ review }: { review: MockStoreReview }) {
 
       {/* Content */}
       <div className="pl-12">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-white mb-1">
           {review.title}
         </p>
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-sm text-[var(--text-secondary)] dark:text-gray-400 leading-relaxed">
           {review.body}
         </p>
         {review.helpfulCount > 0 && (
-          <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-400 dark:text-gray-500">
+          <div className="flex items-center gap-1.5 mt-3 text-xs text-[var(--text-tertiary)] dark:text-gray-500">
             <ThumbsUp className="h-3 w-3" aria-hidden />
             {review.helpfulCount} persona{review.helpfulCount !== 1 ? "s" : ""} encontraron esto útil
           </div>
@@ -129,12 +129,12 @@ export default function StoreReviews({ summary, reviews, storeSlug, storeName }:
     <section aria-labelledby="store-reviews-heading" className="space-y-6">
       {/* Header */}
       <div>
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 dark:text-gray-500 mb-2">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-gray-500 mb-2">
           Opiniones
         </p>
         <h2
           id="store-reviews-heading"
-          className="text-xl sm:text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+          className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] dark:text-white"
         >
           Lo que dicen nuestros clientes
         </h2>
@@ -145,13 +145,13 @@ export default function StoreReviews({ summary, reviews, storeSlug, storeName }:
         {/* Big number */}
         <div className="flex flex-col items-center justify-center gap-2 min-w-[100px]">
           <span
-            className="text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+            className="text-5xl font-extrabold tracking-tight text-[var(--text-primary)] dark:text-white"
             aria-label={`Calificación promedio: ${summary.average}`}
           >
             {Number(summary.average).toFixed(1)}
           </span>
           <StarRow filled={Math.round(summary.average)} />
-          <span className="text-xs text-gray-400 dark:text-gray-500">
+          <span className="text-xs text-[var(--text-tertiary)] dark:text-gray-500">
             {summary.total} reseñas
           </span>
         </div>
@@ -179,10 +179,10 @@ export default function StoreReviews({ summary, reviews, storeSlug, storeName }:
         </div>
       ) : (
         <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 p-8 text-center">
-          <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
+          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-gray-300">
             Esta tienda todavía no tiene reseñas.
           </p>
-          <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-1.5 text-xs text-[var(--text-secondary)] dark:text-gray-400">
             Sé el primero en compartir tu experiencia después de tu próxima compra.
           </p>
         </div>
