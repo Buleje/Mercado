@@ -65,7 +65,9 @@ export async function POST(
       `Producción x${parsed.data.quantity} — costo real: S/${result.costoReal.toFixed(2)}`,
       result.produccionLoteId,
       auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(result, { status: 201 });
   } catch (e) {

@@ -13,15 +13,23 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getInvoiceStatus } from "@/lib/sunat/nubefact-client";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  ctx: { params: Promise<{ id: string }> },
 ) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
-  const { tenantId } = auth;
+  // Round 19 M004: GET puede triggerear refresh SunatInvoice.update si pending.
+  return runWithAuditContext(req, auth.username, () => statusHandler(ctx, auth));
+}
 
+async function statusHandler(
+  { params }: { params: Promise<{ id: string }> },
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
+  const { tenantId } = auth;
   const { id } = await params;
 
   try {

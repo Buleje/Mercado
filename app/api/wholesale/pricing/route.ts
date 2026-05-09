@@ -140,7 +140,9 @@ export async function POST(req: NextRequest) {
       `Precios por volumen actualizados para producto #${productId} (${sortedTiers.length} tramos)`,
       String(productId),
       auth.tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(
       {

@@ -46,7 +46,9 @@ export async function POST(req: NextRequest) {
     customer.email,
     undefined,
     customer.tenantId,
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({ code, shareUrl });
 }

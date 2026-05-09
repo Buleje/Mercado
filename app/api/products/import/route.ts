@@ -253,7 +253,9 @@ export async function POST(req: NextRequest) {
       `Importación Excel: ${created} creados, ${errors.length} errores`,
       undefined,
       auth.username ?? "admin"
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ created, errors }, { status: 201 });
   } catch (err) {

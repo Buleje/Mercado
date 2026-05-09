@@ -48,7 +48,9 @@ export async function POST(req: NextRequest) {
   }
 
   const requestId = req.headers.get("x-request-id") ?? undefined;
-  logActivity("campaign_sent", "promotion", promoId ?? "bulk", `Campaña "${title}" enviada a ${opted.length} clientes`, "admin", requestId).catch(() => {});
+  logActivity("campaign_sent", "promotion", promoId ?? "bulk", `Campaña "${title}" enviada a ${opted.length} clientes`, "admin", requestId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({ sent: opted.length, skipped: phones.length - opted.length });
 }

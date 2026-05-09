@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
         `Password actualizado por ${payload.username}`,
         payload.username,
         payload.username,
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     } catch { /* logger not available */ }
 
     return NextResponse.json({ ok: true });

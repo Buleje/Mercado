@@ -63,7 +63,9 @@ export async function POST(req: NextRequest) {
       "Crear", "receta",
       `Receta "${parsed.data.nombre}" creada con ${parsed.data.ingredientes.length} ingredientes`,
       receta.id, auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(receta, { status: 201 });
   } catch (e) {

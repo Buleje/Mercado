@@ -78,7 +78,9 @@ export async function POST(req: NextRequest) {
       `Reorden automática ejecutada manualmente por ${auth.username}: ${purchaseOrders.length} PO(s) creadas`,
       undefined,
       auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     logger.info("[forecasting/auto-reorder] POs creadas", {
       tenantId: auth.tenantId,

@@ -180,7 +180,9 @@ export async function GET(req: NextRequest) {
           `[${tenant.name}] ${sent} clientes notificados sobre ${dropsByProduct.size} productos con baja de precio`,
           undefined,
           "cron"
-        ).catch(() => {});
+        ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
         allResults.push({ tenant: tenant.name, priceDrops: dropsByProduct.size, notifications: sent });
       }

@@ -86,7 +86,9 @@ export async function POST(req: NextRequest) {
       `Cuenta conectada creada para ${businessName}`,
       accountId,
       auth.username ?? "admin",
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ accountId, onboardingUrl }, { status: 201 });
   } catch (err) {

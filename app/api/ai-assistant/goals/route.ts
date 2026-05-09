@@ -119,7 +119,9 @@ export async function POST(req: NextRequest) {
     `${goal.tipo} ${goal.categoria}: meta S/${goal.meta}`,
     goal.id,
     auth.username
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({ goal, goals });
 }
@@ -144,7 +146,9 @@ export async function DELETE(req: NextRequest) {
 
   await writeGoals(auth.tenantId, filtered);
 
-  logActivity("delete", "ai-goal", `Eliminada meta ${id}`, id, auth.username).catch(() => {});
+  logActivity("delete", "ai-goal", `Eliminada meta ${id}`, id, auth.username).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({ success: true, goals: filtered });
 }

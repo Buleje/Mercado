@@ -55,7 +55,9 @@ export const GET = withCronAuth("prestamos-recordatorios", async () => {
 
       if (canSend) {
         const phone = formatPhoneNumber(c.phone);
-        await sendWAMessage(apiUrl!, apiToken!, phone, msg).catch(() => {});
+        await sendWAMessage(apiUrl!, apiToken!, phone, msg).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
         sent++;
       } else {
         sent++;
@@ -79,7 +81,9 @@ export const GET = withCronAuth("prestamos-recordatorios", async () => {
 
       if (canSend) {
         const phone = formatPhoneNumber(c.phone);
-        await sendWAMessage(apiUrl!, apiToken!, phone, msg).catch(() => {});
+        await sendWAMessage(apiUrl!, apiToken!, phone, msg).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
         sent++;
       } else {
         sent++;

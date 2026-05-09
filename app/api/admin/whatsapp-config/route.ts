@@ -172,7 +172,9 @@ export async function PUT(req: NextRequest) {
       "whatsapp_config",
       `WhatsApp Commerce configurado para tenant ${auth.tenantId}`,
       config.id
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({
       ok: true,
@@ -240,7 +242,9 @@ export async function DELETE(req: NextRequest) {
       "whatsapp_config",
       `WhatsApp Commerce desactivado para tenant ${auth.tenantId}`,
       config.id
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

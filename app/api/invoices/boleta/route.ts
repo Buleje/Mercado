@@ -8,6 +8,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { emitirBoleta } from "@/lib/integrations/sunat";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 /**
  * POST /api/invoices/boleta
@@ -30,7 +31,14 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "invoices-boleta"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  // Round 19 M004: SunatInvoice + Order updates con admin actor.
+  return runWithAuditContext(req, auth.username, () => boletaHandler(req, auth));
+}
 
+async function boletaHandler(
+  req: NextRequest,
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
   try {
     const body = await req.json();
     const parsed = BoletaSchema.safeParse(body);
@@ -143,7 +151,9 @@ export async function POST(req: NextRequest) {
       "boleta_generada",
       "facturacion",
       `Boleta ${numero} para ${clienteNombre} - S/${total.toFixed(2)} — SUNAT: ${sunatResult.success ? "OK" : "pendiente"}`,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     logger.info("[invoices/boleta] Boleta generada", { numero, total, sunat: sunatResult.success });
 

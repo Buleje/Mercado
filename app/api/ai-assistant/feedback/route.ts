@@ -50,7 +50,9 @@ export async function POST(req: NextRequest) {
     `${parsed.data.feedback === "up" ? "👍" : "👎"} feedback on AI message`,
     parsed.data.messageId,
     auth.username
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({ data: { id: updated.id, feedback: updated.feedback } });
 }

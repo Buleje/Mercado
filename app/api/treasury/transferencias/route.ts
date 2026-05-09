@@ -53,7 +53,9 @@ export async function POST(req: NextRequest) {
       "Transferir", "treasury",
       `S/${parsed.data.monto.toFixed(2)} de ${transfer.origenNombre ?? "origen"} a ${transfer.destinoNombre ?? "destino"}`,
       transfer.id, auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(transfer, { status: 201 });
   } catch (e) {

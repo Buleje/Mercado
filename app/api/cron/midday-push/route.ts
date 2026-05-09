@@ -118,7 +118,9 @@ export async function GET(req: NextRequest) {
           "cron",
           undefined,
           tenant.id,
-        ).catch(() => {});
+        ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
         notifications.push({
           tenant: tenant.slug,

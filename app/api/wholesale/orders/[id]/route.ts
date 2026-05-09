@@ -145,7 +145,9 @@ export async function PATCH(
       `Estado actualizado: ${order.status} → ${newStatus}`,
       id,
       auth.tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ data: updated });
   } catch (err) {

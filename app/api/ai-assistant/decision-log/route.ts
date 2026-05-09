@@ -115,7 +115,9 @@ export async function POST(req: NextRequest) {
     `Decisión: ${decision.slice(0, 100)}`,
     note.id,
     auth.username
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({ decision: mapDecision(note) }, { status: 201 });
 }
@@ -177,7 +179,9 @@ export async function PATCH(req: NextRequest) {
     `Actualizada decisión ${id}`,
     id,
     auth.username
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({ decision: mapDecision(updated) });
 }

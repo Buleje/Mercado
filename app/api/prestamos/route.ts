@@ -108,7 +108,9 @@ export async function POST(req: NextRequest) {
       ? `Préstamo recibido de ${d.entidadNombre ?? "entidad"} por S/${d.monto.toFixed(2)}`
       : `Préstamo S/${d.monto.toFixed(2)} a ${d.customerId} — ${prestamo.cuotas.length} cuotas (${d.sistemaAmortizacion ?? "FRANCES"})`;
 
-    logActivity("Crear", "prestamo", label, prestamo.id, auth.username).catch(() => {});
+    logActivity("Crear", "prestamo", label, prestamo.id, auth.username).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(prestamo, { status: 201 });
   } catch (e) {

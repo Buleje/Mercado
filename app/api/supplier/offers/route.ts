@@ -93,7 +93,9 @@ export async function POST(req: NextRequest) {
       `Proveedor ${supplierName} creó oferta "${parsed.data.title}"`,
       offer.id,
       supplierName,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(offer, { status: 201 });
   } catch (err) {

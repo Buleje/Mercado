@@ -53,7 +53,9 @@ async function checkAndCreateBirthdayCoupons() {
         title: "🎂 ¡Feliz cumpleaños!",
         body: `${customer.name}, tienes un cupón de 10% con código ${code}. ¡Válido por 7 días!`,
         url: "/cuenta",
-      }).catch(() => {});
+      }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
 
     created++;

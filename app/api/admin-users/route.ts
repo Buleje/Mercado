@@ -76,7 +76,9 @@ export async function POST(req: NextRequest) {
     select: { id: true, username: true, role: true, name: true, active: true, createdAt: true },
   });
 
-  enqueueActivityLog({ action: "Crear", resource: "usuario_admin", resourceId: user.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${username}' creado con rol '${role}'` }, timestamp: new Date().toISOString() }).catch(() => {});
+  enqueueActivityLog({ action: "Crear", resource: "usuario_admin", resourceId: user.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${username}' creado con rol '${role}'` }, timestamp: new Date().toISOString() }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
   return NextResponse.json(user, { status: 201 });
 }
 
@@ -109,12 +111,18 @@ export async function PATCH(req: NextRequest) {
   });
 
   if (parsed.data.role && parsed.data.role !== existing.role) {
-    enqueueActivityLog({ action: "Cambiar rol", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Rol de '${existing.username}' cambiado de '${existing.role}' a '${parsed.data.role}'` }, timestamp: new Date().toISOString() }).catch(() => {});
+    enqueueActivityLog({ action: "Cambiar rol", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Rol de '${existing.username}' cambiado de '${existing.role}' a '${parsed.data.role}'` }, timestamp: new Date().toISOString() }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
   } else if (parsed.data.active !== undefined && parsed.data.active !== existing.active) {
     const action = parsed.data.active ? "Activar" : "Desactivar";
-    enqueueActivityLog({ action, resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' ${parsed.data.active ? "activado" : "desactivado"}` }, timestamp: new Date().toISOString() }).catch(() => {});
+    enqueueActivityLog({ action, resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' ${parsed.data.active ? "activado" : "desactivado"}` }, timestamp: new Date().toISOString() }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
   } else if (parsed.data.password) {
-    enqueueActivityLog({ action: "Cambiar contraseña", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Contraseña de '${existing.username}' actualizada` }, timestamp: new Date().toISOString() }).catch(() => {});
+    enqueueActivityLog({ action: "Cambiar contraseña", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Contraseña de '${existing.username}' actualizada` }, timestamp: new Date().toISOString() }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
   }
   return NextResponse.json(updated);
 }
@@ -135,6 +143,8 @@ export async function DELETE(req: NextRequest) {
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   await db.adminUser.delete({ where: { id } });
-  enqueueActivityLog({ action: "Eliminar", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' (rol: ${existing.role}) eliminado` }, timestamp: new Date().toISOString() }).catch(() => {});
+  enqueueActivityLog({ action: "Eliminar", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' (rol: ${existing.role}) eliminado` }, timestamp: new Date().toISOString() }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
   return NextResponse.json({ ok: true });
 }

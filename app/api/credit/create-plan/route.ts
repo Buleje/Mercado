@@ -59,7 +59,9 @@ export async function POST(req: NextRequest) {
       `Plan de ${installments} cuotas de S/${plan.installmentAmount} creado para cliente ${customerId} (total: S/${plan.totalWithInterest})`,
       plan.id,
       auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(plan, { status: 201 });
   } catch (err) {

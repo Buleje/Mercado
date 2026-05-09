@@ -68,7 +68,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     "system",
     undefined,
     tenantId,
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({ queued: true }, { status: 202 });
 }

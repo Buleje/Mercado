@@ -116,7 +116,9 @@ export async function PUT(
     `Crédito ${isActive ? "activado" : "desactivado"} para cliente ${customerId}${creditLimitOverride !== undefined ? ` — límite manual: S/${creditLimitOverride}` : ""}`,
     profile.id,
     auth.username,
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json(updated);
 }

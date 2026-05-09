@@ -132,7 +132,9 @@ export async function POST(
       "Producir", "receta",
       `Producción de "${receta.nombre}" x${parsed.data.cantidad} — costo real: S/${costoReal.toFixed(2)}`,
       lote.id, auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(lote, { status: 201 });
   } catch (e) {

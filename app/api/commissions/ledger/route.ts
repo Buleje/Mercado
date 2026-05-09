@@ -99,7 +99,9 @@ export async function POST(req: NextRequest) {
       `Comisión registrada: ${commission.type} — S/${commission.amount} (orden ${commission.orderId})`,
       commission.id,
       auth.username
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(commission, { status: 201 });
   } catch {
@@ -136,7 +138,9 @@ export async function PATCH(req: NextRequest) {
       `${result.count} comisiones liquidadas (ids: ${ids.slice(0, 3).join(", ")}${ids.length > 3 ? "…" : ""})`,
       undefined,
       auth.username
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ settled: result.count, settledAt });
   } catch {

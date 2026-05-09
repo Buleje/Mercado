@@ -68,7 +68,9 @@ export async function POST(req: NextRequest) {
       "Crear", "cierre-diario",
       `Cierre del día ${data.fecha} — Ventas: S/${data.totalVentas.toFixed(2)}`,
       summary.id, auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(summary, { status: 201 });
   } catch (e) {

@@ -111,7 +111,9 @@ export async function GET(req: NextRequest) {
               recipient: settings.businessPhone,
               message: text,
               tenantId: store.tenantId,
-            }).catch(() => {});
+            }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
             sent = true;
           } catch (err) {
             logger.warn("[cron/marketplace-daily-summary] WhatsApp enqueue failed", {
@@ -140,7 +142,9 @@ export async function GET(req: NextRequest) {
         `Resumen marketplace enviado: ${summaries.filter((s) => s.sent).length} tiendas notificadas`,
         undefined,
         "cron"
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
       return { ok: true, summaries };
     });

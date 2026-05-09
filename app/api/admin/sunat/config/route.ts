@@ -102,7 +102,9 @@ export async function PUT(req: NextRequest) {
       auth.name ?? "admin",
       undefined,
       auth.tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({
       data: { id: config.id, ruc: config.ruc, razonSocial: config.razonSocial },

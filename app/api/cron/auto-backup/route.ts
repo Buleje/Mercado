@@ -114,7 +114,9 @@ export async function GET(req: NextRequest) {
         `Backup diario: ${productosActivos} productos, ${clientesTotal} clientes, S/ ${(totalVentasPOS + totalOrdenesImporte).toFixed(2)} en ventas`,
         undefined,
         "cron"
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
       return backup;
     });

@@ -141,7 +141,9 @@ async function importHandler(
       `Importación: ${imported.products} productos, ${imported.customers} clientes`,
       auth.tenantId,
       auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ imported, errors }, { status: 201 });
   } catch (err) {

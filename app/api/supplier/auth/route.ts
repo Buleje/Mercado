@@ -61,7 +61,9 @@ export async function POST(req: NextRequest) {
         `Supplier "${portal.supplier.name}" autenticado`,
         portal.supplier.id,
         portal.supplier.id,
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     } catch { /* logger not available */ }
 
     const token = await createSupplierToken({

@@ -168,7 +168,9 @@ export async function POST(req: NextRequest) {
       `Orden mayorista creada: ${order.id} (total S/${order.total})`,
       order.id,
       auth.tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ data: order }, { status: 201 });
   } catch (err) {

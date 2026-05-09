@@ -115,7 +115,9 @@ export const GET = withCronAuth("dead-stock-report", async (req) => {
         recipient: "admin",
         message: `${deadStock.length} productos sin ventas en 7 días. Capital atado: S/ ${totalCapitalAtado.toFixed(2)}`,
         status: "pending",
-      }, tenantId).catch(() => {});
+      }, tenantId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
       // Build WhatsApp message
       const whatsappMsg = [
@@ -176,7 +178,9 @@ export const GET = withCronAuth("dead-stock-report", async (req) => {
         `${deadStock.length} productos sin ventas en 7 días. Capital: S/ ${totalCapitalAtado.toFixed(2)}`,
         undefined,
         "cron"
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
       } // end for tenant
 
       return {

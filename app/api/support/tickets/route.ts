@@ -91,7 +91,9 @@ export async function POST(req: NextRequest) {
       `Nuevo ticket: "${parsed.data.subject}" (${parsed.data.priority})`,
       ticket.id,
       auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(ticket, { status: 201 });
   } catch (err) {

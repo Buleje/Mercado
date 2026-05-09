@@ -156,7 +156,9 @@ export async function POST(req: NextRequest) {
           where: { phone: customerId },
           data: { notifPromotions: granted },
         })
-        .catch(() => {});
+        .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     } else if (consentType === "whatsapp_notifications") {
       prisma.customer
         .update({
@@ -166,7 +168,9 @@ export async function POST(req: NextRequest) {
             alertasWhatsapp: granted,
           },
         })
-        .catch(() => {});
+        .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
 
     logger.info("[COMPLIANCE] Consent recorded", {

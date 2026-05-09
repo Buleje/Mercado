@@ -153,7 +153,9 @@ export async function PUT(req: NextRequest) {
       `Proveedor ${supplierName} actualizó precios de ${results.length} producto(s)`,
       supplierId,
       supplierName,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ updated: results.length, results });
   } catch (err) {

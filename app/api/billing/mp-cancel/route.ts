@@ -98,7 +98,9 @@ export async function POST(req: NextRequest) {
         tenantId: tenant.slug,
       },
     })
-    .catch(() => {});
+    .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({
     cancelled: true,

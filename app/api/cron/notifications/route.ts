@@ -34,7 +34,9 @@ export async function GET(req: NextRequest) {
         `${generated} notificación(es) generadas por cron`,
         undefined,
         "cron"
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
       return {
         ok: true,

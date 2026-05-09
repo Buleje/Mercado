@@ -4,6 +4,7 @@ import { z } from "zod";
 import { smartModel } from "@/lib/ai/provider";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
+import { trackAiUsage } from "@/lib/ai/track-usage";
 
 // -- Input validation --
 
@@ -62,9 +63,14 @@ export async function getRecommendations(
       .join("\n");
 
     // 2. Ask LLM to pick the best matches
-    const { text } = await generateText({
-      model: smartModel,
-      prompt: `Eres un experto en bodegas peruanas. El cliente mira: "${source.name}" (${source.category}, S/${source.price}).
+    // Round 19: trackAiUsage envuelve la llamada → registra cost+tokens en
+    // logger structured + aiCostGuard. Feature="recommender" para FinOps.
+    const { text } = await trackAiUsage(
+      { tenantId, feature: "recommender", model: "claude-haiku-4-5" },
+      () =>
+        generateText({
+          model: smartModel,
+          prompt: `Eres un experto en bodegas peruanas. El cliente mira: "${source.name}" (${source.category}, S/${source.price}).
 
 Catalogo disponible:
 ${catalogList}
@@ -73,8 +79,9 @@ Elige los ${safeLimit} productos mas complementarios. Responde SOLO en JSON arra
 [{"productId":"<ID>","reason":"<razon corta en espanol>","score":<0.0-1.0>}]
 
 Sin explicacion extra, solo el JSON array.`,
-      maxOutputTokens: 500,
-    });
+          maxOutputTokens: 500,
+        }),
+    );
 
     // 3. Parse response
     const match = text.match(/\[[\s\S]*\]/);

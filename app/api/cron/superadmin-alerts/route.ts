@@ -80,7 +80,9 @@ export async function GET(req: NextRequest) {
         ],
         actionUrl: `${baseUrl}/superadmin`,
         actionLabel: "Ver en SuperAdmin",
-      }).catch(() => {});
+      }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
     alerts.push(`${cancellations.length} cancellation(s)/suspension(s)`);
   }
@@ -106,7 +108,9 @@ export async function GET(req: NextRequest) {
       })),
       actionUrl: `${baseUrl}/superadmin`,
       actionLabel: "Contactar tiendas",
-    }).catch(() => {});
+    }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     alerts.push(`${expiringTrials.length} trial(s) expiring`);
   }
 

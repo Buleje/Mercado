@@ -123,7 +123,9 @@ export async function POST(req: NextRequest) {
       `Comprobante ${numeroCompleto} generado para orden ${orderId}`,
       orderId,
       auth.username ?? "admin",
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(
       { xml, pdfBase64, serie, correlativo, numeroCompleto },

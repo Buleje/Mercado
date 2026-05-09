@@ -176,7 +176,9 @@ export async function POST(req: NextRequest) {
           user: auth.username,
         },
       })
-      .catch(() => {});
+      .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     if (!categories || categories.length === 0) {
       // Full nuclear delete in correct FK order — SCOPED TO TENANT
@@ -218,7 +220,9 @@ export async function POST(req: NextRequest) {
         `Borrado masivo: ${deleted.length} tablas (${failed.length} omitidas)`,
         auth.username,
         auth.username,
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     } catch { /* logger no disponible */ }
 
     return NextResponse.json({

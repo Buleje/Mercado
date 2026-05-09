@@ -74,7 +74,9 @@ export async function POST(
         `Lamentablemente tu solicitud no fue aprobada en este momento.\n\n` +
         `Motivo: ${parsed.data.reason}\n\n` +
         `Si quieres volver a postular, contáctanos directamente.`;
-      sendWhatsAppQueued(supplier.contactPhone, message, { tenantId: "__platform__", context: "supplier-reject-notify" }).catch(() => {});
+      sendWhatsAppQueued(supplier.contactPhone, message, { tenantId: "__platform__", context: "supplier-reject-notify" }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
 
     return NextResponse.json({ ok: true, supplier });

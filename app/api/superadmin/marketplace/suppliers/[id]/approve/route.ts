@@ -64,7 +64,9 @@ export async function POST(
         `\`${supplier.apiKey ?? apiKeyPreview}\`\n\n` +
         `Documentación: https://buleje.pe/supplier/docs\n` +
         `Panel: https://buleje.pe/supplier/dashboard`;
-      sendWhatsAppQueued(supplier.contactPhone, message, { tenantId: "__platform__", context: "supplier-approve-notify" }).catch(() => {});
+      sendWhatsAppQueued(supplier.contactPhone, message, { tenantId: "__platform__", context: "supplier-approve-notify" }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
 
     return NextResponse.json({

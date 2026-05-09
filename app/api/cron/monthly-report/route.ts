@@ -412,7 +412,9 @@ export async function GET(req: NextRequest) {
       `Reporte mensual ${report.period} generado — ingresos S/${report.ingresos.toFixed(2)}`,
       undefined,
       "cron",
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({
       ok:         true,

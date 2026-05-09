@@ -116,7 +116,9 @@ export async function POST(req: NextRequest) {
       `Codigo "${referralCode}" canjeado — referidor: ${referrer.slug}, referido: ${newTenantSlug}`,
       newTenantSlug,
       "system"
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({
       success: true,

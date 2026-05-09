@@ -179,7 +179,9 @@ export async function POST(req: NextRequest) {
       "admin",
       requestId
       // eslint-disable-next-line no-restricted-syntax -- audit log fire-and-forget; failure ya está logueado dentro del helper
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json(product, {
       headers: { "X-Api-Version": "v1" },

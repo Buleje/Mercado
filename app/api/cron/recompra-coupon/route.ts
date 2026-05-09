@@ -126,7 +126,9 @@ export async function GET(req: NextRequest) {
         `${sent} cupones de recompra enviados a clientes de hace 7 días`,
         undefined,
         "cron"
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
       return {
         ok: true,

@@ -84,7 +84,9 @@ export async function POST(req: NextRequest) {
       auth.username ?? "system",
       req.headers.get("x-request-id") ?? undefined,
       auth.tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({
       pointsEarned: result.pointsEarned,

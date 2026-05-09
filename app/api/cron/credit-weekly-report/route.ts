@@ -173,7 +173,9 @@ export async function GET(req: NextRequest) {
             phone: tenant.ownerPhone,
             message: report,
           })
-          .catch(() => {});
+          .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
       }
 
       reportsGenerated++;
@@ -185,7 +187,9 @@ export async function GET(req: NextRequest) {
       `Credit-weekly-report: ${reportsGenerated} reports generated for ${tenants.length} tenants`,
       undefined,
       "cron",
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     logger.info("[cron/credit-weekly-report]", {
       tenants: tenants.length,

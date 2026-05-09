@@ -96,7 +96,9 @@ export async function GET(req: NextRequest) {
       "export",
       "backup",
       `backup-${auth.tenantId}-${new Date().toISOString().slice(0, 10)}`
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     const fecha = new Date().toISOString().slice(0, 10);
     const filename = `backup-${auth.tenantId}-${fecha}.json`;

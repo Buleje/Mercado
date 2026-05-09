@@ -229,7 +229,9 @@ export async function GET(req: NextRequest) {
       `Fiados-reminder: ${totalProcessed} procesados, ${remindersCount} recordatorios creados`,
       undefined,
       "cron",
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     logger.info("[cron/fiados-reminder]", {
       processed: totalProcessed,

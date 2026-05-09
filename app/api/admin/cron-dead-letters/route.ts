@@ -105,7 +105,9 @@ export async function DELETE(req: NextRequest) {
         `${deleted} dead letters borradas por ${auth.username}`,
         auth.username,
         auth.username,
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     } catch { /* logger not available */ }
 
     return NextResponse.json({ deleted });

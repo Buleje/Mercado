@@ -141,7 +141,9 @@ export async function GET(req: NextRequest) {
           "system",
           undefined,
           tenant.slug,
-        ).catch(() => {});
+        ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
       }
 
       return { emailsSent, tenantsProcessed: tenants.length };

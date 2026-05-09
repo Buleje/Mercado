@@ -178,7 +178,9 @@ export async function POST(req: NextRequest) {
     `Coach ${context}: ${message.slice(0, 100)}`,
     undefined,
     auth.username
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   // ── Router LLM (ADR-010) hace disponibility check internamente ────────────
   // El fallback a rule-based se maneja en el bloque `!res.ok` más abajo.
@@ -308,11 +310,15 @@ export async function POST(req: NextRequest) {
 
     // ── Save to conversation memory (fire-and-forget) ─────────────────────
     if (activeConversationId) {
-      saveMessage(activeConversationId, "user", message).catch(() => {});
+      saveMessage(activeConversationId, "user", message).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
       saveMessage(activeConversationId, "assistant", moderation.output, {
         mode: `coach-${context}`,
         tokensUsed: res.usage?.totalTokens ?? 0,
-      }).catch(() => {});
+      }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
 
     return NextResponse.json({

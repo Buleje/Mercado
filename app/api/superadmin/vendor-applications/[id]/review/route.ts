@@ -133,7 +133,9 @@ export async function POST(
           timestamp: new Date().toISOString(),
         },
         reviewer,
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     } catch { /* audit logger not available */ }
 
     return NextResponse.json({

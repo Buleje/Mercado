@@ -56,7 +56,9 @@ export async function POST(req: NextRequest) {
 
     // Si el pago cierra el plan, recalcular el score del cliente
     if (result.isFullyPaid) {
-      updateCreditProfile(auth.tenantId, plan.creditProfile.customerId).catch(() => {});
+      updateCreditProfile(auth.tenantId, plan.creditProfile.customerId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
 
     logActivity(
@@ -65,7 +67,9 @@ export async function POST(req: NextRequest) {
       `Pago de S/${amount} registrado en plan ${installmentId}${result.isFullyPaid ? " — plan completado" : ` — quedan S/${result.remainingAmount}`}`,
       installmentId,
       auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(result);
   } catch (err) {

@@ -63,7 +63,9 @@ export async function GET(req: NextRequest) {
             `Birthday-coupons: ${result.issued} cupones emitidos para tenant ${tenant.slug}`,
             undefined,
             "cron",
-          ).catch(() => {});
+          ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
         }
       } catch (err) {
         logger.error("[cron/birthday-coupons] Error en tenant", {

@@ -212,7 +212,9 @@ export async function GET(req: NextRequest) {
           "cron_supplier_scoring",
           "supplier",
           `[${tenant.name}] ${scored.length} proveedores evaluados automáticamente`,
-        ).catch(() => {});
+        ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
         allResults.push({ tenant: tenant.name, scored: scored.length, rankings: scored });
       }

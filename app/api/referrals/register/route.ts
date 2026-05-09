@@ -83,7 +83,9 @@ export async function POST(req: NextRequest) {
       "system",
       undefined,
       tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({
       success: true,

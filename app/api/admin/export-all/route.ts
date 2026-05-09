@@ -98,7 +98,9 @@ export async function GET(req: NextRequest) {
       `Exportación completa del tenant ${auth.tenantId}`,
       auth.tenantId,
       auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     const fecha = new Date().toISOString().slice(0, 10);
     const filename = `buleje-export-${auth.tenantId}-${fecha}.json`;

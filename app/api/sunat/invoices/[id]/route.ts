@@ -79,7 +79,9 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       `reintento manual status=${updated?.sunatStatus ?? "unknown"}`,
       id,
       auth.username,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({
       message: "Reintento ejecutado.",

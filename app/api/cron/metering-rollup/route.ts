@@ -120,7 +120,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           "cron",
           undefined,
           tenantId,
-        ).catch(() => {});
+        ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
       } catch (err) {
         logger.error("[metering-rollup] tenant processing failed", {
           tenantId,

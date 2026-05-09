@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const requestId = req.headers.get("x-request-id") ?? undefined;
-  logActivity("Backup", "configuracion", "Backup manual iniciado desde panel", undefined, auth.username ?? "admin", requestId).catch(() => {});
+  logActivity("Backup", "configuracion", "Backup manual iniciado desde panel", undefined, auth.username ?? "admin", requestId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   // Disparar la descarga del backup real en el cliente redirigiendo a /api/backup
   return NextResponse.json({ ok: true, downloadUrl: "/api/backup", message: "Backup iniciado correctamente" });

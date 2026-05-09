@@ -169,7 +169,9 @@ export async function GET(req: NextRequest) {
         "cron_category_margins_report",
         "report",
         `${categories.length} categorías, ganancia S/ ${totalProfit.toFixed(2)} (${overallMargin.toFixed(1)}%)`,
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
       allResults.push({ tenantId, categoriesCount: categories.length, totalProfit });
       } // end for tenant

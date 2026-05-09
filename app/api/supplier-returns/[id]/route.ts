@@ -36,7 +36,9 @@ function notifySupplierWhatsApp(
         body: JSON.stringify({ phone: formattedPhone, message }),
       }).catch((e) => logger.error("[supplier-returns] WhatsApp send error", { err: String(e) }));
     })
-    .catch(() => {});
+    .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

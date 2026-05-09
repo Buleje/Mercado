@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
       ? `Ingreso S/${parsed.data.monto.toFixed(2)} en ${mov.cuentaNombre ?? "cuenta"}`
       : `Egreso S/${parsed.data.monto.toFixed(2)} de ${mov.cuentaNombre ?? "cuenta"}`;
 
-    enqueueActivityLog({ action: "Registrar", resource: "treasury", resourceId: mov.id, userId: auth.username, tenantId: auth.tenantId, details: { description: label }, timestamp: new Date().toISOString() }).catch(() => {});
+    enqueueActivityLog({ action: "Registrar", resource: "treasury", resourceId: mov.id, userId: auth.username, tenantId: auth.tenantId, details: { description: label }, timestamp: new Date().toISOString() }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json(mov, { status: 201 });
   } catch (e) {

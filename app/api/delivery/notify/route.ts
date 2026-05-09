@@ -117,7 +117,9 @@ export async function POST(req: NextRequest) {
     `Notificacion enviada al repartidor ${partner.name} — canales: ${channels.join(", ") || "ninguno"}`,
     partner.id,
     auth.username
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return NextResponse.json({
     notified: channels.length > 0,

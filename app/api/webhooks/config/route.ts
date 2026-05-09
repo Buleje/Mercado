@@ -139,7 +139,9 @@ export async function POST(req: NextRequest) {
 
     await saveWebhooksToSettings(auth.tenantId, [...webhooks, newWebhook]);
 
-    enqueueActivityLog({ action: "Crear", resource: "webhook", resourceId: newWebhook.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Webhook creado: ${newWebhook.url}` }, timestamp: new Date().toISOString() }).catch(() => {});
+    enqueueActivityLog({ action: "Crear", resource: "webhook", resourceId: newWebhook.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Webhook creado: ${newWebhook.url}` }, timestamp: new Date().toISOString() }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ webhook: newWebhook }, { status: 201 });
   } catch (e) {
@@ -179,7 +181,9 @@ export async function DELETE(req: NextRequest) {
 
     await saveWebhooksToSettings(auth.tenantId, filtered);
 
-    enqueueActivityLog({ action: "Eliminar", resource: "webhook", resourceId: parsed.data.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Webhook eliminado: ${parsed.data.id}` }, timestamp: new Date().toISOString() }).catch(() => {});
+    enqueueActivityLog({ action: "Eliminar", resource: "webhook", resourceId: parsed.data.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Webhook eliminado: ${parsed.data.id}` }, timestamp: new Date().toISOString() }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return NextResponse.json({ ok: true });
   } catch (e) {

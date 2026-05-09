@@ -26,7 +26,9 @@ export async function GET(req: NextRequest) {
     data: { products, customers, orders, reviews, settings, suppliers, purchases, sales, promotions, payables },
   };
 
-  enqueueActivityLog({ action: "Backup", resource: "configuracion", userId: "admin", tenantId: auth.tenantId, details: { description: "Backup de datos descargado" }, timestamp: new Date().toISOString() }).catch(() => {});
+  enqueueActivityLog({ action: "Backup", resource: "configuracion", userId: "admin", tenantId: auth.tenantId, details: { description: "Backup de datos descargado" }, timestamp: new Date().toISOString() }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return new NextResponse(JSON.stringify(backup, null, 2), {
     headers: {
