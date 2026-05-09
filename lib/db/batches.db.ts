@@ -107,7 +107,7 @@ function mapBatch(b: PBatchWithProduct): DbBatch {
     productName: b.productName,
     ...(b.productId != null && { productId: b.productId }),
     productCategory: b.productCategory,
-    quantity: b.quantity,
+    quantity: toNumOrZero(b.quantity),
     unit: b.unit,
     ...(b.supplierId != null && { supplierId: b.supplierId }),
     supplierName: b.supplierName,
@@ -433,7 +433,7 @@ export const BatchesDB = {
       expiringWithin7Days,
       expiringWithin30Days,
       emptyBatches,
-      totalUnits: aggregated._sum.quantity ?? 0,
+      totalUnits: toNumOrZero(aggregated._sum.quantity),
     };
   },
 

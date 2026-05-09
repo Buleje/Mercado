@@ -239,8 +239,9 @@ export const InventoryMovementsDB = {
       const updates: Array<{ id: string; newQty: number }> = [];
       for (const batch of batches) {
         if (remaining <= 0) break;
-        const toDeduct = Math.min(batch.quantity, remaining);
-        updates.push({ id: batch.id, newQty: batch.quantity - toDeduct });
+        const batchQty = Number(batch.quantity);
+        const toDeduct = Math.min(batchQty, remaining);
+        updates.push({ id: batch.id, newQty: batchQty - toDeduct });
         remaining -= toDeduct;
       }
 

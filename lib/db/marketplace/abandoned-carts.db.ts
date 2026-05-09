@@ -40,7 +40,7 @@ export const MarketplaceAbandonedCartsDB = {
             reminderSentAt: null, // reset so new reminder can be sent
           },
         });
-        return updated as AbandonedCartRecord;
+        return { ...updated, total: Number(updated.total) } as AbandonedCartRecord;
       }
 
       const created = await prisma.marketplaceAbandonedCart.create({
@@ -52,7 +52,7 @@ export const MarketplaceAbandonedCartsDB = {
           total: params.total,
         },
       });
-      return created as AbandonedCartRecord;
+      return { ...created, total: Number(created.total) } as AbandonedCartRecord;
     } catch (e) {
       logger.error("trackAbandonedCart failed", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.trackAbandonedCart" });
       return null;
@@ -98,7 +98,7 @@ export const MarketplaceAbandonedCartsDB = {
         orderBy: { createdAt: "asc" },
         take: 50,
       });
-      return carts as AbandonedCartRecord[];
+      return carts.map(c => ({ ...c, total: Number(c.total) })) as AbandonedCartRecord[];
     } catch (e) {
       logger.error("getAbandoned failed", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.getAbandoned" });
       return [];

@@ -149,7 +149,7 @@ export const MermasDB = {
       if (batch) {
         await prisma.batch.update({
           where: { id: batch.id },
-          data: { quantity: Math.max(0, batch.quantity - input.quantity) },
+          data: { quantity: Math.max(0, Number(batch.quantity) - input.quantity) },
         });
       }
     }

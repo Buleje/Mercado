@@ -13,7 +13,7 @@ export const NewsletterDB = {
    */
   async subscribe(tenantId: string, email: string): Promise<void> {
     await prisma.newsletterSubscriber.upsert({
-      where: { email },
+      where: { tenantId_email: { tenantId, email } },
       update: { updatedAt: new Date() },
       create: { email, tenantId },
     });

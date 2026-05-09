@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
         salePrice: toNumOrZero(b.product?.price),
         warehouseName: b.warehouse?.name ?? null,
         daysUntilExpiry,
-        valorRiesgo: b.quantity * toNumOrZero(b.costUnit),
+        valorRiesgo: toNumOrZero(b.quantity) * toNumOrZero(b.costUnit),
       };
     };
 

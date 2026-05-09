@@ -71,6 +71,7 @@ model Tenant {
   pagePromotions         TenantPagePromotion[]
   pageVisits             TenantPageVisit[]
   pageHeroes             PageHero[]
+  wholesaleOrders        WholesaleOrder[]            @relation("WholesaleOrderTenant")
 
   @@index([slug])
   @@index([active])
@@ -123,7 +124,8 @@ model Product {
   sponsoredBoosts     SponsoredBoost[]
   pageOverrides       TenantPageProductOverride[]
 
-  @@index([tenantId])
+  // CLEANUP P2: redundante con @@index([tenantId, active]) y @@index([tenantId, category, active]) abajo
+  // @@index([tenantId])
   @@index([tenantId, active])
   @@index([tenantId, category, active])
   @@index([barcode])
@@ -314,14 +316,15 @@ model Customer {
   locations           SavedLocation[]
   orders              Order[]
   sales               Sale[]
-  savedCart           SavedCart?
+  savedCarts          SavedCart[]
   notifications       CustomerNotification[]
   fiados              Fiado[]
   prestamos           Prestamo[]
   cotizaciones        Cotizacion[]
   loyaltyTransactions LoyaltyTransaction[]
 
-  @@index([tenantId])
+  // CLEANUP P2: redundante con @@index([tenantId, createdAt]) y @@index([tenantId, phone]) abajo
+  // @@index([tenantId])
   @@index([tenantId, createdAt])
   @@index([tenantId, phone])
   @@index([createdAt])
@@ -351,13 +354,14 @@ model LoyaltyTransaction {
 // ─── Saved Carts (persistent across devices) ────────────
 model SavedCart {
   id            String   @id @default(cuid())
-  customerPhone String   @unique
+  customerPhone String
   tenantId      String
   itemsJson     String // JSON array of cart items
   updatedAt     DateTime @updatedAt
 
   customer Customer @relation(fields: [customerPhone], references: [phone], onDelete: Cascade)
 
+  @@unique([customerPhone, tenantId])
   @@index([tenantId])
 }
 
@@ -435,7 +439,8 @@ model Order {
   @@index([customerPhone])
   @@index([status])
   @@index([createdAt])
-  @@index([tenantId])
+  // CLEANUP P2: redundante con @@index([tenantId, status, createdAt]) y @@index([tenantId, createdAt]) abajo
+  // @@index([tenantId])
   @@index([tenantId, status, createdAt])
   @@index([tenantId, createdAt])
   @@index([tenantId, customerPhone])
@@ -494,7 +499,8 @@ model Review {
   votes            ReviewVote[]
 
   @@index([status])
-  @@index([tenantId])
+  // CLEANUP P2: redundante con @@index([tenantId, verified]) abajo
+  // @@index([tenantId])
   @@index([productId])
   @@index([storeId])
   @@index([storeId, status, date(sort: Desc)], name: "Review_storeId_status_date_idx")
@@ -753,7 +759,8 @@ model PurchaseOrder {
   supplier Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([supplierId])
-  @@index([tenantId])
+  // CLEANUP P2: redundante con @@index([tenantId, status]) abajo
+  // @@index([tenantId])
   // TD-020 / ADR-017 — aplicado en prod 2026-04-09 via scripts/apply-ola1-indices.ts
   @@index([tenantId, status], map: "PurchaseOrder_tenantId_status_idx")
 }
@@ -834,7 +841,7 @@ model Promotion {
   id              String    @id
   name            String
   description     String    @default("")
-  discountPercent Float     @default(0)
+  discountPercent Decimal   @default(0) @db.Decimal(5, 2)
   minPurchase     Decimal?  @db.Decimal(12, 2)
   imageUrl        String?
   message         String?
@@ -1586,7 +1593,7 @@ model Batch {
   lote            String
   productName     String
   productCategory String   @default("Otros")
-  quantity        Float
+  quantity        Decimal  @db.Decimal(10, 3)
   unit            String   @default("unidad")
   supplierId      String?
   supplierName    String   @default("")
@@ -1723,11 +1730,12 @@ model OrderStatusHistory {
 // ─── Newsletter Subscribers ─────────────────────────────
 model NewsletterSubscriber {
   id        String   @id @default(cuid())
-  email     String   @unique
+  email     String
   tenantId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([tenantId, email])
   @@index([tenantId])
 }
 
@@ -2894,6 +2902,8 @@ model WholesaleOrder {
   id             String               @id @default(cuid())
   buyerTenantId  String
   sellerTenantId String
+  // EXPAND-PATTERN: tenantId nullable — backfill con buyerTenantId, luego migrar a NOT NULL
+  tenantId       String?
   status         String               @default("pending")
   total          Decimal              @db.Decimal(12, 2)
   commission     Decimal              @default(0) @db.Decimal(12, 2)
@@ -2901,9 +2911,11 @@ model WholesaleOrder {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   items          WholesaleOrderItem[]
+  tenant         Tenant?              @relation("WholesaleOrderTenant", fields: [tenantId], references: [id])
 
   @@index([buyerTenantId])
   @@index([sellerTenantId])
+  @@index([tenantId])
 }
 
 model WholesaleOrderItem {
@@ -2915,7 +2927,7 @@ model WholesaleOrderItem {
   quantity         Int
   unitPrice        Decimal        @db.Decimal(12, 2)
   total            Decimal        @db.Decimal(12, 2)
-  appliedDiscount  Float          @default(0) // porcentaje de descuento por volumen aplicado
+  appliedDiscount  Decimal        @default(0) @db.Decimal(5, 2) // porcentaje de descuento por volumen aplicado
 
   @@index([wholesaleOrderId])
   @@index([productId])
@@ -2943,7 +2955,7 @@ model CommissionLedger {
   partnerId String?
   type      String
   amount    Decimal   @db.Decimal(12, 2)
-  rate      Float
+  rate      Decimal   @db.Decimal(5, 4)
   status    String    @default("pending")
   settledAt DateTime?
   tenantId  String
@@ -3514,7 +3526,7 @@ model MarketplaceAbandonedCart {
   customerName   String
   customerPhone  String
   itemsJson      String /// JSON array of {storeProductId, productId, name, quantity, price, unit}
-  total          Float
+  total          Decimal   @db.Decimal(12, 2)
   recovered      Boolean   @default(false)
   convertedAt    DateTime?
   reminderSentAt DateTime?

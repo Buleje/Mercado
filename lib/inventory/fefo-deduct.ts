@@ -57,7 +57,8 @@ export async function deductStockFEFO(
     for (const batch of batches) {
       if (remaining <= 0) break;
 
-      const toDeduct = Math.min(batch.quantity, remaining);
+      const batchQty = Number(batch.quantity);
+      const toDeduct = Math.min(batchQty, remaining);
       deductions.push({
         batchId: batch.id,
         qty: toDeduct,
@@ -65,7 +66,7 @@ export async function deductStockFEFO(
       });
       updates.push({
         id: batch.id,
-        newQty: batch.quantity - toDeduct,
+        newQty: batchQty - toDeduct,
       });
       remaining -= toDeduct;
     }

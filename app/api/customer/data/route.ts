@@ -41,22 +41,24 @@ export async function GET(req: NextRequest) {
   const customer = await prisma.customer.findFirst({
     where: { phone, tenantId: auth.tenantId },
     include: {
-      locations: true,
-      savedCart: true,
-      orders: {
-        select: {
-          id: true,
-          createdAt: true,
-          total: true,
-          status: true,
-          paymentMethod: true,
-          customerLocation: true,
-          customerReference: true,
-          items: { select: { name: true, quantity: true, price: true } },
-        },
-      },
+      savedCarts: true,
     },
   });
+
+  // Orders + locations: separate fetches porque Customer ya no tiene relations
+  const orders = customer ? await prisma.order.findMany({
+    where: { customerPhone: customer.phone, tenantId: auth.tenantId },
+    select: {
+      id: true,
+      createdAt: true,
+      total: true,
+      status: true,
+      paymentMethod: true,
+      customerLocation: true,
+      customerReference: true,
+      items: { select: { name: true, quantity: true, price: true } },
+    },
+  }) : [];
 
   if (!customer) {
     return NextResponse.json({ error: "Customer not found" }, { status: 404 });
@@ -71,8 +73,9 @@ export async function GET(req: NextRequest) {
   });
 
   let savedCartItems: unknown = null;
-  if (customer.savedCart) {
-    try { savedCartItems = JSON.parse(customer.savedCart.itemsJson); } catch { /* corrupted data */ }
+  const firstSavedCart = customer.savedCarts?.[0];
+  if (firstSavedCart) {
+    try { savedCartItems = JSON.parse(firstSavedCart.itemsJson); } catch { /* corrupted data */ }
   }
 
   const exportBundle = {
@@ -97,9 +100,8 @@ export async function GET(req: NextRequest) {
       referralCode: customer.referralCode,
       referredBy: customer.referredBy,
     },
-    savedLocations: customer.locations,
     savedCart: savedCartItems,
-    orders: customer.orders,
+    orders,
     reviews,
   };
 
