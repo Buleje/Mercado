@@ -2,6 +2,7 @@
 import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { trackQuery } from "@/lib/query-monitor";
+import { complianceAuditExtension } from "@/lib/audit/prisma-middleware";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
@@ -32,11 +33,19 @@ function createPrismaClient(): PrismaClient {
     keepAlive: true,
     keepAliveInitialDelayMillis: 10_000,
   });
-  return new PrismaClient({ adapter });
+  // Connect Ley 29733 audit extension ONLY when enabled.
+  // Default: enabled in all environments unless AUDIT_CHAIN_ENABLED=false.
+  // Set AUDIT_CHAIN_ENABLED=false in CI or local dev to avoid log saturation.
+  const auditEnabled = process.env.AUDIT_CHAIN_ENABLED !== "false";
+  const base = new PrismaClient({ adapter });
+  if (!auditEnabled) return base;
+  return base.$extends(complianceAuditExtension) as unknown as PrismaClient;
 }
 
 // Query methods to monitor for N+1 detection
-const MONITORED_OPS = new Set(["findMany", "findFirst", "findUnique", "findFirstOrThrow", "findUniqueOrThrow", "count"]);
+// FIX 2026-05-08 (audit Round 4): aggregate y groupBy omitidos — N+1 en
+// esas operaciones pasaba desapercibido (ej: groupBy dentro de loop de tenants).
+const MONITORED_OPS = new Set(["findMany", "findFirst", "findUnique", "findFirstOrThrow", "findUniqueOrThrow", "count", "aggregate", "groupBy"]);
 
 // Lazy Proxy — the real PrismaClient is only created on first property access,
 // NOT at module import time. This prevents Vercel build crashes when DATABASE_URL

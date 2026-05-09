@@ -143,14 +143,38 @@ async function writeAuditEntry(
 }
 
 /**
- * In-memory cache for the latest hash per tenant.
- * This avoids a DB query on every single operation.
- * The cache is process-scoped (reset on cold start).
+ * In-memory cache for the latest hash per tenant with TTL.
+ *
+ * Multi-instance risk (Vercel Fluid Compute): each warm instance has its own
+ * Map, so two concurrent requests on different instances can produce diverging
+ * chains if they both read "GENESIS" before the first write propagates.
+ *
+ * Mitigation:
+ *  1. TTL_MS = 60 s — after expiry, the instance re-reads the true latest
+ *     hash from the DB, healing any drift within ~60 s of the last write.
+ *  2. invalidateHashCache(tenantId) is called synchronously after every
+ *     successful write so the SAME instance doesn't serve a stale hash.
+ *
+ * Ideal fix (P1): replace with Upstash Redis so all instances share one hash.
+ * The structure here (`latestHashCache.set/get/delete`) is intentionally
+ * identical to Redis semantics to make that migration a 1-line change.
  */
-const latestHashCache = new Map<string, string>();
+const HASH_CACHE_TTL_MS = 60_000; // 60 seconds
+
+interface CacheEntry {
+  hash: string;
+  expiresAt: number; // performance.now() epoch
+}
+
+const latestHashCache = new Map<string, CacheEntry>();
+
+/** Called after each successful audit write to keep same-instance cache fresh. */
+function invalidateHashCache(tenantId: string): void {
+  latestHashCache.delete(tenantId);
+}
 
 /**
- * Get the previous hash for the chain. First checks in-memory cache,
+ * Get the previous hash for the chain. First checks in-memory cache (with TTL),
  * then falls back to a DB query for the latest entry.
  */
 async function getPreviousHash(
@@ -159,8 +183,8 @@ async function getPreviousHash(
   },
   tenantId: string,
 ): Promise<string> {
-  const cached = latestHashCache.get(tenantId);
-  if (cached) return cached;
+  const entry = latestHashCache.get(tenantId);
+  if (entry && performance.now() < entry.expiresAt) return entry.hash;
 
   try {
     const rows = (await prismaClient.$queryRawUnsafe(
@@ -175,7 +199,10 @@ async function getPreviousHash(
         hash?: string;
       };
       if (parsed.hash) {
-        latestHashCache.set(tenantId, parsed.hash);
+        latestHashCache.set(tenantId, {
+          hash: parsed.hash,
+          expiresAt: performance.now() + HASH_CACHE_TTL_MS,
+        });
         return parsed.hash;
       }
     }
@@ -216,7 +243,20 @@ export const complianceAuditExtension = Prisma.defineExtension({
         .then(async (result) => {
           try {
             const typedArgs = (args ?? {}) as Record<string, unknown>;
-            const tenantId = extractTenantId(typedArgs) ?? "unknown";
+            // FIX 2026-05-08 (audit Round 4): ?? "unknown" producía entradas
+            // auditadas sin tenant real — imposible rastrear en auditoría Ley 29733.
+            // Ahora: null → saltar log + warning para que el caller lo corrija.
+            // Queries con tenantId explícito (mayoría) no se ven afectadas.
+            const resolvedTenantId = extractTenantId(typedArgs);
+            if (!resolvedTenantId) {
+              logger.warn("audit: tenantId ausente en query sensible — entry omitida", {
+                op: "audit/complianceExtension",
+                model,
+                operation,
+              });
+              return;
+            }
+            const tenantId = resolvedTenantId;
             const entityId = extractEntityId(typedArgs);
 
             // Build detail string
@@ -258,8 +298,14 @@ export const complianceAuditExtension = Prisma.defineExtension({
             const hashData = buildHashData(entryData);
             const hash = calculateHash(hashData, previousHash);
 
-            // Update cache
-            latestHashCache.set(tenantId, hash);
+            // Invalidate stale cache entry before setting the fresh one.
+            // This ensures the SAME instance doesn't serve the old hash on the
+            // next write (avoids same-instance chain divergence).
+            invalidateHashCache(tenantId);
+            latestHashCache.set(tenantId, {
+              hash,
+              expiresAt: performance.now() + HASH_CACHE_TTL_MS,
+            });
 
             await writeAuditEntry(globalPrisma, {
               ...entryData,

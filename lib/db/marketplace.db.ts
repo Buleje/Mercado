@@ -978,6 +978,10 @@ export const MarketplaceOrdersDB = {
     // (espejo de tierForCount en /api/marketplace/customer-tier).
     let tierDiscountPct = 0;
     let tierLabel: string | null = null;
+    // FIX 2026-05-08 (audit Round 4): catch silencioso no dejaba rastro cuando
+    // prisma.order.count fallaba — el pedido se creaba sin descuento de tier
+    // y era imposible reconciliar retroactivamente. Ahora se marca en notes/metadata.
+    let tierDiscountFailed = false;
     if (params.customerPhone) {
       try {
         // F2 fix: tenantId scoped — tier solo cuenta pedidos entregados
@@ -1004,6 +1008,8 @@ export const MarketplaceOrdersDB = {
       } catch (e) {
         // Si la query falla (DB error), seguimos sin descuento — nunca
         // bloquear un pedido por la feature de tier.
+        // Marcamos tierDiscountFailed=true para reconciliación retroactiva.
+        tierDiscountFailed = true;
         logger.error("tier discount query failed — continuing without discount", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.createOrder/tierQuery" });
       }
     }
@@ -1118,6 +1124,11 @@ export const MarketplaceOrdersDB = {
     }
     if (loyaltyDiscount > 0) {
       noteParts.push(`[Loyalty ${redeemPoints}pts: -S/${loyaltyDiscount.toFixed(2)}]`);
+    }
+    // FIX 2026-05-08 (audit Round 4): inyectar tag de falla de tier en notes
+    // para permitir reconciliación retroactiva via findOrdersWithFailedTierDiscount.
+    if (tierDiscountFailed) {
+      noteParts.push(`[TIER_DISCOUNT_FAILED: descuento Frecuente|VIP|Embajador no aplicado — pendiente reconciliación]`);
     }
     const composedNotes = noteParts.length > 0 ? noteParts.join(" ") : null;
 
@@ -1236,6 +1247,38 @@ export const MarketplaceOrdersDB = {
       status:         "pendiente",
       createdAt:      new Date().toISOString(),
     };
+  },
+
+  /**
+   * FIX 2026-05-08 (audit Round 4): query de reconciliación para pedidos
+   * donde falló la query de tier discount. Busca el tag TIER_DISCOUNT_FAILED
+   * en notes — inyectado por createFromCart cuando prisma.order.count falla.
+   * Uso: revisión periódica + reembolso manual del descuento perdido.
+   */
+  async findOrdersWithFailedTierDiscount(
+    tenantId: string,
+  ): Promise<Array<{ id: string; customerPhone: string | null; total: number; createdAt: Date }>> {
+    const rows = await prisma.order.findMany({
+      where: {
+        tenantId,
+        source:    "marketplace",
+        deletedAt: null,
+        notes:     { contains: "TIER_DISCOUNT_FAILED" },
+      },
+      select: {
+        id:            true,
+        customerPhone: true,
+        total:         true,
+        createdAt:     true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return rows.map((r) => ({
+      id:            r.id,
+      customerPhone: r.customerPhone,
+      total:         typeof r.total === "number" ? r.total : Number(r.total),
+      createdAt:     r.createdAt,
+    }));
   },
 
   /**
