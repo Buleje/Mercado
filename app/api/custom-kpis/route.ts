@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { CustomKpisDB } from "@/lib/db/custom-kpis.db";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 export type KpiTrendPoint = { date: string; value: number };
 export type CustomKpi = {
@@ -59,10 +60,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const rows = await prisma.customKpi.findMany({
-      where: { tenantId: auth.tenantId },
-      orderBy: { createdAt: "asc" },
-    });
+    const rows = await CustomKpisDB.list(auth.tenantId);
     if (rows.length === 0) throw new Error("empty");
     const kpis: CustomKpi[] = rows.map((r) => ({
       id: r.id, name: r.name, description: r.description ?? "",
@@ -84,18 +82,18 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
-  const parsed = KpiSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  return runWithAuditContext(req, auth.username, async () => {
+    const body = await req.json();
+    const parsed = KpiSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  try {
-    const row = await prisma.customKpi.create({
-      data: { ...parsed.data, tenantId: auth.tenantId, currentValue: 0, trend: "flat", changePercent: 0, period: "Hoy", history: [] },
-    });
-    return NextResponse.json({ id: row.id }, { status: 201 });
-  } catch {
-    return NextResponse.json({ id: `k${Date.now()}`, demo: true }, { status: 201 });
-  }
+    try {
+      const row = await CustomKpisDB.create(auth.tenantId, parsed.data);
+      return NextResponse.json({ id: row.id }, { status: 201 });
+    } catch {
+      return NextResponse.json({ id: `k${Date.now()}`, demo: true }, { status: 201 });
+    }
+  });
 }
 
 export async function PUT(req: NextRequest) {
@@ -103,18 +101,20 @@ export async function PUT(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
-  const { id, ...rest } = body;
-  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
-  const parsed = KpiSchema.partial().safeParse(rest);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  return runWithAuditContext(req, auth.username, async () => {
+    const body = await req.json();
+    const { id, ...rest } = body;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const parsed = KpiSchema.partial().safeParse(rest);
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  try {
-    await prisma.customKpi.update({ where: { id, tenantId: auth.tenantId }, data: parsed.data });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: true, demo: true });
-  }
+    try {
+      await CustomKpisDB.update(auth.tenantId, id, parsed.data);
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json({ ok: true, demo: true });
+    }
+  });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -122,13 +122,15 @@ export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  return runWithAuditContext(req, auth.username, async () => {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
 
-  try {
-    await prisma.customKpi.delete({ where: { id, tenantId: auth.tenantId } });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: true, demo: true });
-  }
+    try {
+      await CustomKpisDB.delete(auth.tenantId, id);
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json({ ok: true, demo: true });
+    }
+  });
 }

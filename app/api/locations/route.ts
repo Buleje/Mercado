@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { LocationsDB } from "@/lib/db/locations.db";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 const CreateSchema = z.object({
   code: z.string().min(1).max(30),
@@ -59,11 +60,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const rows = await prisma.location.findMany({
-      where: { tenantId: auth.tenantId },
-      include: { warehouse: true, product: true },
-      orderBy: [{ zone: "asc" }, { code: "asc" }],
-    });
+    const rows = await LocationsDB.list(auth.tenantId);
     return NextResponse.json(rows.map((row) => mapLocation(row)));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
@@ -76,27 +73,21 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  try {
-    const raw = await req.json();
-    const parsed = CreateSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues.map((issue) => issue.message) }, { status: 400 });
-    }
+  return runWithAuditContext(req, auth.username, async () => {
+    try {
+      const raw = await req.json();
+      const parsed = CreateSchema.safeParse(raw);
+      if (!parsed.success) {
+        return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues.map((issue) => issue.message) }, { status: 400 });
+      }
 
-    const row = await prisma.location.create({
-      data: {
-        ...parsed.data,
-        productId: parsed.data.productId ?? null,
-        qty: parsed.data.qty ?? 0,
-        tenantId: auth.tenantId,
-      },
-      include: { warehouse: true, product: true },
-    });
-    return NextResponse.json(mapLocation(row), { status: 201 });
-  } catch (err) {
-    const { payload, status } = toErrorPayload(err);
-    return NextResponse.json(payload, { status });
-  }
+      const row = await LocationsDB.create(auth.tenantId, parsed.data);
+      return NextResponse.json(mapLocation(row), { status: 201 });
+    } catch (err) {
+      const { payload, status } = toErrorPayload(err);
+      return NextResponse.json(payload, { status });
+    }
+  });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -104,37 +95,26 @@ export async function PATCH(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  try {
-    const raw = await req.json();
-    const parsed = UpdateSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues.map((issue) => issue.message) }, { status: 400 });
-    }
+  return runWithAuditContext(req, auth.username, async () => {
+    try {
+      const raw = await req.json();
+      const parsed = UpdateSchema.safeParse(raw);
+      if (!parsed.success) {
+        return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues.map((issue) => issue.message) }, { status: 400 });
+      }
 
-    const { id, ...rest } = parsed.data;
-    // Round 21 P0 (Security): UPDATE sin tenantId guard permitía cross-tenant
-    // write attack. updateMany con filtro tenantId rechaza writes a Locations
-    // de otros tenants aunque el admin conozca el id.
-    const updResult = await prisma.location.updateMany({
-      where: { id, tenantId: auth.tenantId },
-      data: {
-        ...rest,
-        ...(rest.productId === undefined ? {} : { productId: rest.productId ?? null }),
-      },
-    });
-    if (updResult.count === 0) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      const { id, ...rest } = parsed.data;
+      // Round 21 P0 (Security): updateMany con tenantId rechaza cross-tenant writes
+      const row = await LocationsDB.update(auth.tenantId, id, rest);
+      if (!row) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
+      return NextResponse.json(mapLocation(row));
+    } catch (err) {
+      const { payload, status } = toErrorPayload(err);
+      return NextResponse.json(payload, { status });
     }
-    const row = await prisma.location.findFirst({
-      where: { id, tenantId: auth.tenantId },
-      include: { warehouse: true, product: true },
-    });
-    if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(mapLocation(row));
-  } catch (err) {
-    const { payload, status } = toErrorPayload(err);
-    return NextResponse.json(payload, { status });
-  }
+  });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -142,20 +122,20 @@ export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  try {
-    const id = new URL(req.url).searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  return runWithAuditContext(req, auth.username, async () => {
+    try {
+      const id = new URL(req.url).searchParams.get("id");
+      if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
 
-    // Round 21 P0 (Security): tenantId guard previene cross-tenant delete.
-    const result = await prisma.location.deleteMany({
-      where: { id, tenantId: auth.tenantId },
-    });
-    if (result.count === 0) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      // Round 21 P0 (Security): tenantId guard previene cross-tenant delete
+      const deleted = await LocationsDB.delete(auth.tenantId, id);
+      if (!deleted) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
+      return NextResponse.json({ ok: true });
+    } catch (err) {
+      const { payload, status } = toErrorPayload(err);
+      return NextResponse.json(payload, { status });
     }
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    const { payload, status } = toErrorPayload(err);
-    return NextResponse.json(payload, { status });
-  }
+  });
 }

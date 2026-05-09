@@ -354,4 +354,45 @@ export const SettingsDB = {
     const fresh = await prisma.settings.findUnique({ where: { tenantId: tid } });
     return mapSettings(fresh ?? row);
   },
+
+  // ── Loyalty rules ────────────────────────────────────────────────────────
+
+  /**
+   * Leer reglas y recompensas de loyalty desde Settings.
+   * Retorna null para cada campo si no se han configurado aún.
+   */
+  async getLoyaltyRules(tenantId: string): Promise<{ rules: unknown; rewards: unknown }> {
+    const row = await prisma.settings.findUnique({
+      where: { tenantId },
+      select: { loyaltyRulesJson: true, loyaltyRewardsJson: true },
+    });
+    const safeParse = (json: string | null | undefined): unknown => {
+      if (!json) return null;
+      try { return JSON.parse(json); } catch { return null; }
+    };
+    return {
+      rules: safeParse(row?.loyaltyRulesJson),
+      rewards: safeParse(row?.loyaltyRewardsJson),
+    };
+  },
+
+  /**
+   * Persistir reglas / recompensas de loyalty (upsert para tenants sin row previo).
+   * Solo actualiza los campos provistos.
+   */
+  async updateLoyaltyRules(
+    tenantId: string,
+    data: { rules?: unknown; rewards?: unknown },
+  ): Promise<void> {
+    const d: Record<string, string> = {};
+    if (data.rules !== undefined)   d.loyaltyRulesJson   = JSON.stringify(data.rules);
+    if (data.rewards !== undefined) d.loyaltyRewardsJson = JSON.stringify(data.rewards);
+    if (Object.keys(d).length === 0) return;
+    await prisma.settings.upsert({
+      where: { tenantId },
+      update: d,
+      create: { tenantId, ...d },
+    });
+    invalidateByPrefix(`settings:${tenantId}`);
+  },
 };

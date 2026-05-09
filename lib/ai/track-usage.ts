@@ -4,16 +4,24 @@
  * Round 19 (2026-05-09) — wrapper genérico para tracking de costo+tokens
  * en uses de generateText/streamText del Vercel AI SDK.
  *
+ * Round 28+ (2026-05-09) — soporte event-based para streamText.
+ *
  * Centraliza:
  *  1. Logger structured con tenantId, modelo, tokens in/out, costo USD
  *  2. recordSpend en aiCostGuard (lib/ai/cost-control.ts) — Upstash Redis
  *  3. Métricas observables para dashboard FinOps
  *
- * Uso:
+ * Uso (generateText / no-stream):
  *   const result = await trackAiUsage(
  *     { tenantId, feature: "recommender", model: "claude-haiku-4-5" },
  *     () => generateText({ model: smartModel, prompt: "..." }),
  *   );
+ *
+ * Uso (streamText / stream):
+ *   const onFinish = makeStreamUsageHandler({
+ *     tenantId, feature: "chat", model: "claude-haiku-4-5",
+ *   });
+ *   const result = streamText({ model, messages, onFinish });
  *
  * Si no se puede capturar `usage` del SDK (provider no lo expone),
  * cae al estimate por longitud del prompt.
@@ -109,4 +117,147 @@ export async function trackAiUsage<T extends { usage?: AiUsageInfo }>(
   }
 
   return result;
+}
+
+// ── streamText support ────────────────────────────────────────────────────────
+
+/**
+ * Vercel AI SDK v6 expone `usage` en distintos shapes según versión y provider:
+ *   - `{ promptTokens, completionTokens, totalTokens }` (clásico)
+ *   - `{ inputTokens, outputTokens, totalTokens }` (nuevo / Anthropic)
+ *
+ * Normalizamos ambos. Si el provider no expone tokens (caso edge), retornamos 0.
+ */
+interface RawStreamUsage {
+  promptTokens?: number;
+  completionTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+}
+
+function normalizeUsage(raw: RawStreamUsage | undefined): AiUsageInfo {
+  if (!raw) return {};
+  const promptTokens = raw.promptTokens ?? raw.inputTokens ?? 0;
+  const completionTokens = raw.completionTokens ?? raw.outputTokens ?? 0;
+  const totalTokens =
+    raw.totalTokens ??
+    (promptTokens + completionTokens > 0 ? promptTokens + completionTokens : 0);
+  return { promptTokens, completionTokens, totalTokens };
+}
+
+/**
+ * Argumentos que el SDK entrega a `onFinish` de `streamText`. Tipamos solo
+ * los campos que consumimos para evitar acoplarnos a la versión exacta del
+ * SDK.
+ */
+export interface StreamFinishEvent {
+  usage?: RawStreamUsage;
+  finishReason?: string;
+  /** Texto final acumulado (no requerido para tracking). */
+  text?: string;
+}
+
+export interface MakeStreamUsageHandlerOptions extends AiTrackContext {
+  /** Se llama cuando el stream termina con éxito (después de logging). */
+  onFinish?: (event: StreamFinishEvent) => void | Promise<void>;
+  /** Marca el inicio del stream para medir duración. Default: ahora. */
+  startedAt?: number;
+}
+
+/**
+ * Crea el handler `onFinish` que `streamText({ ..., onFinish })` debe recibir.
+ *
+ * Garantías:
+ *  - Logging structured con tenantId/feature/model/tokens/costo/duración.
+ *  - recordSpend fire-and-forget (no bloquea ni propaga errores).
+ *  - Si el cliente cancela (`abortSignal`), AI SDK invoca `onFinish` con
+ *    `finishReason: "abort"` y los tokens parciales — los registramos igual.
+ *  - Si el handler externo (caller) falla, lo aislamos con try/catch.
+ *
+ * Retorna una función con el shape exacto que el SDK espera.
+ */
+export function makeStreamUsageHandler(opts: MakeStreamUsageHandlerOptions) {
+  const { tenantId, feature, model, onFinish: userOnFinish } = opts;
+  const startedAt = opts.startedAt ?? Date.now();
+
+  return async (event: StreamFinishEvent) => {
+    const durationMs = Date.now() - startedAt;
+    const usage = normalizeUsage(event.usage);
+    const costUsd = calculateCostUsd(model, usage);
+    const finishReason = event.finishReason ?? "unknown";
+
+    logger.info("[ai-track] stream finished", {
+      tenantId,
+      feature,
+      model,
+      durationMs,
+      promptTokens: usage.promptTokens ?? 0,
+      completionTokens: usage.completionTokens ?? 0,
+      totalTokens: usage.totalTokens ?? 0,
+      costUsd: +costUsd.toFixed(6),
+      finishReason,
+    });
+
+    if (costUsd > 0) {
+      aiCostGuard.recordSpend(tenantId, costUsd).catch((err) => {
+        logger.warn("[ai-track] stream recordSpend failed", {
+          tenantId,
+          err: err instanceof Error ? err.message : String(err),
+        });
+      });
+    }
+
+    if (userOnFinish) {
+      try {
+        await userOnFinish(event);
+      } catch (err) {
+        logger.warn("[ai-track] user onFinish threw", {
+          tenantId,
+          feature,
+          err: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+  };
+}
+
+/**
+ * Helper de conveniencia: ejecuta `streamFn` (que invoca `streamText`) y
+ * registra error si la creación del stream lanza.
+ *
+ * El tracking real ocurre en `onFinish` (vía `makeStreamUsageHandler`); esta
+ * función solo aísla errores de inicialización (ej. modelo inválido, RL).
+ *
+ * Uso:
+ *   const result = await trackAiStream(
+ *     { tenantId, feature: "chat", model: "claude-haiku-4-5" },
+ *     (onFinish) => streamText({ model: chatModel, messages, onFinish }),
+ *   );
+ */
+export async function trackAiStream<T>(
+  ctx: AiTrackContext,
+  streamFn: (
+    onFinish: ReturnType<typeof makeStreamUsageHandler>,
+  ) => T | Promise<T>,
+  userOnFinish?: (event: StreamFinishEvent) => void | Promise<void>,
+): Promise<T> {
+  const onFinish = makeStreamUsageHandler({
+    tenantId: ctx.tenantId,
+    feature: ctx.feature,
+    model: ctx.model,
+    onFinish: userOnFinish,
+  });
+
+  try {
+    return await streamFn(onFinish);
+  } catch (err) {
+    logger.error("[ai-track] streamText init failed", {
+      tenantId: ctx.tenantId,
+      feature: ctx.feature,
+      model: ctx.model,
+      err: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
 }

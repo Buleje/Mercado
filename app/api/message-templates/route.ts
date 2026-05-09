@@ -1,9 +1,9 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { MessageTemplatesDB } from "@/lib/db/message-templates.db";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 const ChannelEnum = z.enum(["whatsapp", "email", "sms"]);
 const CategoryEnum = z.enum(["ventas", "cobranza", "delivery", "promociones", "atención", "general"]);
@@ -34,10 +34,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rows = await prisma.messageTemplate.findMany({
-    where: { tenantId: auth.tenantId },
-    orderBy: [{ starred: "desc" }, { usageCount: "desc" }, { createdAt: "desc" }],
-  });
+  const rows = await MessageTemplatesDB.list(auth.tenantId);
 
   return NextResponse.json(rows.map(r => ({
     ...r,
@@ -53,17 +50,19 @@ export async function POST(req: NextRequest) {
   const rl = applyRateLimit(req, "MODERATE", "templates");
   if (rl) return rl;
 
-  const body = await req.json();
-  const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  return runWithAuditContext(req, auth.username, async () => {
+    const body = await req.json();
+    const parsed = CreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
 
-  const row = await prisma.messageTemplate.create({
-    data: { ...parsed.data, tenantId: auth.tenantId },
+    const row = await MessageTemplatesDB.create(auth.tenantId, {
+      ...parsed.data,
+      subject: parsed.data.subject ?? null,
+    });
+    return NextResponse.json({ ...row, variables: JSON.parse(row.variablesJson) }, { status: 201 });
   });
-
-  return NextResponse.json({ ...row, variables: JSON.parse(row.variablesJson) }, { status: 201 });
 }
 
 // PATCH /api/message-templates?id=xxx
@@ -74,26 +73,19 @@ export async function PATCH(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const body = await req.json();
-  const parsed = UpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  return runWithAuditContext(req, auth.username, async () => {
+    const body = await req.json();
+    const parsed = UpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
 
-  // SECURITY (HOTFIX-M3, 2026-04-29): updateMany atomico con tenantId
-  // (antes findFirst + update tenia ventana TOCTOU).
-  const result = await prisma.messageTemplate.updateMany({
-    where: { id, tenantId: auth.tenantId },
-    data: parsed.data,
+    // updateMany atómico con tenantId (previene TOCTOU — HOTFIX-M3 2026-04-29)
+    const row = await MessageTemplatesDB.update(auth.tenantId, id, parsed.data);
+    if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+    return NextResponse.json({ ...row, variables: JSON.parse(row.variablesJson) });
   });
-  if (result.count === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  const row = await prisma.messageTemplate.findFirst({
-    where: { id, tenantId: auth.tenantId },
-  });
-  if (!row) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  return NextResponse.json({ ...row, variables: JSON.parse(row.variablesJson) });
 }
 
 // DELETE /api/message-templates?id=xxx
@@ -106,11 +98,9 @@ export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  // SECURITY (HOTFIX-M3): deleteMany atomico con tenantId.
-  const result = await prisma.messageTemplate.deleteMany({
-    where: { id, tenantId: auth.tenantId },
+  return runWithAuditContext(req, auth.username, async () => {
+    const deleted = await MessageTemplatesDB.delete(auth.tenantId, id);
+    if (!deleted) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true });
   });
-  if (result.count === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  return NextResponse.json({ ok: true });
 }

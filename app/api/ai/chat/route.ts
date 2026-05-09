@@ -6,6 +6,15 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { tryAdmin } from "@/lib/require-admin";
 import { CUSTOMER_SESSION, getCustomerPayload } from "@/lib/auth/customer-session";
 import { aiCostGuard } from "@/lib/ai/cost-control";
+import { makeStreamUsageHandler } from "@/lib/ai/track-usage";
+
+// Modelo que se usa actualmente en `chatModel` (provider.ts → pickChatModel).
+// Si cambia ahí, sincronizar acá o exportar el slug desde provider.
+const CHAT_MODEL_SLUG = process.env.ANTHROPIC_API_KEY
+  ? "claude-haiku-4-5-20251001"
+  : process.env.GROQ_API_KEY
+    ? "llama-3.3-70b-versatile"
+    : "gpt-4o-mini";
 
 const ChatInput = z.object({
   messages: z.array(
@@ -53,6 +62,10 @@ export async function POST(req: NextRequest) {
   // SECURITY 2026-05-06 (audit AI #1 + #4): cost cap por tenant. Estimamos
   // ~$0.0008 por request (Haiku 4.5: 200 input + 1000 output tokens). Si el
   // tenant ya quemó su budget mensual, devolver 429.
+  // Round 28+: el `recordSpend` aproximado se mantiene como pre-charge para
+  // que el guardrail dispare antes; `makeStreamUsageHandler` registra DESPUÉS
+  // el costo real basado en tokens (delta = corrección a la baja en Upstash
+  // sigue siendo válida porque INCR es atómico aunque acumule estimación + real).
   const ESTIMATED_COST_USD = 0.0008;
   if (!await aiCostGuard.canSpend(resolvedTenantId, ESTIMATED_COST_USD, "free")) {
     return Response.json(
@@ -60,7 +73,6 @@ export async function POST(req: NextRequest) {
       { status: 429 },
     );
   }
-  aiCostGuard.recordSpend(resolvedTenantId, ESTIMATED_COST_USD);
 
   const body = await req.json();
   const parsed = ChatInput.safeParse(body);
@@ -74,6 +86,15 @@ export async function POST(req: NextRequest) {
 
   const { messages } = parsed.data;
 
+  // Round 28+: tracking event-based para streamText. Registra tokens reales,
+  // costo real y duración cuando el stream termina (incluye finishReason
+  // "abort" si el cliente canceló — caso explícito en abortSignal arriba).
+  const onFinish = makeStreamUsageHandler({
+    tenantId: resolvedTenantId,
+    feature: "ai-chat",
+    model: CHAT_MODEL_SLUG,
+  });
+
   const result = streamText({
     model: chatModel,
     system: `${SYSTEM_PROMPT}\nTenant: ${resolvedTenantId}.`,
@@ -82,6 +103,7 @@ export async function POST(req: NextRequest) {
     // FIX 2026-05-06 (audit AI #8): cancelar inferencia si el cliente cierra
     // la conexión, para no facturar tokens que nadie va a leer.
     abortSignal: req.signal,
+    onFinish,
   });
 
   return result.toUIMessageStreamResponse();

@@ -475,4 +475,26 @@ export const MarketplaceStoresDB = {
       hours: savedHours,
     };
   },
+
+  /**
+   * Obtener la primera Store del tenant autenticado.
+   * Usado para rutas que necesitan el storeId del vendor actual.
+   */
+  async getByTenant(tenantId: string): Promise<{ id: string } | null> {
+    return prisma.store.findFirst({
+      where: { tenantId },
+      select: { id: true },
+    });
+  },
+
+  /**
+   * Verificar que un storeId pertenece al tenant (guard cross-tenant).
+   */
+  async assertStoreOwnership(tenantId: string, storeId: string): Promise<boolean> {
+    const row = await prisma.store.findFirst({
+      where: { id: storeId, tenantId },
+      select: { id: true },
+    });
+    return !!row;
+  },
 };
