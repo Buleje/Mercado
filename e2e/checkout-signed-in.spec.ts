@@ -1,28 +1,22 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { signInCustomer } from "./helpers/sign-in-customer";
 
 /**
- * checkout-signed-in.spec.ts — Sprint 4.1
+ * checkout-signed-in.spec.ts — Sprint 4.1 (rev 2)
  *
  * Flujo completo de checkout para un cliente AUTENTICADO (signed-in):
- *   login (simulado) → /tienda → agregar producto → carrito → checkout
+ *   test-session → /tienda → agregar producto → carrito → checkout
  *   → paso Datos (pre-relleno con datos del customer) → paso Pago
  *   → paso Confirmar (review) — SIN confirmar pedido real.
  *
- * ESTRATEGIA DE AUTH:
- *   La sesión de customer (cookie "buleje-customer-sess") se obtiene vía
- *   OAuth/OTP — no existe endpoint de login por password. Por eso usamos
- *   page.route() para mockear GET /api/auth/customer/me y devolver un
- *   customer autenticado. Esto activa el comportamiento signed-in del
- *   useCheckoutInit: cuando customer.phone + customer.name existen, el
- *   wizard salta el paso "Cuenta" y va directo a "Datos" con
- *   CustomerVerifiedCard pre-rellena (ver useCheckoutInit.ts línea 70).
+ * ESTRATEGIA DE AUTH (rev 2 — auth real, sin mock):
+ *   En test.beforeEach se llama a POST /api/auth/customer/test-session.
+ *   Esto setea la cookie HttpOnly "buleje-customer-sess" firmada con el
+ *   mismo HMAC-SHA256 que usa OTP/verify, ANTES de navegar a cualquier ruta.
+ *   El CustomerContext ya tiene la cookie cuando monta → cero race conditions.
  *
- * QUÉ FALTA PARA CORRER CONTRA AUTH REAL:
- *   - Implementar POST /api/auth/customer/test-session que acepte
- *     { phone, name, tenantId } y devuelva la cookie "buleje-customer-sess"
- *     firmada (solo disponible en NODE_ENV=test). Ver cross-tenant.spec.ts
- *     para el TODO pendiente. Una vez disponible, reemplazar la función
- *     mockearSesionCustomer() por una llamada a ese endpoint.
+ *   GATE: requiere NODE_ENV=test o ALLOW_E2E_TEST_AUTH=1.
+ *   Si el endpoint devuelve 404, el helper falla con mensaje accionable.
  *
  * ZONA DE PELIGRO (checkout):
  *   - POST /api/orders está mockeado → no crea pedidos reales en DB.
@@ -60,38 +54,9 @@ const SEL = {
   pagoSubmit: '[data-testid="pago-submit"]',
 } as const;
 
-// ── Helper: mockear sesión de customer autenticado ───────────────────────────
-
-/**
- * Mockea GET /api/auth/customer/me para devolver un customer autenticado.
- * El CustomerContext del storefront consume este endpoint al montar.
- * Con `authenticated: true` + phone + name, useCheckoutInit salta el
- * paso "Cuenta" y va directo a "Datos".
- */
-async function mockearSesionCustomer(page: Page): Promise<void> {
-  await page.route("**/api/auth/customer/me**", (route) => {
-    if (route.request().method() === "GET") {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          authenticated: true,
-          customer: {
-            id: CUSTOMER_QA.phone,
-            phone: CUSTOMER_QA.phone,
-            name: CUSTOMER_QA.name,
-            loyaltyPoints: 0,
-            loyaltyTier: "bronze",
-          },
-          tenantId: CUSTOMER_QA.tenantId,
-        }),
-      });
-    }
-    return route.continue();
-  });
-}
-
 // ── Helper: mocks de soporte para checkout ───────────────────────────────────
+
+import type { Page } from "@playwright/test";
 
 async function instalarMocksCheckout(page: Page): Promise<void> {
   // Órdenes → simulado (no crea pedidos reales)
@@ -173,23 +138,32 @@ async function agregarProductoYAbrirCheckout(page: Page) {
 test.describe("Checkout signed-in — flujo completo cliente autenticado", () => {
   test.describe.configure({ mode: "serial" });
 
-  // ── 1. Simular login y verificar que el CustomerContext tiene al customer ──
+  /**
+   * beforeEach: setear sesión real ANTES de cada test.
+   * La cookie HttpOnly se propaga a todas las requests del contexto,
+   * por lo que GET /api/auth/customer/me ya retorna authenticated:true
+   * cuando el CustomerContext monta en el navegador.
+   */
+  test.beforeEach(async ({ context, baseURL }) => {
+    await signInCustomer(context, CUSTOMER_QA, baseURL ?? "http://localhost:3000");
+  });
 
-  test("1 — GET /api/auth/customer/me devuelve customer autenticado (mock)", async ({
+  // ── 1. Verificar que la sesión real retorna customer autenticado ───────────
+
+  test("1 — GET /api/auth/customer/me retorna customer autenticado (sesion real)", async ({
     page,
   }) => {
-    await mockearSesionCustomer(page);
-
     await page.goto("/tienda", { waitUntil: "domcontentloaded", timeout: 30_000 });
 
-    // Verificar que el mock responde correctamente
+    // La cookie ya está en el contexto — /me debe devolver authenticated:true
     const res = await page.request.get("/api/auth/customer/me");
     const json = await res.json();
 
     expect(res.status()).toBe(200);
     expect(json.authenticated).toBe(true);
-    expect(json.customer.phone).toBe(CUSTOMER_QA.phone);
-    expect(json.customer.name).toBe(CUSTOMER_QA.name);
+    // El endpoint /me devuelve el customer decodificado del JWT
+    expect(json.customer).toBeDefined();
+    expect(json.customer.phone ?? json.customer.customerId).toBeTruthy();
   });
 
   // ── 2. Con customer autenticado, el checkout salta paso "Cuenta" ──────────
@@ -197,30 +171,21 @@ test.describe("Checkout signed-in — flujo completo cliente autenticado", () =>
   test("2 — checkout salta paso Cuenta y va directo a Datos (signed-in)", async ({
     page,
   }) => {
-    await mockearSesionCustomer(page);
     await instalarMocksCheckout(page);
 
     const modal = await agregarProductoYAbrirCheckout(page);
 
-    // El paso "Cuenta" NO debe aparecer (skipAccount no visible)
+    // Con auth real el CustomerContext hidrata antes de que monte el wizard:
+    // el paso "Cuenta" NO debe aparecer.
     const skipAccountVisible = await modal
       .locator(SEL.skipAccount)
       .isVisible({ timeout: 3_000 })
       .catch(() => false);
 
-    if (skipAccountVisible) {
-      // Si el CustomerContext no hidrato el mock a tiempo,
-      // el wizard puede mostrar el paso Cuenta igual.
-      // Documentamos y saltamos — necesita test-session endpoint real.
-      test.skip(
-        true,
-        "CustomerContext no recibió el mock a tiempo. " +
-        "Implementar POST /api/auth/customer/test-session para auth real.",
-      );
-      return;
-    }
+    // Con sesión real no hay race condition — si skipAccount aparece es un bug real.
+    expect(skipAccountVisible).toBe(false);
 
-    // Con signed-in: debe ver datos-form O CustomerVerifiedCard
+    // Debe ver datos-form O CustomerVerifiedCard
     const datosVisible = await modal
       .locator(SEL.datosForm)
       .isVisible({ timeout: 10_000 })
@@ -231,7 +196,6 @@ test.describe("Checkout signed-in — flujo completo cliente autenticado", () =>
       .isVisible({ timeout: 5_000 })
       .catch(() => false);
 
-    // Al menos uno debe estar visible
     expect(datosVisible || verifiedCardVisible).toBe(true);
   });
 
@@ -240,18 +204,11 @@ test.describe("Checkout signed-in — flujo completo cliente autenticado", () =>
   test("3 — paso Datos muestra nombre y teléfono del customer autenticado", async ({
     page,
   }) => {
-    await mockearSesionCustomer(page);
     await instalarMocksCheckout(page);
 
     const modal = await agregarProductoYAbrirCheckout(page);
 
-    // Saltar paso Cuenta si aparece (fallback por timing del mock)
-    const skipBtn = modal.locator(SEL.skipAccount);
-    if (await skipBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await skipBtn.click();
-    }
-
-    // El formulario de datos debe estar visible
+    // El formulario de datos debe estar visible (no hay paso Cuenta con auth real)
     const datosForm = modal.locator(SEL.datosForm);
     await expect(datosForm).toBeVisible({ timeout: 10_000 });
 
@@ -261,7 +218,7 @@ test.describe("Checkout signed-in — flujo completo cliente autenticado", () =>
       await expect(modal.getByText(CUSTOMER_QA.name)).toBeVisible({ timeout: 5_000 });
       await expect(modal.getByText(CUSTOMER_QA.phone)).toBeVisible({ timeout: 5_000 });
     } else {
-      // Campos de formulario pre-rellenados
+      // Campos de formulario pre-rellenados por useCheckoutInit
       const inputNombre = datosForm
         .locator(
           'input[name="name"], input[name="customerName"], [data-testid="name-input"]',
@@ -270,7 +227,6 @@ test.describe("Checkout signed-in — flujo completo cliente autenticado", () =>
 
       if (await inputNombre.first().isVisible({ timeout: 3_000 }).catch(() => false)) {
         const valor = await inputNombre.first().inputValue();
-        // El nombre puede estar pre-relleno o vacío si el mock no hidrató a tiempo
         if (valor) {
           expect(valor).toBe(CUSTOMER_QA.name);
         }
@@ -281,16 +237,9 @@ test.describe("Checkout signed-in — flujo completo cliente autenticado", () =>
   // ── 4. Completar paso Datos y llegar a paso Pago ──────────────────────────
 
   test("4 — completar paso Datos y avanzar al paso Pago", async ({ page }) => {
-    await mockearSesionCustomer(page);
     await instalarMocksCheckout(page);
 
     const modal = await agregarProductoYAbrirCheckout(page);
-
-    // Saltar paso Cuenta si aparece
-    const skipBtn = modal.locator(SEL.skipAccount);
-    if (await skipBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await skipBtn.click();
-    }
 
     const datosForm = modal.locator(SEL.datosForm);
     await expect(datosForm).toBeVisible({ timeout: 10_000 });
@@ -340,16 +289,9 @@ test.describe("Checkout signed-in — flujo completo cliente autenticado", () =>
   test("5 — seleccionar Efectivo y verificar que StepConfirmar muestra total correcto", async ({
     page,
   }) => {
-    await mockearSesionCustomer(page);
     await instalarMocksCheckout(page);
 
     const modal = await agregarProductoYAbrirCheckout(page);
-
-    // Paso Cuenta (saltar si aparece)
-    const skipBtn = modal.locator(SEL.skipAccount);
-    if (await skipBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await skipBtn.click();
-    }
 
     // Paso Datos
     const datosForm = modal.locator(SEL.datosForm);
@@ -430,16 +372,15 @@ test.describe("Checkout signed-in — flujo completo cliente autenticado", () =>
   test("6 — E2E completo: signed-in → tienda → cart → checkout → StepConfirmar", async ({
     page,
   }) => {
-    await mockearSesionCustomer(page);
     await instalarMocksCheckout(page);
 
     const modal = await agregarProductoYAbrirCheckout(page);
 
-    // Paso Cuenta: NO debe aparecer con signed-in. Si aparece, saltar.
+    // Paso Cuenta: NO debe aparecer con auth real.
+    // Si aparece, es un bug genuino — no saltamos silenciosamente.
     const skipBtn = modal.locator(SEL.skipAccount);
-    if (await skipBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await skipBtn.click();
-    }
+    const cuentaVisible = await skipBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+    expect(cuentaVisible).toBe(false);
 
     // Paso Datos
     const datosForm = modal.locator(SEL.datosForm);
