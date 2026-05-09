@@ -154,9 +154,9 @@ export const MermasDB = {
       }
     }
 
-    // Actualizar stock del producto
+    // Actualizar stock del producto — tenantId en where previene cross-tenant write.
     await prisma.product.update({
-      where: { id: input.productId },
+      where: { id: input.productId, tenantId },
       data: { stock: newStock },
     });
 

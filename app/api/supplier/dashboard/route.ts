@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
         LIMIT 20
       `,
 
-      SupplierRatingDB.getBySupplierId(supplierId).then((ratings) =>
+      SupplierRatingDB.getBySupplierId(tenantId, supplierId).then((ratings) =>
         ratings.find((r) => r.period === currentPeriod) ?? null,
       ),
     ]);

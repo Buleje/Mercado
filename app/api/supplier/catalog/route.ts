@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     `;
 
     // Historial de precios por producto (últimas 5 versiones)
-    const priceVersions = await SupplierPriceVersionDB.getBySupplierId(supplierId, 200);
+    const priceVersions = await SupplierPriceVersionDB.getBySupplierId(tenantId, supplierId, 200);
 
     const priceHistoryByProduct: Record<number, typeof priceVersions> = {};
     for (const v of priceVersions) {

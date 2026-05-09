@@ -250,7 +250,7 @@ export default async function StoreDetailPage({ params }: Props) {
 
   // 4. Fetch reseñas REALES (de la tabla Review). Defensive: si falla,
   //    devuelve listas vacías y la UI muestra empty state honesto.
-  const { reviews, summary: reviewSummary } = await StoreReviewsDB.listByStoreId(store.id);
+  const { reviews, summary: reviewSummary } = await StoreReviewsDB.listByStoreId(store.tenantId, store.id);
 
   // 5. Horario real de la tienda — leído de Store.hoursJson (columna jsonb
   //    fuera del schema Prisma — fase expand). Si no hay hours configuradas,

@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
     const [monthlyRatings, evaluationAverages, tenantAverage, ranking] = await Promise.all([
-      SupplierRatingDB.getBySupplierId(supplierId),
+      SupplierRatingDB.getBySupplierId(tenantId, supplierId),
       SupplierEvaluationsDB.getAverages(supplierId, tenantId),
       SupplierRatingDB.getTenantAverage(tenantId, currentPeriod),
       SupplierRatingDB.getRanking(tenantId, supplierId, currentPeriod),

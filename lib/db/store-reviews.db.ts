@@ -87,7 +87,7 @@ function buildSummaryFromGroups(
 
 export const StoreReviewsDB = {
   /** Lee reseñas reales para una tienda marketplace. */
-  async listByStoreId(storeId: string, limit = 50): Promise<{
+  async listByStoreId(tenantId: string, storeId: string, limit = 50): Promise<{
     reviews: StoreReview[];
     summary: StoreRatingSummary;
   }> {
@@ -95,7 +95,7 @@ export const StoreReviewsDB = {
       // Paralelizar: top-N reviews + groupBy de ratings para summary.
       // Antes: 2 queries seriales (~2× latencia + traía todos los rows).
       // Ahora: 2 queries paralelas, summary via groupBy (DB-side).
-      const baseWhere = { storeId, status: "approved", deletedAt: null };
+      const baseWhere = { tenantId, storeId, status: "approved", deletedAt: null };
       const [rows, ratingGroups] = await Promise.all([
         prisma.review.findMany({
           where: baseWhere,

@@ -51,9 +51,9 @@ function toISO(d: Date): string {
 // ─── SupplierPriceVersionDB ───────────────────────────────────────────────────
 
 export const SupplierPriceVersionDB = {
-  async getBySupplierId(supplierId: string, limit = 50): Promise<DbSupplierPriceVersion[]> {
+  async getBySupplierId(tenantId: string, supplierId: string, limit = 50): Promise<DbSupplierPriceVersion[]> {
     const rows = await prisma.supplierPriceVersion.findMany({
-      where: { supplierId },
+      where: { supplierId, tenantId },
       orderBy: { effectiveDate: "desc" },
       take: limit,
     });
@@ -98,9 +98,9 @@ export const SupplierPriceVersionDB = {
 // ─── SupplierRatingDB ─────────────────────────────────────────────────────────
 
 export const SupplierRatingDB = {
-  async getBySupplierId(supplierId: string): Promise<DbSupplierRating[]> {
+  async getBySupplierId(tenantId: string, supplierId: string): Promise<DbSupplierRating[]> {
     const rows = await prisma.supplierRating.findMany({
-      where: { supplierId },
+      where: { supplierId, tenantId },
       orderBy: { period: "desc" },
     });
     return rows.map((r) => ({
