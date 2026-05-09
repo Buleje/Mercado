@@ -44,7 +44,7 @@ describe("RBAC — role: delivery", () => {
     expect(hasAnyPermission("delivery", "settings")).toBe(false);
     expect(hasAnyPermission("delivery", "products")).toBe(false);
     expect(hasAnyPermission("delivery", "suppliers")).toBe(false);
-    expect(hasAnyPermission("delivery", "finanzas")).toBe(false);
+    expect(hasAnyPermission("delivery", "expenses")).toBe(false);
   });
 
   it("getAccessibleResources devuelve solo orders + delivery_assignments + customers", () => {
@@ -88,7 +88,7 @@ describe("RBAC — role: tienda_owner", () => {
 
   it("NO puede acceder a recursos plataforma (suppliers, finanzas, settings globales)", () => {
     expect(hasAnyPermission("tienda_owner", "suppliers")).toBe(false);
-    expect(hasAnyPermission("tienda_owner", "finanzas")).toBe(false);
+    expect(hasAnyPermission("tienda_owner", "expenses")).toBe(false);
     expect(hasAnyPermission("tienda_owner", "settings")).toBe(false);
   });
 });
