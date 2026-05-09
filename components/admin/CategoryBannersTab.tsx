@@ -229,7 +229,7 @@ export default function CategoryBannersTab({
                     {/* Vincular a producto específico (opcional) */}
                     <div className="space-y-1.5 pt-1">
                       <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                        Vincular a producto <span className="text-[10px] font-normal text-muted normal-case tracking-normal">(opcional)</span>
+                        Vincular a producto <span className="text-[length:var(--ts-2xs)] font-normal text-muted normal-case tracking-normal">(opcional)</span>
                       </label>
                       <select
                         value={banner.productSlug ?? ""}
@@ -243,7 +243,7 @@ export default function CategoryBannersTab({
                           </option>
                         ))}
                       </select>
-                      <p className="text-[11px] text-muted leading-snug">
+                      <p className="text-[length:var(--ts-xs)] text-muted leading-snug">
                         Si elegís un producto, el botón lleva directo al detalle de ese producto.
                         Sin elegir, filtra toda la categoría.
                       </p>
@@ -280,9 +280,9 @@ export default function CategoryBannersTab({
                         className="object-cover"
                         unoptimized={banner.image!.startsWith("data:")}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+                      <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent" />
                       <div className="absolute inset-0 flex flex-col justify-center px-6 max-w-md">
-                        <span className="inline-flex items-center gap-1.5 self-start text-[10px] font-bold uppercase tracking-wider text-white/90 mb-2">
+                        <span className="inline-flex items-center gap-1.5 self-start text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/90 mb-2">
                           <Tag className="h-3 w-3" />
                           Oferta de Temporada
                         </span>
@@ -290,7 +290,7 @@ export default function CategoryBannersTab({
                         <p className="text-sm text-white/85 mt-1 line-clamp-2">{banner.subtitle || "Hasta 20% OFF en productos seleccionados"}</p>
                         <button
                           type="button"
-                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-white dark:bg-[var(--color-card)] text-primary text-xs font-bold shadow-lg pointer-events-none"
+                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-white dark:bg-[var(--color-card)] text-primary text-xs font-bold shadow-[var(--shadow-lg)] pointer-events-none"
                         >
                           {banner.ctaText || `Ver ${cat.label}`}
                           <ArrowRight className="h-3.5 w-3.5" />

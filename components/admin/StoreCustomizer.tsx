@@ -302,7 +302,7 @@ function ColorPicker({
             onClick={() => onChange(c.value)}
             title={c.label}
             className={cn(
-              "h-11 w-11 rounded-2xl border-2 transition-all shrink-0 shadow-sm",
+              "h-11 w-11 rounded-2xl border-2 transition-all shrink-0 shadow-[var(--shadow-sm)]",
               value === c.value
                 ? "border-foreground scale-110 ring-2 ring-primary/30"
                 : "border-white dark:border-card hover:scale-105 hover:border-foreground/40"
@@ -523,7 +523,7 @@ function HeroTab({
                 <div className={cn(previewDevice === "desktop" ? "md:col-span-3 text-left" : "")}>
                   {theme.heroBadge && (
                     <span
-                      className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-4"
+                      className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider mb-4"
                       style={{ color: accent }}
                     >
                       {theme.heroBadge}
@@ -553,7 +553,7 @@ function HeroTab({
                   >
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white shadow-lg pointer-events-none"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white shadow-[var(--shadow-lg)] pointer-events-none"
                       style={{ backgroundColor: accent, boxShadow: `0 10px 25px ${accent}40` }}
                     >
                       <ShoppingBag className="h-4 w-4" />
@@ -569,7 +569,7 @@ function HeroTab({
                   </div>
 
                   {/* Stats line */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-6 text-[10px] font-bold uppercase tracking-wider text-white/50">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-6 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/50">
                     <span className="inline-flex items-center gap-1">
                       <Clock className="h-3 w-3" /> 25 min
                     </span>
@@ -599,7 +599,7 @@ function HeroTab({
                         />
                       </div>
                       <div
-                        className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider text-white shadow-lg whitespace-nowrap"
+                        className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white shadow-[var(--shadow-lg)] whitespace-nowrap"
                         style={{
                           backgroundColor: accent,
                           boxShadow: `0 10px 25px ${accent}50`,
@@ -900,7 +900,7 @@ function HeroTab({
                       "p-4 rounded-2xl border-2 text-left transition-all flex items-start gap-3",
                       active
                         ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                        : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                        : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                     )}
                   >
                     <div className={cn(
@@ -1434,7 +1434,7 @@ export default function StoreCustomizer() {
                     <span className="text-xs text-muted">PNG/JPG/WebP · máx 5 MB · cuadrado idealmente</span>
                   </div>
                   <div className="flex flex-col sm:flex-row items-start gap-5 p-5 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface">
-                    <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary hover:shadow-md transition-all relative group">
+                    <div className="shrink-0 w-32 h-32 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary hover:shadow-[var(--shadow-md)] transition-all relative group">
                       {theme.logo ? (
                         <>
                           <Image src={theme.logo} alt="Logo" fill className="object-cover" sizes="128px" />
@@ -1583,7 +1583,7 @@ export default function StoreCustomizer() {
                           }}
                           aria-pressed={active}
                           className={cn(
-                            "rounded-2xl border-2 text-left transition-all overflow-hidden hover:shadow-md",
+                            "rounded-2xl border-2 text-left transition-all overflow-hidden hover:shadow-[var(--shadow-md)]",
                             active
                               ? "border-primary ring-2 ring-primary/20"
                               : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
@@ -1606,7 +1606,7 @@ export default function StoreCustomizer() {
                               </div>
                             )}
                             {t.darkModeDefault && (
-                              <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/40 text-white text-[9px] font-bold">
+                              <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/40 text-white text-[length:var(--ts-2xs)] font-bold">
                                 <Moon className="h-2.5 w-2.5" />
                                 Dark
                               </span>
@@ -1615,9 +1615,9 @@ export default function StoreCustomizer() {
                           {/* Body con color dots + título + descripción */}
                           <div className="p-3.5 flex items-start gap-3">
                             <div className="flex -space-x-1.5 shrink-0 mt-0.5">
-                              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-md" style={{ backgroundColor: t.colors.primaryColor }} />
-                              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-md" style={{ backgroundColor: t.colors.secondaryColor }} />
-                              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-md" style={{ backgroundColor: t.colors.accentColor || t.colors.primaryColor }} />
+                              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-[var(--shadow-md)]" style={{ backgroundColor: t.colors.primaryColor }} />
+                              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-[var(--shadow-md)]" style={{ backgroundColor: t.colors.secondaryColor }} />
+                              <div className="w-7 h-7 rounded-full border-2 border-white dark:border-card shadow-[var(--shadow-md)]" style={{ backgroundColor: t.colors.accentColor || t.colors.primaryColor }} />
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-base font-bold text-foreground leading-tight">{t.name}</p>
@@ -1640,11 +1640,11 @@ export default function StoreCustomizer() {
                     <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-sm" style={{ backgroundColor: theme.primaryColor }} />
+                          <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-[var(--shadow-sm)]" style={{ backgroundColor: theme.primaryColor }} />
                           <p className="text-sm font-bold text-foreground">Primario</p>
                         </div>
                         <span
-                          className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                          className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
                           style={{ backgroundColor: theme.primaryColor }}
                         >
                           CTA
@@ -1661,11 +1661,11 @@ export default function StoreCustomizer() {
                     <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-sm" style={{ backgroundColor: theme.secondaryColor }} />
+                          <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-[var(--shadow-sm)]" style={{ backgroundColor: theme.secondaryColor }} />
                           <p className="text-sm font-bold text-foreground">Secundario</p>
                         </div>
                         <span
-                          className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                          className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
                           style={{ backgroundColor: theme.secondaryColor }}
                         >
                           Oferta
@@ -1682,11 +1682,11 @@ export default function StoreCustomizer() {
                     <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-sm" style={{ backgroundColor: theme.accentColor }} />
+                          <div className="h-6 w-6 rounded-lg border-2 border-white dark:border-card shadow-[var(--shadow-sm)]" style={{ backgroundColor: theme.accentColor }} />
                           <p className="text-sm font-bold text-foreground">Acento</p>
                         </div>
                         <span
-                          className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                          className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
                           style={{ backgroundColor: theme.accentColor }}
                         >
                           Hover
@@ -1744,7 +1744,7 @@ export default function StoreCustomizer() {
                         }}
                       >
                         <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-white"
                           style={{ backgroundColor: theme.secondaryColor }}
                         >
                           {theme.heroBadge || "Oferta"}
@@ -1757,14 +1757,14 @@ export default function StoreCustomizer() {
                       <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
-                          className="px-5 py-2.5 text-sm font-bold text-white shadow-md hover:opacity-90 transition-all pointer-events-none"
+                          className="px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
                           style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
                         >
                           {theme.heroCTA || "Comprar ahora"}
                         </button>
                         <button
                           type="button"
-                          className="px-5 py-2.5 text-sm font-bold text-white shadow-md hover:opacity-90 transition-all pointer-events-none"
+                          className="px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
                           style={{ backgroundColor: theme.secondaryColor, borderRadius: `${theme.borderRadius}px` }}
                         >
                           Ver oferta
@@ -1793,13 +1793,13 @@ export default function StoreCustomizer() {
                           Link primary
                         </a>
                         <span
-                          className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                          className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-white"
                           style={{ backgroundColor: theme.secondaryColor }}
                         >
                           -25% OFF
                         </span>
                         <span
-                          className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                          className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold"
                           style={{ backgroundColor: `${theme.accentColor}25`, color: theme.accentColor }}
                         >
                           Hover state
@@ -2072,20 +2072,20 @@ export default function StoreCustomizer() {
                             "group p-3 rounded-2xl border-2 text-left transition-all",
                             active
                               ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                           )}
                         >
                           {/* Mini-card preview */}
                           <div className={cn(
                             "aspect-[4/3] mb-3 rounded-xl overflow-hidden flex flex-col bg-white dark:bg-surface relative",
                             s.value === "minimal" && "border-0",
-                            s.value === "shadow"  && "shadow-md",
+                            s.value === "shadow"  && "shadow-[var(--shadow-md)]",
                             s.value === "border"  && "border-2",
                             s.value === "glass"   && "backdrop-blur-md bg-white/60 dark:bg-surface/60 border border-white/40 dark:border-card-border"
                           )}
                           style={s.value === "border" ? { borderColor: theme.primaryColor } : undefined}>
                             {/* Imagen placeholder */}
-                            <div className="flex-1 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                            <div className="flex-1 bg-linear-to-br from-[var(--surface-sunken)] to-[var(--rule-soft)] dark:from-[var(--surface-sunken)] dark:to-[var(--surface-canvas)] flex items-center justify-center">
                               <ShoppingBag className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                             </div>
                             {/* Texto + precio */}
@@ -2125,13 +2125,13 @@ export default function StoreCustomizer() {
                             "p-4 rounded-2xl border-2 transition-all",
                             active
                               ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                           )}
                         >
                           {/* Preview real del botón */}
                           <div
                             className={cn(
-                              "w-full h-10 mb-3 flex items-center justify-center text-sm font-bold text-white shadow-sm",
+                              "w-full h-10 mb-3 flex items-center justify-center text-sm font-bold text-white shadow-[var(--shadow-sm)]",
                               s.radius
                             )}
                             style={{ backgroundColor: theme.primaryColor }}
@@ -2169,15 +2169,15 @@ export default function StoreCustomizer() {
                             "p-3 rounded-2xl border-2 text-left transition-all",
                             active
                               ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                           )}
                         >
                           {/* Mini-mockup del navbar */}
-                          <div className="relative h-16 mb-3 rounded-xl overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                          <div className="relative h-16 mb-3 rounded-xl overflow-hidden bg-linear-to-b from-[var(--surface-alt)] to-[var(--surface-sunken)] dark:from-[var(--surface-sunken)] dark:to-[var(--surface-canvas)]">
                             <div
                               className={cn(
                                 "absolute top-0 inset-x-0 h-7 flex items-center px-2 gap-1.5",
-                                s.value === "solid"       && "shadow-sm",
+                                s.value === "solid"       && "shadow-[var(--shadow-sm)]",
                                 s.value === "transparent" && "border-b border-gray-300 dark:border-gray-700",
                                 s.value === "blur"        && "backdrop-blur-md border-b border-white/30",
                                 s.value === "minimal"     && "border-b-2"
@@ -2227,8 +2227,8 @@ export default function StoreCustomizer() {
                       <div className="grid grid-cols-3 gap-3">
                         {([
                           { value: "none", label: "Sin sombra", cls: "" },
-                          { value: "soft", label: "Suave",      cls: "shadow-md" },
-                          { value: "deep", label: "Profunda",   cls: "shadow-2xl" },
+                          { value: "soft", label: "Suave",      cls: "shadow-[var(--shadow-md)]" },
+                          { value: "deep", label: "Profunda",   cls: "shadow-[var(--shadow-xl)]" },
                         ] as const).map((s) => {
                           const active = theme.shadowLevel === s.value;
                           return (
@@ -2507,7 +2507,7 @@ export default function StoreCustomizer() {
                         href={`https://api.qrserver.com/v1/create-qr-code/?size=512x512&format=png&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 shadow-md self-center sm:self-start"
+                        className="inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 shadow-[var(--shadow-md)] self-center sm:self-start"
                       >
                         Descargar QR (512px)
                       </a>
@@ -2570,7 +2570,7 @@ export default function StoreCustomizer() {
                             "p-3 rounded-2xl border-2 text-center transition-all",
                             active
                               ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-md"
+                              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
                           )}
                         >
                           <div
@@ -2582,7 +2582,7 @@ export default function StoreCustomizer() {
                           <p className="text-sm font-bold text-foreground leading-tight" style={{ fontFamily: f.stack }}>
                             {f.label}
                           </p>
-                          <p className="text-[11px] text-muted leading-snug mt-0.5">{f.vibe}</p>
+                          <p className="text-[length:var(--ts-xs)] text-muted leading-snug mt-0.5">{f.vibe}</p>
                         </button>
                       );
                     })}
@@ -2612,7 +2612,7 @@ export default function StoreCustomizer() {
                       />
                       {/* Preview multi-elemento: input, badge, card, botón */}
                       <div className="rounded-2xl bg-gray-50 dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-card-border">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">Vista previa en vivo</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-3">Vista previa en vivo</p>
                         <div className="flex items-center gap-3 flex-wrap">
                           <div
                             className="h-10 w-32 bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border flex items-center px-3 text-xs text-muted transition-all"
@@ -2627,12 +2627,12 @@ export default function StoreCustomizer() {
                             BADGE
                           </span>
                           <div
-                            className="h-12 w-20 bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border shadow-sm transition-all"
+                            className="h-12 w-20 bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border shadow-[var(--shadow-sm)] transition-all"
                             style={{ borderRadius: `${theme.borderRadius}px` }}
                           />
                           <button
                             type="button"
-                            className="h-10 px-5 text-sm font-bold text-white shadow-md transition-all pointer-events-none"
+                            className="h-10 px-5 text-sm font-bold text-white shadow-[var(--shadow-md)] transition-all pointer-events-none"
                             style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
                           >
                             Comprar
@@ -2689,7 +2689,7 @@ export default function StoreCustomizer() {
                   <div className="space-y-4">
                     {/* Browser tab preview */}
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Cómo se verá la pestaña del navegador</p>
+                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">Cómo se verá la pestaña del navegador</p>
                       <div className="rounded-t-xl bg-gray-200 dark:bg-gray-800 px-2 pt-2 border border-b-0 border-[var(--rule-soft)] dark:border-card-border">
                         <div className="inline-flex items-center gap-2 max-w-[260px] bg-white dark:bg-card rounded-t-lg border-t border-x border-[var(--rule-soft)] dark:border-card-border px-3 py-2">
                           {theme.favicon ? (
@@ -2835,7 +2835,7 @@ export default function StoreCustomizer() {
                   <div className="space-y-4">
                     {/* Snippets clickables */}
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Snippets para empezar</p>
+                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">Snippets para empezar</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {CSS_SNIPPETS.map((s) => (
                           <button
@@ -2920,10 +2920,10 @@ export default function StoreCustomizer() {
               onClick={handleSave}
               disabled={saving}
               className={cn(
-                "w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl text-base font-bold transition-all relative shadow-md",
+                "w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl text-base font-bold transition-all relative shadow-[var(--shadow-md)]",
                 saved
                   ? "bg-[var(--data-success-500)] text-white"
-                  : "bg-primary hover:bg-primary-dark text-white hover:shadow-lg active:scale-[0.98]",
+                  : "bg-primary hover:bg-primary-dark text-white hover:shadow-[var(--shadow-lg)] active:scale-[0.98]",
                 saving && "opacity-60 cursor-not-allowed"
               )}
             >

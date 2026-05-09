@@ -225,7 +225,7 @@ function PreviewBrowserFrame({
 }) {
   return (
     <div
-      className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 w-full"
+      className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden shadow-[var(--shadow-xl)] border border-gray-700/50 w-full"
       style={{ height: "calc(100vh - 130px)" }}
     >
       {/* Browser chrome */}
@@ -512,7 +512,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               <WandSparkles className="h-4 w-4 text-[var(--data-success-500)]" />
             </div>
             <div className="leading-tight">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--data-success-500)]">Modo Creativo</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-500)]">Modo Creativo</p>
               <p className="text-xs font-semibold text-white truncate max-w-[200px]">{draft.storeName || tenantSlug}</p>
             </div>
           </div>
@@ -531,7 +531,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold transition-all",
                     active
-                      ? "bg-[var(--data-success-500)] text-gray-950 shadow-md shadow-[var(--data-success-500)]/30"
+                      ? "bg-[var(--data-success-500)] text-gray-950 shadow-[var(--shadow-md)] shadow-[var(--data-success-500)]/30"
                       : "text-gray-400 hover:text-white hover:bg-gray-700/60",
                   )}
                 >
@@ -618,7 +618,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             onClick={handleApply}
             disabled={saving}
-            className="ml-1 flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--data-success-500)] text-white text-sm font-bold shadow-lg shadow-[var(--data-success-500)]/20 hover:bg-[var(--data-success-500)]/90 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="ml-1 flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--data-success-500)] text-white text-sm font-bold shadow-[var(--shadow-lg)] shadow-[var(--data-success-500)]/20 hover:bg-[var(--data-success-500)]/90 active:scale-[0.98] transition-all disabled:opacity-50"
           >
             {saving ? <Sparkles className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
             {saving ? "Aplicando..." : "Aplicar y guardar"}
@@ -630,7 +630,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         <aside className="w-80 bg-gray-900 border-r border-gray-800 overflow-y-auto shrink-0">
           {/* Sidebar nav — items con icono en bg + label, active state pronunciado */}
           <nav className="p-3 space-y-1">
-            <p className="px-2 pb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Configuración</p>
+            <p className="px-2 pb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Configuración</p>
             {panelItems.map((item) => {
               const active = panel === item.id;
               return (
@@ -661,7 +661,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             {panel === "plantillas" && (
               <>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--data-success-500)] mb-1">⚡ Plantillas listas</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-500)] mb-1">⚡ Plantillas listas</p>
                   <p className="text-xs text-gray-400 leading-snug">Aplicá un look completo en 1 click — colores + tipografía + estilo.</p>
                 </div>
                 {QUICK_TEMPLATES.map((tpl) => (
@@ -669,7 +669,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     key={tpl.id}
                     type="button"
                     onClick={() => applyTemplate(tpl)}
-                    className="group w-full text-left rounded-xl bg-gray-800/70 border border-gray-700 hover:border-[var(--data-success-500)]/40 hover:shadow-lg hover:shadow-[var(--data-success-500)]/10 transition-all overflow-hidden"
+                    className="group w-full text-left rounded-xl bg-gray-800/70 border border-gray-700 hover:border-[var(--data-success-500)]/40 hover:shadow-[var(--shadow-lg)] hover:shadow-[var(--data-success-500)]/10 transition-all overflow-hidden"
                   >
                     {/* Mini-mockup: gradient banner con los 3 colores */}
                     <div
@@ -694,7 +694,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.accentColor }} />
                         </div>
                       </div>
-                      <p className="text-[10px] text-gray-400 mt-1 group-hover:text-[var(--data-success-500)]/80 transition-colors">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1 group-hover:text-[var(--data-success-500)]/80 transition-colors">
                         Click para aplicar →
                       </p>
                     </div>
@@ -1029,7 +1029,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           </div>
         </aside>
 
-        <main className="flex-1 bg-gradient-to-br from-gray-950 to-gray-900 flex items-start justify-center p-6 overflow-auto">
+        <main className="flex-1 bg-linear-to-br from-gray-950 to-gray-900 flex items-start justify-center p-6 overflow-auto">
           {livePreview ? (
             <div className={cn("flex gap-6 w-full justify-center items-start", !splitPreview && "h-full")}>
               {splitPreview && (
@@ -1074,7 +1074,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             </div>
           ) : (
           <div
-            className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 transition-all duration-[var(--dur-base)] w-full"
+            className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden shadow-[var(--shadow-xl)] border border-gray-700/50 transition-all duration-[var(--dur-base)] w-full"
             style={{
               ...(viewport === "mobile"
                 ? { width: "390px" }
