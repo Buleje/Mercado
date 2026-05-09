@@ -38,17 +38,19 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_activitylog_tenant_entity_created
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_customer_tenant_phone
   ON "Customer" ("tenantId", "phone");
 
--- 8. LoyaltyTransaction por tenant + phone + createdAt (historial gamificado)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_loyaltytxn_tenant_phone_created
-  ON "LoyaltyTransaction" ("tenantId", "phone", "createdAt" DESC);
+-- 8. LoyaltyTransaction por tenant + customerId + createdAt (historial gamificado)
+-- FIX 2026-05-08: el modelo no tiene `phone`, usa `customerId` (FK a Customer.phone)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_loyaltytxn_tenant_customer_created
+  ON "LoyaltyTransaction" ("tenantId", "customerId", "createdAt" DESC);
 
 -- 9. Sale por tenant + createdAt (reportes POS)
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_sale_tenant_created
   ON "Sale" ("tenantId", "createdAt" DESC);
 
--- 10. Review por tenant + productId + createdAt (PDP)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_review_tenant_product_created
-  ON "Review" ("tenantId", "productId", "createdAt" DESC);
+-- 10. Review por tenant + productId + date (PDP)
+-- FIX 2026-05-08: Review usa columna `date`, no `createdAt`
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_review_tenant_product_date
+  ON "Review" ("tenantId", "productId", "date" DESC);
 
 -- 11. Settings lookup (usado en cada request)
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_settings_tenant

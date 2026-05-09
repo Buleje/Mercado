@@ -10,6 +10,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
+import { safeFetch, SsrfBlockedError } from "@/lib/safe-fetch";
 import type { WebhookConfig, WebhookEvent } from "@/app/api/webhooks/config/route";
 
 // ── Helpers internos ──────────────────────────────────────────────────────────
@@ -46,9 +47,6 @@ async function postToUrl(
   secret: string,
 ): Promise<{ ok: boolean; status?: number; error?: string }> {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5_000);
-
     // SECURITY 2026-05-05 (audit webhooks #2): firma HMAC saliente.
     // Antes los outgoing webhooks no llevaban firma — el receptor del tenant
     // no podía verificar que el POST viniera de Buleje, permitiendo a un
@@ -58,7 +56,10 @@ async function postToUrl(
     const signature = crypto.createHmac("sha256", secret).update(body).digest("hex");
     const ts = Math.floor(Date.now() / 1000).toString();
 
-    const res = await fetch(url, {
+    // SECURITY 2026-05-08 (audit SSRF): tenant elige URL → bloquear IPs
+    // privadas (10.x, 172.16-31, 192.168, 169.254 metadata, localhost) +
+    // forzar https + redirect:"error" (anti redirect-to-private-IP).
+    const res = await safeFetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -66,12 +67,14 @@ async function postToUrl(
         "X-Buleje-Timestamp": ts,
       },
       body,
-      signal: controller.signal,
+      timeoutMs: 5_000,
     });
 
-    clearTimeout(timeoutId);
     return { ok: res.ok, status: res.status };
   } catch (e) {
+    if (e instanceof SsrfBlockedError) {
+      return { ok: false, error: e.message };
+    }
     const error = e instanceof Error ? e.message : String(e);
     return { ok: false, error };
   }
