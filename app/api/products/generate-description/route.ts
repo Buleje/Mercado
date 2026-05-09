@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { aiCostGuard } from "@/lib/ai/cost-control";
+import { trackAiUsage } from "@/lib/ai/track-usage";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 
 /**
@@ -92,12 +93,18 @@ Reglas estrictas:
 
 Devolvé EXCLUSIVAMENTE el texto de la descripción, sin comillas, sin markdown, sin prefijos.`;
 
-    const result = await generateText({
-      model: chatModel,
-      prompt,
-      maxOutputTokens: 200,
-      temperature: 0.7,
-    });
+    // Round 20: trackAiUsage envuelve la llamada — captura tokens reales
+    // del SDK + recordSpend automático. Reemplaza el manual recordSpend de abajo.
+    const result = await trackAiUsage(
+      { tenantId: auth.tenantId, feature: "product-description", model: "claude-haiku-4-5" },
+      () =>
+        generateText({
+          model: chatModel,
+          prompt,
+          maxOutputTokens: 200,
+          temperature: 0.7,
+        }),
+    );
 
     const description = result.text
       .trim()
@@ -111,9 +118,9 @@ Devolvé EXCLUSIVAMENTE el texto de la descripción, sin comillas, sin markdown,
         { status: 502 },
       );
     }
-
-    // Registrar gasto real (fire-and-forget)
-    aiCostGuard.recordSpend(auth.tenantId, estimatedCost);
+    // Nota: recordSpend ya lo hace trackAiUsage con costo real (no estimado).
+    void aiCostGuard;
+    void estimatedCost;
 
     return NextResponse.json({ description });
   } catch (err) {

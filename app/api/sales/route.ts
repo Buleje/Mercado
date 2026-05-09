@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { conteoLockKey } from "@/app/api/inventory/conteo/route";
@@ -128,7 +129,14 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
   const blocked = await requireActiveSubscription(auth.tenantId);
   if (blocked) return blocked;
-  if (auth instanceof NextResponse) return auth;
+  // Round 20 M004: Sale + Customer + InventoryMovement + LoyaltyTx writes.
+  return runWithAuditContext(req, auth.username, () => salesHandler(req, auth));
+}
+
+async function salesHandler(
+  req: NextRequest,
+  auth: { tenantId: string; username: string; role?: string },
+): Promise<NextResponse> {
 
   // F6: Bloquear ventas durante conteo físico activo
   const conteoActive = await getOrSet<string | null>(conteoLockKey(auth.tenantId), 1, async () => null).catch((err) => { logger.warn("[sales] conteo lock check failed", { err: String(err) }); return null; });
