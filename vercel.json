@@ -29,7 +29,7 @@
   "crons": [
     {
       "path": "/api/cron/dlq-retry",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/stock-alerts",
@@ -65,7 +65,7 @@
     },
     {
       "path": "/api/cron/delivery-offer-cascade",
-      "schedule": "*/1 * * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/billing/webhook-replay",
@@ -77,7 +77,7 @@
     },
     {
       "path": "/api/cron/marketplace-sla-watchdog",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/agent-tasks",
@@ -121,7 +121,7 @@
     },
     {
       "path": "/api/cron/turnos-zombie-close",
-      "schedule": "15 * * * *"
+      "schedule": "15 0 * * *"
     },
     {
       "path": "/api/cron/fiados-reminder",
