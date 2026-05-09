@@ -19,6 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // ── GET — data export ─────────────────────────────────────────────────────────
 
@@ -116,7 +117,15 @@ export async function DELETE(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "customer-data"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  // Round 17 M004: GDPR/Ley 29733 art. 21 — DELETE de Customer + anon Reviews.
+  // Operación máxima criticidad. Audit con admin actor + IP obligatorio SBS.
+  return runWithAuditContext(req, `gdpr:${auth.username}`, () => deleteHandler(req, auth));
+}
 
+async function deleteHandler(
+  req: NextRequest,
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
   let body: unknown;
   try {
     body = await req.json();

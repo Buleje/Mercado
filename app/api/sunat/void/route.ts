@@ -18,6 +18,7 @@ import { voidInvoice } from "@/lib/sunat/nubefact-client";
 import { buildBaja } from "@/lib/sunat/invoice-builder";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // ── Validación ────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,16 @@ export async function POST(req: NextRequest) {
   const blocked = await requireActiveSubscription(tenantId);
   if (blocked) return blocked;
 
+  // Round 17 M004: SUNAT void → afecta SunatInvoice (PII fiscal). Audit con
+  // admin actor + IP. Operación crítica reversible solo cancelando sustituto.
+  return runWithAuditContext(req, auth.username, () => voidHandler(req, auth));
+}
+
+async function voidHandler(
+  req: NextRequest,
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
+  const { tenantId } = auth;
   const rawBody = await req.json().catch((err) => { logger.warn("[security] op failed", { err: String(err) }); return null; });
   const parsed = VoidSchema.safeParse(rawBody);
   if (!parsed.success) {

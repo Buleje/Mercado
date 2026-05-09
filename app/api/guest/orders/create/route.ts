@@ -8,6 +8,7 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { GuestOrderSchema } from "@/lib/validators/guest-order";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 /**
  * POST /api/guest/orders/create
@@ -115,20 +116,23 @@ export async function POST(req: NextRequest) {
   const etaIso = new Date(Date.now() + 35 * 60 * 1000);
 
   // 9. Upsert Customer (guest temporal vinculado al tenant).
+  // Round 17 M004: audit log con phone como actor (guest no autenticado).
   try {
-    // eslint-disable-next-line no-restricted-properties -- guest path: customer phone es @id, upsert atómico previene race con guest concurrentes.
-    await prisma.customer.upsert({
-      where: { phone: normalizedPhone },
-      update: {}, // no pisar datos existentes si el phone ya está registrado
-      create: {
-        phone: normalizedPhone,
-        name: data.name,
-        location: data.address.line1,
-        reference: data.address.reference ?? "",
-        tenantId,
-        email: data.email,
-      },
-    });
+    await runWithAuditContext(req, normalizedPhone || "guest-anonymous", () =>
+      // eslint-disable-next-line no-restricted-properties -- guest path: customer phone es @id, upsert atómico previene race con guest concurrentes.
+      prisma.customer.upsert({
+        where: { phone: normalizedPhone },
+        update: {},
+        create: {
+          phone: normalizedPhone,
+          name: data.name,
+          location: data.address.line1,
+          reference: data.address.reference ?? "",
+          tenantId,
+          email: data.email,
+        },
+      }),
+    );
   } catch (err) {
     logger.warn("[guest/orders/create] customer upsert failed", {
       phone: normalizedPhone,
@@ -138,8 +142,10 @@ export async function POST(req: NextRequest) {
   }
 
   // 10. Crear Order + OrderItems.
+  // Round 17 M004: audit log de Order.create con phone del guest como actor.
   try {
-    await tx.order.create({
+    await runWithAuditContext(req, normalizedPhone || "guest-anonymous", () =>
+    tx.order.create({
       data: {
         id: orderId,
         tenantId,
@@ -167,7 +173,8 @@ export async function POST(req: NextRequest) {
           }),
         },
       },
-    });
+    }),
+    );
   } catch (err) {
     logger.error("[guest/orders/create] order create failed", {
       orderId,
