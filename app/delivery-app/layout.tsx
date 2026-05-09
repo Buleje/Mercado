@@ -12,8 +12,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Round 28 P0 fix (Mobile audit + WCAG 1.4.4 AA):
+  // antes maximumScale=1 + userScalable=false bloqueaban zoom completamente.
+  // Repartidores con baja visión no podían ampliar la UI. Plus en Capacitor
+  // Android causaba shifts inesperados al abrir teclado virtual.
+  maximumScale: 5,
+  userScalable: true,
   // Hex literal obligatorio — Next.js serializa themeColor como meta tag en
   // <head> en build time; var(--accent) no resuelve en ese contexto y el
   // navegador ignora el valor. #00B4A6 = token --accent resuelto en Buleje DS.

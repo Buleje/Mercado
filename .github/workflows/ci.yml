@@ -62,8 +62,9 @@ jobs:
         run: npm run test:coverage
 
       - name: Enforce coverage thresholds
-        run: |
-          npx vitest run --coverage --coverage.thresholds.lines=80 --coverage.thresholds.statements=80 --coverage.thresholds.branches=70 --coverage.thresholds.functions=75 2>/dev/null || echo "::warning::Coverage below thresholds — check test:coverage output"
+        # Round 28 (DevOps audit P0): antes era warning silencioso. Ahora
+        # blocking — un PR que baja coverage debajo del threshold falla CI.
+        run: npx vitest run --coverage --coverage.thresholds.lines=80 --coverage.thresholds.statements=80 --coverage.thresholds.branches=70 --coverage.thresholds.functions=75
 
       - name: Build
         run: npm run build
@@ -76,8 +77,11 @@ jobs:
         continue-on-error: true
 
       - name: E2E — admin bulk + checkout
+        # Round 28 (DevOps audit P0): antes non-blocking. Ahora bloquea PRs.
+        # Estos 2 specs cubren CSRF (bug 2026-04-20) y flujo checkout. Baseline
+        # verificado verde en round 14 prod build fix. Si vuelve a ponerse
+        # rojo, investigar antes que ignorar.
         run: npx playwright test e2e/admin-bulk-images.spec.ts e2e/checkout-multistep.spec.ts --reporter=list
-        continue-on-error: true  # non-blocking hasta tener baseline verde
 
   evals:
     name: Run Evals (28 critical zone tests)

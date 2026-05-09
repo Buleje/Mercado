@@ -508,7 +508,10 @@ export default function UnifiedProductCard({
                     : `Agregar ${product.name} al carrito`
               }
               className={cn(
-                "inline-flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-200 ring-1 shrink-0",
+                // Round 28 P0 (Mobile): h-10 w-10 = 40px viola WCAG 2.5.5 (44 mín).
+                // Es el botón con mayor frecuencia de tap del marketplace —
+                // máximo impacto en conversión mobile.
+                "inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-200 ring-1 shrink-0",
                 isOutOfStock
                   ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
                   : justAdded

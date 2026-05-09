@@ -294,8 +294,13 @@ body {
   --sai-bottom: env(safe-area-inset-bottom, 0px);
   --sai-left: env(safe-area-inset-left, 0px);
 }
+/* Round 28 fix (Mobile audit): consolidación de .pb-safe — antes había
+   2 definiciones (línea 297 y línea 1604) — la segunda ganaba siempre y
+   ambas divergían. Definición única acá: max() asegura mínimo 1rem para
+   iPhones SIN notch (donde safe-area-inset-bottom=0) sin perder el inset
+   en iPhone X+ con home indicator. */
 .pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 1rem);
 }
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
@@ -1600,8 +1605,9 @@ button,
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ── Safe-area insets para mobile (iPhone notch) ── */
-.pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 1rem); }
+/* ── Safe-area insets para mobile (iPhone notch) ──
+   Round 28: .pb-safe consolidado en línea 302 (deduplicación). Mantener
+   solo .pt-safe acá. */
 .pt-safe { padding-top: max(env(safe-area-inset-top), 0.5rem); }
 
 /* ═════════════════════════════════════════════════════════════════════════
