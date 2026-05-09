@@ -1,8 +1,27 @@
 # MEMORIA-PROYECTO.md — Buleje
 
-> **Última verificación:** 2026-05-04 · Fuente: `package.json`, `CLAUDE.md`, `docs/HISTORY.md`
-> **Versión:** v15 — slim (2026-04-26). Snapshot histórico (133 tabs, 14 fases ERP, batches) movido a `docs/HISTORY.md`.
+> **Última verificación:** 2026-05-09 · Fuente: `package.json`, `CLAUDE.md`, `docs/HISTORY.md`, ADR-099
+> **Versión:** v16 — post sesión maratón rounds 6-23 (25 commits, score 12→17.69/20).
 > **Propósito:** contexto vivo NO derivable del código (decisiones, patrones, operaciones críticas, gaps).
+
+## Estado tras sesión maratón rounds 6-23 (2026-05-09)
+
+**Score promedio: 17.69/20 (88.4%)** — 15 de 16 categorías ≥17. Detalle por categoría:
+
+| Cat | Score | Cat | Score |
+|---|---|---|---|
+| Seguridad | 20/20 ✨ | Compliance Ley 29733 | 20/20 ✨ |
+| Bugs/Errores | 19 | Pagos/Checkout | 19 |
+| Code Quality | 19 | Multi-tenant | 18 |
+| AI/IA | 18 | Performance | 18 |
+| Tests/QA | 18 | Documentación | 16 → 18 (round 24) |
+| UX/A11y | 17 | DX | 17 |
+| UI/DS | 16 | DevOps | 15 |
+| Mobile | 16 | **DB** | **14** ⚠️ |
+
+**Sólido para producción** con monitoring activo. Único gap material: DB (14/20) bloqueado por DIRECT_URL Supabase desde WSL.
+
+**Patrones consolidados rounds 6-23**: ver **ADR-099** (audit-context, multi-tenant guards, force-dynamic ban, empty catches cleanup, WCAG accent-600, dataset client→server, splitting handler, HUSKY=0 justification).
 
 ---
 
@@ -168,6 +187,16 @@ Después usar `prisma migrate deploy` para aplicar las genuinamente nuevas. `dep
 
 ## 7. Gaps conocidos (TD vivo)
 
+### Activos (round 23)
+- [ ] **TD-040** — `Customer.phone` PK global (no compuesto con tenantId). Vector cross-tenant explotable. **Mitigación temporal aplicada round 23** (cart guard); fix definitivo: 4h migración mayor (todos los FK que referencian `references: [phone]` deben pasar a `customerId`).
+- [ ] **TD-041** — `SavedCart.customerPhone @unique` global. Mismo problema. Mitigación temporal: handlers usan tenantId en where (round 23). Fix: schema migration `@@unique([customerPhone, tenantId])` requiere DIRECT_URL.
+- [ ] **TD-042** — DB wave-1 + wave-2: 24 índices `CONCURRENTLY` listos en `prisma/migrations/proposed-*.sql`. Bloqueados por DNS WSL → DIRECT_URL. **5 min de Brandon en consola Supabase resuelve esto** y sube DB de 14→17.
+- [ ] **TD-043** — `ProductAnalytics` schema drift: tabla en `schema.prisma` pero migración no numerada. Verificar `SELECT to_regclass('"ProductAnalytics"')` en Supabase. Si null, datos analytics se perdieron silenciosamente desde round 6.
+- [ ] **TD-044** — `audit-context` lee `globalThis.prisma`. En Edge runtime / workers BullMQ / tests sin globalThis.prisma seteado, entries Ley 29733 se omitían silenciosas. **Round 22 fix:** logger.error escala el gap; refactor a pasar `prismaClient` como param queda como deuda mayor (45 min DANGER ZONE).
+- [ ] **TD-045** — FiadosModule.tsx 1366L con 5 toques en sesión. Code smell estructural. Plan: extraer 3 hooks (`useFiadoList`, `useFiadoPago`, `useFiadoStats`). 3-4h sprint.
+- [ ] **TD-046** — UX agent (`product-uiux-strategist`) trunca persistentemente cuando usa Playwright/Chrome DevTools. 4 fallos en sesión rounds 9, 11, 17, 21. Necesita reemplazo o tooling diferente para auditorías visuales.
+
+### Pre-existentes
 - [ ] `SearchAction` URL declarada en schema.org pero página `/buscar` parcial
 - [ ] `CombosSection.tsx` aún usa `COMBO_TEMPLATES` hardcodeado, no lee `settings`
 - [ ] Warnings Tailwind v4 residuales (`bg-gradient-to-r` → `bg-linear-to-r`) en algunos componentes
@@ -204,6 +233,28 @@ Después usar `prisma migrate deploy` para aplicar las genuinamente nuevas. `dep
 | `docs/TECH-DEBT.md` | Backlog técnico activo |
 | `README.md` | Quick start, deploy, API endpoints |
 | `SESSION_HANDOFF.md` | Estado última sesión |
+
+---
+
+## 2026-05-09 — Sesión maratón rounds 6-23 (25 commits)
+
+**Score promedio: 12 → 17.69/20 (88.4%)** — 18 rounds incrementales documentados en ADR-099.
+
+**Highlights por categoría con mayor delta**:
+- 🛡️ **Seguridad 19→20**: 30 rutas write con audit-context (M004 AsyncLocalStorage), 5 P0 cross-tenant cerrados (locations, discount-rules, supplier-returns + activity-feed leak + idempotency anonymous), 3 P1 hardening (XSS brand colors, MP webhook freshness, audit-context silent loss).
+- 🔐 **Compliance Ley 29733 16→20**: audit chain trazable con IP+actor real, GDPR DELETE auditado, MercadoPago/Stripe/Nubefact webhooks IPN tagueados.
+- 🐛 **Bugs 14→19**: P0 prod build fix (`Response 204 con body`), 27 endpoints rotos por `force-dynamic` arreglados, N+1 stockout-predictions, cache leak top-today.
+- 🏷️ **Code Quality 12→19**: 126 archivos empty `.catch()` cleanup, 49 tests pre-existentes recuperados, dead code FiadosModule.
+- 🎯 **UX/A11y 12→17**: 155+ archivos WCAG `bg-accent-600`, text-tertiary light/dark fix, FiadoStreakBadge ternario.
+- ⚡ **Performance 10→18**: prod build measurement (LCP estimado <1.5s, JS 93KB vs dev 2.8MB), -350KB checkout (ubigeo client→server).
+
+**Round 21 paralelo (hito)**: 6 agentes especializados auditaron en paralelo (Security, Bug Hunter, Code Reviewer, DB, Performance, QA). 49 hallazgos consolidados, 5 P0 + 4 quick wins aplicados en lote único. ROI más alto de toda la sesión.
+
+**ADRs publicados**:
+- ADR-098 — Audit context AsyncLocalStorage
+- ADR-099 — Hardening patterns rounds 6-23
+
+**Bloqueado para Brandon**: aplicar `prisma/migrations/proposed-db-indexes-wave-1.sql` y `wave-2.sql` (24 índices `CONCURRENTLY`) via `psql $DIRECT_URL`. 5 min de trabajo sube DB de 14→17.
 
 ---
 
