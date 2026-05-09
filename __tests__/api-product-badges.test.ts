@@ -91,11 +91,16 @@ function setupDefaultMocks(overrides: {
   topSellers?: { productId: number; _sum: { quantity: number | null } }[];
   maxId?: number;
   productId?: number;
+  tenantId?: string;
 } = {}) {
   const productId = overrides.productId ?? 42;
+  // Round 13: handler primero hace findFirst para resolver productOwner.tenantId,
+  // luego dentro de computeBadges hace otro findFirst con stock real. Ambos calls
+  // van al mismo mock. Devolvemos un objeto con AMBOS shapes para satisfacer ambos.
   mockProductFindFirst.mockResolvedValue({
     id: productId,
     stock: overrides.stock ?? 20,
+    tenantId: overrides.tenantId ?? "test-tenant",
   });
   mockStoreProductFindFirst.mockResolvedValue({
     store: { rating: overrides.storeRating ?? 4.0, zone: null },
@@ -191,10 +196,13 @@ describe("GET /api/marketplace/products/[id]/badges", () => {
     expect(mockGetOrSet).not.toHaveBeenCalled();
   });
 
-  it("multi-tenant: queries de prisma usan el tenantId del header", async () => {
-    setupDefaultMocks({ stock: 10 });
-    await GET(makeGetReq("42", "", "bodega-xyz"), makeParams());
-    // product.findFirst debe recibir tenantId="bodega-xyz"
+  it("multi-tenant: tenantId derivado del producto (audit AI 2026-05-06: NO header)", async () => {
+    // Handler: 1er findFirst lee tenantId del producto (NO usa header).
+    // 2do findFirst (dentro de computeBadges) usa el tenantId derivado.
+    setupDefaultMocks({ stock: 10, tenantId: "bodega-xyz" });
+    await GET(makeGetReq("42", "", "header-fake"), makeParams());
+    // El 2do call (computeBadges) debe usar tenantId="bodega-xyz" del producto,
+    // NO "header-fake" del request.
     expect(mockProductFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ tenantId: "bodega-xyz" }) })
     );

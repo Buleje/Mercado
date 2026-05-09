@@ -224,16 +224,15 @@ describe("POST /api/auth/login", () => {
       expect(body.error).toMatch(/incorrect/i);
     });
 
-    it("returns 200 when login is attempted without a username (matches first valid user)", async () => {
+    it("returns 400 when login is attempted without a username (security hardening: username required)", async () => {
       mockFindMany.mockResolvedValue([DB_USER]);
       mockCompare.mockResolvedValue(true);
 
-      // username is optional in the handler
+      // Antes username era opcional → matched el primer user activo (peligroso).
+      // Ahora username es requerido — sin él retorna 400 (validation error).
       const res = await POST(makeReq({ password: "correctpass" }));
 
-      expect(res.status).toBe(200);
-      const body = await res.json();
-      expect(body.ok).toBe(true);
+      expect(res.status).toBe(400);
     });
   });
 
@@ -247,7 +246,8 @@ describe("POST /api/auth/login", () => {
       mockSettingsGet.mockResolvedValue({ adminPassword: BCRYPT_HASH });
       mockCompare.mockResolvedValue(true);
 
-      const res = await POST(makeReq({ password: "adminpass123" }));
+      // Round 13: handler requiere username explícito tras hardening.
+      const res = await POST(makeReq({ username: "admin", password: "adminpass123" }));
 
       expect(res.status).toBe(200);
       const body = await res.json();
@@ -256,11 +256,10 @@ describe("POST /api/auth/login", () => {
     });
 
     it("returns 401 via settings fallback when settings adminPassword is plain-text (fail-closed)", async () => {
-      // Plain-text en settings.adminPassword es rechazado — checkPassword fail-closed.
       mockFindMany.mockResolvedValue([]);
       mockSettingsGet.mockResolvedValue({ adminPassword: "plaintext-admin-pass" });
 
-      const res = await POST(makeReq({ password: "plaintext-admin-pass" }));
+      const res = await POST(makeReq({ username: "admin", password: "plaintext-admin-pass" }));
 
       expect(res.status).toBe(401);
     });
@@ -269,7 +268,7 @@ describe("POST /api/auth/login", () => {
       mockFindMany.mockResolvedValue([]);
       mockSettingsGet.mockResolvedValue({ adminPassword: "adminpass123" });
 
-      const res = await POST(makeReq({ password: "wrongpass" }));
+      const res = await POST(makeReq({ username: "admin", password: "wrongpass" }));
 
       expect(res.status).toBe(401);
     });

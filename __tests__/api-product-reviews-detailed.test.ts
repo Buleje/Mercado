@@ -39,12 +39,14 @@ const {
   mockReviewGroupBy,
   mockReviewCreate,
   mockOrderFindFirst,
+  mockProductFindFirst,
 } = vi.hoisted(() => ({
   mockReviewFindMany: vi.fn(),
   mockReviewAggregate: vi.fn(),
   mockReviewGroupBy: vi.fn(),
   mockReviewCreate: vi.fn(),
   mockOrderFindFirst: vi.fn(),
+  mockProductFindFirst: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -57,6 +59,10 @@ vi.mock("@/lib/prisma", () => ({
     },
     order: {
       findFirst: mockOrderFindFirst,
+    },
+    // Round 13: handler hace product.findFirst para resolver tenantId del producto.
+    product: {
+      findFirst: mockProductFindFirst,
     },
   },
 }));
@@ -134,6 +140,8 @@ describe("GET /api/marketplace/products/[id]/reviews-detailed", () => {
     vi.clearAllMocks();
     mockReviewAggregate.mockResolvedValue(DEFAULT_AGG);
     mockReviewGroupBy.mockResolvedValue(DEFAULT_DIST);
+    // Round 13: producto siempre existe con tenantId="test-tenant".
+    mockProductFindFirst.mockResolvedValue({ tenantId: "test-tenant" });
   });
 
   it("retorna reviews + summary con promedios (200)", async () => {

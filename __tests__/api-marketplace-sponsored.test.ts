@@ -288,28 +288,34 @@ describe("POST /api/marketplace/sponsored/[id]/click", () => {
     mockRecordClick.mockResolvedValue(undefined);
   });
 
-  it("registra click y retorna 204 (endpoint público, sin auth)", async () => {
+  it("registra click y retorna 204 (endpoint público, requiere tenant real)", async () => {
+    // SECURITY F1: tenantId real (no "main" fallback). Cliente debe enviar slug auth.
     const req = new NextRequest(`${BASE}/api/marketplace/sponsored/boost-xyz/click`, {
       method: "POST",
-      headers: { "x-tenant-id": "main" },
+      headers: { "x-tenant-id": "bodega-test" },
     });
 
     const res = await clickPost(req, { params: Promise.resolve({ id: "boost-xyz" }) });
 
     expect(res.status).toBe(204);
     await new Promise((r) => setTimeout(r, 0));
-    expect(mockRecordClick).toHaveBeenCalledWith("main", "boost-xyz");
+    expect(mockRecordClick).toHaveBeenCalledWith("bodega-test", "boost-xyz");
   });
 
-  it("usa 'main' como tenantId por defecto si no hay header x-tenant-id", async () => {
-    const req = new NextRequest(`${BASE}/api/marketplace/sponsored/b2/click`, {
+  it("rechaza con 400 cuando no hay tenant real (audit F1: no aceptar 'main' fallback)", async () => {
+    const reqSinHeader = new NextRequest(`${BASE}/api/marketplace/sponsored/b2/click`, {
       method: "POST",
     });
+    const resSinHeader = await clickPost(reqSinHeader, { params: Promise.resolve({ id: "b2" }) });
+    expect(resSinHeader.status).toBe(400);
 
-    const res = await clickPost(req, { params: Promise.resolve({ id: "b2" }) });
+    const reqMain = new NextRequest(`${BASE}/api/marketplace/sponsored/b3/click`, {
+      method: "POST",
+      headers: { "x-tenant-id": "main" },
+    });
+    const resMain = await clickPost(reqMain, { params: Promise.resolve({ id: "b3" }) });
+    expect(resMain.status).toBe(400);
 
-    expect(res.status).toBe(204);
-    await new Promise((r) => setTimeout(r, 0));
-    expect(mockRecordClick).toHaveBeenCalledWith("main", "b2");
+    expect(mockRecordClick).not.toHaveBeenCalled();
   });
 });

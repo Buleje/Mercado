@@ -20,6 +20,17 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
+// ── Mock de Prisma (handler usa await import("@/lib/prisma") dinámico) ─────────
+const { mockProductFindFirst } = vi.hoisted(() => ({
+  mockProductFindFirst: vi.fn(),
+}));
+
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    product: { findFirst: mockProductFindFirst },
+  },
+}));
+
 // ── Mock del algoritmo de recomendaciones ─────────────────────────────────────
 const { mockGetRelatedProducts } = vi.hoisted(() => ({
   mockGetRelatedProducts: vi.fn(),
@@ -62,6 +73,9 @@ async function callRoute(req: NextRequest, productId: string) {
 describe("GET /api/marketplace/recommendations/[productId]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // El handler hace prisma.product.findFirst para resolver tenantId del producto.
+    // Default: producto pertenece al tenant del header (mockable por test).
+    mockProductFindFirst.mockResolvedValue({ tenantId: "bodega-test" });
   });
 
   it("retorna 200 con los productos relacionados para un productId válido", async () => {
@@ -105,22 +119,28 @@ describe("GET /api/marketplace/recommendations/[productId]", () => {
     expect(body.issues).toBeDefined();
   });
 
-  it("pasa el tenantId del header x-tenant-id al algoritmo", async () => {
+  it("deriva tenantId del producto (audit AI 2026-05-06: NO del header, evita cache cross-tenant)", async () => {
+    mockProductFindFirst.mockResolvedValueOnce({ tenantId: "mi-bodega" });
     mockGetRelatedProducts.mockResolvedValueOnce([]);
 
-    const req = makeRequest("5", { tenantId: "mi-bodega" });
+    const req = makeRequest("5", { tenantId: "header-fake" });
     await callRoute(req, "5");
 
+    // El tenantId viene del producto en DB, NO del header (header se ignora).
     expect(mockGetRelatedProducts).toHaveBeenCalledWith("mi-bodega", 5, 5);
   });
 
-  it("usa 'main' como tenantId por defecto si no hay header x-tenant-id", async () => {
-    mockGetRelatedProducts.mockResolvedValueOnce([]);
+  it("retorna products vacío cuando el producto no existe (productOwner null)", async () => {
+    mockProductFindFirst.mockResolvedValueOnce(null);
 
-    const req = makeRequest("3"); // sin tenantId
-    await callRoute(req, "3");
+    const req = makeRequest("3");
+    const res = await callRoute(req, "3");
+    const body = await res.json();
 
-    expect(mockGetRelatedProducts).toHaveBeenCalledWith("main", 3, 5);
+    expect(res.status).toBe(200);
+    expect(body.products).toEqual([]);
+    // No llama al algoritmo si el producto no existe
+    expect(mockGetRelatedProducts).not.toHaveBeenCalled();
   });
 
   it("retorna 200 con array vacío cuando no hay co-ocurrencias (no lanza 404)", async () => {
@@ -135,6 +155,7 @@ describe("GET /api/marketplace/recommendations/[productId]", () => {
   });
 
   it("respeta el parámetro limit cuando se pasa como query string", async () => {
+    mockProductFindFirst.mockResolvedValueOnce({ tenantId: "t1" });
     mockGetRelatedProducts.mockResolvedValueOnce(RELATED_PRODUCTS);
 
     const req = makeRequest("1", { tenantId: "t1", limit: "3" });
