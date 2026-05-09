@@ -7,7 +7,7 @@ import {
   MessageCircle, X, Send, Loader2,
   Clock, Truck, CreditCard, MapPin, ShoppingBag,
   Package, HelpCircle, Bot, User,
-  Sparkles,
+  Sparkles, AlertTriangle,
 } from "@buleje/design-system/icons";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
@@ -639,10 +639,18 @@ export default function LiveChatWidget() {
 
           {/* Powered by */}
           <div className="px-3 pb-2 flex items-center justify-center">
-            <span className="text-[length:var(--ts-2xs)] text-muted/50 font-medium">
-              {aiStatus?.hasAI
-                ? `✨ IA: ${aiStatus.activeProviderName} · El equipo también responde`
-                : "⚠️ Sin API de IA · Solo respuestas automáticas básicas"}
+            <span className="text-[length:var(--ts-2xs)] text-muted/50 font-medium inline-flex items-center gap-1">
+              {aiStatus?.hasAI ? (
+                <>
+                  <Sparkles className="h-3 w-3 shrink-0" aria-hidden />
+                  {`IA: ${aiStatus.activeProviderName} · El equipo también responde`}
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+                  Sin API de IA · Solo respuestas automáticas básicas
+                </>
+              )}
             </span>
           </div>
         </div>

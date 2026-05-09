@@ -126,11 +126,11 @@ export default function WelcomeSurveyModal() {
                 en su primera versión beta. Algunas funciones aún están en construcción.
               </p>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                Tu feedback es valioso — ayúdanos a mejorar respondiendo 2 preguntas rápidas. 🙌
+                Tu feedback es valioso — ayúdanos a mejorar respondiendo 2 preguntas rápidas.
               </p>
             </div>
             <div className="flex gap-2 justify-center flex-wrap text-xs">
-              {["⚗️ v1 Beta", "🛠️ En desarrollo", "📦 E-commerce", "📊 Dashboard", "🔒 Auth"].map((tag) => (
+              {["v1 Beta", "En desarrollo", "E-commerce", "Dashboard", "Auth"].map((tag) => (
                 <span
                   key={tag}
                   className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full"
@@ -240,7 +240,9 @@ export default function WelcomeSurveyModal() {
         {/* Step: thanks */}
         {step === "thanks" && (
           <div className="p-8 text-center space-y-3">
-            <div className="text-5xl animate-bounce">🎉</div>
+            <div className="flex justify-center animate-bounce">
+            <Sparkles className="h-12 w-12 text-indigo-500" aria-hidden />
+          </div>
             <p className="text-gray-700 dark:text-gray-200 font-medium text-lg">
               ¡Hola, <span className="text-indigo-600 dark:text-indigo-400">{name}</span>!
             </p>

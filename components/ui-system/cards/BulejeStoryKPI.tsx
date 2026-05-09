@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import NumberFlow from "@number-flow/react";
-import { ArrowRight, Sparkles, AlertTriangle, Target, TrendingUp } from "@buleje/design-system/icons";
+import { ArrowRight, Sparkles, AlertTriangle, Target, TrendingUp, Lightbulb } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { PrimaryButton } from "@buleje/design-system";
 import { BulejeSparkline } from "../charts/BulejeSparkline";
@@ -215,8 +215,9 @@ export const BulejeStoryKPI = memo(function BulejeStoryKPI({
                     <a href={nextActionHref}>{story.nextAction}</a>
                   </PrimaryButton>
                 ) : (
-                  <p className="text-xs text-[var(--text-secondary)] italic">
-                    💡 {story.nextAction}
+                  <p className="text-xs text-[var(--text-secondary)] italic inline-flex items-center gap-1">
+                    <Lightbulb className="h-3 w-3 shrink-0" aria-hidden />
+                    {story.nextAction}
                   </p>
                 )}
               </div>

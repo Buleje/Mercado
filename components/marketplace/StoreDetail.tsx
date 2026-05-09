@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Lightbulb } from "@buleje/design-system/icons";
 import { useSearchParams } from "next/navigation";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
@@ -190,7 +191,7 @@ function RelatedProducts({
   return (
     <section className="mt-10 mb-4" aria-label="Productos relacionados">
       <div className="flex items-center gap-3 mb-4">
-        <span className="text-lg">💡</span>
+        <Lightbulb className="h-5 w-5 text-yellow-500 shrink-0" aria-hidden />
         <h2 className="text-base font-bold text-gray-900 dark:text-white">
           También te puede gustar
         </h2>

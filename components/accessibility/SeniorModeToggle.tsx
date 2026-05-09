@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { Eye, Search } from "@buleje/design-system/icons";
 import {
   SENIOR_MODE_COOKIE,
   SENIOR_MODE_VALUE,
@@ -59,9 +60,10 @@ export default function SeniorModeToggle() {
       aria-pressed={enabled}
       className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]"
     >
-      <span aria-hidden className="text-lg">
-        {enabled ? "👀" : "🔍"}
-      </span>
+      {enabled
+        ? <Eye className="h-5 w-5 shrink-0" aria-hidden />
+        : <Search className="h-5 w-5 shrink-0" aria-hidden />
+      }
       {enabled ? "Modo normal" : "Texto grande"}
     </button>
   );

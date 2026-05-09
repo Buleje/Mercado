@@ -6,7 +6,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   X, MapPin, User, Home, Loader2,
-  Pencil, Plus, CheckCircle2, Navigation, Maximize2, Trash2, Smartphone,
+  Pencil, Plus, CheckCircle2, Navigation, Maximize2, Trash2, Smartphone, Gift,
 } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
@@ -431,12 +431,12 @@ export default function CustomerModal() {
                     </button>
                   )}
                   <div>
-                    <h2 className="text-base font-bold text-foreground">
-                      {view === "profile" && "👤 Mi perfil"}
-                      {view === "phone-lookup" && "📱 Identificarte"}
-                      {view === "edit-info" && (customer ? "✏️ Editar información" : "📋 Datos de entrega")}
-                      {view === "edit-loc" && "📍 Editar dirección"}
-                      {view === "add-loc" && (customer ? "➕ Nueva dirección" : "📍 Tu dirección")}
+                    <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                      {view === "profile" && <><User className="h-4 w-4 text-primary" aria-hidden /> Mi perfil</>}
+                      {view === "phone-lookup" && <><Smartphone className="h-4 w-4 text-primary" aria-hidden /> Identificarte</>}
+                      {view === "edit-info" && (customer ? <><Pencil className="h-4 w-4 text-primary" aria-hidden /> Editar información</> : <><CheckCircle2 className="h-4 w-4 text-primary" aria-hidden /> Datos de entrega</>)}
+                      {view === "edit-loc" && <><MapPin className="h-4 w-4 text-primary" aria-hidden /> Editar dirección</>}
+                      {view === "add-loc" && (customer ? <><Plus className="h-4 w-4 text-primary" aria-hidden /> Nueva dirección</> : <><MapPin className="h-4 w-4 text-primary" aria-hidden /> Tu dirección</>)}
                     </h2>
                     <p className="text-xs text-muted mt-0.5">
                       {view === "profile" && "Tus datos y direcciones guardadas"}
@@ -492,7 +492,7 @@ export default function CustomerModal() {
                           animate={{ opacity: 1, y: 0 }}
                           className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3"
                         >
-                          <span className="text-[var(--data-warning-500)] text-lg">📝</span>
+                          <Pencil className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" aria-hidden />
                           <div>
                             <p className="text-sm font-semibold text-[var(--data-warning-700)]">¡Bienvenido/a! Eres nuevo en Buleje</p>
                             <p className="text-xs text-[var(--data-warning-600)] mt-0.5">Completemos tus datos para tu primer pedido</p>
@@ -581,8 +581,9 @@ export default function CustomerModal() {
                                   {isActive && <CheckCircle2 className="h-3.5 w-3.5 text-white fill-white" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-[length:var(--ts-2xs)] font-bold text-muted uppercase tracking-wider mb-0.5">
-                                    {loc.id === "default" ? "📍 Dirección principal" : `📍 Dirección ${locations.indexOf(loc) + 1}`}
+                                  <p className="text-[length:var(--ts-2xs)] font-bold text-muted uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                                    {loc.id === "default" ? "Dirección principal" : `Dirección ${locations.indexOf(loc) + 1}`}
                                   </p>
                                   <p className={cn("text-sm font-semibold truncate", isActive ? "text-primary" : "text-foreground")}>{loc.location}</p>
                                   <p className="text-xs text-muted mt-0.5 flex items-center gap-1"><Home className="h-3 w-3 shrink-0" /> Ref: {loc.reference}</p>
@@ -672,7 +673,7 @@ export default function CustomerModal() {
                             onChange={(e) => { const v = e.target.value; if (v) setBirthday(v.slice(5)); else setBirthday(""); }}
                             className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                           />
-                          <p className="text-[length:var(--ts-2xs)] text-muted mt-1">🎂 Te daremos un 10% de descuento en tu cumpleaños</p>
+                          <p className="text-[length:var(--ts-2xs)] text-muted mt-1 flex items-center gap-1"><Gift className="h-3 w-3 shrink-0" aria-hidden /> Te daremos un 10% de descuento en tu cumpleaños</p>
                         </div>
                         <div className="flex gap-3">
                           {customer && (
