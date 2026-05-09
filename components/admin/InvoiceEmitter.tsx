@@ -299,7 +299,7 @@ export default function InvoiceEmitter({
       </div>
 
       {/* Toggle Boleta / Factura */}
-      <div className="flex gap-1 p-1 bg-gray-100 dark:bg-surface rounded-xl w-fit">
+      <div className="flex gap-1 p-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-xl w-fit">
         {(["boleta", "factura"] as const).map(t => (
           <button
             key={t}
@@ -508,14 +508,14 @@ export default function InvoiceEmitter({
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={handleNuevo}
-          className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           Cancelar
         </button>
         <button
           onClick={() => setShowPreview(true)}
           disabled={items.every(i => !i.producto.trim())}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors disabled:opacity-40"
         >
           <Eye className="h-4 w-4" /> Vista previa
         </button>
@@ -593,7 +593,7 @@ export default function InvoiceEmitter({
 
             <button
               onClick={() => setShowPreview(false)}
-              className="w-full py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+              className="w-full py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
             >
               Cerrar
             </button>

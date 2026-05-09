@@ -241,7 +241,7 @@ export default function LiquidityForecastTab() {
               `liquidez-${scenario}`
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -277,7 +277,7 @@ export default function LiquidityForecastTab() {
                 "px-3 py-2 text-sm font-semibold transition-colors",
                 horizon === h
                   ? "bg-primary text-white"
-                  : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                  : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
               )}
             >
               {h} días
@@ -286,7 +286,7 @@ export default function LiquidityForecastTab() {
         </div>
 
         {/* Escenario */}
-        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-gray-100 dark:bg-surface p-1 gap-1">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] dark:bg-surface p-1 gap-1">
           {(Object.keys(SCENARIO_META) as Scenario[]).map((k) => (
             <button
               key={k}
@@ -373,7 +373,7 @@ export default function LiquidityForecastTab() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
+              <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface">
                 <th className="px-4 py-3">Semana</th>
                 <th className="px-4 py-3">Ingresos</th>
                 <th className="px-4 py-3">Egresos</th>
@@ -475,7 +475,7 @@ export default function LiquidityForecastTab() {
       )}
 
       {/* Totales */}
-      <div className="flex flex-wrap items-center gap-4 bg-gray-50 dark:bg-surface rounded-xl p-3 text-sm">
+      <div className="flex flex-wrap items-center gap-4 bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-sm">
         <div>
           <span className="text-[var(--text-tertiary)]">Total ingresos proyect.: </span>
           <span className="font-extrabold text-[var(--data-success-500)] flex items-center gap-1 inline-flex">

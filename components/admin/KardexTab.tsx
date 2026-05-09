@@ -288,7 +288,7 @@ export default function KardexTab() {
         </div>
         <button
           onClick={() => exportToCSV(lines.map((line) => ({ fecha: line.date, tipo: TYPE_META[line.type]?.label || line.type, referencia: line.reference, descripcion: line.description, entrada: line.qtyIn || "", salida: line.qtyOut || "", saldo: line.balance, costo_unit: line.costUnit, costo_total: line.totalCost, almacen: line.warehouse })), `kardex-${product.name}`)}
-          className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+          className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)] dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
         >
           <Download className="h-4 w-4" /> Descargar movimientos
         </button>
@@ -311,7 +311,7 @@ export default function KardexTab() {
                 setDropdownOpen(true);
                 setTimeout(() => productInputRef.current?.focus(), 0);
               }}
-              className="shrink-0 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+              className="shrink-0 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
             >
               Cambiar
             </button>
@@ -350,7 +350,7 @@ export default function KardexTab() {
                     type="button"
                     onClick={() => handleSelectProduct(item.id)}
                     className={cn(
-                      "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-surface/50",
+                      "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50",
                       selectedProduct === item.id && "bg-primary/5 dark:bg-primary/10"
                     )}
                   >
@@ -410,7 +410,7 @@ export default function KardexTab() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="border-b border-[var(--rule-base)] bg-gray-50 dark:border-card-border dark:bg-surface/50">
+            <thead className="border-b border-[var(--rule-base)] bg-[var(--surface-alt)] dark:border-card-border dark:bg-surface/50">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo</th>
@@ -440,7 +440,7 @@ export default function KardexTab() {
               {lines.map((line) => {
                 const meta = TYPE_META[line.type] ?? TYPE_META.ajuste_negativo;
                 return (
-                  <tr key={line.id} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-surface/30">
+                  <tr key={line.id} className="transition-colors hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30">
                     <td className="whitespace-nowrap px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold", meta.bg, meta.color)}>

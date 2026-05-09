@@ -102,7 +102,7 @@ export default function InsuranceTab() {
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Registro de pólizas, alertas de vencimiento y siniestros</p>
         </div>
-        <button onClick={() => exportToCSV(policies.map(p => ({ tipo: TYPE_LABELS[p.type], aseguradora: p.insurer, poliza: p.policyNumber, cobertura: p.coverage, prima_mensual: p.monthlyPremium, inicio: p.startDate, fin: p.endDate, estado: STATUS_META[p.status].label })), "polizas-seguros")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(policies.map(p => ({ tipo: TYPE_LABELS[p.type], aseguradora: p.insurer, poliza: p.policyNumber, cobertura: p.coverage, prima_mensual: p.monthlyPremium, inicio: p.startDate, fin: p.endDate, estado: STATUS_META[p.status].label })), "polizas-seguros")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -140,7 +140,7 @@ export default function InsuranceTab() {
       {/* Tabs */}
       <div className="flex flex-wrap gap-2">
         {([["policies", "Pólizas"], ["claims", "Siniestros"]] as const).map(([k, label]) => (
-          <button key={k} onClick={() => setView(k)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold transition-colors", view === k ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
+          <button key={k} onClick={() => setView(k)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold transition-colors", view === k ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent")}>
             {label}
           </button>
         ))}
@@ -156,7 +156,7 @@ export default function InsuranceTab() {
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+                <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
                   <tr>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Estado</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Tipo</th>
@@ -172,7 +172,7 @@ export default function InsuranceTab() {
                     const st = STATUS_META[p.status];
                     const StIcon = st.icon;
                     return (
-                      <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
+                      <tr key={p.id} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30 transition-colors">
                         <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}><StIcon className="h-3 w-3" />{st.label}</span></td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{TYPE_LABELS[p.type]}</td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{p.insurer}</td>
@@ -194,7 +194,7 @@ export default function InsuranceTab() {
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+              <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
                 <tr>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Estado</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Fecha</th>
@@ -209,7 +209,7 @@ export default function InsuranceTab() {
                   const st = CLAIM_STATUS[c.status];
                   const pol = policies.find(p => p.id === c.policyId);
                   return (
-                    <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
+                    <tr key={c.id} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30 transition-colors">
                       <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)]">{c.date}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono text-[var(--text-secondary)]">{pol?.policyNumber ?? "—"}</td>

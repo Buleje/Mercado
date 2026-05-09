@@ -117,7 +117,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
               Kardex — {productName ?? data?.producto.name ?? `#${productId}`}
             </CardTitle>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         </div>
@@ -204,9 +204,9 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                     </thead>
                     <tbody>
                       {data.movimientos.map((m) => {
-                        const meta = TYPE_LABELS[m.tipo] ?? { label: m.tipo, color: "text-[var(--text-secondary)] bg-gray-100", dir: "out" };
+                        const meta = TYPE_LABELS[m.tipo] ?? { label: m.tipo, color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]", dir: "out" };
                         return (
-                          <tr key={m.id} className="border-t border-gray-50 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                          <tr key={m.id} className="border-t border-gray-50 dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                             <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{fmtDate(m.fecha)}</td>
                             <td className="py-2">
                               <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", meta.color)}>

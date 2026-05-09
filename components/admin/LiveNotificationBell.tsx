@@ -209,7 +209,7 @@ export default function LiveNotificationBell() {
           }}
           className={cn(
             "relative flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
-            "bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700",
+            "bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700",
             open && "bg-teal-50 dark:bg-teal-900/30",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           )}

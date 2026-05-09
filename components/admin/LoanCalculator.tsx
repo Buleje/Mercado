@@ -123,7 +123,7 @@ export default function LoanCalculator() {
               onChange={(e) => setPrincipal(e.target.value)}
               min="0"
               step="100"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
@@ -137,7 +137,7 @@ export default function LoanCalculator() {
               min="0"
               max="200"
               step="0.5"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
@@ -150,7 +150,7 @@ export default function LoanCalculator() {
               onChange={(e) => setMonths(e.target.value)}
               min="1"
               max="360"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
           <div>
@@ -163,7 +163,7 @@ export default function LoanCalculator() {
               onChange={(e) => setAvgMonthlySales(e.target.value)}
               placeholder="Opcional"
               min="0"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
         </div>
@@ -291,7 +291,7 @@ export default function LoanCalculator() {
             {showTable && (
               <button
                 onClick={handleExport}
-                className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition hover:bg-gray-200"
+                className="flex items-center gap-2 rounded-lg bg-[var(--surface-sunken)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--rule-soft)]"
               >
                 <Download className="h-4 w-4" />
                 Exportar CSV
@@ -328,7 +328,7 @@ export default function LoanCalculator() {
                       className={cn(
                         i % 2 === 0
                           ? "bg-white dark:bg-[var(--color-card)]"
-                          : "bg-gray-50"
+                          : "bg-[var(--surface-alt)]"
                       )}
                     >
                       <td className="px-4 py-2 text-[var(--text-secondary)]">
@@ -354,7 +354,7 @@ export default function LoanCalculator() {
           )}
         </>
       ) : (
-        <div className="flex items-center justify-center rounded-xl border border-dashed border-[var(--rule-base)] bg-gray-50 py-12">
+        <div className="flex items-center justify-center rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-alt)] py-12">
           <p className="text-sm text-[var(--text-tertiary)]">
             Ingresa los datos del prestamo para ver los calculos.
           </p>

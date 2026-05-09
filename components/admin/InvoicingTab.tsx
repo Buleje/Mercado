@@ -44,7 +44,7 @@ type Invoice = {
 const TYPE_LABEL: Record<InvoiceType, string> = { factura: "Factura", boleta: "Boleta", nota_credito: "Nota Crédito", nota_debito: "Nota Débito" };
 const STATUS_LABEL: Record<InvoiceStatus, string> = { borrador: "Borrador", emitida: "Emitida", anulada: "Anulada", pagada: "Pagada" };
 const STATUS_COLOR: Record<InvoiceStatus, string> = {
-  borrador: "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted",
+  borrador: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted",
   emitida:  "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   anulada:  "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
   pagada:   "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
@@ -186,7 +186,7 @@ export default function InvoicingTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Toolbar — header propio eliminado; el header del módulo lo provee FacturacionModule via AdminModuleHeader */}
       <div className="flex items-center justify-end gap-2">
-        <button onClick={() => exportToCSV(filtered.map(i => ({ tipo: TYPE_LABEL[i.type], serie_número: `${i.serie}-${i.number}`, cliente: i.customerName, ruc_dni: i.customerDoc, fecha: i.issueDate, subtotal: i.subtotal, igv: i.igv, total: i.total, estado: STATUS_LABEL[i.status] })), "comprobantes")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(i => ({ tipo: TYPE_LABEL[i.type], serie_número: `${i.serie}-${i.number}`, cliente: i.customerName, ruc_dni: i.customerDoc, fecha: i.issueDate, subtotal: i.subtotal, igv: i.igv, total: i.total, estado: STATUS_LABEL[i.status] })), "comprobantes")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
         <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -227,7 +227,7 @@ export default function InvoicingTab() {
           {/* Type selector */}
           <div className="flex gap-2 flex-wrap">
             {(["boleta", "factura", "nota_credito", "nota_debito"] as InvoiceType[]).map(t => (
-              <button key={t} onClick={() => setForm(p => ({ ...p, type: t }))} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors", form.type === t ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+              <button key={t} onClick={() => setForm(p => ({ ...p, type: t }))} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors", form.type === t ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
                 {TYPE_LABEL[t]}
               </button>
             ))}
@@ -343,7 +343,7 @@ export default function InvoicingTab() {
         </div>
         <div className="flex gap-1 flex-wrap">
           {(["all", "boleta", "factura", "nota_credito", "nota_debito"] as const).map(t => (
-            <button key={t} onClick={() => setTypeFilter(t)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors", typeFilter === t ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+            <button key={t} onClick={() => setTypeFilter(t)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors", typeFilter === t ? "bg-primary text-white border-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
               {t === "all" ? "Todos" : TYPE_LABEL[t]}
             </button>
           ))}
@@ -353,7 +353,7 @@ export default function InvoicingTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
         <table className="w-full min-w-[600px] text-sm">
-          <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
+          <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
             <tr>
               <th className="text-left px-3 sm:px-6 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Serie-Núm.</th>
               <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Tipo</th>
@@ -366,7 +366,7 @@ export default function InvoicingTab() {
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-card-border">
             {filtered.map(inv => (
-              <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors cursor-pointer" onClick={() => setSelected(selected?.id === inv.id ? null : inv)}>
+              <tr key={inv.id} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors cursor-pointer" onClick={() => setSelected(selected?.id === inv.id ? null : inv)}>
                 <td className="px-3 sm:px-6 py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{inv.serie}-{inv.number}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3">
                   <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", TYPE_COLOR[inv.type])}>{TYPE_LABEL[inv.type]}</span>
@@ -391,7 +391,7 @@ export default function InvoicingTab() {
                     {inv.status === "emitida" && (
                       <button onClick={() => handleChangeStatus(inv.id, "pagada")} className="p-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors" title="Marcar pagado"><CheckCircle className="h-3.5 w-3.5" /></button>
                     )}
-                    <button className="p-1.5 rounded-lg bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent transition-colors" title="Imprimir"><Printer className="h-3.5 w-3.5" /></button>
+                    <button className="p-1.5 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent transition-colors" title="Imprimir"><Printer className="h-3.5 w-3.5" /></button>
                     {inv.status !== "pagada" && (
                       <button onClick={() => handleDelete(inv.id)} className="p-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/30 transition-colors" title="Anular"><X className="h-3.5 w-3.5" /></button>
                     )}
@@ -415,7 +415,7 @@ export default function InvoicingTab() {
               </div>
               <button onClick={() => setSelected(null)}><X className="h-5 w-5 text-[var(--text-tertiary)]" /></button>
             </div>
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-1 text-sm">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 space-y-1 text-sm">
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{selected.customerName}</p>
               <p className="text-[var(--text-secondary)] dark:text-muted">{selected.customerDocType.toUpperCase()} {selected.customerDoc}</p>
               {selected.customerAddress && <p className="text-[var(--text-secondary)] dark:text-muted">{selected.customerAddress}</p>}
@@ -439,7 +439,7 @@ export default function InvoicingTab() {
             </div>
             {selected.notes && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted italic">{selected.notes}</p>}
             <div className="flex flex-wrap gap-2 pt-2">
-              <button className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg bg-gray-100 dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm font-semibold hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+              <button className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm font-semibold hover:bg-[var(--rule-soft)] dark:hover:bg-accent transition-colors">
                 <Printer className="h-4 w-4" /> Imprimir
               </button>
               {selected.status === "borrador" && (

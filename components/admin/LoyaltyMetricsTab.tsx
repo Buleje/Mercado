@@ -52,10 +52,10 @@ export default function LoyaltyMetricsTab() {
       <div className="space-y-4 animate-pulse">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 bg-gray-200 rounded-xl" />
+            <div key={i} className="h-24 bg-[var(--rule-soft)] rounded-xl" />
           ))}
         </div>
-        <div className="h-48 bg-gray-200 rounded-xl" />
+        <div className="h-48 bg-[var(--rule-soft)] rounded-xl" />
       </div>
     );
   }
@@ -194,7 +194,7 @@ export default function LoyaltyMetricsTab() {
               </thead>
               <tbody>
                 {topCustomers.map((c, i) => (
-                  <tr key={c.phone} className="border-b border-gray-50 hover:bg-gray-50/50">
+                  <tr key={c.phone} className="border-b border-gray-50 hover:bg-[var(--surface-alt)]/50">
                     <td className="py-2 pr-3 font-bold text-[var(--text-tertiary)]">{i + 1}</td>
                     <td className="py-2 pr-3">
                       <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">

@@ -134,7 +134,7 @@ export default function InvoiceHistory() {
         <button
           onClick={fetchRecords}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-surface text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-surface/80 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-surface/80 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Actualizar
@@ -156,7 +156,7 @@ export default function InvoiceHistory() {
         </div>
 
         {/* Tipo */}
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1">
+        <div className="flex items-center gap-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-xl p-1">
           {(["todos", "boleta", "factura"] as const).map((t) => (
             <button
               key={t}
@@ -173,7 +173,7 @@ export default function InvoiceHistory() {
         </div>
 
         {/* Estado */}
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1">
+        <div className="flex items-center gap-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-xl p-1">
           {(["todos", "emitido", "anulado", "pendiente"] as const).map((e) => (
             <button
               key={e}
@@ -233,7 +233,7 @@ export default function InvoiceHistory() {
                 {paginatedRecords.map((record) => (
                   <tr
                     key={record.id}
-                    className="border-b border-[var(--rule-soft)] dark:border-card-border/50 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
+                    className="border-b border-[var(--rule-soft)] dark:border-card-border/50 hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors"
                   >
                     <td className="py-2.5 px-2">
                       <span
@@ -316,7 +316,7 @@ export default function InvoiceHistory() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface disabled:opacity-30 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -326,7 +326,7 @@ export default function InvoiceHistory() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface disabled:opacity-30 transition-colors"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

@@ -281,7 +281,7 @@ export default function InventoryMetricsTab() {
         </div>
         <button
           onClick={fetchData}
-          className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700 transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -484,7 +484,7 @@ export default function InventoryMetricsTab() {
                   return (
                     <tr
                       key={batch.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                      className="hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700/30 transition-colors"
                     >
                       <td className="py-2.5 px-3 text-[var(--text-primary)] font-medium">
                         {batch.product?.name || `Producto ${batch.productId}`}

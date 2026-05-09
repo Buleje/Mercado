@@ -83,7 +83,7 @@ function ProductRow({ item }: ProductRowProps) {
         </p>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
-        <div className="w-24 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+        <div className="w-24 h-1.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
           <div
             className={cn("h-full rounded-full transition-all", styles.bar)}
             style={{ width: `${Math.min(100, marginPct)}%` }}
@@ -137,7 +137,7 @@ export default function LiveMarginDisplay({ items }: Props) {
       {/* Summary bar */}
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between gap-4 px-5 py-4 bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between gap-4 px-5 py-4 bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-alt)] transition-colors"
       >
         <div className="flex items-center gap-3">
           <div
@@ -193,7 +193,7 @@ export default function LiveMarginDisplay({ items }: Props) {
       </button>
 
       {/* Progress bar */}
-      <div className="h-2 w-full bg-gray-100">
+      <div className="h-2 w-full bg-[var(--surface-sunken)]">
         <div
           className={cn("h-full transition-all duration-[var(--dur-slow)]", styles.bar)}
           style={{ width: `${Math.min(100, totals.marginPct)}%` }}

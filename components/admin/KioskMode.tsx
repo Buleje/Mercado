@@ -310,7 +310,7 @@ export default function KioskMode() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button type="button" onClick={() => updateQty(item.product.id, -1)}
-                      className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] dark:text-foreground hover:bg-gray-200">
+                      className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] dark:text-foreground hover:bg-[var(--rule-soft)]">
                       <Minus className="h-3 w-3" />
                     </button>
                     <span className="w-6 text-center text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{item.quantity}</span>

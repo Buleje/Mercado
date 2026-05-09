@@ -13,7 +13,7 @@ type Task = {
 };
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; color: string }> = {
-  baja: { label: "Baja", color: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]" },
+  baja: { label: "Baja", color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]" },
   media: { label: "Media", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
   alta: { label: "Alta", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
   urgente: { label: "Urgente", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
@@ -118,7 +118,7 @@ export default function KanbanBoardTab() {
             </div>
           </div>
           <div className="flex flex-wrap justify-end gap-2">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>
             <button onClick={addTask} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90">Crear Tarea</button>
           </div>
         </div>
@@ -154,12 +154,12 @@ export default function KanbanBoardTab() {
                       </div>
                       <div className="flex items-center gap-1">
                         {col !== "pendiente" && (
-                          <button onClick={() => moveTask(t.id, col === "en-progreso" ? "pendiente" : "en-progreso")} className="p-1 rounded text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent text-xs">Atras</button>
+                          <button onClick={() => moveTask(t.id, col === "en-progreso" ? "pendiente" : "en-progreso")} className="p-1 rounded text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-xs">Atras</button>
                         )}
                         {col !== "completado" && (
-                          <button onClick={() => moveTask(t.id, col === "pendiente" ? "en-progreso" : "completado")} className="p-1 rounded text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent text-xs">Adelante</button>
+                          <button onClick={() => moveTask(t.id, col === "pendiente" ? "en-progreso" : "completado")} className="p-1 rounded text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-xs">Adelante</button>
                         )}
-                        <button onClick={() => setEditing(t)} className="p-1 rounded text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><Pencil className="h-3 w-3" /></button>
+                        <button onClick={() => setEditing(t)} className="p-1 rounded text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><Pencil className="h-3 w-3" /></button>
                         <button onClick={() => deleteTask(t.id)} className="p-1 rounded text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20"><Trash2 className="h-3 w-3" /></button>
                       </div>
                     </div>
