@@ -117,6 +117,7 @@ export function validateCsrfToken(request: NextRequest): boolean {
     "/api/auth/bypass",
     "/api/auth/refresh",
     "/api/auth/otp/",
+    "/api/auth/customer/test-session",
     "/api/auth/customer-lookup",
     "/api/webhooks/",
     "/api/stripe/webhook",
