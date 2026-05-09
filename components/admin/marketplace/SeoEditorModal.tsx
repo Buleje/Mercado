@@ -4,7 +4,6 @@ import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { X, Loader2, Search, CheckCircle, XCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -54,7 +53,7 @@ function TagInput({
   };
 
   return (
-    <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] min-h-[44px] focus-within:ring-2 focus-within:ring-primary">
+    <div className="flex flex-wrap gap-1.5 p-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] min-h-[44px] focus-within:ring-2 focus-within:ring-[#00B4A6]">
       {tags.map((tag) => (
         <span
           key={tag}
@@ -96,7 +95,7 @@ function SerpPreview({ title, description }: { title: string; description: strin
         <p className="text-[#1558d6] text-[length:var(--ts-base)] leading-snug hover:underline cursor-pointer truncate font-normal">
           {displayTitle.slice(0, 70)}
         </p>
-        <p className="text-[#006621] dark:text-[var(--data-success-500)] text-xs">
+        <p className="text-[#006621] dark:text-[var(--data-success)] text-xs">
           bodegasanmartin.pe › producto
         </p>
         <p className="text-[var(--text-secondary)] text-sm leading-relaxed line-clamp-2">
@@ -162,7 +161,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
     try {
       const res = await fetch(`/api/marketplace/products/${productId}/seo`, {
         method: "PUT",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error("Error al guardar");
@@ -206,7 +205,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   </label>
                   <span className={cn(
                     "text-xs",
-                    form.metaTitle.length > 70 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
+                    form.metaTitle.length > 70 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
                   )}>
                     {form.metaTitle.length}/70
                   </span>
@@ -216,15 +215,15 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   value={form.metaTitle}
                   onChange={(e) => setForm((f) => ({ ...f, metaTitle: e.target.value }))}
                   className={cn(
-                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary",
+                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
                     errors.metaTitle
-                      ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
+                      ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
                       : "border-[var(--rule-base)]"
                   )}
                   placeholder="Título optimizado para Google"
                 />
                 {errors.metaTitle && (
-                  <p className="text-xs text-[var(--data-error-500)] mt-1">{errors.metaTitle}</p>
+                  <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaTitle}</p>
                 )}
               </div>
 
@@ -236,7 +235,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   </label>
                   <span className={cn(
                     "text-xs",
-                    form.metaDescription.length > 160 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
+                    form.metaDescription.length > 160 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"
                   )}>
                     {form.metaDescription.length}/160
                   </span>
@@ -246,15 +245,15 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   value={form.metaDescription}
                   onChange={(e) => setForm((f) => ({ ...f, metaDescription: e.target.value }))}
                   className={cn(
-                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none",
+                    "w-full px-3 py-2.5 rounded-lg border bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none",
                     errors.metaDescription
-                      ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
+                      ? "border-[var(--data-error)] dark:border-[var(--data-error)]"
                       : "border-[var(--rule-base)]"
                   )}
                   placeholder="Descripción que aparecerá en los resultados de búsqueda"
                 />
                 {errors.metaDescription && (
-                  <p className="text-xs text-[var(--data-error-500)] mt-1">{errors.metaDescription}</p>
+                  <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaDescription}</p>
                 )}
               </div>
 
@@ -283,7 +282,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                   type="text"
                   value={form.ogImage}
                   onChange={(e) => setForm((f) => ({ ...f, ogImage: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                   placeholder="https://..."
                 />
               </div>
@@ -306,7 +305,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar
@@ -318,7 +317,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
       {toast && (
         <div className={cn(
           "fixed bottom-6 right-6 z-[60] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-          toast.type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error-500)] text-white"
+          toast.type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
         )}>
           {toast.type === "success"
             ? <CheckCircle className="h-4 w-4 shrink-0" />

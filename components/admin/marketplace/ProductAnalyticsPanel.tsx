@@ -141,7 +141,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                 days === r.value
-                  ? "bg-primary text-white"
+                  ? "bg-[#00B4A6] text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
@@ -166,7 +166,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               label="Visitas totales"
               value={data!.totalViews.toLocaleString()}
               icon={Eye}
-              color="bg-primary"
+              color="bg-[#00B4A6]"
             />
             <KpiCard
               label="Clicks totales"
@@ -178,7 +178,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
               label="Tasa de conversión"
               value={`${data!.conversionRate}%`}
               icon={TrendingUp}
-              color="bg-[var(--data-warning-500)]"
+              color="bg-[#f97316]"
             />
             <KpiCard
               label="Ingresos"
@@ -220,7 +220,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
                   type="monotone"
                   dataKey="views"
                   name="Visitas"
-                  stroke="var(--accent)"
+                  stroke="#00B4A6"
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}
@@ -265,7 +265,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
                       <tr key={tp.id}>
                         <td className="py-2 text-[var(--text-primary)]">{tp.name}</td>
                         <td className="py-2 text-right text-[var(--text-secondary)]">{tp.views.toLocaleString()}</td>
-                        <td className="py-2 text-right text-[var(--text-secondary)]">S/ {Number(tp.revenue).toFixed(2)}</td>
+                        <td className="py-2 text-right text-[var(--text-secondary)]">S/ {tp.revenue.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>

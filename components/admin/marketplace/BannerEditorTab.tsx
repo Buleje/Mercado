@@ -1,7 +1,6 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
 import {
   DndContext,
@@ -76,7 +75,7 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
       "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error-500)] text-white"
+      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
       {msg}
@@ -130,7 +129,7 @@ function BannerModal({
                 value={form[key as keyof BannerFormData] as string}
                 onChange={(e) => set(key as keyof BannerFormData, e.target.value)}
                 placeholder={placeholder}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
               />
             </div>
           ))}
@@ -142,7 +141,7 @@ function BannerModal({
                 type="date"
                 value={form.startDate}
                 onChange={(e) => set("startDate", e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
               />
             </div>
             <div>
@@ -151,7 +150,7 @@ function BannerModal({
                 type="date"
                 value={form.endDate}
                 onChange={(e) => set("endDate", e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
               />
             </div>
           </div>
@@ -160,7 +159,7 @@ function BannerModal({
             <span className="text-sm font-medium text-[var(--text-secondary)]">Activo</span>
             <button onClick={() => set("active", !form.active)}>
               {form.active
-                ? <ToggleRight className="h-6 w-6 text-primary" />
+                ? <ToggleRight className="h-6 w-6 text-[#00B4A6]" />
                 : <ToggleLeft className="h-6 w-6 text-[var(--text-tertiary)]" />}
             </button>
           </div>
@@ -177,7 +176,7 @@ function BannerModal({
           <button
             onClick={() => onSave(form)}
             disabled={saving || !form.title.trim()}
-            className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar
@@ -215,7 +214,7 @@ function SortableBannerCard({
       style={style}
       className={cn(
         "flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-shadow",
-        isDragging && "ring-2 ring-primary opacity-90"
+        isDragging && "ring-2 ring-[#00B4A6] opacity-90"
       )}
     >
       {/* Drag handle — min 44px touch target */}
@@ -257,7 +256,7 @@ function SortableBannerCard({
       <div className="flex items-center gap-2 shrink-0">
         <button onClick={() => onToggle(banner.id)} aria-label="Alternar activo">
           {banner.active
-            ? <ToggleRight className="h-5 w-5 text-primary" />
+            ? <ToggleRight className="h-5 w-5 text-[#00B4A6]" />
             : <ToggleLeft className="h-5 w-5 text-[var(--text-tertiary)]" />}
         </button>
         <button
@@ -268,7 +267,7 @@ function SortableBannerCard({
         </button>
         <button
           onClick={() => onDelete(banner.id)}
-          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-secondary)] hover:text-[var(--data-error-500)]"
+          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 text-[var(--text-secondary)] hover:text-[var(--data-error)]"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -355,9 +354,9 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
       // POST reorder al backend (fire-and-forget)
       fetch(`/api/marketplace/stores/${storeSlug}/banners/reorder`, {
         method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ section, order: reordered.map((b) => b.id) }),
-      }).catch(() => {});
+      }).catch((err) => { /* fire-and-forget */ void err; });
 
       return { ...prev, [section]: reordered };
     });
@@ -371,9 +370,9 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         const updated = { ...b, active: !b.active };
         fetch(`/api/marketplace/stores/${storeSlug}/banners/${bannerId}`, {
           method: "PUT",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ active: updated.active }),
-        }).catch(() => {});
+        }).catch((err) => { /* fire-and-forget */ void err; });
         return updated;
       }),
     }));
@@ -381,7 +380,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
 
   const handleDelete = useCallback((section: BannerSection, bannerId: string) => {
     fetch(`/api/marketplace/stores/${storeSlug}/banners/${bannerId}`, { method: "DELETE" })
-      .catch(() => {});
+      .catch((err) => { /* fire-and-forget */ void err; });
     setBannersBySection((prev) => ({
       ...prev,
       [section]: prev[section].filter((b) => b.id !== bannerId),
@@ -396,7 +395,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         // Editar existente
         const res = await fetch(`/api/marketplace/stores/${storeSlug}/banners/${editingBanner.id}`, {
           method: "PUT",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...data, section }),
         });
         if (!res.ok) throw new Error("Error al actualizar banner");
@@ -410,7 +409,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
         // Crear nuevo
         const res = await fetch(`/api/marketplace/stores/${storeSlug}/banners`, {
           method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...data, section, position: bannersBySection[section].length }),
         });
         if (!res.ok) throw new Error("Error al crear banner");
@@ -456,7 +455,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
             </CardTitle>
             <button
               onClick={() => { setEditingBanner(null); setModalSection(section); }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary text-xs font-medium hover:bg-primary/20 dark:hover:bg-primary/30 min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] text-xs font-medium hover:bg-[#00B4A6]/20 dark:hover:bg-[#00B4A6]/30 min-h-[44px]"
             >
               <Plus className="h-3.5 w-3.5" /> Nuevo banner
             </button>
