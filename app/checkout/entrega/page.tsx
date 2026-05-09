@@ -40,17 +40,14 @@ import {
 } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
 import { useSavedAddresses, type SavedAddress } from "@/hooks/use-saved-addresses";
 import { csrfHeaders } from "@/lib/csrf-client";
-import {
-  listDepartamentos,
-  listProvincias,
-  listDistritos,
-  bestMatchFromGeocode,
-} from "@/lib/peru-ubigeo";
+// Round 23 (Performance): ubigeo dataset (~350KB) ya NO se importa en
+// cliente. Se consume via fetch /api/marketplace/ubigeo y reverse-geocode
+// server-side. Resultado: -350KB en el bundle de checkout (mayor ruta de
+// conversión del marketplace).
+type UbigeoEntry = { code: string; nombre: string };
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
-
-const DEPARTAMENTOS = listDepartamentos();
 
 type PaymentMethod = "efectivo" | "yape" | "plin";
 
@@ -182,6 +179,60 @@ export default function CheckoutEntregaPage() {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [geoSuccess, setGeoSuccess] = useState(false);
 
+  // Round 23: ubigeo cargado desde server (no más bundle de 350KB).
+  const [departamentos, setDepartamentos] = useState<UbigeoEntry[]>([]);
+  const [provincias, setProvincias] = useState<UbigeoEntry[]>([]);
+  const [distritos, setDistritos] = useState<UbigeoEntry[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/marketplace/ubigeo")
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data: { items: UbigeoEntry[] }) => {
+        if (!cancelled) setDepartamentos(data.items ?? []);
+      })
+      .catch(() => {
+        /* fire-and-forget per CLAUDE.md rule #7 */
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!address.departmentCode) {
+      setProvincias([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/marketplace/ubigeo?dep=${encodeURIComponent(address.departmentCode)}`)
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data: { items: UbigeoEntry[] }) => {
+        if (!cancelled) setProvincias(data.items ?? []);
+      })
+      .catch(() => {
+        /* fire-and-forget per CLAUDE.md rule #7 */
+      });
+    return () => { cancelled = true; };
+  }, [address.departmentCode]);
+
+  useEffect(() => {
+    if (!address.departmentCode || !address.provinceCode) {
+      setDistritos([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(
+      `/api/marketplace/ubigeo?dep=${encodeURIComponent(address.departmentCode)}&prov=${encodeURIComponent(address.provinceCode)}`,
+    )
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data: { items: UbigeoEntry[] }) => {
+        if (!cancelled) setDistritos(data.items ?? []);
+      })
+      .catch(() => {
+        /* fire-and-forget per CLAUDE.md rule #7 */
+      });
+    return () => { cancelled = true; };
+  }, [address.departmentCode, address.provinceCode]);
+
   // Multi-address picker: direcciones guardadas de compras anteriores
   const { addresses: savedAddresses, removeAddress } = useSavedAddresses();
   const [activeAddressId, setActiveAddressId] = useState<string | null>(null);
@@ -246,15 +297,9 @@ export default function CheckoutEntregaPage() {
     });
   }, [setAddress]);
 
-  const provincias = address.departmentCode ? listProvincias(address.departmentCode) : [];
-  const distritos =
-    address.departmentCode && address.provinceCode
-      ? listDistritos(address.departmentCode, address.provinceCode)
-      : [];
-
   const handleDepartmentChange = useCallback(
     (depCode: string) => {
-      const dep = DEPARTAMENTOS.find((d) => d.code === depCode);
+      const dep = departamentos.find((d) => d.code === depCode);
       setAddress({
         departmentCode: dep?.code ?? "",
         departmentName: dep?.nombre ?? "",
@@ -368,25 +413,22 @@ export default function CheckoutEntregaPage() {
       const pos = await getPositionWithRetry();
       const { latitude, longitude } = pos.coords;
 
+      // Round 23 (Performance): reverse-geocode + ubigeo match ahora 100%
+      // server-side. Antes el cliente cargaba el dataset INEI (~350KB) +
+      // hacía fetch directo a Nominatim. Ahora una sola llamada al endpoint
+      // /api/marketplace/reverse-geocode que devuelve {address, departamento,
+      // provincia, distrito} listo para usar.
       const r = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=es&zoom=18`,
-        { headers: { Accept: "application/json" } },
+        `/api/marketplace/reverse-geocode?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`,
       );
       if (!r.ok) throw new Error("reverse-geocode failed");
       const data = await r.json();
-      const a = data.address ?? {};
-
-      const street = a.road
-        ? `${a.road}${a.house_number ? " " + a.house_number : ""}`
-        : (data.display_name?.split(",")[0] ?? "");
-
-      const match = bestMatchFromGeocode({
-        state: a.state,
-        county: a.county ?? a.region,
-        city: a.city ?? a.town ?? a.village,
-        suburb: a.suburb,
-        city_district: a.city_district ?? a.borough,
-      });
+      const street = (data.street as string | null) ?? "";
+      const match = (data.match ?? {}) as {
+        departamento?: { code: string; nombre: string } | null;
+        provincia?: { code: string; nombre: string } | null;
+        distrito?: { code: string; nombre: string } | null;
+      };
 
       setAddress({
         address: street || address.address,
@@ -399,7 +441,7 @@ export default function CheckoutEntregaPage() {
         zone:
           match.distrito && match.provincia && match.departamento
             ? `${match.distrito.nombre}, ${match.provincia.nombre}, ${match.departamento.nombre}`
-            : (a.suburb || a.city || a.town || "") || address.zone,
+            : ((data.displayName as string | undefined) ?? "") || address.zone,
       });
 
       setGeoSuccess(true);
@@ -713,7 +755,7 @@ export default function CheckoutEntregaPage() {
                   className={selectCls(false)}
                 >
                   <option value="">Seleccioná</option>
-                  {DEPARTAMENTOS.map((d) => (
+                  {departamentos.map((d) => (
                     <option key={d.code} value={d.code}>
                       {d.nombre}
                     </option>

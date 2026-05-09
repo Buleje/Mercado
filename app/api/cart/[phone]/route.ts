@@ -26,13 +26,15 @@ function notFound(): NextResponse {
  * tenantId is read from the `active-tenant` cookie set by middleware —
  * the same value that was in scope when the token was originally signed.
  */
-function authorize(req: NextRequest, rawPhone: string): string | null {
+function authorize(req: NextRequest, rawPhone: string): { phone: string; tenantId: string } | null {
   const clean = rawPhone.replace(/\D/g, "");
   if (clean.length < 6) return null;
   const tenantId = req.cookies.get("active-tenant")?.value ?? "main";
   const token = req.nextUrl.searchParams.get("token");
   if (!verifyCartToken(tenantId, clean, token)) return null;
-  return clean;
+  // Round 23: devolver tenantId junto con phone — los handlers ahora lo usan
+  // en el where para prevenir cross-tenant cart leak (Security Pentester P1).
+  return { phone: clean, tenantId };
 }
 
 export async function GET(
@@ -40,11 +42,14 @@ export async function GET(
   { params }: { params: Promise<{ phone: string }> },
 ) {
   const { phone } = await params;
-  const clean = authorize(req, phone);
-  if (!clean) return notFound();
+  const ctx = authorize(req, phone);
+  if (!ctx) return notFound();
 
-  const saved = await prisma.savedCart.findUnique({
-    where: { customerPhone: clean },
+  // Round 23 (Security Pentester P1): findFirst con tenantId previene leak
+  // cross-tenant si el mismo phone aparece en 2 tenants (deuda P0-2 mientras
+  // SavedCart.customerPhone siga siendo @unique global en lugar de compuesto).
+  const saved = await prisma.savedCart.findFirst({
+    where: { customerPhone: ctx.phone, tenantId: ctx.tenantId },
   });
 
   if (!saved) return NextResponse.json({ items: [] });
@@ -63,8 +68,8 @@ export async function PUT(
 ) {
   const _rl = await applyRateLimit(req, "STRICT", "cart-X"); if (_rl) return _rl;
   const { phone } = await params;
-  const clean = authorize(req, phone);
-  if (!clean) return notFound();
+  const ctx = authorize(req, phone);
+  if (!ctx) return notFound();
 
   const body = await req.json();
   const items = body.items;
@@ -72,18 +77,23 @@ export async function PUT(
     return NextResponse.json({ error: "Invalid items" }, { status: 400 });
   }
 
-  // If empty cart, delete the saved cart
+  // Round 23: deleteMany con tenantId garantiza no tocar cart del mismo phone
+  // en otro tenant (defense-in-depth con HMAC token + tenantId scope).
   if (items.length === 0) {
-    await prisma.savedCart.deleteMany({ where: { customerPhone: clean } });
+    await prisma.savedCart.deleteMany({
+      where: { customerPhone: ctx.phone, tenantId: ctx.tenantId },
+    });
     return NextResponse.json({ ok: true });
   }
 
-  // Derive tenantId from cookie set by middleware (public endpoint — best-effort)
-  const tenantId = req.cookies.get("active-tenant")?.value ?? "main";
-  await prisma.savedCart.upsert({
-    where: { customerPhone: clean },
-    update: { itemsJson: JSON.stringify(items) },
-    create: { customerPhone: clean, itemsJson: JSON.stringify(items), tenantId },
+  // Round 23: como customerPhone aún es @unique global, no podemos hacer
+  // upsert por (phone, tenantId). Estrategia: deleteMany del phone en este
+  // tenant + create. Atómica suficiente para este flujo (cliente tiene HMAC).
+  await prisma.savedCart.deleteMany({
+    where: { customerPhone: ctx.phone, tenantId: ctx.tenantId },
+  });
+  await prisma.savedCart.create({
+    data: { customerPhone: ctx.phone, itemsJson: JSON.stringify(items), tenantId: ctx.tenantId },
   });
 
   return NextResponse.json({ ok: true });
@@ -95,9 +105,11 @@ export async function DELETE(
 ) {
   const _rl = await applyRateLimit(req, "STRICT", "cart-X"); if (_rl) return _rl;
   const { phone } = await params;
-  const clean = authorize(req, phone);
-  if (!clean) return notFound();
+  const ctx = authorize(req, phone);
+  if (!ctx) return notFound();
 
-  await prisma.savedCart.deleteMany({ where: { customerPhone: clean } });
+  await prisma.savedCart.deleteMany({
+    where: { customerPhone: ctx.phone, tenantId: ctx.tenantId },
+  });
   return NextResponse.json({ ok: true });
 }

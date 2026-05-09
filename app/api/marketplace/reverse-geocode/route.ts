@@ -67,14 +67,31 @@ export async function GET(req: NextRequest) {
     });
 
     const street = [addr.road, addr.house_number].filter(Boolean).join(" ").trim();
+    // Round 23: shape extendida con códigos completos para que el cliente
+    // (checkout/entrega) pueda hidratar dropdowns sin importar el dataset
+    // INEI completo (~350KB). Backwards-compat: nombres flat preservados.
     return NextResponse.json({
       lat,
       lng,
+      // Backwards-compat (nombres flat):
       departamento: match.departamento?.nombre ?? null,
       provincia: match.provincia?.nombre ?? null,
       distrito: match.distrito?.nombre ?? null,
       direccion: street || null,
       displayName: data.display_name ?? null,
+      // Round 23: shape para checkout (códigos + nombres):
+      street: street || null,
+      match: {
+        departamento: match.departamento
+          ? { code: match.departamento.code, nombre: match.departamento.nombre }
+          : null,
+        provincia: match.provincia
+          ? { code: match.provincia.code, nombre: match.provincia.nombre }
+          : null,
+        distrito: match.distrito
+          ? { code: match.distrito.code, nombre: match.distrito.nombre }
+          : null,
+      },
     });
   } catch (err) {
     logger.error("[reverse-geocode] failed", { error: String(err), lat, lng });
