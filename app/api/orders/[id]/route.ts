@@ -12,6 +12,7 @@ import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { autoEarnLoyaltyPoints } from "@/lib/loyalty/auto-earn";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 const NOTIFIABLE_STATUSES = new Set(["confirmado", "preparando", "en_camino", "entregado", "cancelado"]);
 
@@ -68,12 +69,20 @@ export async function GET(
 // -- PATCH /api/orders/[id] -- update status / notes / deuda -----------------
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  ctx: { params: Promise<{ id: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "orders-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  // Round 12 M004: audit log de Order.update (state machine).
+  return runWithAuditContext(req, auth.username, () => patchOrder(req, ctx, auth));
+}
 
+async function patchOrder(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
   const { id } = await params;
   let raw: unknown;
   try { raw = await req.json(); } catch {
@@ -366,17 +375,25 @@ export async function PATCH(
 // -- DELETE /api/orders/[id] -- remove order ----------------------------------
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  ctx: { params: Promise<{ id: string }> }
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "orders-X"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  // Round 12 M004: DELETE de Order — Ley 29733 art. 23 obliga trazabilidad.
+  return runWithAuditContext(req, auth.username, () => deleteOrder(req, ctx, auth));
+}
 
+async function deleteOrder(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
   const { id } = await params;
   try {
     await OrdersDB.delete(auth.tenantId, id);
     const reqId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, "admin", reqId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
+    logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, auth.username, reqId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
     return new NextResponse(null, { status: 204 });
   } catch (e) {

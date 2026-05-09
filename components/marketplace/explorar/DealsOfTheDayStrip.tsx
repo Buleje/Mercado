@@ -158,7 +158,7 @@ export default function DealsOfTheDayStrip() {
               )}
             >
               {/* Badge descuento — tamaño legible */}
-              <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center rounded-md bg-[var(--accent)] text-[var(--surface-canvas)] px-2.5 py-1 text-xs font-black tabular-nums leading-none shadow-sm">
+              <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center rounded-md bg-[var(--accent-600,var(--accent))] text-[var(--surface-canvas)] px-2.5 py-1 text-xs font-black tabular-nums leading-none shadow-sm">
                 −30%
               </span>
 

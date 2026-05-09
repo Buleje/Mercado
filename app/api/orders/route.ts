@@ -3,6 +3,7 @@ import { z } from "zod";
 import { OrdersDB, CouponsDB, PromotionsDB } from "@/lib/jsondb";
 import type { DbOrder } from "@/lib/jsondb";
 import { emitAdminSSE } from "@/lib/sse-emitter";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { sendOrderNotification } from "@/lib/mailer";
 import { sendWhatsAppNotification, getWhatsAppLink, sendWhatsAppQueued } from "@/lib/whatsapp";
@@ -714,7 +715,14 @@ export const POST = withApiHandler("orders-create", async (req) => {
 
     let saved: DbOrder;
     try {
-      saved = await withDbRetry(() => OrdersDB.add(order, tenantId));
+      // Round 12 M004: audit log de Order create + Customer upsert con phone
+      // del comprador (cliente público) o "anonymous" si no hay phone.
+      // OrdersDB.add internamente puede crear/actualizar Customer.
+      saved = await runWithAuditContext(
+        req,
+        body.customer.phone || "anonymous",
+        () => withDbRetry(() => OrdersDB.add(order, tenantId)),
+      );
     } catch (addErr) {
       // Compensating writes — the atomic guards above already decremented
       // stock and bumped coupon usage, but the order row never landed. Roll

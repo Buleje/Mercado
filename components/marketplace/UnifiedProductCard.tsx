@@ -329,7 +329,7 @@ export default function UnifiedProductCard({
           {/* Discount % badge — RESALTADO: fondo accent solido + sombra */}
           {product.discount != null && product.discount > 0 && variant !== "top" && (
             <span
-              className="inline-flex items-center justify-center rounded-md px-2 py-1 text-[length:var(--ts-xs)] font-black tabular-nums uppercase tracking-wider bg-[var(--accent)] text-[var(--surface-canvas)] shadow-md"
+              className="inline-flex items-center justify-center rounded-md px-2 py-1 text-[length:var(--ts-xs)] font-black tabular-nums uppercase tracking-wider bg-[var(--accent-600,var(--accent))] text-[var(--surface-canvas)] shadow-md"
               aria-label={`${product.discount}% de descuento`}
             >
               -{product.discount}%
@@ -339,7 +339,7 @@ export default function UnifiedProductCard({
           {/* Liquidacion / Oferta badge — text label adicional */}
           {showOfertaBadge && variant !== "top" && product.discount == null && (
             <span
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider bg-[var(--accent)] text-[var(--surface-canvas)] shadow-md"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider bg-[var(--accent-600,var(--accent))] text-[var(--surface-canvas)] shadow-md"
             >
               {ofertaLabel}
             </span>

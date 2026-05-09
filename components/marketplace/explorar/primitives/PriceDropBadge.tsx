@@ -50,7 +50,7 @@ export default function PriceDropBadge({ was, now, variant = "default", classNam
       className={cn(
         "inline-flex items-center justify-center rounded-md px-2 py-1",
         "text-[length:var(--ts-2xs)] font-black tabular-nums uppercase tracking-wider",
-        "bg-[var(--accent)] text-[var(--surface-canvas)]",
+        "bg-[var(--accent-600,var(--accent))] text-[var(--surface-canvas)]",
         "animate-in fade-in zoom-in-90 duration-300",
         className,
       )}
