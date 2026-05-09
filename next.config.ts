@@ -140,6 +140,11 @@ const nextConfig: NextConfig = {
     // Sobrevive restarts: rebuilds ~5s en vez de 30-60s.
     // Fuente: nextjs.org/blog/next-16-2
     turbopackFileSystemCacheForDev: true,
+
+    // Round 28 Sprint 1 (Quick Win 1.4): inline + minify critical CSS para LCP.
+    // Reduce el FOUC en /marketplace y /tienda; ahorro ~20-50ms LCP en 4G.
+    // Requiere `critters` instalado (ya viene con Next 16).
+    optimizeCss: true,
   },
 
   // Redirects — rutas consolidadas en la landing (anchors) para SEO-friendly

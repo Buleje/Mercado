@@ -1083,7 +1083,7 @@ export default function Header() {
                       {/* Búsquedas recientes */}
                       {recentSearches.length > 0 && (
                         <div className="px-4 pt-3 pb-2 border-t border-gray-100 dark:border-card-border first:border-t-0">
-                          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">🔥 Recientes</p>
+                          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2 inline-flex items-center gap-1.5"><Flame className="h-3 w-3" aria-hidden /> Recientes</p>
                           <div className="flex flex-wrap gap-1.5">
                             {recentSearches.slice(0, 4).map(term => (
                               <button
@@ -1805,7 +1805,6 @@ export default function Header() {
                     )}
                     <Trophy className="h-5 w-5" />
                     <span className="flex-1">
-                      {loyalty.loyaltyTier === "diamante" ? "💎" : loyalty.loyaltyTier === "oro" ? "🥇" : loyalty.loyaltyTier === "plata" ? "🥈" : "🥉"}{" "}
                       {loyalty.loyaltyPoints} puntos · Nivel {loyalty.loyaltyTier}
                     </span>
                   </a>
@@ -1924,7 +1923,7 @@ export default function Header() {
               {/* AC4: Trending / recent searches */}
               {searchQuery.length === 0 && recentSearches.length > 0 && (
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">🔥 Búsquedas recientes</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2 inline-flex items-center gap-1.5"><Flame className="h-3 w-3" aria-hidden /> Búsquedas recientes</p>
                   <div className="flex flex-wrap gap-1.5">
                     {recentSearches.map(term => (
                       <button

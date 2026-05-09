@@ -1,11 +1,13 @@
-"use client";
-
 /**
  * LivesStrip — TS-30 strip "En vivo ahora" para /tiendas.
  *
  * Carrusel horizontal con cards compactos de transmisiones activas.
  * Si no hay lives, no renderiza nada (degradación silenciosa para no
  * ocupar espacio vacío).
+ *
+ * Round 28 Sprint 1 (1.7): RSC — sin interactividad, sin estado, sin
+ * eventos. El scroll horizontal es CSS puro. Server-render reduce
+ * el bundle cliente ~3KB y no fuerza hidratación.
  *
  * Sprint 6 marketplace blueprint.
  */

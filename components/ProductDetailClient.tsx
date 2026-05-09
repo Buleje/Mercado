@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   Plus, Minus, ShoppingCart, Heart, Share2, ChevronRight,
   Package, Truck, Shield, Clock, Star, GitCompareArrows,
-  BellRing, CheckCircle2, Loader2, Eye,
+  BellRing, CheckCircle2, Loader2, Eye, Flame, TrendingUp,
 } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -679,12 +679,12 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               return (
                 <div className="bg-white dark:bg-card rounded-xl p-4 border border-gray-100 dark:border-card-border">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold text-muted">
-                      📈 Historial de precios
+                    <p className="text-xs font-semibold text-muted inline-flex items-center gap-1.5">
+                      <TrendingUp className="h-3.5 w-3.5" aria-hidden /> Historial de precios
                     </p>
                     {isBestPrice && (
-                      <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[length:var(--ts-2xs)] font-bold animate-pulse">
-                        🔥 Mejor precio
+                      <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[length:var(--ts-2xs)] font-bold animate-pulse inline-flex items-center gap-1">
+                        <Flame className="h-3 w-3" aria-hidden /> Mejor precio
                       </span>
                     )}
                   </div>

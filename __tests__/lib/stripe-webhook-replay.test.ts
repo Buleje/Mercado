@@ -86,7 +86,9 @@ function makeStripeEvent(id = "evt_123", type = "customer.subscription.updated")
     type,
     object: "event" as const,
     api_version: "2023-10-16",
-    created: 1_700_000_000,
+    // Round 28 Sprint 1 (1.9): freshness check rechaza events >1h.
+    // Usamos `now` para que los tests pasen el check anti-replay.
+    created: Math.floor(Date.now() / 1000),
     data: {
       object: {
         id: "sub_abc",

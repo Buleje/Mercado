@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { MapPin, Phone, Clock, MessageCircle } from "@buleje/design-system/icons";
+import { MapPin, Phone, Clock, MessageCircle, ShoppingCart } from "@buleje/design-system/icons";
 import { useInView } from "@/hooks/use-in-view";
 import { useSettings } from "@/contexts/settings-context";
 
@@ -216,7 +216,7 @@ export default function Contact() {
               href="#productos"
               className="inline-flex items-center justify-center gap-2 mt-8 rounded-xl bg-white px-8 py-4 text-base font-bold text-primary shadow-lg hover:bg-gray-50 active:scale-[0.98] transition-all duration-200"
             >
-              🛒 Empezar a Comprar
+              <ShoppingCart className="h-5 w-5" aria-hidden /> Empezar a Comprar
             </a>
           </div>
         </div>

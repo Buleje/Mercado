@@ -170,8 +170,8 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
             </>
           ) : (
             <>
-              <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-3">
-                ¡Espera! 🎁
+              <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-3 inline-flex items-center gap-2">
+                ¡Espera! <Gift className="h-7 w-7 text-primary" aria-hidden />
               </h2>
               <p className="text-muted text-base mb-6">
                 Aprovecha <strong className="text-primary">delivery GRATIS</strong> en tu primera compra mayor a S/{promoMin}

@@ -29,6 +29,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Webhook error: ${err instanceof Error ? err.message : "Webhook error"}` }, { status: 400 });
   }
 
+  // Round 28 Sprint 1 (Quick Win 1.9): freshness check (paridad MP webhook).
+  // Stripe.constructEvent ya valida ts del Stripe-Signature (tolerance 5min),
+  // pero el dashboard permite re-enviar events hasta 30 días. Si el event.created
+  // tiene más de 1 hora, asumimos replay desde dashboard/leak y rechazamos.
+  // Esto bloquea replay attacks con firma válida pero events viejos.
+  const MAX_EVENT_AGE_SEC = 60 * 60; // 1h
+  const eventAgeSec = Math.floor(Date.now() / 1000) - event.created;
+  if (eventAgeSec > MAX_EVENT_AGE_SEC) {
+    logger.warn("[Stripe Webhook] Event demasiado viejo — posible replay", {
+      eventId: event.id,
+      type: event.type,
+      ageSec: eventAgeSec,
+    });
+    return NextResponse.json({ error: "Event too old" }, { status: 400 });
+  }
+
   try {
     // Idempotency atómica con lock por UNIQUE constraint
     // Antes: findUnique + upsert (no atómico) → 2 webhooks simultáneos

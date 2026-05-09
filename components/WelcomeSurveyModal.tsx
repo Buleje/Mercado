@@ -102,8 +102,12 @@ export default function WelcomeSurveyModal() {
               <span className="absolute -top-1 -right-1 bg-amber-400 text-amber-900 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-full leading-none shadow">Beta</span>
             </div>
           </div>
-          <h2 className="text-xl font-bold tracking-tight">
-            {step === "thanks" ? "¡Gracias! 🎉" : "Proyecto en desarrollo"}
+          <h2 className="text-xl font-bold tracking-tight inline-flex items-center gap-2">
+            {step === "thanks" ? (
+              <>¡Gracias! <Sparkles className="h-5 w-5" aria-hidden /></>
+            ) : (
+              "Proyecto en desarrollo"
+            )}
           </h2>
           <p className="text-white/80 text-sm mt-1">
             {step === "thanks"

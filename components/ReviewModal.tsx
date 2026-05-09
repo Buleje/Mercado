@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
-import { X, Star, Send, Pencil, Camera, ZoomIn } from "@buleje/design-system/icons";
+import { X, Star, Send, Pencil, Camera, ZoomIn, PartyPopper } from "@buleje/design-system/icons";
 import { useReviews } from "@/contexts/reviews-context";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -161,7 +161,7 @@ export default function ReviewModal() {
             <div className="px-6 py-4 flex items-center justify-between shrink-0" style={{ background: "linear-gradient(90deg, var(--color-primary-dark), var(--color-primary), var(--color-primary-dark))" }}>
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
-                  <span className="text-xl">⭐</span>
+                  <Star className="h-5 w-5 text-white" fill="currentColor" aria-hidden />
                 </div>
                 <div>
                   <p className="font-bold text-white text-base leading-tight">¿Cómo fue tu experiencia?</p>
@@ -190,9 +190,9 @@ export default function ReviewModal() {
                   <m.div
                     animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.2, 1] }}
                     transition={{ duration: 0.6 }}
-                    className="text-6xl"
+                    className="text-primary"
                   >
-                    🎉
+                    <PartyPopper className="h-16 w-16" aria-hidden />
                   </m.div>
                   <p className="text-xl font-extrabold text-primary">¡Gracias por tu opinion!</p>
                   <p className="text-sm text-muted">Tu reseña ya aparece en la seccion de clientes.</p>
