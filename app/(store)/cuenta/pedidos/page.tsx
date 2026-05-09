@@ -94,7 +94,7 @@ const STATUS_META: Record<
   confirmado: {
     label: "Confirmado",
     icon: CheckCircle2,
-    tone: "text-foreground bg-gray-100 dark:bg-surface",
+    tone: "text-foreground bg-[var(--surface-sunken)] dark:bg-surface",
     dot: "bg-foreground",
   },
   en_camino: {
@@ -253,7 +253,7 @@ export default function PedidosPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background">
       <BreadcrumbSchema
         items={[
           { name: "Inicio", url: "https://www.buleje.pe/" },

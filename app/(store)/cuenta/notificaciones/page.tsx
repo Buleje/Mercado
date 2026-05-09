@@ -187,7 +187,7 @@ function FilterPills({
               className={cn(
                 "flex items-center justify-between gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all w-full",
                 !active &&
-                  "text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface",
+                  "text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface",
               )}
               style={
                 active
@@ -212,7 +212,7 @@ function FilterPills({
                     ? "bg-white/25 text-white"
                     : key === "sin-leer" && count > 0
                       ? "bg-primary/15 text-primary"
-                      : "bg-gray-100 dark:bg-surface text-muted",
+                      : "bg-[var(--surface-sunken)] dark:bg-surface text-muted",
                 )}
               >
                 {count}
@@ -380,7 +380,7 @@ function NotifCard({
               <button
                 type="button"
                 onClick={() => onMarkRead(notification.id)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
               >
                 <CheckCheck className="h-4 w-4" strokeWidth={2.25} />
                 Marcar leído

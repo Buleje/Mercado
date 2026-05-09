@@ -13,7 +13,7 @@ export default function TerminosPage() {
   return (
     <>
     <LandingHeader minimal />
-    {/* Designer audit P0: H1 antes era text-gray-900 hardcoded → invisible
+    {/* Designer audit P0: H1 antes era text-[var(--text-primary)] hardcoded → invisible
         en dark mode (contraste 1.2:1). Ahora token DS que se adapta. */}
     <main className="mx-auto max-w-3xl px-4 py-12 sm:py-16 text-[var(--text-primary)]">
       <h1 className="text-3xl font-extrabold text-[var(--text-primary)] mb-8">

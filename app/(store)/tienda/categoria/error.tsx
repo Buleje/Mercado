@@ -24,8 +24,8 @@ export default function CategoriaError({
           </svg>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Error al cargar categoría</h2>
-          <p className="mt-2 text-sm text-gray-500 dark:text-muted">
+          <h2 className="text-xl font-bold text-[var(--text-primary)] dark:text-white">Error al cargar categoría</h2>
+          <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-muted">
             No pudimos cargar esta categoría. Intenta de nuevo.
           </p>
         </div>
@@ -33,7 +33,7 @@ export default function CategoriaError({
           <button onClick={reset} className="px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 transition-opacity">
             Reintentar
           </button>
-          <Link href="/tienda" className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+          <Link href="/tienda" className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             Ir a la tienda
           </Link>
         </div>

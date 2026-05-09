@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 
 function ConfirmacionFallback() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-white dark:bg-[var(--surface-canvas)]">
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <div className="mx-auto h-12 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+        <div className="mx-auto h-12 w-48 animate-pulse rounded bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)]" />
       </div>
     </div>
   );

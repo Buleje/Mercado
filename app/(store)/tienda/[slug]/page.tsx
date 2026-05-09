@@ -73,14 +73,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 function ProductDetailSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-pulse">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] animate-pulse">
       <div className="max-w-4xl mx-auto px-4 py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="aspect-square bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+          <div className="aspect-square bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded-2xl" />
           <div className="space-y-4 pt-4">
-            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded" />
-            <div className="h-6 w-24 bg-gray-200 dark:bg-gray-800 rounded" />
-            <div className="h-10 w-32 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-8 w-48 bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded" />
+            <div className="h-6 w-24 bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded" />
+            <div className="h-10 w-32 bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded" />
           </div>
         </div>
       </div>

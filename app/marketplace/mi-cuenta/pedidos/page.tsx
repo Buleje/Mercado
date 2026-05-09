@@ -44,7 +44,7 @@ const STATUS_STYLES: Record<OrderSummary["status"], string> = {
   confirmado: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   en_camino:  "bg-purple-50 text-[var(--accent)] dark:bg-purple-900/30 dark:text-purple-400",
   entregado:  "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  cancelado:  "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+  cancelado:  "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-tertiary)]",
 };
 
 function formatDate(iso: string): string {
@@ -99,7 +99,7 @@ export default function PedidosPage() {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-20 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"
+            className="h-20 animate-pulse rounded-lg bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]"
           />
         ))}
         <span className="sr-only">Cargando pedidos...</span>
@@ -171,7 +171,7 @@ export default function PedidosPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-medium text-gray-700 dark:text-gray-300">
+        <h2 className="text-base font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
           Historial de pedidos
         </h2>
         {customer?.phone && (
@@ -185,14 +185,14 @@ export default function PedidosPage() {
           return (
             <li
               key={order.id}
-              className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+              className="rounded-lg border border-gray-200 bg-white p-4 dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                  <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
                     {formatDate(order.createdAt)}
                   </p>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                  <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
                     {order.itemsCount === 1
                       ? "1 producto"
                       : `${order.itemsCount} productos`}
@@ -201,7 +201,7 @@ export default function PedidosPage() {
                 </div>
 
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     S/ {Number(order.total).toFixed(2)}
                   </span>
                   <span
@@ -217,7 +217,7 @@ export default function PedidosPage() {
 
               {/* MK-28: re-pedir un click */}
               {canReorder && (
-                <div className="mt-3 flex justify-end border-t border-gray-100 pt-3 dark:border-gray-800">
+                <div className="mt-3 flex justify-end border-t border-gray-100 pt-3 dark:border-[var(--rule-soft)]">
                   <ReorderOrderButton
                     orderId={order.id}
                     storeSlug={order.storeSlug}

@@ -278,7 +278,7 @@ async function CategoryPageContent({ params }: Props) {
 
 function CategoryPageSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-pulse">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] animate-pulse">
       <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <section className="bg-linear-to-br from-indigo-900 to-indigo-950 pt-32 pb-14">
         <div className="max-w-7xl mx-auto px-4 text-center">

@@ -63,7 +63,7 @@ const porQueElegirnos: { Icon: LucideIcon; title: string; desc: string }[] = [
 
 function Kicker({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 mb-3">
+    <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
       {children}
     </span>
   );
@@ -103,7 +103,7 @@ export default async function AboutPage() {
   return (
     <>
       <LandingHeader minimal />
-      <main className="pt-20 sm:pt-24 min-h-screen bg-white dark:bg-gray-950" id="main-content">
+      <main className="pt-20 sm:pt-24 min-h-screen bg-white dark:bg-[var(--surface-canvas)]" id="main-content">
 
         {/* ── HERO ─ editorial dark ─ */}
         <section
@@ -127,7 +127,7 @@ export default async function AboutPage() {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/tienda"
-                className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold px-6 py-3 rounded-full text-sm transition-colors hover:bg-gray-100"
+                className="inline-flex items-center gap-2 bg-white text-[var(--text-primary)] font-bold px-6 py-3 rounded-full text-sm transition-colors hover:bg-[var(--surface-sunken)]"
               >
                 <ShoppingCart className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                 Ver Tienda
@@ -148,22 +148,22 @@ export default async function AboutPage() {
         </section>
 
         {/* ── HISTORIA ─ */}
-        <section className="py-16 sm:py-24 border-b border-gray-200 dark:border-gray-800">
+        <section className="py-16 sm:py-24 border-b border-gray-200 dark:border-[var(--rule-soft)]">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="mb-10 max-w-2xl">
               <Kicker>
                 <Heart className="h-3 w-3" strokeWidth={1.75} aria-hidden />
                 Historia
               </Kicker>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white leading-[1.05]">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] dark:text-white leading-[1.05]">
                 Nuestra historia
               </h2>
             </div>
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 sm:p-12">
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+            <div className="bg-white dark:bg-[var(--surface-canvas)] rounded-xl border border-gray-200 dark:border-[var(--rule-soft)] p-8 sm:p-12">
+              <p className="text-base sm:text-lg text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] leading-relaxed">
                 {storyText}
               </p>
-              <div className="mt-10 grid grid-cols-3 gap-0 border-t border-gray-200 dark:border-gray-800 pt-8">
+              <div className="mt-10 grid grid-cols-3 gap-0 border-t border-gray-200 dark:border-[var(--rule-soft)] pt-8">
                 {[
                   { value: "500+", label: "Productos" },
                   { value: "100+", label: "Familias atendidas" },
@@ -171,12 +171,12 @@ export default async function AboutPage() {
                 ].map((s, i) => (
                   <div
                     key={s.label}
-                    className={i > 0 ? "border-l border-gray-200 dark:border-gray-800 pl-4" : ""}
+                    className={i > 0 ? "border-l border-gray-200 dark:border-[var(--rule-soft)] pl-4" : ""}
                   >
-                    <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums tracking-tight">
+                    <p className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-white tabular-nums tracking-tight">
                       {s.value}
                     </p>
-                    <p className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
+                    <p className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                       {s.label}
                     </p>
                   </div>
@@ -187,17 +187,17 @@ export default async function AboutPage() {
         </section>
 
         {/* ── POR QUÉ ELEGIRNOS ─ */}
-        <section className="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900/40 border-b border-gray-200 dark:border-gray-800">
+        <section className="py-16 sm:py-24 bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)]/40 border-b border-gray-200 dark:border-[var(--rule-soft)]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="mb-12 max-w-2xl">
               <Kicker>
                 <Users className="h-3 w-3" strokeWidth={1.75} aria-hidden />
                 Por qué elegirnos
               </Kicker>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white leading-[1.05]">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] dark:text-white leading-[1.05]">
                 Tu bodega, tu confianza
               </h2>
-              <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed max-w-lg">
+              <p className="mt-3 text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] leading-relaxed max-w-lg">
                 Todo lo que necesitas para tu hogar, con la cercanía del barrio.
               </p>
             </div>
@@ -207,15 +207,15 @@ export default async function AboutPage() {
                 return (
                   <div
                     key={item.title}
-                    className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
+                    className="group rounded-xl border border-gray-200 dark:border-[var(--rule-soft)] bg-white dark:bg-[var(--surface-canvas)] p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
                   >
-                    <div className="h-10 w-10 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200 mb-5">
+                    <div className="h-10 w-10 rounded-lg bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] border border-gray-200 dark:border-[var(--rule-soft)] flex items-center justify-center text-[var(--text-secondary)] dark:text-[var(--text-secondary)] mb-5">
                       <IIcon className="h-4 w-4" strokeWidth={1.5} aria-hidden />
                     </div>
-                    <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">
+                    <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)] dark:text-white">
                       {item.title}
                     </h3>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                    <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
@@ -226,49 +226,49 @@ export default async function AboutPage() {
         </section>
 
         {/* ── HORARIOS ─ */}
-        <section className="py-16 sm:py-24 border-b border-gray-200 dark:border-gray-800">
+        <section className="py-16 sm:py-24 border-b border-gray-200 dark:border-[var(--rule-soft)]">
           <div className="mx-auto max-w-3xl px-4 sm:px-6">
             <div className="mb-10">
               <Kicker>
                 <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden />
                 Horarios
               </Kicker>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white leading-[1.05]">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] dark:text-white leading-[1.05]">
                 Horarios de atención
               </h2>
             </div>
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-              <div className="flex items-center justify-between py-5 px-6 border-b border-gray-200 dark:border-gray-800">
-                <span className="text-sm font-extrabold text-gray-900 dark:text-white tracking-tight">Lunes a Sábado</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">
+            <div className="bg-white dark:bg-[var(--surface-canvas)] rounded-xl border border-gray-200 dark:border-[var(--rule-soft)] overflow-hidden">
+              <div className="flex items-center justify-between py-5 px-6 border-b border-gray-200 dark:border-[var(--rule-soft)]">
+                <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-white tracking-tight">Lunes a Sábado</span>
+                <span className="text-sm font-bold text-[var(--text-primary)] dark:text-white tabular-nums">
                   {weekdayHours}
                 </span>
               </div>
               <div className="flex items-center justify-between py-5 px-6">
-                <span className="text-sm font-extrabold text-gray-900 dark:text-white tracking-tight">Domingos</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-white tabular-nums">
+                <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-white tracking-tight">Domingos</span>
+                <span className="text-sm font-bold text-[var(--text-primary)] dark:text-white tabular-nums">
                   {weekendHours}
                 </span>
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-4">
+            <p className="text-xs text-[var(--text-tertiary)] mt-4">
               Horarios pueden variar en feriados. Consulta por WhatsApp.
             </p>
           </div>
         </section>
 
         {/* ── CONTACTO ─ */}
-        <section className="py-16 sm:py-24 bg-gray-50 dark:bg-gray-900/40 border-b border-gray-200 dark:border-gray-800">
+        <section className="py-16 sm:py-24 bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)]/40 border-b border-gray-200 dark:border-[var(--rule-soft)]">
           <div className="mx-auto max-w-5xl px-4 sm:px-6">
             <div className="mb-12 max-w-2xl">
               <Kicker>
                 <Phone className="h-3 w-3" strokeWidth={1.75} aria-hidden />
                 Contacto
               </Kicker>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white leading-[1.05]">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] dark:text-white leading-[1.05]">
                 Estamos para ayudarte
               </h2>
-              <p className="mt-3 text-gray-500 dark:text-gray-400 leading-relaxed max-w-lg">
+              <p className="mt-3 text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] leading-relaxed max-w-lg">
                 Escríbenos o visítanos cuando quieras.
               </p>
             </div>
@@ -277,17 +277,17 @@ export default async function AboutPage() {
                 href={mapsLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
+                className="group rounded-xl border border-gray-200 dark:border-[var(--rule-soft)] bg-white dark:bg-[var(--surface-canvas)] p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
               >
                 <div className="flex items-start justify-between mb-5">
-                  <div className="h-10 w-10 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                  <div className="h-10 w-10 rounded-lg bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] border border-gray-200 dark:border-[var(--rule-soft)] flex items-center justify-center text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">
                     <MapPin className="h-4 w-4" strokeWidth={1.5} aria-hidden />
                   </div>
-                  <ArrowUpRight className="h-4 w-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" strokeWidth={1.75} aria-hidden />
+                  <ArrowUpRight className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] dark:group-hover:text-white transition-colors" strokeWidth={1.75} aria-hidden />
                 </div>
-                <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">Dirección</h3>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{address}</p>
-                <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">Google Maps</p>
+                <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)] dark:text-white">Dirección</h3>
+                <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] leading-relaxed">{address}</p>
+                <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Google Maps</p>
               </a>
 
               {phone && (
@@ -295,34 +295,34 @@ export default async function AboutPage() {
                   href={whatsappLink || "#"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
+                  className="group rounded-xl border border-gray-200 dark:border-[var(--rule-soft)] bg-white dark:bg-[var(--surface-canvas)] p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
                 >
                   <div className="flex items-start justify-between mb-5">
-                    <div className="h-10 w-10 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                    <div className="h-10 w-10 rounded-lg bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] border border-gray-200 dark:border-[var(--rule-soft)] flex items-center justify-center text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">
                       <MessageCircle className="h-4 w-4" strokeWidth={1.5} aria-hidden />
                     </div>
-                    <ArrowUpRight className="h-4 w-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" strokeWidth={1.75} aria-hidden />
+                    <ArrowUpRight className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] dark:group-hover:text-white transition-colors" strokeWidth={1.75} aria-hidden />
                   </div>
-                  <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">WhatsApp</h3>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed tabular-nums">{phone}</p>
-                  <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">Enviar mensaje</p>
+                  <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)] dark:text-white">WhatsApp</h3>
+                  <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] leading-relaxed tabular-nums">{phone}</p>
+                  <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Enviar mensaje</p>
                 </a>
               )}
 
               {email && (
                 <a
                   href={`mailto:${email}`}
-                  className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
+                  className="group rounded-xl border border-gray-200 dark:border-[var(--rule-soft)] bg-white dark:bg-[var(--surface-canvas)] p-6 hover:border-gray-900 dark:hover:border-gray-500 transition-colors"
                 >
                   <div className="flex items-start justify-between mb-5">
-                    <div className="h-10 w-10 rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                    <div className="h-10 w-10 rounded-lg bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] border border-gray-200 dark:border-[var(--rule-soft)] flex items-center justify-center text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">
                       <Mail className="h-4 w-4" strokeWidth={1.5} aria-hidden />
                     </div>
-                    <ArrowUpRight className="h-4 w-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" strokeWidth={1.75} aria-hidden />
+                    <ArrowUpRight className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] dark:group-hover:text-white transition-colors" strokeWidth={1.75} aria-hidden />
                   </div>
-                  <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">Email</h3>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{email}</p>
-                  <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">Enviar correo</p>
+                  <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)] dark:text-white">Email</h3>
+                  <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] leading-relaxed">{email}</p>
+                  <p className="mt-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Enviar correo</p>
                 </a>
               )}
             </div>
@@ -330,23 +330,23 @@ export default async function AboutPage() {
         </section>
 
         {/* ── UBICACIÓN ─ */}
-        <section className="py-16 sm:py-24 border-b border-gray-200 dark:border-gray-800">
+        <section className="py-16 sm:py-24 border-b border-gray-200 dark:border-[var(--rule-soft)]">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
             <Kicker>
               <MapPin className="h-3 w-3" strokeWidth={1.75} aria-hidden />
               Ubicación
             </Kicker>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] dark:text-white">
               Encuéntranos
             </h2>
-            <p className="mt-4 text-gray-500 dark:text-gray-400 leading-relaxed">
+            <p className="mt-4 text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] leading-relaxed">
               {address}
             </p>
             <a
               href={mapsLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-8 inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold px-6 py-3 rounded-full text-sm transition-colors hover:bg-gray-800 dark:hover:bg-gray-100"
+              className="mt-8 inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-[var(--text-primary)] font-bold px-6 py-3 rounded-full text-sm transition-colors hover:bg-gray-800 dark:hover:bg-[var(--surface-sunken)]"
             >
               <MapPin className="h-4 w-4" strokeWidth={1.75} aria-hidden />
               Abrir en Google Maps
@@ -370,7 +370,7 @@ export default async function AboutPage() {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/tienda"
-                className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold px-6 py-3 rounded-full text-sm transition-colors hover:bg-gray-100"
+                className="inline-flex items-center gap-2 bg-white text-[var(--text-primary)] font-bold px-6 py-3 rounded-full text-sm transition-colors hover:bg-[var(--surface-sunken)]"
               >
                 <ShoppingCart className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                 Explorar la tienda

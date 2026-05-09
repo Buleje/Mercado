@@ -180,7 +180,7 @@ export default function MarketplaceApplyPage() {
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="max-w-md w-full text-center space-y-6 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-8 shadow-2xl"
+          className="max-w-md w-full text-center space-y-6 bg-white dark:bg-[var(--surface-canvas)] rounded-3xl border border-gray-200 dark:border-[var(--rule-soft)] p-8 shadow-2xl"
         >
           <m.div
             initial={{ scale: 0 }}
@@ -190,16 +190,16 @@ export default function MarketplaceApplyPage() {
           >
             <CheckCircle2 className="h-10 w-10 text-[var(--data-success-500)]" />
           </m.div>
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-extrabold text-[var(--text-primary)] dark:text-white">
             ¡Solicitud enviada!
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
             Recibimos la información de{" "}
-            <strong className="text-gray-900 dark:text-white">{form.storeName}</strong>.
+            <strong className="text-[var(--text-primary)] dark:text-white">{form.storeName}</strong>.
             Te contactamos por WhatsApp al{" "}
-            <strong className="text-gray-900 dark:text-white">{form.ownerPhone}</strong>.
+            <strong className="text-[var(--text-primary)] dark:text-white">{form.ownerPhone}</strong>.
           </p>
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-left space-y-2">
+          <div className="bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] rounded-xl p-4 text-left space-y-2">
             {[
               "Revisamos tu solicitud (máximo 24 horas)",
               "Te enviamos acceso a tu panel de administración",
@@ -207,7 +207,7 @@ export default function MarketplaceApplyPage() {
             ].map((t, i) => (
               <div
                 key={i}
-                className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
+                className="flex items-start gap-2 text-sm text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]"
               >
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[var(--data-success-600)] text-xs font-extrabold">
                   {i + 1}
@@ -229,7 +229,7 @@ export default function MarketplaceApplyPage() {
             </a>
             <button
               onClick={() => router.push("/marketplace")}
-              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl border border-gray-200 dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] font-semibold hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
             >
               Ir al marketplace
             </button>
@@ -248,7 +248,7 @@ export default function MarketplaceApplyPage() {
             <Sparkles className="h-3 w-3" />
             Registro gratuito · 3 minutos
           </span>
-          <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
+          <h1 className="mt-4 text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] dark:text-white">
             Abre tu tienda en <span className="gradient-text">Buleje</span>
           </h1>
         </div>
@@ -264,7 +264,7 @@ export default function MarketplaceApplyPage() {
                     ? "bg-primary text-white scale-110 shadow-lg shadow-primary/30"
                     : step > s
                     ? "bg-[var(--data-success-500)] text-white"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-400",
+                    : "bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
                 )}
               >
                 {step > s ? <Check className="h-4 w-4" /> : s}
@@ -273,7 +273,7 @@ export default function MarketplaceApplyPage() {
                 <div
                   className={cn(
                     "w-8 sm:w-16 h-0.5 rounded-full transition-colors",
-                    step > s ? "bg-[var(--data-success-500)]" : "bg-gray-200 dark:bg-gray-700",
+                    step > s ? "bg-[var(--data-success-500)]" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)]",
                   )}
                 />
               )}
@@ -284,7 +284,7 @@ export default function MarketplaceApplyPage() {
         <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
           {/* Steps */}
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-6 sm:p-8 min-h-[440px] flex flex-col">
+            <div className="bg-white dark:bg-[var(--surface-canvas)] rounded-3xl border border-gray-200 dark:border-[var(--rule-soft)] p-6 sm:p-8 min-h-[440px] flex flex-col">
               <AnimatePresence mode="wait">
                 {/* ── STEP 1: Tú ── */}
                 {step === 1 && (
@@ -297,16 +297,16 @@ export default function MarketplaceApplyPage() {
                     className="flex-1 space-y-6"
                   >
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+                      <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wide">
                         Paso 1 de 4
                       </p>
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mt-1">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-white mt-1">
                         Primero, contanos quién sos
                       </h2>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
                         <User className="h-3.5 w-3.5 inline mr-1.5" />
                         ¿Cómo te llamás?
                       </label>
@@ -316,12 +316,12 @@ export default function MarketplaceApplyPage() {
                         onChange={(e) => update("ownerName", e.target.value)}
                         placeholder="Ej: Juan Pérez"
                         autoFocus
-                        className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent text-lg font-semibold text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all"
+                        className="w-full px-4 py-3.5 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] border-2 border-transparent text-lg font-semibold text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
                         <Phone className="h-3.5 w-3.5 inline mr-1.5" />
                         WhatsApp (te llamamos por aquí)
                       </label>
@@ -332,12 +332,12 @@ export default function MarketplaceApplyPage() {
                           update("ownerPhone", e.target.value.replace(/[^\d+]/g, ""))
                         }
                         placeholder="Ej: 916409675"
-                        className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent text-lg font-semibold text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all tabular-nums"
+                        className="w-full px-4 py-3.5 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] border-2 border-transparent text-lg font-semibold text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all tabular-nums"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
                         <Mail className="h-3.5 w-3.5 inline mr-1.5" />
                         Correo (opcional)
                       </label>
@@ -346,7 +346,7 @@ export default function MarketplaceApplyPage() {
                         value={form.ownerEmail}
                         onChange={(e) => update("ownerEmail", e.target.value)}
                         placeholder="tu@email.com"
-                        className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent text-lg font-semibold text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all"
+                        className="w-full px-4 py-3.5 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] border-2 border-transparent text-lg font-semibold text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all"
                       />
                     </div>
                   </m.div>
@@ -363,16 +363,16 @@ export default function MarketplaceApplyPage() {
                     className="flex-1 space-y-6"
                   >
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+                      <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wide">
                         Paso 2 de 4
                       </p>
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mt-1">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-white mt-1">
                         Ahora, tu negocio
                       </h2>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
                         <Store className="h-3.5 w-3.5 inline mr-1.5" />
                         ¿Cómo se llama tu tienda?
                       </label>
@@ -382,12 +382,12 @@ export default function MarketplaceApplyPage() {
                         onChange={(e) => update("storeName", e.target.value)}
                         placeholder="Ej: Buleje"
                         autoFocus
-                        className="w-full px-4 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent text-lg font-semibold text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all"
+                        className="w-full px-4 py-3.5 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] border-2 border-transparent text-lg font-semibold text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
                         <Tag className="h-3.5 w-3.5 inline mr-1.5" />
                         ¿Qué tipo de negocio es?
                       </label>
@@ -403,8 +403,8 @@ export default function MarketplaceApplyPage() {
                               className={cn(
                                 "flex flex-col items-center gap-2 p-4 rounded-xl border transition-all",
                                 active
-                                  ? "bg-gray-900 dark:bg-white border-gray-900 dark:border-white text-white dark:text-gray-900"
-                                  : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-gray-900 dark:hover:border-gray-500 hover:text-gray-900 dark:hover:text-white",
+                                  ? "bg-gray-900 dark:bg-white border-gray-900 dark:border-white text-white dark:text-[var(--text-primary)]"
+                                  : "bg-white dark:bg-[var(--surface-canvas)] border-gray-200 dark:border-[var(--rule-soft)] text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] hover:border-gray-900 dark:hover:border-gray-500 hover:text-[var(--text-primary)] dark:hover:text-white",
                               )}
                             >
                               <Icon
@@ -422,7 +422,7 @@ export default function MarketplaceApplyPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
                         <FileText className="h-3.5 w-3.5 inline mr-1.5" />
                         Describí tu tienda (opcional)
                       </label>
@@ -431,7 +431,7 @@ export default function MarketplaceApplyPage() {
                         value={form.description}
                         onChange={(e) => update("description", e.target.value)}
                         placeholder="Ej: Bodega familiar con más de 10 años en el barrio..."
-                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 resize-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] border-2 border-transparent text-sm text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 resize-none transition-all"
                       />
                     </div>
                   </m.div>
@@ -448,13 +448,13 @@ export default function MarketplaceApplyPage() {
                     className="flex-1 space-y-6"
                   >
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+                      <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wide">
                         Paso 3 de 4
                       </p>
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mt-1">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-white mt-1">
                         ¿En qué zona estás?
                       </h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-2">
                         Tocá la zona donde está tu tienda en Pucallpa.
                       </p>
                     </div>
@@ -477,13 +477,13 @@ export default function MarketplaceApplyPage() {
                     className="flex-1 space-y-6"
                   >
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+                      <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wide">
                         Paso 4 de 4
                       </p>
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mt-1">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-white mt-1">
                         Revisa y listo
                       </h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-2">
                         Si todo se ve bien, enviá tu solicitud.
                       </p>
                     </div>
@@ -502,12 +502,12 @@ export default function MarketplaceApplyPage() {
                       ].map((row) => (
                         <div
                           key={row.label}
-                          className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0"
+                          className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 dark:border-[var(--rule-soft)] last:border-0"
                         >
-                          <dt className="text-xs font-bold text-gray-400 uppercase tracking-wide shrink-0">
+                          <dt className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wide shrink-0">
                             {row.label}
                           </dt>
-                          <dd className="text-sm font-semibold text-gray-900 dark:text-white text-right">
+                          <dd className="text-sm font-semibold text-[var(--text-primary)] dark:text-white text-right">
                             {row.value}
                           </dd>
                         </div>
@@ -538,7 +538,7 @@ export default function MarketplaceApplyPage() {
                     "inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all",
                     step === 1
                       ? "opacity-0 pointer-events-none"
-                      : "text-gray-500 hover:text-gray-900 dark:hover:text-white",
+                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-white",
                   )}
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -554,7 +554,7 @@ export default function MarketplaceApplyPage() {
                       "inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all",
                       canAdvance
                         ? "bg-gray-900 text-white hover:bg-gray-800 active:scale-95"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed",
+                        : "bg-[var(--rule-soft)] text-[var(--text-tertiary)] cursor-not-allowed",
                     )}
                   >
                     Continuar
@@ -586,7 +586,7 @@ export default function MarketplaceApplyPage() {
           {/* Preview lateral en vivo */}
           <aside className="lg:col-span-1">
             <div className="lg:sticky lg:top-24">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">
+              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wide mb-3">
                 Vista previa en vivo
               </p>
               <m.div
@@ -594,18 +594,18 @@ export default function MarketplaceApplyPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+                className="bg-white dark:bg-[var(--surface-canvas)] rounded-2xl border border-gray-200 dark:border-[var(--rule-soft)] overflow-hidden"
               >
                 {/* Mock de cover — minimal grid pattern */}
                 <div
-                  className="relative aspect-[16/10] bg-gray-50 dark:bg-gray-950 flex items-center justify-center border-b border-gray-200 dark:border-gray-800"
+                  className="relative aspect-[16/10] bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] flex items-center justify-center border-b border-gray-200 dark:border-[var(--rule-soft)]"
                   style={{
                     backgroundImage:
                       "linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px)",
                     backgroundSize: "24px 24px",
                   }}
                 >
-                  <div className="h-16 w-16 rounded-xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200">
+                  <div className="h-16 w-16 rounded-xl bg-white dark:bg-[var(--surface-canvas)] border border-gray-200 dark:border-[var(--rule-soft)] flex items-center justify-center text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">
                     {(() => {
                       const Icon =
                         CATEGORIES.find((c) => c.id === form.category)?.icon ?? Store;
@@ -614,10 +614,10 @@ export default function MarketplaceApplyPage() {
                   </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="text-base font-extrabold text-gray-900 dark:text-white truncate">
+                  <h3 className="text-base font-extrabold text-[var(--text-primary)] dark:text-white truncate">
                     {form.storeName || "Tu nombre de tienda"}
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 inline-flex items-center gap-1">
+                  <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-0.5 inline-flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
                     {form.zone || "Zona"}
                   </p>
@@ -626,18 +626,18 @@ export default function MarketplaceApplyPage() {
                       {form.category}
                     </span>
                   )}
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 line-clamp-3 min-h-[3rem]">
+                  <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-3 line-clamp-3 min-h-[3rem]">
                     {form.description || "Tu descripción aparecerá aquí — contale a los vecinos qué hace tu tienda especial."}
                   </p>
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-[length:var(--ts-2xs)]">
+                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[var(--rule-soft)] flex items-center justify-between text-[length:var(--ts-2xs)]">
                     <span className="inline-flex items-center gap-1 text-[var(--data-warning-500)] font-bold">
                       ★ Nueva
                     </span>
-                    <span className="text-gray-400">Próximamente en Buleje</span>
+                    <span className="text-[var(--text-tertiary)]">Próximamente en Buleje</span>
                   </div>
                 </div>
               </m.div>
-              <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-3 text-center">
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-3 text-center">
                 Así va a verse tu tienda en el marketplace
               </p>
             </div>

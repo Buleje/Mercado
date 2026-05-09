@@ -161,8 +161,8 @@ function TenantTiendaSkeleton() {
             >
               <div className="aspect-square bg-[var(--surface-sunken)]" />
               <div className="p-3 space-y-2">
-                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
-                <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
+                <div className="h-4 w-24 bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] rounded" />
+                <div className="h-5 w-16 bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] rounded" />
               </div>
             </div>
           ))}

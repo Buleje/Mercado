@@ -23,7 +23,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
 
   if (!verified) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background flex items-center justify-center px-4">
         <div className="w-full max-w-md rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-8 text-center">
           <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
             Seguimiento
@@ -53,7 +53,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
 
   if (!snapshot) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background flex items-center justify-center px-4">
         <div className="w-full max-w-md rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-8 text-center">
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
             Pedido no encontrado
@@ -78,8 +78,8 @@ export default async function PublicTrackingPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-[#060a0d]">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background">
+      <header className="border-b border-gray-200 dark:border-[var(--rule-soft)] bg-[#060a0d]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-white">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 border border-primary/30 text-primary font-extrabold text-sm">

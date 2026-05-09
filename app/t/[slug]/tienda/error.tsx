@@ -42,10 +42,10 @@ export default function TenantTiendaError({
           </svg>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-bold text-[var(--text-primary)] dark:text-white">
             No pudimos cargar la tienda
           </h2>
-          <p className="mt-2 text-sm text-gray-500 dark:text-muted">
+          <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-muted">
             Tuvimos un problema momentáneo. Probá reintentar; si persiste,
             volvé al inicio de la tienda.
           </p>
@@ -59,7 +59,7 @@ export default function TenantTiendaError({
           </button>
           <Link
             href={tenantHome}
-            className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
           >
             Ir al inicio
           </Link>

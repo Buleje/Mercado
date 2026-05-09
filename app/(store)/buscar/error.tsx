@@ -23,8 +23,8 @@ export default function BuscarError({
           </svg>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Error en la búsqueda</h2>
-          <p className="mt-2 text-sm text-gray-500 dark:text-muted">
+          <h2 className="text-xl font-bold text-[var(--text-primary)] dark:text-white">Error en la búsqueda</h2>
+          <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-muted">
             Ocurrió un error al buscar. Intenta de nuevo.
           </p>
         </div>

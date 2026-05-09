@@ -152,8 +152,8 @@ function CatalogLoadingSkeleton() {
     <section className="py-16 sm:py-20 bg-surface min-h-150">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <div className="h-12 w-full sm:w-64 bg-gray-200 dark:bg-surface rounded-xl animate-pulse" />
-          <div className="h-12 w-full sm:w-48 bg-gray-200 dark:bg-surface rounded-xl animate-pulse" />
+          <div className="h-12 w-full sm:w-64 bg-[var(--rule-soft)] dark:bg-surface rounded-xl animate-pulse" />
+          <div className="h-12 w-full sm:w-48 bg-[var(--rule-soft)] dark:bg-surface rounded-xl animate-pulse" />
         </div>
         <ProductGridSkeleton count={12} />
       </div>

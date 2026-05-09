@@ -42,7 +42,7 @@ export default async function SeguimientoPage({ params }: PageProps) {
   if (!snapshot) notFound();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background">
       <BreadcrumbSchema
         items={[
           { name: "Inicio", url: "https://www.buleje.pe/" },

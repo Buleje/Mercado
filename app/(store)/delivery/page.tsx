@@ -124,24 +124,24 @@ export default function DeliveryPage() {
   // ── Login screen ──────────────────────────────────────────────────────────
   if (!loggedIn) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg w-full max-w-sm p-6 space-y-5">
+      <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-[var(--surface-canvas)] rounded-2xl shadow-lg w-full max-w-sm p-6 space-y-5">
           <div className="text-center">
             <div className="h-16 w-16 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center mx-auto mb-3">
               <Truck className="h-7 w-7" strokeWidth={1.75} aria-hidden />
             </div>
-            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">Repartidor</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Buleje · Entregas</p>
+            <h1 className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Repartidor</h1>
+            <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-1">Buleje · Entregas</p>
           </div>
           <div>
-            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase block mb-1.5">Tu teléfono</label>
+            <label className="text-xs font-bold text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] uppercase block mb-1.5">Tu teléfono</label>
             <input
               type="tel"
               value={phone}
               onChange={e => { setPhone(e.target.value); setError(""); }}
               onKeyDown={e => e.key === "Enter" && handleLogin()}
               placeholder="Ej: 961234567"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-semibold text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] transition-all"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] text-base font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] transition-all"
               autoFocus
             />
           </div>
@@ -160,7 +160,7 @@ export default function DeliveryPage() {
 
   // ── Delivery list ─────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)]">
       {/* Header */}
       <div className="bg-[var(--accent-600,var(--accent))] text-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
@@ -190,11 +190,11 @@ export default function DeliveryPage() {
       <div className="p-4 space-y-3 max-w-lg mx-auto">
         {orders.length === 0 ? (
           <div className="text-center py-16">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 text-gray-400 dark:text-gray-600 mb-4">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-gray-200 dark:border-[var(--rule-soft)] bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mb-4">
               <Package className="h-5 w-5" strokeWidth={1.5} />
             </div>
-            <p className="text-base font-extrabold tracking-tight text-gray-800 dark:text-gray-200">No hay entregas pendientes</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Se actualiza automáticamente cada 30 segundos</p>
+            <p className="text-base font-extrabold tracking-tight text-[var(--text-primary)] dark:text-[var(--text-secondary)]">No hay entregas pendientes</p>
+            <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-1">Se actualiza automáticamente cada 30 segundos</p>
           </div>
         ) : (
           orders.map(order => {
@@ -205,17 +205,17 @@ export default function DeliveryPage() {
             return (
               <div
                 key={order.id}
-                className={`bg-white dark:bg-gray-900 rounded-2xl shadow-sm border transition-all duration-300 overflow-hidden ${
+                className={`bg-white dark:bg-[var(--surface-canvas)] rounded-2xl shadow-sm border transition-all duration-300 overflow-hidden ${
                   isSuccess
                     ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 scale-95 opacity-60"
-                    : "border-gray-100 dark:border-gray-800"
+                    : "border-gray-100 dark:border-[var(--rule-soft)]"
                 }`}
               >
                 {/* Customer info */}
                 <div className="p-4 space-y-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-bold text-gray-900 dark:text-gray-100 text-base">
+                      <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-base">
                         {order.customerName || "Cliente"}
                       </p>
                       {order.customerPhone && (
@@ -243,16 +243,16 @@ export default function DeliveryPage() {
 
                   {/* Address */}
                   {order.address && (
-                    <div className="flex items-start gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2">
+                    <div className="flex items-start gap-2 bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] rounded-xl px-3 py-2">
                       <span className="text-sm shrink-0">📍</span>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{order.address}</p>
+                      <p className="text-sm text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">{order.address}</p>
                     </div>
                   )}
 
                   {/* Items summary */}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">
-                      {itemCount > 0 ? `${itemCount} producto${itemCount > 1 ? "s" : ""}` : `${order.items?.length ?? 0} items`} · <span className="font-bold text-gray-900 dark:text-gray-100">S/ {Number(order.total).toFixed(2)}</span>
+                    <span className="text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
+                      {itemCount > 0 ? `${itemCount} producto${itemCount > 1 ? "s" : ""}` : `${order.items?.length ?? 0} items`} · <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {Number(order.total).toFixed(2)}</span>
                     </span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                       order.paymentMethod === "yape" || order.paymentMethod === "Yape"
@@ -265,8 +265,8 @@ export default function DeliveryPage() {
                 </div>
 
                 {/* Action buttons */}
-                <div className="border-t border-gray-100 dark:border-gray-800 p-3 flex gap-2">
-                  <label className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                <div className="border-t border-gray-100 dark:border-[var(--rule-soft)] p-3 flex gap-2">
+                  <label className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] text-sm font-bold cursor-pointer hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 transition-colors">
                     📷 Foto de entrega
                     <input
                       type="file"

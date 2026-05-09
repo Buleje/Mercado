@@ -425,7 +425,7 @@ function FilterPills({
               onClick={() => onSelect(key)}
               className={cn(
                 "flex items-center justify-between gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all w-full",
-                !active && "text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface",
+                !active && "text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface",
               )}
               style={
                 active
@@ -448,7 +448,7 @@ function FilterPills({
                   "inline-flex items-center justify-center min-w-[1.5rem] h-6 px-2 rounded-full text-xs font-extrabold",
                   active
                     ? "bg-white/25 text-white"
-                    : "bg-gray-100 dark:bg-surface text-muted",
+                    : "bg-[var(--surface-sunken)] dark:bg-surface text-muted",
                 )}
               >
                 {count}
@@ -478,7 +478,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
 
   return (
     <div className="relative">
-      <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-100 dark:bg-surface" />
+      <div className="absolute top-4 left-4 right-4 h-0.5 bg-[var(--surface-sunken)] dark:bg-surface" />
       <div
         className="absolute top-4 left-4 h-0.5 bg-primary/40 transition-all duration-500"
         style={{
@@ -502,7 +502,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
                     ? "bg-primary text-white shadow-md shadow-primary/30 scale-110"
                     : isCompleted
                       ? "bg-primary/20 text-primary"
-                      : "bg-gray-100 dark:bg-surface text-gray-300",
+                      : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)]",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -514,7 +514,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
                     ? "text-primary font-bold"
                     : isCompleted
                       ? "text-muted"
-                      : "text-gray-300 dark:text-muted/40",
+                      : "text-[var(--text-tertiary)] dark:text-muted/40",
                 )}
               >
                 {step.label}
@@ -679,9 +679,9 @@ function OrderDetailModal({
               {items.map((item, idx) => (
                 <div
                   key={`${order.id}-${item.productId ?? item.name}-${idx}`}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
                 >
-                  <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface shrink-0">
+                  <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[var(--surface-sunken)] dark:bg-surface shrink-0">
                     {item.image ? (
                       <Image
                         src={item.image}
@@ -692,7 +692,7 @@ function OrderDetailModal({
                       />
                     ) : (
                       <div className="h-full w-full flex items-center justify-center">
-                        <Package className="h-5 w-5 text-gray-300" />
+                        <Package className="h-5 w-5 text-[var(--text-tertiary)]" />
                       </div>
                     )}
                   </div>
@@ -812,7 +812,7 @@ function OrderDetailModal({
           <div className="flex gap-2 pt-1 pb-2">
             <button
               type="button"
-              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-extrabold text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-extrabold text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
             >
               <Download className="h-4 w-4" />
               Boleta
@@ -900,7 +900,7 @@ function ActiveOrderCard({
       </div>
 
       <div className="mb-4">
-        <div className="relative h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+        <div className="relative h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
           <div
             className="absolute top-0 left-0 h-full transition-all duration-700"
             style={{
@@ -923,7 +923,7 @@ function ActiveOrderCard({
                     ? "text-primary"
                     : isDone
                       ? "text-muted"
-                      : "text-gray-300 dark:text-muted/40",
+                      : "text-[var(--text-tertiary)] dark:text-muted/40",
                 )}
               >
                 {step.label}
@@ -961,7 +961,7 @@ function ActiveOrderCard({
         <button
           type="button"
           onClick={() => onViewDetail(order)}
-          className="flex items-center justify-center gap-1.5 py-3 px-4 rounded-xl border-2 text-sm font-extrabold text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="flex items-center justify-center gap-1.5 py-3 px-4 rounded-xl border-2 text-sm font-extrabold text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
           style={{ borderColor: "var(--color-card-border)" }}
         >
           Detalle
@@ -982,7 +982,7 @@ function ActiveOrderCard({
               <button
                 type="button"
                 onClick={() => setConfirmingCancel(false)}
-                className="py-3 px-4 rounded-xl bg-gray-100 dark:bg-surface text-muted text-sm font-extrabold hover:bg-gray-200 dark:hover:bg-card-hover transition-colors"
+                className="py-3 px-4 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface text-muted text-sm font-extrabold hover:bg-[var(--rule-soft)] dark:hover:bg-card-hover transition-colors"
               >
                 No
               </button>
@@ -1084,7 +1084,7 @@ function CompletedOrderCard({
             {items.slice(0, 3).map((item, idx) => (
               <div
                 key={`thumb-${idx}`}
-                className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 dark:bg-surface ring-2 ring-white dark:ring-card flex items-center justify-center"
+                className="w-8 h-8 rounded-lg overflow-hidden bg-[var(--surface-sunken)] dark:bg-surface ring-2 ring-white dark:ring-card flex items-center justify-center"
               >
                 {item.image ? (
                   <Image
@@ -1095,7 +1095,7 @@ function CompletedOrderCard({
                     className="object-cover"
                   />
                 ) : (
-                  <Package className="h-3.5 w-3.5 text-gray-300" />
+                  <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 )}
               </div>
             ))}
@@ -1112,7 +1112,7 @@ function CompletedOrderCard({
         <button
           type="button"
           onClick={() => onViewDetail(order)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 text-sm font-extrabold text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 text-sm font-extrabold text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
           style={{ borderColor: "var(--color-card-border)" }}
         >
           Ver detalle
@@ -1152,7 +1152,7 @@ function CompletedOrderCard({
               navigator.clipboard.writeText(text).catch(() => {});
             }
           }}
-          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-gray-100 dark:bg-surface text-muted text-sm font-extrabold hover:bg-gray-200 dark:hover:bg-card-hover transition-colors"
+          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface text-muted text-sm font-extrabold hover:bg-[var(--rule-soft)] dark:hover:bg-card-hover transition-colors"
           title="Compartir pedido"
           aria-label="Compartir pedido"
         >
@@ -1174,17 +1174,17 @@ function OrderSkeleton() {
       }}
     >
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-11 h-11 rounded-2xl bg-gray-100 dark:bg-surface" />
+        <div className="w-11 h-11 rounded-2xl bg-[var(--surface-sunken)] dark:bg-surface" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-24 bg-gray-100 dark:bg-surface rounded-full" />
-          <div className="h-3 w-32 bg-gray-100 dark:bg-surface rounded-full" />
+          <div className="h-4 w-24 bg-[var(--surface-sunken)] dark:bg-surface rounded-full" />
+          <div className="h-3 w-32 bg-[var(--surface-sunken)] dark:bg-surface rounded-full" />
         </div>
-        <div className="h-5 w-16 bg-gray-100 dark:bg-surface rounded-full" />
+        <div className="h-5 w-16 bg-[var(--surface-sunken)] dark:bg-surface rounded-full" />
       </div>
-      <div className="h-2 w-full bg-gray-100 dark:bg-surface rounded-full mb-4" />
+      <div className="h-2 w-full bg-[var(--surface-sunken)] dark:bg-surface rounded-full mb-4" />
       <div className="flex gap-2">
-        <div className="flex-1 h-11 bg-gray-100 dark:bg-surface rounded-xl" />
-        <div className="h-11 w-24 bg-gray-100 dark:bg-surface rounded-xl" />
+        <div className="flex-1 h-11 bg-[var(--surface-sunken)] dark:bg-surface rounded-xl" />
+        <div className="h-11 w-24 bg-[var(--surface-sunken)] dark:bg-surface rounded-xl" />
       </div>
     </div>
   );
@@ -1702,7 +1702,7 @@ export default function MisPedidosPage() {
                       </Link>
                       <Link
                         href="/mi-panel"
-                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-foreground text-sm font-extrabold border-2 transition-colors hover:bg-gray-50 dark:hover:bg-surface"
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-foreground text-sm font-extrabold border-2 transition-colors hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
                         style={{
                           background: "var(--color-card)",
                           borderColor: "var(--color-card-border)",

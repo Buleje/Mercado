@@ -23,8 +23,8 @@ export default function TiendaError({
           </svg>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Error al cargar la tienda</h2>
-          <p className="mt-2 text-sm text-gray-500 dark:text-muted">
+          <h2 className="text-xl font-bold text-[var(--text-primary)] dark:text-white">Error al cargar la tienda</h2>
+          <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-muted">
             No pudimos cargar los productos. Verifica tu conexión e intenta de nuevo.
           </p>
         </div>

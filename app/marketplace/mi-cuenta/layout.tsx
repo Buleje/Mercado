@@ -39,7 +39,7 @@ export default function MiCuentaLayout({
   if (!customer) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-sm text-gray-500 dark:text-gray-400">Redirigiendo...</p>
+        <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">Redirigiendo...</p>
       </div>
     );
   }
@@ -48,10 +48,10 @@ export default function MiCuentaLayout({
     <div className="mx-auto max-w-4xl px-4 py-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <h1 className="text-xl font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           Mi cuenta
         </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
           {customer.name}
           {customer.phone ? ` · ${customer.phone}` : ""}
         </p>
@@ -60,7 +60,7 @@ export default function MiCuentaLayout({
       {/* Tabs nav horizontal */}
       <nav
         aria-label="Secciones de mi cuenta"
-        className="mb-6 flex gap-1 overflow-x-auto rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-900"
+        className="mb-6 flex gap-1 overflow-x-auto rounded-lg border border-gray-200 bg-white p-1 dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)]"
       >
         {TABS.map((tab) => {
           // "Perfil" es la raiz — solo activo en exactamente /marketplace/mi-cuenta
@@ -77,8 +77,8 @@ export default function MiCuentaLayout({
               className={cn(
                 "min-w-max rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400",
                 isActive
-                  ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200",
+                  ? "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-raised)] dark:text-[var(--text-primary)]"
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800 dark:hover:text-gray-200",
               )}
             >
               {tab.label}

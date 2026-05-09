@@ -70,7 +70,7 @@ export default function CuponesPage() {
     return (
       <div role="status" aria-live="polite" className="space-y-3">
         {[1, 2].map((i) => (
-          <div key={i} className="h-20 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+          <div key={i} className="h-20 animate-pulse rounded-lg bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]" />
         ))}
         <span className="sr-only">Cargando cupones...</span>
       </div>
@@ -106,7 +106,7 @@ export default function CuponesPage() {
     <div className="space-y-6">
       {active.length > 0 && (
         <section>
-          <h2 className="mb-3 text-base font-medium text-gray-700 dark:text-gray-300">
+          <h2 className="mb-3 text-base font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
             Disponibles ({active.length})
           </h2>
           <ul className="space-y-3" aria-label="Cupones disponibles">
@@ -119,7 +119,7 @@ export default function CuponesPage() {
 
       {inactive.length > 0 && (
         <section>
-          <h2 className="mb-3 text-base font-medium text-gray-500 dark:text-gray-500">
+          <h2 className="mb-3 text-base font-medium text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
             Usados / vencidos ({inactive.length})
           </h2>
           <ul className="space-y-3" aria-label="Cupones usados o vencidos">
@@ -159,23 +159,23 @@ function CouponCard({
       className={cn(
         "flex items-center justify-between gap-3 rounded-lg border p-4",
         dimmed
-          ? "border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/50"
-          : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900",
+          ? "border-gray-100 bg-[var(--surface-sunken)] dark:border-[var(--rule-soft)] dark:bg-[var(--surface-canvas)]/50"
+          : "border-gray-200 bg-white dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)]",
       )}
     >
       <div className="min-w-0">
         <p
           className={cn(
             "font-mono text-sm font-semibold tracking-wide",
-            dimmed ? "text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-gray-100",
+            dimmed ? "text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]",
           )}
         >
           {coupon.code}
         </p>
-        <p className={cn("mt-0.5 text-xs", dimmed ? "text-gray-400 dark:text-gray-500" : "text-gray-500 dark:text-gray-400")}>
+        <p className={cn("mt-0.5 text-xs", dimmed ? "text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]")}>
           {coupon.description}
         </p>
-        <p className={cn("mt-1 text-xs", dimmed ? "text-gray-400 dark:text-gray-500" : "text-gray-400 dark:text-gray-500")}>
+        <p className={cn("mt-1 text-xs", dimmed ? "text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]")}>
           {formatExpiry(coupon.expiresAt)}
           {coupon.minPurchase ? ` · min. S/ ${Number(coupon.minPurchase).toFixed(2)}` : ""}
         </p>
@@ -186,7 +186,7 @@ function CouponCard({
           className={cn(
             "text-sm font-semibold",
             dimmed
-              ? "text-gray-400 dark:text-gray-500"
+              ? "text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]"
               : "text-[#2d6a4f] dark:text-[#52b788]",
           )}
         >
@@ -195,14 +195,14 @@ function CouponCard({
         {!dimmed && (
           <button
             onClick={handleCopy}
-            className="rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-strong)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-700"
             aria-label={`Copiar codigo ${coupon.code}`}
           >
             {copied ? "Copiado" : "Copiar"}
           </button>
         )}
         {coupon.usedAt && (
-          <span className="text-xs text-gray-400 dark:text-gray-500">Usado</span>
+          <span className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">Usado</span>
         )}
       </div>
     </li>

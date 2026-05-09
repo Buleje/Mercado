@@ -47,17 +47,17 @@ function PaymentResultContent() {
       badgeText: "Pendiente",
     },
   }[status || "pending"] || {
-    icon: <Clock className="h-12 w-12 text-gray-600" />,
+    icon: <Clock className="h-12 w-12 text-[var(--text-secondary)]" />,
     bg: "from-gray-100 to-gray-50",
     shadow: "",
     title: "Estado desconocido",
     subtitle: "No pudimos determinar el estado del pago.",
-    badge: "bg-gray-100 text-gray-700",
+    badge: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
     badgeText: "Desconocido",
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center space-y-6">
         {/* Icon */}
         <div
@@ -68,22 +68,22 @@ function PaymentResultContent() {
 
         {/* Status */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] dark:text-white mb-2">
             {config.title}
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
             {config.subtitle}
           </p>
         </div>
 
         {/* Order ID */}
         {orderId && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 space-y-2">
+          <div className="bg-white dark:bg-[var(--surface-canvas)] rounded-2xl border border-gray-200 dark:border-[var(--rule-soft)] p-4 space-y-2">
             <div className="flex items-center justify-center gap-2">
               <ShoppingBag className="h-4 w-4 text-primary" />
-              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Pedido</span>
+              <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">Pedido</span>
             </div>
-            <p className="font-mono text-sm font-bold text-gray-900 dark:text-white">
+            <p className="font-mono text-sm font-bold text-[var(--text-primary)] dark:text-white">
               {orderId.slice(0, 8)}…
             </p>
             <span className={`inline-block text-xs font-bold rounded-full px-3 py-1 ${config.badge}`}>
@@ -102,7 +102,7 @@ function PaymentResultContent() {
           </Link>
           <Link
             href="/marketplace"
-            className="block w-full py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+            className="block w-full py-3 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] font-bold text-sm hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver al marketplace
@@ -117,8 +117,8 @@ export default function PaymentResultPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-          <div className="animate-pulse text-gray-400">Cargando...</div>
+        <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] flex items-center justify-center">
+          <div className="animate-pulse text-[var(--text-tertiary)]">Cargando...</div>
         </div>
       }
     >

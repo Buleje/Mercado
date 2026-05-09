@@ -169,7 +169,7 @@ function SelectPills<T extends string>({
               className={cn(
                 "flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-sm font-bold transition-all",
                 !active &&
-                  "text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface",
+                  "text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface",
               )}
               style={
                 active
@@ -219,7 +219,7 @@ function LinkRow({
     <div
       className={cn(
         "flex items-center gap-3 py-4 border-b last:border-0 group transition-colors",
-        href || onClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-surface" : "",
+        href || onClick ? "cursor-pointer hover:bg-[var(--surface-sunken)] dark:hover:bg-surface" : "",
       )}
       style={{
         borderColor: "var(--color-card-border)",
@@ -532,7 +532,7 @@ export default function PreferenciasPage() {
                   <a
                     key={key}
                     href={anchor}
-                    className="flex items-center justify-between gap-2 px-3 py-3 rounded-xl text-sm font-bold text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-all"
+                    className="flex items-center justify-between gap-2 px-3 py-3 rounded-xl text-sm font-bold text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-all"
                   >
                     <span className="flex items-center gap-2">
                       <Icon className="h-4 w-4" strokeWidth={2.25} />

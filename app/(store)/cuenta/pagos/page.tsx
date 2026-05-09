@@ -93,7 +93,7 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
 
 export default function PagosPage() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background">
       <BreadcrumbSchema
         items={[
           { name: "Inicio", url: "https://www.buleje.pe/" },
@@ -106,7 +106,7 @@ export default function PagosPage() {
 
       {/* Hero */}
       <div
-        className="pt-32 sm:pt-36 pb-8 border-b border-gray-200 dark:border-gray-800"
+        className="pt-32 sm:pt-36 pb-8 border-b border-gray-200 dark:border-[var(--rule-soft)]"
         style={{ background: "#060a0d" }}
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6">

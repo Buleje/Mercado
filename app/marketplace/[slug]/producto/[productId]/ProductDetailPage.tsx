@@ -170,17 +170,17 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)]">
         <div className="mx-auto max-w-6xl px-4 py-8">
           <div className="animate-pulse grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="aspect-square rounded-2xl bg-gray-200 dark:bg-gray-800" />
+            <div className="aspect-square rounded-2xl bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)]" />
             <div className="space-y-4">
-              <div className="h-4 w-24 bg-gray-200 dark:bg-gray-800 rounded" />
-              <div className="h-8 w-3/4 bg-gray-200 dark:bg-gray-800 rounded" />
-              <div className="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded" />
-              <div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-800 rounded" />
-              <div className="h-12 w-48 bg-gray-200 dark:bg-gray-800 rounded-xl mt-6" />
-              <div className="h-14 w-full bg-gray-200 dark:bg-gray-800 rounded-xl mt-4" />
+              <div className="h-4 w-24 bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded" />
+              <div className="h-8 w-3/4 bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded" />
+              <div className="h-4 w-full bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded" />
+              <div className="h-4 w-2/3 bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded" />
+              <div className="h-12 w-48 bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded-xl mt-6" />
+              <div className="h-14 w-full bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded-xl mt-4" />
             </div>
           </div>
         </div>
@@ -192,15 +192,15 @@ export default function ProductDetailPage() {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] flex items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5 dark:bg-primary/10 text-primary">
             <Package className="h-8 w-8" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] dark:text-[var(--text-secondary)] mb-2">
             Producto no encontrado
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mb-6">
             Este producto ya no está disponible o la tienda lo retiró.
           </p>
           <Link
@@ -246,7 +246,7 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)]">
       {/* JSON-LD */}
       <script
         type="application/ld+json"
@@ -254,9 +254,9 @@ export default function ProductDetailPage() {
       />
 
       {/* Breadcrumb */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+      <div className="bg-white dark:bg-[var(--surface-canvas)] border-b border-gray-200 dark:border-[var(--rule-soft)]">
         <div className="mx-auto max-w-6xl px-4 py-3">
-          <nav className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+          <nav className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
             <Link href="/marketplace" className="hover:text-primary transition-colors">
               Marketplace
             </Link>
@@ -268,7 +268,7 @@ export default function ProductDetailPage() {
               {product.store.name}
             </Link>
             <ChevronRight className="h-3.5 w-3.5" />
-            <span className="text-gray-800 dark:text-gray-200 font-medium truncate max-w-48">
+            <span className="text-[var(--text-primary)] dark:text-[var(--text-secondary)] font-medium truncate max-w-48">
               {product.name}
             </span>
           </nav>
@@ -316,7 +316,7 @@ export default function ProductDetailPage() {
             {/* Title + badge */}
             <div>
               <div className="flex items-start gap-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] dark:text-white">
                   {product.name}
                 </h1>
                 {product.badge && (
@@ -326,7 +326,7 @@ export default function ProductDetailPage() {
                 )}
               </div>
               {product.category && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-1">
                   {product.category}
                 </p>
               )}
@@ -334,11 +334,11 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-extrabold text-gray-900 dark:text-white">
+              <span className="text-3xl font-extrabold text-[var(--text-primary)] dark:text-white">
                 {fmt(displayPrice)}
               </span>
               {product.unit && (
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
                   / {product.unit}
                 </span>
               )}
@@ -364,7 +364,7 @@ export default function ProductDetailPage() {
                   <span className="text-sm font-medium text-[var(--data-error-500)]">Agotado</span>
                 </>
               )}
-              <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 flex items-center gap-1">
+              <span className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] ml-2 flex items-center gap-1">
                 <Truck className="h-3.5 w-3.5" />
                 Delivery disponible
               </span>
@@ -372,7 +372,7 @@ export default function ProductDetailPage() {
 
             {/* Description */}
             {product.description && (
-              <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+              <p className="text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] text-sm leading-relaxed">
                 {product.description}
               </p>
             )}
@@ -381,7 +381,7 @@ export default function ProductDetailPage() {
             <button
               type="button"
               onClick={() => setAssistantOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:border-primary/40 hover:text-primary transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] dark:text-[var(--text-secondary)] hover:border-primary/40 hover:text-primary transition-colors"
               aria-label="Abrir el asistente Buleje para preguntar sobre este producto"
             >
               <BotMessageSquare className="h-4 w-4" />
@@ -412,13 +412,13 @@ export default function ProductDetailPage() {
             {/* Quantity selector + Add to cart */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <span className="text-sm font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
                   Cantidad:
                 </span>
-                <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                <div className="flex items-center border border-gray-200 dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
                   <button
                     onClick={() => setQuantity((q) => Math.max(product.minOrderQty || 1, q - 1))}
-                    className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-2.5 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
                     aria-label="Menos"
                   >
                     <Minus className="h-4 w-4" />
@@ -432,7 +432,7 @@ export default function ProductDetailPage() {
                         product.stock !== null ? Math.min(product.stock, q + 1) : q + 1
                       )
                     }
-                    className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-2.5 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
                     aria-label="Más"
                   >
                     <Plus className="h-4 w-4" />
@@ -460,7 +460,7 @@ export default function ProductDetailPage() {
                 {/* Share */}
                 <button
                   onClick={handleShare}
-                  className="py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="py-3 rounded-xl border border-gray-200 dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] font-semibold text-sm flex items-center justify-center gap-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
                 >
                   <Share2 className="h-4 w-4" />
                   Compartir
@@ -475,8 +475,8 @@ export default function ProductDetailPage() {
                     inCompare
                       ? "border-primary bg-primary/5 dark:bg-primary/10 text-primary hover:bg-primary/10"
                       : compareFull
-                        ? "border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-gray-400 cursor-not-allowed"
-                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800",
+                        ? "border-gray-200 dark:border-[var(--rule-soft)] bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)] text-[var(--text-tertiary)] cursor-not-allowed"
+                        : "border-gray-200 dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800",
                   )}
                   title={
                     !inCompare && compareFull
@@ -525,13 +525,13 @@ export default function ProductDetailPage() {
 
       {/* Sticky mobile add-to-cart bar */}
       <div
-        className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 p-3 safe-area-bottom"
+        className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white/95 dark:bg-[var(--surface-canvas)]/95 backdrop-blur-xl border-t border-gray-200 dark:border-[var(--rule-soft)] p-3 safe-area-bottom"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 12px)" }}
       >
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{product?.name}</p>
-            <p className="text-lg font-extrabold text-gray-900 dark:text-white">
+            <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] truncate">{product?.name}</p>
+            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-white">
               {fmt(displayPrice * quantity)}
             </p>
           </div>

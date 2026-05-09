@@ -130,12 +130,12 @@ export default function DireccionesPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-medium text-gray-700 dark:text-gray-300">
+        <h2 className="text-base font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
           Mis direcciones
         </h2>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
         >
           {showForm ? "Cancelar" : "Agregar"}
         </button>
@@ -147,13 +147,13 @@ export default function DireccionesPage() {
           onSubmit={handleSubmit}
           noValidate
           aria-label="Agregar nueva direccion"
-          className="mb-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+          className="mb-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)]"
         >
           <div className="space-y-3">
             <div>
               <label
                 htmlFor="location"
-                className="block text-xs font-medium text-gray-600 dark:text-gray-400"
+                className="block text-xs font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]"
               >
                 Direccion
               </label>
@@ -165,10 +165,10 @@ export default function DireccionesPage() {
                 onChange={handleChange}
                 placeholder="Av. Lima 123, Pucallpa"
                 className={cn(
-                  "mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:bg-gray-800 dark:text-gray-100",
+                  "mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]",
                   errors.location
                     ? "border-red-300 dark:border-[var(--data-error-700)]"
-                    : "border-gray-200 dark:border-gray-700",
+                    : "border-gray-200 dark:border-[var(--rule-base)]",
                 )}
                 aria-describedby={errors.location ? "location-error" : undefined}
               />
@@ -182,7 +182,7 @@ export default function DireccionesPage() {
             <div>
               <label
                 htmlFor="reference"
-                className="block text-xs font-medium text-gray-600 dark:text-gray-400"
+                className="block text-xs font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]"
               >
                 Referencia
               </label>
@@ -194,10 +194,10 @@ export default function DireccionesPage() {
                 onChange={handleChange}
                 placeholder="Frente al parque"
                 className={cn(
-                  "mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:bg-gray-800 dark:text-gray-100",
+                  "mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]",
                   errors.reference
                     ? "border-red-300 dark:border-[var(--data-error-700)]"
-                    : "border-gray-200 dark:border-gray-700",
+                    : "border-gray-200 dark:border-[var(--rule-base)]",
                 )}
                 aria-describedby={errors.reference ? "reference-error" : undefined}
               />
@@ -251,7 +251,7 @@ export default function DireccionesPage() {
                   "rounded-lg border p-4",
                   isActive
                     ? "border-[#2d6a4f]/30 bg-[#2d6a4f]/5 dark:border-[#52b788]/20 dark:bg-[#2d6a4f]/10"
-                    : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900",
+                    : "border-gray-200 bg-white dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)]",
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -259,14 +259,14 @@ export default function DireccionesPage() {
                   <div className={cn(
                     "shrink-0 h-10 w-10 rounded-xl border flex items-center justify-center",
                     isActive
-                      ? "bg-white border-[#2d6a4f]/30 dark:bg-gray-900"
-                      : "bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700",
+                      ? "bg-white border-[#2d6a4f]/30 dark:bg-[var(--surface-canvas)]"
+                      : "bg-[var(--surface-sunken)] border-gray-200 dark:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)]",
                   )}>
                     <KindIcon className={cn("h-4 w-4", kind.color)} strokeWidth={1.75} aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                         {loc.location}
                       </p>
                       <span className={cn(
@@ -277,7 +277,7 @@ export default function DireccionesPage() {
                         {kind.tag}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
                       {loc.reference}
                     </p>
                     {isActive && (
@@ -292,7 +292,7 @@ export default function DireccionesPage() {
                     {!isActive && (
                       <button
                         onClick={() => handleSetActive(loc.id)}
-                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] dark:hover:text-gray-200"
                         aria-label={`Usar ${loc.location} como direccion principal`}
                       >
                         Usar
@@ -300,7 +300,7 @@ export default function DireccionesPage() {
                     )}
                     <button
                       onClick={() => handleDelete(loc.id)}
-                      className="text-xs text-gray-400 hover:text-[var(--data-error-600)] dark:text-gray-500 dark:hover:text-red-400"
+                      className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-600)] dark:text-[var(--text-tertiary)] dark:hover:text-red-400"
                       aria-label={`Eliminar ${loc.location}`}
                     >
                       Eliminar

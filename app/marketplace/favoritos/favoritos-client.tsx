@@ -28,13 +28,13 @@ export default function FavoritosClient() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
         <div className="flex items-center justify-between gap-4 mb-6">
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-primary"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver al marketplace
@@ -44,7 +44,7 @@ export default function FavoritosClient() {
             <button
               type="button"
               onClick={clear}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-[var(--data-error-600)] hover:bg-red-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-600)] hover:bg-red-50 transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Vaciar lista
@@ -57,10 +57,10 @@ export default function FavoritosClient() {
             <Heart className="h-5 w-5 fill-current" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-white">
               Mis favoritos
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
               {items.length === 0
                 ? "Aún no guardaste ningún producto."
                 : `${items.length} producto${items.length === 1 ? "" : "s"} guardado${items.length === 1 ? "" : "s"}`}
@@ -70,14 +70,14 @@ export default function FavoritosClient() {
 
         {/* Empty state */}
         {items.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+          <div className="text-center py-16 bg-white dark:bg-[var(--surface-canvas)] rounded-2xl border border-gray-200 dark:border-[var(--rule-soft)]">
             <div className="mx-auto h-20 w-20 rounded-full bg-rose-50 flex items-center justify-center mb-4">
               <Heart className="h-10 w-10 text-[var(--data-error-500)]" />
             </div>
-            <h2 className="text-lg font-extrabold text-gray-800 dark:text-white">
+            <h2 className="text-lg font-extrabold text-[var(--text-primary)] dark:text-white">
               Tu lista está vacía
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">
+            <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-1 max-w-sm mx-auto">
               Tocá el corazón en cualquier producto del marketplace para guardarlo aquí
               y comprarlo después.
             </p>
@@ -94,7 +94,7 @@ export default function FavoritosClient() {
             {items.map((item) => (
               <article
                 key={`${item.storeSlug}-${item.productId}`}
-                className="group relative flex flex-col rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-primary/40 hover:shadow-lg transition-all"
+                className="group relative flex flex-col rounded-2xl overflow-hidden bg-white dark:bg-[var(--surface-canvas)] border border-gray-200 dark:border-[var(--rule-soft)] hover:border-primary/40 hover:shadow-lg transition-all"
               >
                 {/* Remove button */}
                 <button
@@ -121,7 +121,7 @@ export default function FavoritosClient() {
 
                 <Link
                   href={`/marketplace/${item.storeSlug}?p=${item.productId}`}
-                  className="relative aspect-square bg-gray-100 dark:bg-gray-800 overflow-hidden"
+                  className="relative aspect-square bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] overflow-hidden"
                 >
                   {item.image ? (
                     <Image
@@ -132,25 +132,25 @@ export default function FavoritosClient() {
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center text-gray-300">
+                    <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)]">
                       <ShoppingBag className="h-10 w-10" />
                     </div>
                   )}
                 </Link>
 
                 <div className="flex-1 flex flex-col p-3">
-                  <p className="text-xs font-bold text-gray-900 dark:text-white line-clamp-2 min-h-[2.25rem]">
+                  <p className="text-xs font-bold text-[var(--text-primary)] dark:text-white line-clamp-2 min-h-[2.25rem]">
                     {item.name}
                   </p>
                   <Link
                     href={`/marketplace/${item.storeSlug}`}
-                    className="text-[length:var(--ts-2xs)] text-gray-400 hover:text-primary inline-flex items-center gap-1 mt-1"
+                    className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hover:text-primary inline-flex items-center gap-1 mt-1"
                   >
                     <StoreIcon className="h-2.5 w-2.5" />
                     {item.storeName}
                   </Link>
                   <div className="mt-2 flex items-baseline justify-between">
-                    <span className="text-base font-extrabold text-gray-900 dark:text-white">
+                    <span className="text-base font-extrabold text-[var(--text-primary)] dark:text-white">
                       S/{Number(item.price).toFixed(2)}
                     </span>
                   </div>

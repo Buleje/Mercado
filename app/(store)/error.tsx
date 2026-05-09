@@ -24,8 +24,8 @@ export default function StoreError({
           </svg>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Algo salió mal</h2>
-          <p className="mt-2 text-sm text-gray-500 dark:text-muted">
+          <h2 className="text-xl font-bold text-[var(--text-primary)] dark:text-white">Algo salió mal</h2>
+          <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-muted">
             Ocurrió un error inesperado. Por favor intenta de nuevo.
           </p>
         </div>
@@ -38,7 +38,7 @@ export default function StoreError({
           </button>
           <Link
             href="/tienda"
-            className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
           >
             Ir a la tienda
           </Link>

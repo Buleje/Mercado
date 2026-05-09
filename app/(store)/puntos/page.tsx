@@ -470,7 +470,7 @@ function RewardCard({
 
       {!canRedeem && (
         <div className="mb-3">
-          <div className="relative h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+          <div className="relative h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
             <div
               className="absolute top-0 left-0 h-full transition-all duration-700"
               style={{
@@ -1063,7 +1063,7 @@ export default function PuntosPage() {
                       </span>
                       .
                     </p>
-                    <div className="relative h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                    <div className="relative h-3 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                       <div
                         className="absolute top-0 left-0 h-full transition-all duration-700"
                         style={{

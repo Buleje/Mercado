@@ -53,7 +53,7 @@ export default function FavoritosPage() {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="h-40 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"
+            className="h-40 animate-pulse rounded-lg bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]"
           />
         ))}
         <span className="sr-only">Cargando favoritos...</span>
@@ -98,7 +98,7 @@ export default function FavoritosPage() {
 
   return (
     <div>
-      <h2 className="mb-4 text-base font-medium text-gray-700 dark:text-gray-300">
+      <h2 className="mb-4 text-base font-medium text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]">
         Favoritos ({favorites.length})
       </h2>
 
@@ -109,11 +109,11 @@ export default function FavoritosPage() {
         {favorites.map((product) => (
           <li
             key={product.id}
-            className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+            className="rounded-lg border border-gray-200 bg-white dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)]"
           >
             <a
               href={`/marketplace/${product.storeSlug}`}
-              className="block p-3 hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="block p-3 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800"
             >
               <div className="relative h-24 w-full overflow-hidden rounded-md">
                 <Image
@@ -125,13 +125,13 @@ export default function FavoritosPage() {
                   loading="lazy"
                 />
               </div>
-              <p className="mt-2 text-sm font-medium text-gray-900 line-clamp-2 dark:text-gray-100">
+              <p className="mt-2 text-sm font-medium text-[var(--text-primary)] line-clamp-2 dark:text-[var(--text-primary)]">
                 {product.name}
               </p>
               <p className="mt-1 text-sm font-semibold text-[#2d6a4f] dark:text-[#52b788]">
                 S/ {Number(product.price).toFixed(2)}
               </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)]">
                 {product.storeName}
               </p>
             </a>

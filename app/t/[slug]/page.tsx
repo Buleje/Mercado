@@ -134,14 +134,14 @@ function TenantPageSkeleton() {
         </div>
       </section>
       <section className="max-w-5xl mx-auto px-4 py-12">
-        <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded mb-6" />
+        <div className="h-8 w-48 bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded mb-6" />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="rounded-2xl bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] overflow-hidden">
               <div className="aspect-square bg-[var(--surface-sunken)]" />
               <div className="p-3 space-y-2">
-                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
-                <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
+                <div className="h-4 w-24 bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] rounded" />
+                <div className="h-5 w-16 bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] rounded" />
               </div>
             </div>
           ))}
@@ -179,7 +179,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const planBadge: Record<string, { label: string; className: string }> = {
     free: {
       label: "Free",
-      className: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+      className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-tertiary)]",
     },
     pro: {
       label: "Pro",
@@ -275,7 +275,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             {customization.heroCtaLabel && customization.heroCtaUrl && (
               <Link
                 href={customization.heroCtaUrl}
-                className="px-4 py-2 rounded-full text-sm font-bold bg-white text-gray-900 hover:bg-gray-100 transition-colors"
+                className="px-4 py-2 rounded-full text-sm font-bold bg-white text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 {customization.heroCtaLabel}
               </Link>
@@ -322,15 +322,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             ))}
           </div>
         ) : (
-          <div className="flex items-center gap-3 p-4 rounded-2xl shadow-lg border-2 border-dashed border-[var(--rule-base)] bg-white/80 dark:bg-gray-900/80 backdrop-blur">
+          <div className="flex items-center gap-3 p-4 rounded-2xl shadow-lg border-2 border-dashed border-[var(--rule-base)] bg-white/80 dark:bg-[var(--surface-canvas)]/80 backdrop-blur">
             <div className="w-10 h-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center flex-shrink-0">
-              <Tag className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+              <Tag className="w-5 h-5 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-bold text-[var(--text-tertiary)]">Promoción destacada</p>
-              <p className="text-gray-300 dark:text-gray-600 text-sm">Configura desde Mi Tienda &gt; Secciones</p>
+              <p className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] text-sm">Configura desde Mi Tienda &gt; Secciones</p>
             </div>
-            <div className="flex-shrink-0 px-3 py-1 rounded-full bg-[var(--surface-sunken)] text-gray-300 dark:text-gray-600 font-extrabold text-sm">
+            <div className="flex-shrink-0 px-3 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] font-extrabold text-sm">
               % OFF
             </div>
           </div>
@@ -378,7 +378,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
                   {/* Custom badge */}
                   {p.badge && (
-                    <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-white/95 text-gray-900 font-bold text-[length:var(--ts-2xs)] shadow">
+                    <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-white/95 text-[var(--text-primary)] font-bold text-[length:var(--ts-2xs)] shadow">
                       {p.badge}
                     </div>
                   )}
@@ -414,9 +414,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 <div className="aspect-square bg-[var(--surface-sunken)] flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center">
-                      <ShoppingBag className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                      <ShoppingBag className="w-6 h-6 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />
                     </div>
-                    <p className="text-xs font-semibold text-gray-300 dark:text-gray-600">Imagen {i + 1}</p>
+                    <p className="text-xs font-semibold text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">Imagen {i + 1}</p>
                   </div>
                 </div>
                 <div className="p-3 space-y-2">
@@ -445,8 +445,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         </section>
       ) : (
         <section className="max-w-3xl mx-auto px-4 py-8">
-          <div className="p-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white/60 dark:bg-gray-900/60">
-            <h2 className="text-xl font-extrabold mb-3 text-gray-300 dark:text-gray-600">
+          <div className="p-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white/60 dark:bg-[var(--surface-canvas)]/60">
+            <h2 className="text-xl font-extrabold mb-3 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">
               Sobre nosotros
             </h2>
             <div className="space-y-2">
@@ -454,7 +454,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               <div className="h-4 w-4/5 bg-[var(--surface-sunken)] rounded" />
               <div className="h-4 w-3/5 bg-[var(--surface-sunken)] rounded" />
             </div>
-            <p className="text-xs text-gray-300 dark:text-gray-600 mt-3">Configura desde Mi Tienda &gt; Identidad</p>
+            <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mt-3">Configura desde Mi Tienda &gt; Identidad</p>
           </div>
         </section>
       )}
@@ -534,19 +534,19 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             )}
           </div>
         ) : (
-          <div className="rounded-2xl p-6 border-2 border-dashed border-[var(--rule-base)] bg-white/60 dark:bg-gray-900/60 space-y-3">
-            <h3 className="text-sm font-bold text-gray-300 dark:text-gray-600 uppercase tracking-wider">
+          <div className="rounded-2xl p-6 border-2 border-dashed border-[var(--rule-base)] bg-white/60 dark:bg-[var(--surface-canvas)]/60 space-y-3">
+            <h3 className="text-sm font-bold text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] uppercase tracking-wider">
               Contacto
             </h3>
             <div className="flex items-center gap-3">
-              <Phone className="w-4 h-4 text-gray-200 dark:text-gray-700 flex-shrink-0" />
+              <Phone className="w-4 h-4 text-gray-200 dark:text-[var(--text-secondary)] flex-shrink-0" />
               <div className="h-4 w-32 bg-[var(--surface-sunken)] rounded" />
             </div>
             <div className="flex items-center gap-3">
-              <MapPin className="w-4 h-4 text-gray-200 dark:text-gray-700 flex-shrink-0" />
+              <MapPin className="w-4 h-4 text-gray-200 dark:text-[var(--text-secondary)] flex-shrink-0" />
               <div className="h-4 w-48 bg-[var(--surface-sunken)] rounded" />
             </div>
-            <p className="text-xs text-gray-300 dark:text-gray-600">Configura desde Mi Tienda &gt; Contacto</p>
+            <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">Configura desde Mi Tienda &gt; Contacto</p>
           </div>
         )}
 
