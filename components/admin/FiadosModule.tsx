@@ -1007,6 +1007,10 @@ export default function FiadosModule() {
         ) : (
           <>
             <div className="max-h-[65vh] overflow-y-auto overflow-x-auto -mx-4 sm:mx-0">
+              {/* ds-ignore-table — caso legítimo: thead clickable con
+                  sort indicators, mobile-aware (hidden sm:table-cell),
+                  sticky positioning, sr-only labels. DataTable del DS
+                  no soporta esta combinación de features (ADR-075). */}
               <table className="w-full min-w-[700px] sm:min-w-0 text-sm">
                 <thead className="sticky top-0 bg-white dark:bg-[var(--color-card)] z-10 shadow-[var(--shadow-sm)]">
                   <tr className="border-b border-[var(--rule-soft)] text-left">

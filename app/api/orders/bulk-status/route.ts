@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 const VALID_STATUSES = ["pendiente", "confirmado", "preparando", "en_camino", "entregado", "cancelado"] as const;
 
@@ -36,6 +37,8 @@ export async function POST(req: NextRequest) {
 
   const { ids, status } = parsed.data;
 
+  // Round 14 M004: audit log de Order.updateMany bulk con admin actor + IP.
+  return runWithAuditContext(req, auth.username, async () => {
   try {
     // F3: tenantId en where — previene modificación cross-tenant
     const result = await prisma.order.updateMany({
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
     logActivity(
       "Bulk", "pedido",
       `Cambio masivo de estado a "${status}" — ${result.count} pedido(s)`,
-      undefined, "admin", requestId,
+      undefined, auth.username, requestId,
     ).catch((err) => logger.warn("[orders/bulk-status] activity log failed", { err: String(err) }));
 
     return NextResponse.json({ ok: true, updated: result.count });
@@ -59,4 +62,5 @@ export async function POST(req: NextRequest) {
     logger.error("[orders/bulk-status] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
+  });
 }
