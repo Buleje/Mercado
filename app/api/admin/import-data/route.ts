@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod/v4";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // ── Schemas de validación ─────────────────────────────────────────────────────
 
@@ -39,7 +40,15 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const traceId = newTraceId();
+  // Round 18 M004: bulk import → Customer.create batched. Audit con admin actor.
+  return runWithAuditContext(req, `import:${auth.username}`, () => importHandler(req, auth, traceId));
+}
 
+async function importHandler(
+  req: NextRequest,
+  auth: { tenantId: string; username: string },
+  traceId: string,
+): Promise<NextResponse> {
   try {
     const body = await req.json();
     const parsed = BodySchema.safeParse(body);

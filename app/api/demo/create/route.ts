@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createRateLimiter, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // Rate limit: 1 demo por IP cada 30 minutos
 const demoLimiter = createRateLimiter({ maxRequests: 1, windowMs: 30 * 60 * 1000 });
@@ -62,6 +63,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Round 18 M004: demo-create genera Customer + Order + Fiado. Audit con
+  // userId="demo-builder" para discovery/cleanup posterior.
+  return runWithAuditContext(req, "demo-builder", () => demoCreateHandler(req, traceId));
+}
+
+async function demoCreateHandler(req: NextRequest, traceId: string): Promise<NextResponse> {
   try {
     // ── Generar slug único ────────────────────────────────
     let slug = randomDemoSlug();

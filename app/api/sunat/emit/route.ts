@@ -23,6 +23,7 @@ import { DomainEvents } from "@/lib/domain-events";
 import { emitMeteringEvent } from "@/lib/billing/wire-up/metering-bus";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // ── Validación de entrada ─────────────────────────────────────────────────────
 
@@ -41,9 +42,17 @@ export async function POST(req: NextRequest) {
   // Auth
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
-  const { tenantId } = auth;
-  const blocked = await requireActiveSubscription(tenantId);
+  const blocked = await requireActiveSubscription(auth.tenantId);
   if (blocked) return blocked;
+  // Round 18 M004: SUNAT emit → SunatInvoice + Order updates con admin actor.
+  return runWithAuditContext(req, auth.username, () => emitHandler(req, auth));
+}
+
+async function emitHandler(
+  req: NextRequest,
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
+  const { tenantId } = auth;
 
   // Parsear body
   const rawBody = await req.json().catch((err: unknown) => {

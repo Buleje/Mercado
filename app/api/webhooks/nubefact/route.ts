@@ -23,6 +23,8 @@ import {
 import { sunatEventBus } from "@/lib/sunat/sale-events";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { withAuditContext } from "@/lib/audit/audit-context";
+import { getClientIp } from "@/lib/rate-limit";
 
 // ── Validación Zod del body ───────────────────────────────────────────────────
 
@@ -42,6 +44,20 @@ const WebhookBodySchema = z.object({
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  // Round 18 M004: webhook externo Nubefact → SunatInvoice updates con
+  // userId="nubefact:webhook" para distinguir transitions automáticas SUNAT
+  // de las manuales de admin en audit chain.
+  return withAuditContext(
+    {
+      ipAddress: getClientIp(req),
+      userId: "nubefact:webhook",
+      requestId: req.headers.get("x-request-id"),
+    },
+    () => nubefactHandler(req),
+  );
+}
+
+async function nubefactHandler(req: NextRequest): Promise<NextResponse> {
   const webhookSecret = process.env.NUBEFACT_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
