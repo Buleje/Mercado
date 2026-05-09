@@ -1301,7 +1301,7 @@ export default function Header() {
             <button
               onClick={() => setSearchOpen(true)}
               className={cn(
-                "lg:hidden flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                "lg:hidden flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200",
                 scrolled
                   ? "text-foreground hover:bg-primary/10 hover:text-primary"
                   : "text-white/70 hover:text-white hover:bg-white/15"
@@ -1320,7 +1320,7 @@ export default function Header() {
                 <button
                   onClick={() => setNotifOpen((p) => !p)}
                   className={cn(
-                    "relative flex items-center justify-center h-9 w-9 rounded-full transition-all duration-200",
+                    "relative flex items-center justify-center h-11 w-11 rounded-full transition-all duration-200",
                     scrolled
                       ? "text-foreground hover:bg-muted"
                       : "text-white/70 hover:text-white hover:bg-white/15"
@@ -1599,7 +1599,7 @@ export default function Header() {
               id="order-status-nav-btn-mobile"
               onClick={() => { setOrderStatusChanged(false); openOrderStatusModal(); }}
               className={cn(
-                "lg:hidden relative flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                "lg:hidden relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200",
                 scrolled
                   ? hasActiveOrder
                     ? "text-[var(--data-warning-600)] hover:bg-amber-50 dark:hover:bg-amber-900/20"
@@ -1624,7 +1624,7 @@ export default function Header() {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen((o) => !o)}
-              className={cn("lg:hidden p-2 rounded-lg transition-colors",
+              className={cn("lg:hidden h-11 w-11 flex items-center justify-center rounded-lg transition-colors",
                 scrolled ? "text-foreground hover:bg-gray-100" : "text-white hover:bg-white/10")}
               aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
               aria-expanded={mobileOpen}
@@ -1706,7 +1706,7 @@ export default function Header() {
           id="mobile-menu"
           role="navigation"
           aria-label="Menú principal"
-          className="lg:hidden bg-white dark:bg-card border-t dark:border-card-border shadow-2xl overflow-hidden animate-[fadeDown_0.3s_ease-out]"
+          className="lg:hidden bg-white dark:bg-card border-t dark:border-card-border shadow-2xl overflow-hidden animate-[fadeDown_0.3s_ease-out] pb-[env(safe-area-inset-bottom)]"
         >
             <div className="px-4 py-5 space-y-1">
               {/* Buscador — mobile */}

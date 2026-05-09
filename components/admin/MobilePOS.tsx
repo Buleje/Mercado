@@ -104,7 +104,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
             <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
           </div>
         )}
-        <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-100 text-center leading-tight line-clamp-2 w-full px-0.5">{product.name}</span>
+        <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] text-center leading-tight line-clamp-2 w-full px-0.5">{product.name}</span>
         <span className="text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success-500)]">S/{Number(product.price).toFixed(2)}</span>
       </button>
 
@@ -180,12 +180,12 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       className={cn(
-        "flex items-center gap-2 py-2 px-1 rounded-xl border border-gray-800 bg-gray-900 transition-all duration-[var(--dur-base)]",
+        "flex items-center gap-2 py-2 px-1 rounded-xl border border-gray-800 bg-gray-900 dark:border-gray-700 dark:bg-gray-800/80 transition-all duration-[var(--dur-base)]",
         swiped && "-translate-x-full opacity-0",
       )}
     >
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-gray-200 truncate">{item.product.name}</p>
+        <p className="text-xs font-semibold text-[var(--text-tertiary)] truncate">{item.product.name}</p>
         <p className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] font-bold">S/{Number(item.product.price).toFixed(2)} c/u</p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
@@ -285,7 +285,7 @@ export default function MobilePOS() {
   ];
 
   return (
-    <div className="flex flex-col bg-black" style={{ height: "100dvh", overflow: "hidden" }}>
+    <div className="flex flex-col bg-black dark:bg-gray-950" style={{ height: "100dvh", overflow: "hidden" }}>
 
       {/* ── Zona superior (60%) — productos ─────────────────────────────── */}
       <div className="flex flex-col" style={{ flex: "0 0 60%" }}>
@@ -378,7 +378,7 @@ export default function MobilePOS() {
         {/* Total + botones de cobro */}
         <div className="px-3 pb-3 pt-2 space-y-2 shrink-0">
           {/* Total */}
-          <div className="flex items-center justify-between bg-gray-900 rounded-xl px-4 py-2 border border-gray-800">
+          <div className="flex items-center justify-between bg-gray-900 dark:bg-gray-800 rounded-xl px-4 py-2 border border-gray-800 dark:border-gray-700">
             <span className="text-[var(--text-tertiary)] text-sm font-semibold">Total</span>
             <span className="text-4xl font-extrabold text-white">S/{total.toFixed(2)}</span>
           </div>

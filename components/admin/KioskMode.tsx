@@ -265,7 +265,7 @@ export default function KioskMode() {
                           <Image src={product.imageUrl} alt={product.name} fill className="object-contain p-1" />
                         ) : (
                           <div className="flex items-center justify-center w-full h-full">
-                            <Package className="h-8 w-8 text-gray-200 dark:text-[var(--text-primary)]" />
+                            <Package className="h-8 w-8 text-[var(--text-tertiary)] dark:text-[var(--text-primary)]" />
                           </div>
                         )}
                         {inCart && (

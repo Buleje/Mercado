@@ -269,8 +269,8 @@ export default function UnifiedProductCard({
   /* ── Rank badge (top variant) ─────────────────────────────────── */
   const rankColors: Record<number, string> = {
     1: "bg-[var(--color-primary)] text-white",
-    2: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200",
-    3: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
+    2: "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-700 dark:text-gray-200",
+    3: "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-500 dark:text-gray-400",
   };
 
   return (
@@ -371,7 +371,7 @@ export default function UnifiedProductCard({
               e.stopPropagation();
               setQuickViewOpen(true);
             }}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-sm transition-colors hover:border-gray-400 dark:hover:border-gray-500"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-sm transition-colors hover:border-gray-400 dark:hover:border-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:border-[var(--accent)]"
             aria-label={`Ver rápido ${product.name}`}
           >
             <Heart className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" strokeWidth={1.75} aria-hidden />
@@ -388,10 +388,11 @@ export default function UnifiedProductCard({
             aria-label={inCompare ? `Quitar ${product.name} de la comparacion` : `Comparar ${product.name}`}
             aria-pressed={inCompare}
             className={cn(
-              "inline-flex h-8 w-8 items-center justify-center rounded-full border shadow-sm transition-colors backdrop-blur-sm",
+              "inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors backdrop-blur-sm",
               inCompare
                 ? "bg-[var(--accent-soft)] border-[var(--accent)]/30 text-[var(--accent)]"
                 : "bg-white/95 dark:bg-gray-900/95 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:border-[var(--accent)]",
             )}
           >
             <GitCompareArrows className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
@@ -414,7 +415,7 @@ export default function UnifiedProductCard({
       <div className="flex flex-1 flex-col p-4">
         {/* Nombre — text-base font-bold, 2 lineas, mayor presencia */}
         <Link href={productHref}>
-          <h3 className="text-base sm:text-lg font-bold leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.75rem] group-hover:text-[var(--accent)] transition-colors">
+          <h3 className="text-base sm:text-lg font-bold leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.75rem] group-hover:text-[var(--accent)] group-focus-within:text-[var(--accent)] transition-colors">
             {product.name}
           </h3>
         </Link>
@@ -513,7 +514,7 @@ export default function UnifiedProductCard({
                 // máximo impacto en conversión mobile.
                 "inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-200 ring-1 shrink-0",
                 isOutOfStock
-                  ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
+                  ? "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
                   : justAdded
                     ? "bg-[var(--data-success-500)] text-white scale-90 ring-[var(--data-success-500)]/30"
                     : inCartQty > 0

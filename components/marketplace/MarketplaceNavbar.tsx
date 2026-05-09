@@ -473,7 +473,7 @@ export default function MarketplaceNavbar() {
                     {/* Círculo con iniciales del nombre */}
                     <span
                       aria-hidden="true"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-black text-white shadow-sm"
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-black text-white shadow-sm"
                     >
                       {getInitials(customer.name)}
                     </span>
@@ -504,7 +504,7 @@ export default function MarketplaceNavbar() {
                           href="/marketplace/mi-cuenta"
                           onClick={() => setUserMenuOpen(false)}
                           role="menuitem"
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors"
                         >
                           <UserCircle
                             className="h-4 w-4 text-[var(--text-secondary)]"
@@ -517,7 +517,7 @@ export default function MarketplaceNavbar() {
                           href="/mis-pedidos"
                           onClick={() => setUserMenuOpen(false)}
                           role="menuitem"
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors"
                         >
                           <Package
                             className="h-4 w-4 text-[var(--text-secondary)]"
@@ -530,7 +530,7 @@ export default function MarketplaceNavbar() {
                           href="/cuenta/suscripciones"
                           onClick={() => setUserMenuOpen(false)}
                           role="menuitem"
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors"
                         >
                           <Sparkles
                             className="h-4 w-4 text-[var(--text-secondary)]"
@@ -543,7 +543,7 @@ export default function MarketplaceNavbar() {
                           href="/marketplace/favoritos"
                           onClick={() => setUserMenuOpen(false)}
                           role="menuitem"
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors"
                         >
                           <Heart
                             className={cn(
@@ -567,7 +567,7 @@ export default function MarketplaceNavbar() {
                             toggleTheme();
                           }}
                           role="menuitem"
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors text-left"
                         >
                           {themeResolved === "dark" ? (
                             <Sun
@@ -629,7 +629,7 @@ export default function MarketplaceNavbar() {
               </span>
               <button
                 onClick={() => setMobileMenuOpen((o) => !o)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[var(--text-secondary)] dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800"
                 aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-drawer"
@@ -659,7 +659,7 @@ export default function MarketplaceNavbar() {
             role="dialog"
             aria-modal="true"
             aria-label="Menú del marketplace"
-            className="fixed inset-y-0 right-0 z-[70] flex w-[90vw] max-w-sm flex-col bg-[var(--surface-canvas)] shadow-2xl animate-in slide-in-from-right duration-200"
+            className="fixed inset-y-0 right-0 z-[70] flex w-[90vw] max-w-sm flex-col bg-[var(--surface-canvas)] shadow-2xl animate-in slide-in-from-right duration-200 overscroll-contain"
           >
             {/* Header drawer */}
             <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3">
@@ -675,7 +675,7 @@ export default function MarketplaceNavbar() {
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Cerrar menú"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800"
               >
                 <X className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
               </button>
@@ -701,13 +701,13 @@ export default function MarketplaceNavbar() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t("nav.searchPlaceholder")}
                   aria-label={t("nav.search")}
-                  className="w-full rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
+                  className="w-full rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800 border border-gray-200 dark:border-gray-700 pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
                 />
               </div>
             </form>
 
             {/* Scrollable: links + mega-menu + switchers */}
-            <div className="flex-1 overflow-y-auto px-3 py-3">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3">
               <div className="space-y-0.5">
                 {renderedLinks.map((link) => {
                   if (link.discover) return null;
@@ -723,10 +723,10 @@ export default function MarketplaceNavbar() {
                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
                         active
                           ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900",
+                          : "text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900",
                       )}
                     >
-                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-soft)] bg-gray-50 dark:bg-gray-900">
+                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-alt)] dark:bg-gray-900">
                         <LinkIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
                       </span>
                       <span className="flex-1">{t(link.labelKey)}</span>
@@ -761,13 +761,13 @@ export default function MarketplaceNavbar() {
             </div>
 
             {/* Footer drawer — auth + theme fijo abajo */}
-            <div className="border-t border-[var(--rule-soft)] px-3 py-3 space-y-1">
+            <div className="border-t border-[var(--rule-soft)] px-3 py-3 space-y-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               {customer ? (
                 <>
                   <Link
                     href="/marketplace/mi-cuenta"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
                   >
                     <UserCircle
                       className="h-4 w-4 text-[var(--text-secondary)]"
@@ -782,7 +782,7 @@ export default function MarketplaceNavbar() {
                   <Link
                     href="/mis-pedidos"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
                   >
                     <Package
                       className="h-4 w-4 text-[var(--text-secondary)]"
@@ -794,7 +794,7 @@ export default function MarketplaceNavbar() {
                   <Link
                     href="/marketplace/favoritos"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
                   >
                     <Heart
                       className={cn(
@@ -829,7 +829,7 @@ export default function MarketplaceNavbar() {
                 onClick={() => {
                   toggleTheme();
                 }}
-                className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 text-left"
+                className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900 text-left"
               >
                 {themeResolved === "dark" ? (
                   <Sun
