@@ -7,7 +7,7 @@ import {
   X, Package, Loader2, Search, AlertTriangle,
   CheckCircle2, XCircle, ImageIcon,
 } from "@buleje/design-system/icons";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 
 interface ProductItem {
   id: number;

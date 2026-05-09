@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SocialProofToast from "@/components/marketing/SocialProofToast";
+import MotionProvider from "@/components/MotionProvider";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
 
@@ -108,9 +109,11 @@ export default function MarketingLayout({
       </header>
 
       {/* ── Contenido principal ─────────────────────────────────────────── */}
-      <main id="main-content" className="flex-1">
-        {children}
-      </main>
+      <MotionProvider>
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
+      </MotionProvider>
 
       {/* Social proof toast — shows recent activity to boost conversion */}
       <SocialProofToast />

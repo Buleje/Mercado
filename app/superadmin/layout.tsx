@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getPlatformSession, maybeRotateToken, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import SuperAdminShell from "@/components/superadmin/SuperAdminShell";
+import MotionProvider from "@/components/MotionProvider";
 
 export const metadata = {
   title: "Platform Admin — Buleje SaaS",
@@ -82,8 +83,10 @@ async function SuperAdminAuthGate({ children }: { children: ReactNode }) {
 
 export default function SuperAdminLayout({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<SuperAdminSkeleton />}>
-      <SuperAdminAuthGate>{children}</SuperAdminAuthGate>
-    </Suspense>
+    <MotionProvider>
+      <Suspense fallback={<SuperAdminSkeleton />}>
+        <SuperAdminAuthGate>{children}</SuperAdminAuthGate>
+      </Suspense>
+    </MotionProvider>
   );
 }

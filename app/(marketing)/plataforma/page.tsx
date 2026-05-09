@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import PricingTable from "@/components/marketing/PricingTable";
 
 // ── Viewport compartido para whileInView ──────────────────────────────────────

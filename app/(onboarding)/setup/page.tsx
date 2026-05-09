@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { csrfHeaders } from "@/lib/csrf-client";
