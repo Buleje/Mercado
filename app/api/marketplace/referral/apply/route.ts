@@ -4,6 +4,7 @@ import { CustomersDB } from "@/lib/db/customers.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { getTenantIdFromRequest } from "@/lib/tenant";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 const ApplySchema = z.object({
   phone: z.string().min(6).max(20),
@@ -26,10 +27,15 @@ export async function POST(req: NextRequest) {
     }
 
     const tenantId = getTenantIdFromRequest(req);
-    const result = await CustomersDB.applyReferralCode(
-      tenantId,
-      parsed.data.phone,
-      parsed.data.code.toUpperCase(),
+    // Round 9 M004: envolver la escritura con audit-context para que la
+    // extension Prisma (complianceAuditExtension) registre IP+user reales.
+    // El "user" aquí es el phone del cliente que aplica el código.
+    const result = await runWithAuditContext(req, parsed.data.phone, () =>
+      CustomersDB.applyReferralCode(
+        tenantId,
+        parsed.data.phone,
+        parsed.data.code.toUpperCase(),
+      ),
     );
 
     return NextResponse.json(result);

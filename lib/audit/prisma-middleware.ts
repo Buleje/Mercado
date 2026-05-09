@@ -20,6 +20,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { calculateHash, buildHashData } from "./hash-chain";
 import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
+import { getAuditContext } from "./audit-context";
 
 /**
  * Tables that contain personal data subject to Ley 29733.
@@ -335,7 +336,10 @@ export const complianceAuditExtension = Prisma.defineExtension({
               entity: model,
               entityId,
               detail,
-              user: "system",
+              // Round 9 fix M004: lee actor + IP del AsyncLocalStorage si el
+              // handler usó runWithAuditContext(req, userId, fn). Fallback a
+              // "system"/null para handlers no migrados (sin crash).
+              user: getAuditContext()?.userId ?? "system",
               tenantId,
               createdAt: new Date(),
             };
@@ -349,7 +353,7 @@ export const complianceAuditExtension = Prisma.defineExtension({
 
             await writeAuditEntry(globalPrisma, {
               ...entryData,
-              ipAddress: null,
+              ipAddress: getAuditContext()?.ipAddress ?? null,
               previousHash,
               hash,
             });

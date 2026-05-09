@@ -181,3 +181,7 @@ reports/forecasting/
 
 # Claude Code session metrics — JSON regenerado en cada agente run.
 .claude/agent-metrics.json
+
+# Lighthouse Chrome temp dirs (Windows path leaked into WSL)
+C:*lighthouse.*
+lighthouse.*

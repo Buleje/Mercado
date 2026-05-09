@@ -213,11 +213,13 @@ function FiadoReliabilityBadge({ customerId, fiados }: { customerId: string; fia
     );
   }
 
+  // Round 9: tokens DS (ADR-075). 5/4 estrellas = excelente puntualidad → success.
+  // 3 = warning. 2/1 = malo → error (gradiente). Antes: yellow-500/orange-500 raw.
   const colorMap: Record<number, string> = {
-    5: "text-yellow-500",
-    4: "text-yellow-500",
+    5: "text-[var(--data-success-500)]",
+    4: "text-[var(--data-success-500)]",
     3: "text-[var(--data-warning-500)]",
-    2: "text-orange-500",
+    2: "text-[var(--data-error-500)]",
     1: "text-[var(--data-error-500)]",
   };
 
