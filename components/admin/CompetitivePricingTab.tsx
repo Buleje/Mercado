@@ -89,7 +89,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
   const maxVal = Math.max(...allValues) * 1.1;
 
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-[var(--shadow-sm)]">
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div className="flex items-start gap-3">
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
@@ -245,7 +245,7 @@ export default function CompetitivePricingTab() {
 
   if (products.length === 0) {
     return (
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-[var(--shadow-sm)]">
         <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
           <BarChart2 className="h-8 w-8 text-[var(--text-tertiary)]" />
         </span>
@@ -262,7 +262,7 @@ export default function CompetitivePricingTab() {
   return (
     <div className="space-y-6">
       {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-[var(--shadow-sm)]">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
@@ -344,7 +344,7 @@ export default function CompetitivePricingTab() {
       <PriceComparisonChart products={products} />
 
       {/* ── 3. Tabla análisis por producto ─────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-[var(--shadow-sm)]">
         <div className="px-6 sm:px-8 py-5 border-b border-[var(--rule-base)] flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-start gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">

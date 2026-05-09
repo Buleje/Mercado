@@ -513,7 +513,7 @@ export default function CashRegisterTab() {
               Tolerancia <span className="font-bold tabular-nums">&plusmn;S/{cashTolerance}</span>
             </button>
             {showToleranceConfig && (
-              <div className="absolute right-0 top-12 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 w-72 shadow-lg">
+              <div className="absolute right-0 top-12 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 w-72 shadow-[var(--shadow-lg)]">
                 <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-3">Tolerancia de diferencia</p>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-base font-bold text-[var(--text-tertiary)]">S/</span>
@@ -546,19 +546,19 @@ export default function CashRegisterTab() {
           <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-xl p-1">
             <button
               onClick={() => setView("current")}
-              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "current" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "current" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Actual
             </button>
             <button
               onClick={() => setView("history")}
-              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "history" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "history" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Historial
             </button>
             <button
               onClick={() => setView("reconcile")}
-              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "reconcile" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "reconcile" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Reconciliación
             </button>
@@ -585,7 +585,7 @@ export default function CashRegisterTab() {
                 <div className="flex justify-end">
                   <button
                     onClick={() => setShowOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors shadow-sm"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors shadow-[var(--shadow-sm)]"
                   >
                     <Unlock className="h-5 w-5" strokeWidth={2} aria-hidden />
                     Abrir caja
@@ -1042,7 +1042,7 @@ export default function CashRegisterTab() {
                 <button
                   key={r.id}
                   onClick={() => setDetailRegister(r)}
-                  className="w-full bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4 text-left hover:shadow-sm transition-all"
+                  className="w-full bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4 text-left hover:shadow-[var(--shadow-sm)] transition-all"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex flex-wrap items-center gap-2">
@@ -1253,7 +1253,7 @@ export default function CashRegisterTab() {
       {/* Open register modal */}
       {showOpen && (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowOpen(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1376,7 +1376,7 @@ export default function CashRegisterTab() {
         
         return (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowClose(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1545,7 +1545,7 @@ export default function CashRegisterTab() {
       {/* Add movement modal */}
       {showMovement && (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowMovement(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1670,7 +1670,7 @@ export default function CashRegisterTab() {
         
         return (
           <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueo(false)}>
-            <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
               {/* Header */}
               <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1833,7 +1833,7 @@ export default function CashRegisterTab() {
       {/* Arqueo Guiado modal */}
       {showArqueoGuiado && currentRegister && (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueoGuiado(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">

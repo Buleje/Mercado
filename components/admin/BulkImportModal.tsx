@@ -176,7 +176,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
       onClick={closeAndReset}
     >
       <div
-        className="relative w-full max-w-3xl max-h-[92vh] overflow-hidden rounded-t-2xl sm:rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-2xl flex flex-col"
+        className="relative w-full max-w-3xl max-h-[92vh] overflow-hidden rounded-t-2xl sm:rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-[var(--shadow-xl)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

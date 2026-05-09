@@ -45,7 +45,7 @@ function SectionEditor({
   onToggle: () => void;
 }) {
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden  hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden  hover:shadow-[var(--shadow-sm)] transition-shadow">
       <button
         onClick={onToggle}
         className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group"

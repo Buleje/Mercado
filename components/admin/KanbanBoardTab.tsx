@@ -136,7 +136,7 @@ export default function KanbanBoardTab() {
               <h3 className={cn("text-sm font-extrabold mb-4", conf.color)}>{conf.label} ({colTasks.length})</h3>
               <div className="space-y-3">
                 {colTasks.map(t => (
-                  <div key={t.id} draggable onDragStart={() => setDragTask(t.id)} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4  hover:shadow-sm transition-shadow cursor-grab active:cursor-grabbing">
+                  <div key={t.id} draggable onDragStart={() => setDragTask(t.id)} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4  hover:shadow-[var(--shadow-sm)] transition-shadow cursor-grab active:cursor-grabbing">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <GripVertical className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />

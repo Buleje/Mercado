@@ -334,7 +334,7 @@ export default function ExecutiveDashboardTab() {
                 key={h.module}
                 onClick={() => setExpanded(expandedModule === h.module ? null : h.module)}
                 className={cn(
-                  "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-[var(--dur-base)] hover:shadow-sm",
+                  "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-[var(--dur-base)] hover:shadow-[var(--shadow-sm)]",
                   h.status === "critical" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : h.status === "warning" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border",
                   expandedModule === h.module && "sm:col-span-2 ring-1 ring-primary/20"
                 )}

@@ -660,7 +660,7 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
         aria-haspopup="true"
       >?</button>
       {open && (
-        <div className="absolute bottom-7 left-0 z-50 w-72 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-xs shadow-lg">
+        <div className="absolute bottom-7 left-0 z-50 w-72 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-xs shadow-[var(--shadow-lg)]">
           <p className="font-bold text-[var(--text-primary)] mb-1">{term}</p>
           <p className="text-[var(--text-secondary)] mb-2">{explanation}</p>
           <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 rounded-lg p-2">
@@ -1442,7 +1442,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <m.div
                       key={tpl.id}
                       whileHover={{ scale: 1.02 }}
-                      className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-lg transition-all group"
+                      className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-[var(--shadow-lg)] transition-all group"
                       onClick={() => startWizard(tpl)}
                     >
                       <div className="flex items-start gap-3">
@@ -1514,7 +1514,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         <div
                           key={c.id}
                           onClick={() => setSelected(c)}
-                          className={cn("bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg  hover:shadow-lg transition-all cursor-pointer border-l-4", borderColor)}
+                          className={cn("bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg  hover:shadow-[var(--shadow-lg)] transition-all cursor-pointer border-l-4", borderColor)}
                         >
                           <div className="p-4 space-y-3">
                             <div className="flex items-start justify-between">

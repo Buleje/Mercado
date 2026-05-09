@@ -718,7 +718,7 @@ export default function GoalsTab() {
               <div
                 key={g.id}
                 className={cn(
-                  "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] border-l-4 rounded-xl p-5 space-y-4 hover:shadow-sm transition-shadow",
+                  "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] border-l-4 rounded-xl p-5 space-y-4 hover:shadow-[var(--shadow-sm)] transition-shadow",
                   getStatusBorder(status)
                 )}
               >

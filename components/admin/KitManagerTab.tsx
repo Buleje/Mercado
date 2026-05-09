@@ -95,7 +95,7 @@ export default function KitManagerTab() {
           const cost = getCost(kit);
           const margin = getMargin(kit);
           return (
-            <div key={kit.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 hover:shadow-sm transition-shadow", !kit.active && "opacity-60")}>
+            <div key={kit.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 hover:shadow-[var(--shadow-sm)] transition-shadow", !kit.active && "opacity-60")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{kit.name}</CardTitle>

@@ -826,7 +826,7 @@ export default function CotizacionesModule() {
                       const headerColor = c.status === "BORRADOR" ? "bg-[var(--surface-sunken)]" : c.status === "ENVIADA" ? "bg-[var(--accent-soft)]" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]";
                       const diasValidez = Math.max(0, Math.ceil((new Date(c.validoHasta).getTime() - Date.now()) / 86400000));
                       return (
-                        <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-lg cursor-pointer transition-all group">
+                        <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-[var(--shadow-lg)] cursor-pointer transition-all group">
                           <div className={cn("px-4 py-2 flex items-center justify-between", headerColor)}>
                             <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">COT-{String(c.número).padStart(4, "0")}</span>
                             <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>

@@ -256,7 +256,7 @@ export default function KioskMode() {
                       type="button"
                       onClick={() => addToCart(product)}
                       className={cn(
-                        "flex flex-col items-center rounded-xl border-2 p-3 bg-white dark:bg-card text-left transition-all hover:shadow-sm hover:border-primary active:scale-95 focus:outline-none focus:border-primary",
+                        "flex flex-col items-center rounded-xl border-2 p-3 bg-white dark:bg-card text-left transition-all hover:shadow-[var(--shadow-sm)] hover:border-primary active:scale-95 focus:outline-none focus:border-primary",
                         inCart ? "border-primary" : "border-[var(--rule-soft)] dark:border-card-border"
                       )}
                     >

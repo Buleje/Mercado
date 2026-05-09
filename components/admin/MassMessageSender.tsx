@@ -352,7 +352,7 @@ export default function MassMessageSender({
 
           {/* Preview bubble — bg neutro DS, no verde WhatsApp saturado */}
           <div className="rounded-xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-soft)]">
-            <div className="inline-block max-w-[85%] rounded-xl rounded-tl-none bg-[var(--surface-raised)] px-4 py-3 border border-[var(--rule-soft)] shadow-sm">
+            <div className="inline-block max-w-[85%] rounded-xl rounded-tl-none bg-[var(--surface-raised)] px-4 py-3 border border-[var(--rule-soft)] shadow-[var(--shadow-sm)]">
               <p className="text-sm leading-relaxed text-[var(--text-primary)]">
                 {previewCustomer ? previewText : template}
               </p>

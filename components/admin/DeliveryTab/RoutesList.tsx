@@ -100,7 +100,7 @@ export function RoutesList({
                 "w-full rounded-xl border-2 p-4 text-left transition-all",
                 "focus:outline-none focus:ring-2 focus:ring-primary/30",
                 isSelected
-                  ? "border-primary bg-primary/5 shadow-sm"
+                  ? "border-primary bg-primary/5 shadow-[var(--shadow-sm)]"
                   : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] hover:border-primary/40 hover:bg-primary/[0.03]",
               )}
             >

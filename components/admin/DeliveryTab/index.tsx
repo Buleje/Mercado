@@ -140,7 +140,7 @@ export default function DeliveryTab() {
   // ── Subcomponente reutilizable: panel de Rutas ──────────────────
   const routesPanel = (
     <aside
-      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden flex flex-col"
+      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden flex flex-col"
       aria-labelledby="routes-heading"
     >
       <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
@@ -176,7 +176,7 @@ export default function DeliveryTab() {
   // ── Subcomponente reutilizable: panel de Paradas ────────────────
   const stopsPanel = (
     <aside
-      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden flex flex-col"
+      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden flex flex-col"
       aria-labelledby="stops-heading"
     >
       <div className="px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
@@ -219,7 +219,7 @@ export default function DeliveryTab() {
   // ── Subcomponente: Mapa con header ──────────────────────────────
   const mapPanel = (
     <section
-      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden flex flex-col"
+      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden flex flex-col"
       aria-labelledby="map-heading"
     >
       <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 shrink-0">
@@ -288,7 +288,7 @@ export default function DeliveryTab() {
           primaryColor={branding.primaryColor}
         />
         {/* Leyenda flotante sobre el mapa */}
-        <div className="absolute bottom-6 left-6 z-[400] bg-[var(--surface-raised)]/95 backdrop-blur border border-[var(--rule-base)] rounded-xl shadow-lg p-3 max-w-[260px]">
+        <div className="absolute bottom-6 left-6 z-[400] bg-[var(--surface-raised)]/95 backdrop-blur border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-lg)] p-3 max-w-[260px]">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
             Leyenda
           </p>
@@ -314,7 +314,7 @@ export default function DeliveryTab() {
           </div>
         </div>
         {/* Indicador "última actualización" */}
-        <div className="absolute top-6 right-6 z-[400] inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-[var(--surface-raised)]/95 backdrop-blur border border-[var(--rule-base)] shadow-md text-xs font-bold text-[var(--text-secondary)]">
+        <div className="absolute top-6 right-6 z-[400] inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-[var(--surface-raised)]/95 backdrop-blur border border-[var(--rule-base)] shadow-[var(--shadow-md)] text-xs font-bold text-[var(--text-secondary)]">
           <span className="h-2 w-2 rounded-full bg-[var(--data-success-500)] animate-pulse" />
           Live · {lastUpdate.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </div>
@@ -325,7 +325,7 @@ export default function DeliveryTab() {
   return (
     <div className="space-y-6">
       {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-[var(--shadow-sm)]">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
@@ -476,7 +476,7 @@ export default function DeliveryTab() {
       </div>
 
       {/* ── 2. Mobile tabs (< lg) ──────────────────────────────────── */}
-      <div className="lg:hidden bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 shadow-sm">
+      <div className="lg:hidden bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 shadow-[var(--shadow-sm)]">
         <div className="flex items-center gap-2">
           {(["rutas", "mapa", "paradas"] as const).map((t) => (
             <button
@@ -531,7 +531,7 @@ export default function DeliveryTab() {
 
       {/* ── 4. Órdenes en vivo (Uber Eats style) ───────────────────── */}
       {trackingState.events.length > 0 && (
-        <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
+        <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
@@ -558,7 +558,7 @@ export default function DeliveryTab() {
 
       {/* ── 5. Feed de eventos del día ─────────────────────────────── */}
       <section
-        className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden"
+        className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden"
         aria-labelledby="feed-heading"
       >
         <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">

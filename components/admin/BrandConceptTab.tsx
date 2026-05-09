@@ -638,7 +638,7 @@ export default function BrandConceptTab({
                   <div className="flex flex-wrap gap-2">
                     {colors.map((c, i) => (
                       <div key={c} className="inline-flex items-center gap-1.5">
-                        <div className="h-9 w-9 rounded-lg border-2 border-white dark:border-card shadow-sm" style={{ backgroundColor: c }} />
+                        <div className="h-9 w-9 rounded-lg border-2 border-white dark:border-card shadow-[var(--shadow-sm)]" style={{ backgroundColor: c }} />
                         <div className="leading-tight">
                           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">{i === 0 ? "Dominante" : `#${i + 1}`}</p>
                           <p className="text-xs font-mono text-foreground">{c.toUpperCase()}</p>
@@ -784,8 +784,8 @@ function ConceptCard({
       className={cn(
         "group rounded-2xl border-2 overflow-hidden transition-all flex flex-col",
         isActive
-          ? "border-primary ring-2 ring-primary/20 shadow-lg"
-          : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-xl",
+          ? "border-primary ring-2 ring-primary/20 shadow-[var(--shadow-lg)]"
+          : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-xl)]",
       )}
     >
       {/* Mini-mockup grande */}
@@ -899,7 +899,7 @@ function ConceptCard({
               className={cn(
                 "p-1.5 flex flex-col gap-1",
                 c.cardStyle === "minimal" && (c.darkMode ? "bg-gray-900" : "bg-gray-50"),
-                c.cardStyle === "shadow" && (c.darkMode ? "bg-gray-900 shadow-lg" : "bg-white dark:bg-[var(--color-card)] shadow-md"),
+                c.cardStyle === "shadow" && (c.darkMode ? "bg-gray-900 shadow-[var(--shadow-lg)]" : "bg-white dark:bg-[var(--color-card)] shadow-[var(--shadow-md)]"),
                 c.cardStyle === "border" && "bg-transparent border-2",
                 c.cardStyle === "glass" && (c.darkMode ? "bg-white/5 backdrop-blur" : "bg-white/70 backdrop-blur border border-white/40"),
               )}
@@ -963,7 +963,7 @@ function ConceptCard({
         </div>
 
         {isActive && (
-          <div className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white dark:bg-[var(--color-card)] flex items-center justify-center shadow-lg ring-2 ring-primary">
+          <div className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white dark:bg-[var(--color-card)] flex items-center justify-center shadow-[var(--shadow-lg)] ring-2 ring-primary">
             <Check className="h-4 w-4 text-primary" />
           </div>
         )}

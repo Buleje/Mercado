@@ -124,7 +124,7 @@ export default function BranchesTab() {
 
           <div className="grid gap-2 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredBranches.map(b => (
-              <div key={b.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3 hover:shadow-lg transition-shadow">
+              <div key={b.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3 hover:shadow-[var(--shadow-lg)] transition-shadow">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{b.name}</p>

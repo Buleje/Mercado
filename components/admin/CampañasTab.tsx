@@ -525,7 +525,7 @@ export default function CampañasTab() {
           </div>
         )}
         {!loading && filtered.map(c => (
-          <div key={c.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow">
+          <div key={c.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:shadow-[var(--shadow-sm)] transition-shadow">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">

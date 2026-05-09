@@ -1107,7 +1107,7 @@ export default function InventoryTab() {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap",
                 view === v
-                  ? "bg-[var(--surface-canvas)] text-[var(--text-primary)] shadow-sm"
+                  ? "bg-[var(--surface-canvas)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               )}
             >
@@ -1255,7 +1255,7 @@ export default function InventoryTab() {
                   className={cn(
                     "shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border-2 text-sm font-bold transition-all whitespace-nowrap",
                     active
-                      ? "border-primary bg-primary text-white shadow-sm"
+                      ? "border-primary bg-primary text-white shadow-[var(--shadow-sm)]"
                       : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
@@ -1458,7 +1458,7 @@ export default function InventoryTab() {
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all",
                   noImageCount > 0
-                    ? "border-primary bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 shadow-sm"
+                    ? "border-primary bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 shadow-[var(--shadow-sm)]"
                     : "border-primary/30 text-primary hover:bg-primary/5",
                 )}
               >
@@ -1927,7 +1927,7 @@ export default function InventoryTab() {
                       {items.length === 0 ? (
                         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center py-4">Sin productos</p>
                       ) : items.map(p => (
-                        <div key={p.id} className="bg-white dark:bg-card rounded-lg p-2.5  border border-[var(--rule-soft)] dark:border-border cursor-pointer hover:shadow-sm transition-shadow"
+                        <div key={p.id} className="bg-white dark:bg-card rounded-lg p-2.5  border border-[var(--rule-soft)] dark:border-border cursor-pointer hover:shadow-[var(--shadow-sm)] transition-shadow"
                           onClick={() => { setEditModalProduct(p); }}>
                           <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
                           <div className="flex items-center justify-between mt-1">
@@ -2015,7 +2015,7 @@ export default function InventoryTab() {
                           setEditModalProduct(p);
                           setEditForm({ ...p });
                         }}
-                        className="flex flex-col items-center gap-2 p-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border hover:border-primary hover:shadow-sm transition-all text-center group"
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border hover:border-primary hover:shadow-[var(--shadow-sm)] transition-all text-center group"
                       >
                         <div className="w-16 h-16 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent overflow-hidden flex-shrink-0">
                           {p.image ? (

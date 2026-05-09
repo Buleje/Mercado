@@ -228,7 +228,7 @@ function _OrderPickerCard({ order, isSelected, onSelect }: {
         "w-full text-left rounded-xl border-2 p-4 transition-all duration-[var(--dur-base)] relative overflow-hidden",
         isSelected
           ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-          : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] hover:shadow-lg hover:border-primary/40"
+          : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] hover:shadow-[var(--shadow-lg)] hover:border-primary/40"
       )}
     >
       <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" : "bg-[var(--accent-soft)]")} />
