@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * Recipe illustrations — line-art SVG custom.
  * Estilo editorial: solo stroke, sin fills de colores.

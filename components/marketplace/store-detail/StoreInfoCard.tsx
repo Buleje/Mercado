@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * StoreInfoCard — card lateral con datos de contacto y ubicación.
  *

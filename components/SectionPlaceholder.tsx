@@ -1,4 +1,3 @@
-"use client";
 
 import { Package, ShoppingBag, Sparkles } from "@buleje/design-system/icons";
 

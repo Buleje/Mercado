@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * TiendasBreadcrumb — TS-47 breadcrumb visible para /tiendas con JSON-LD.
  *

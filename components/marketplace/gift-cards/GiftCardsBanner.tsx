@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Gift, ArrowRight } from "@buleje/design-system/icons";
 import GiftCardArtwork from "./shared/GiftCardArtwork";

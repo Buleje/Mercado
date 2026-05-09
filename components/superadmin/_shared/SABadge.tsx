@@ -1,5 +1,3 @@
-"use client";
-
 // ─── PlanBadge ────────────────────────────────────────────────────────────────
 
 type PlanId = "free" | "pro" | "business" | "enterprise";

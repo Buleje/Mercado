@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * ProductSpecs — Ficha técnica del producto.
  * Tabla 2-col con datos reales del producto + mock SUNAT/empaque.

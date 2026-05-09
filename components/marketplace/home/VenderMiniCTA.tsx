@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * VenderMiniCTA — Banner minimalista 2-col para B2B (bodegueros).
  *

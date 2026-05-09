@@ -306,11 +306,12 @@ export default function MarketplaceApplyPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
-                        <User className="h-3.5 w-3.5 inline mr-1.5" />
+                      <label htmlFor="apply-owner-name" className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
+                        <User className="h-3.5 w-3.5 inline mr-1.5" aria-hidden="true" />
                         ¿Cómo te llamás?
                       </label>
                       <input
+                        id="apply-owner-name"
                         type="text"
                         value={form.ownerName}
                         onChange={(e) => update("ownerName", e.target.value)}
@@ -321,11 +322,12 @@ export default function MarketplaceApplyPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
-                        <Phone className="h-3.5 w-3.5 inline mr-1.5" />
+                      <label htmlFor="apply-owner-phone" className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
+                        <Phone className="h-3.5 w-3.5 inline mr-1.5" aria-hidden="true" />
                         WhatsApp (te llamamos por aquí)
                       </label>
                       <input
+                        id="apply-owner-phone"
                         type="tel"
                         value={form.ownerPhone}
                         onChange={(e) =>
@@ -337,11 +339,12 @@ export default function MarketplaceApplyPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
-                        <Mail className="h-3.5 w-3.5 inline mr-1.5" />
+                      <label htmlFor="apply-owner-email" className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
+                        <Mail className="h-3.5 w-3.5 inline mr-1.5" aria-hidden="true" />
                         Correo (opcional)
                       </label>
                       <input
+                        id="apply-owner-email"
                         type="email"
                         value={form.ownerEmail}
                         onChange={(e) => update("ownerEmail", e.target.value)}
@@ -372,11 +375,12 @@ export default function MarketplaceApplyPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
-                        <Store className="h-3.5 w-3.5 inline mr-1.5" />
+                      <label htmlFor="apply-store-name" className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
+                        <Store className="h-3.5 w-3.5 inline mr-1.5" aria-hidden="true" />
                         ¿Cómo se llama tu tienda?
                       </label>
                       <input
+                        id="apply-store-name"
                         type="text"
                         value={form.storeName}
                         onChange={(e) => update("storeName", e.target.value)}
@@ -387,10 +391,10 @@ export default function MarketplaceApplyPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
-                        <Tag className="h-3.5 w-3.5 inline mr-1.5" />
+                      <p className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
+                        <Tag className="h-3.5 w-3.5 inline mr-1.5" aria-hidden="true" />
                         ¿Qué tipo de negocio es?
-                      </label>
+                      </p>
                       <div className="grid grid-cols-3 gap-2">
                         {CATEGORIES.map((cat) => {
                           const Icon = cat.icon;
@@ -422,11 +426,12 @@ export default function MarketplaceApplyPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
-                        <FileText className="h-3.5 w-3.5 inline mr-1.5" />
+                      <label htmlFor="apply-description" className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
+                        <FileText className="h-3.5 w-3.5 inline mr-1.5" aria-hidden="true" />
                         Describí tu tienda (opcional)
                       </label>
                       <textarea
+                        id="apply-description"
                         rows={2}
                         value={form.description}
                         onChange={(e) => update("description", e.target.value)}

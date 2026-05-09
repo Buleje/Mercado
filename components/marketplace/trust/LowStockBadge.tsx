@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * LowStockBadge — "Solo quedan N unidades" cuando stock < 10.
  *

@@ -167,8 +167,8 @@ export default function ProductReviewsSection({ productId, productName }: Produc
           <form onSubmit={handleSubmitReview} className="space-y-4">
             {/* Star selector */}
             <div>
-              <label className="text-sm font-medium text-muted mb-2 block">Puntuación *</label>
-              <div className="flex items-center gap-1">
+              <p className="text-sm font-medium text-muted mb-2 block" id="prs-rating-label">Puntuación *</p>
+              <div className="flex items-center gap-1" role="group" aria-labelledby="prs-rating-label">
                 {[1, 2, 3, 4, 5].map(s => (
                   <button
                     key={s}
@@ -189,8 +189,9 @@ export default function ProductReviewsSection({ productId, productName }: Produc
             </div>
             {/* Name */}
             <div>
-              <label className="text-sm font-medium text-muted mb-1 block">Tu nombre *</label>
+              <label htmlFor="prs-name" className="text-sm font-medium text-muted mb-1 block">Tu nombre *</label>
               <input
+                id="prs-name"
                 type="text"
                 value={formName}
                 onChange={e => setFormName(e.target.value)}
@@ -201,8 +202,9 @@ export default function ProductReviewsSection({ productId, productName }: Produc
             </div>
             {/* Comment */}
             <div>
-              <label className="text-sm font-medium text-muted mb-1 block">Tu opinión *</label>
+              <label htmlFor="prs-text" className="text-sm font-medium text-muted mb-1 block">Tu opinión *</label>
               <textarea
+                id="prs-text"
                 value={formText}
                 onChange={e => setFormText(e.target.value)}
                 placeholder={`¿Qué te pareció ${productName}?`}

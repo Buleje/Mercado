@@ -542,8 +542,9 @@ export default function SuperAdminRecetarioPage() {
               {/* Tenant (only for create) */}
               {!editingId && (
                 <div>
-                  <label className={labelCls}>Tenant *</label>
+                  <label htmlFor="rec-tenant" className={labelCls}>Tenant *</label>
                   <select
+                    id="rec-tenant"
                     value={form.tenantId}
                     onChange={(e) => setForm({ ...form, tenantId: e.target.value })}
                     className={selectCls}
@@ -560,8 +561,9 @@ export default function SuperAdminRecetarioPage() {
 
               {/* Nombre */}
               <div>
-                <label className={labelCls}>Nombre *</label>
+                <label htmlFor="rec-nombre" className={labelCls}>Nombre *</label>
                 <input
+                  id="rec-nombre"
                   type="text"
                   value={form.nombre}
                   onChange={(e) => setForm({ ...form, nombre: e.target.value })}

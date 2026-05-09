@@ -1,5 +1,3 @@
-"use client";
-
 import { Coins, MessageSquare, Send } from "@buleje/design-system/icons";
 
 const STEPS = [

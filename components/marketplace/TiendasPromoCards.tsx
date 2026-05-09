@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * TiendasPromoCards — 2 cards promocionales lado a lado al estilo PedidosYa
  * pero con paleta Buleje (teal accent + neutral oscuro). Minimalistas, sin

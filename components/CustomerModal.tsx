@@ -147,12 +147,13 @@ function LocationForm({
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-semibold text-foreground mb-1.5">
+          <label htmlFor="cm-location" className="block text-sm font-semibold text-foreground mb-1.5">
             Dirección / Ubicación
           </label>
           <div className="relative">
             <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
             <input
+              id="cm-location"
               type="text"
               required
               value={location}
@@ -195,10 +196,11 @@ function LocationForm({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-foreground mb-1.5">Referencia</label>
+          <label htmlFor="cm-reference" className="block text-sm font-semibold text-foreground mb-1.5">Referencia</label>
           <div className="relative">
             <Home className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
             <input
+              id="cm-reference"
               type="text"
               required
               value={reference}
@@ -460,11 +462,12 @@ export default function CustomerModal() {
                   {view === "phone-lookup" && (
                     <m.div key="phone-lookup" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="space-y-5">
                       <div>
-                        <label className="block text-sm font-semibold text-foreground mb-1.5">Número de celular</label>
+                        <label htmlFor="cm-phone-lookup" className="block text-sm font-semibold text-foreground mb-1.5">Número de celular</label>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
                             <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
                             <input
+                              id="cm-phone-lookup"
                               type="tel"
                               value={phone}
                               onChange={(e) => setPhone(e.target.value)}
@@ -651,10 +654,11 @@ export default function CustomerModal() {
                           </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-foreground mb-1.5">Teléfono (opcional)</label>
+                          <label htmlFor="cm-edit-phone" className="block text-sm font-semibold text-foreground mb-1.5">Teléfono (opcional)</label>
                           <div className="relative">
                             <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
                             <input
+                              id="cm-edit-phone"
                               type="tel"
                               value={phone}
                               onChange={(e) => setPhone(e.target.value)}
@@ -666,8 +670,9 @@ export default function CustomerModal() {
                         </div>
                         {/* T2: Birthday field */}
                         <div>
-                          <label className="block text-sm font-semibold text-foreground mb-1.5">Cumpleaños (opcional)</label>
+                          <label htmlFor="cm-edit-birthday" className="block text-sm font-semibold text-foreground mb-1.5">Cumpleaños (opcional)</label>
                           <input
+                            id="cm-edit-birthday"
                             type="date"
                             value={birthday ? `2000-${birthday}` : ""}
                             onChange={(e) => { const v = e.target.value; if (v) setBirthday(v.slice(5)); else setBirthday(""); }}

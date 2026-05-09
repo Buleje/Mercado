@@ -1,5 +1,3 @@
-"use client";
-
 // ─── Base skeleton ────────────────────────────────────────────────────────────
 
 interface SASkeletonProps {

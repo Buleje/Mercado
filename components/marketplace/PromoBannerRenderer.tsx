@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * PromoBannerRenderer — render unificado de banners promocionales.
  *

@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * StoreInfoPanel — card lateral rica con TODA la info que el cliente
  * necesita para decidir comprar: ubicación con mini-mapa, horario actual

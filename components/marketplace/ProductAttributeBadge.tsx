@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * ProductAttributeBadge — Sticker con mini-ilustración para atributos especiales
  * de productos del marketplace. Se monta como absolute sobre ProductCard.

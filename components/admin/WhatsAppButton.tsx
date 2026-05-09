@@ -1,5 +1,3 @@
-"use client";
-
 import { MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 

@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * StoreAboutBlock — historia editorial de la bodega.
  *

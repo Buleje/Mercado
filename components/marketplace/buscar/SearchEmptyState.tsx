@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * SearchEmptyState — Pantalla amable cuando la busqueda no arroja resultados.
  *

@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * StorePoliciesBlock — 3 cards: delivery, pagos, devoluciones.
  *

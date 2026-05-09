@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * AsistenteHomeBanner — Banner CTA linkeando a /asistente con 3 preguntas ejemplo.
  *

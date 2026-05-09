@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * PriceDropBadge — badge de descuento con animacion shake sutil al montar.
  *

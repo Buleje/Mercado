@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * SocioPriceBadge — Pequeño badge "Precio Socio" para ProductCard.
  *

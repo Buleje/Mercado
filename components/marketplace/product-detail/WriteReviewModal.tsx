@@ -291,9 +291,9 @@ export default function WriteReviewModal({
 
               {/* Photos — más grande y cálido */}
               <div>
-                <label className="block text-base font-bold text-[var(--text-primary)] mb-2">
+                <p className="block text-base font-bold text-[var(--text-primary)] mb-2">
                   Subí fotos <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
-                </label>
+                </p>
                 <p className="text-sm text-[var(--text-secondary)] inline-flex items-center gap-1.5 mb-3">
                   <ImageIcon className="h-4 w-4" />
                   Las fotos generan más confianza · Hasta {MAX_PHOTOS} fotos · {MAX_FILE_SIZE_MB}MB c/u

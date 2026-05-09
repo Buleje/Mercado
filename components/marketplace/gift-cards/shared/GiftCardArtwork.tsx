@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * components/marketplace/gift-cards/shared/GiftCardArtwork.tsx
  *
