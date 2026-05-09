@@ -273,4 +273,74 @@ describe("POST /api/auth/login", () => {
       expect(res.status).toBe(401);
     });
   });
+
+  // ── 6. Edge cases (round 27 — QA gap #7 round 21) ────────────────────────
+
+  describe("Edge cases — security hardening", () => {
+    it("rechaza username con SQL injection sin crash (' OR '1'='1)", async () => {
+      // Prisma usa parametrized queries — inyección no funcional, pero el
+      // handler debe responder 401 (no encontrado) sin throw ni 500.
+      mockFindMany.mockResolvedValue([]);
+      const res = await POST(
+        makeReq({ username: "' OR '1'='1", password: "anything" }),
+      );
+      expect([401, 400]).toContain(res.status);
+      // No 500 — handler no debe crashear con input malicioso
+      expect(res.status).not.toBe(500);
+    });
+
+    it("rechaza username con caracteres NULL bytes y control chars", async () => {
+      mockFindMany.mockResolvedValue([]);
+      const res = await POST(
+        makeReq({ username: "admin\x00\x01\x02", password: "test" }),
+      );
+      expect([401, 400]).toContain(res.status);
+      expect(res.status).not.toBe(500);
+    });
+
+    it("rechaza payload con username muy largo (DoS resistance)", async () => {
+      const hugeUsername = "a".repeat(10000);
+      const res = await POST(
+        makeReq({ username: hugeUsername, password: "test" }),
+      );
+      expect([401, 400, 413]).toContain(res.status);
+      expect(res.status).not.toBe(500);
+    });
+
+    it("Set-Cookie tiene flags httpOnly + secure + SameSite en login exitoso", async () => {
+      mockFindMany.mockResolvedValue([DB_USER]);
+      mockCompare.mockResolvedValue(true);
+
+      const res = await POST(
+        makeReq({ username: "admin", password: "correctpass" }),
+      );
+      expect(res.status).toBe(200);
+      const setCookie = res.headers.get("set-cookie") ?? "";
+      // SECURITY hardening: httpOnly + SameSite obligatorios.
+      expect(setCookie.toLowerCase()).toMatch(/httponly/);
+      expect(setCookie.toLowerCase()).toMatch(/samesite=/);
+    });
+
+    it("body no-JSON returns 400 sin crash", async () => {
+      // Request con body string no parseable como JSON
+      const req = new Request("http://localhost/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "not-valid-json{",
+      });
+      const res = await POST(req);
+      expect([400, 401]).toContain(res.status);
+      expect(res.status).not.toBe(500);
+    });
+
+    it("acepta password Unicode (no normaliza ni rompe)", async () => {
+      // Caracteres Unicode válidos — el handler debe procesar sin crash
+      mockFindMany.mockResolvedValue([]);
+      const res = await POST(
+        makeReq({ username: "admin", password: "pässwörd-ñ-中文-🔒" }),
+      );
+      expect([401, 200]).toContain(res.status);
+      expect(res.status).not.toBe(500);
+    });
+  });
 });

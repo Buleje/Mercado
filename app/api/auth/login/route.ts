@@ -76,7 +76,13 @@ export async function POST(req: Request) {
   const resolvedSlug = (await resolveTenantSlug(rawTenantId)) ?? "main";
 
   try {
-  const body = await req.json() as { username?: string; password?: string };
+  // Round 27 (security hardening): req.json() puede throw si body no es JSON
+  // válido — devolver 400 explícito en lugar de fallar al catch externo (500).
+  // Test descubrió que payloads malformados producían 500 (DoS signal).
+  const body = await req.json().catch(() => null) as { username?: string; password?: string } | null;
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
+  }
   const { username, password } = body;
 
   if (!username || !password) {
