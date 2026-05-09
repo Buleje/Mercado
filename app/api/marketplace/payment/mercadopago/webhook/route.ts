@@ -8,6 +8,8 @@ import { createNotification } from "@/lib/create-notification";
 import { logger } from "@/lib/logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { OrderStatus } from "@/lib/generated/prisma/client";
+import { withAuditContext } from "@/lib/audit/audit-context";
+import { getClientIp } from "@/lib/rate-limit";
 
 /**
  * @prisma-direct excepción documentada — el `prisma.order.updateMany` y el
@@ -21,6 +23,19 @@ import { OrderStatus } from "@/lib/generated/prisma/client";
 // POST /api/marketplace/payment/mercadopago/webhook
 // Handles MercadoPago IPN notifications for marketplace orders
 export async function POST(req: NextRequest) {
+  // Round 15 M004: webhook externo MercadoPago. userId="mp:webhook" para
+  // distinguir transiciones de Order originadas por IPN de las de admin.
+  return withAuditContext(
+    {
+      ipAddress: getClientIp(req),
+      userId: "mp:webhook",
+      requestId: req.headers.get("x-request-id"),
+    },
+    () => mpWebhookHandler(req),
+  );
+}
+
+async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
   const traceId = newTraceId();
   try {
     const body = await req.json().catch(() => ({}));

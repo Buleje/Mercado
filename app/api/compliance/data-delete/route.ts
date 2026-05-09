@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 /**
  * POST /api/compliance/data-delete
@@ -39,8 +40,19 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "compliance-data-delete"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  // Round 15 M004: PRIORIDAD MÁX — Ley 29733 art. 21 (derecho de supresión).
+  // Cada anonimización debe quedar registrada con admin actor + IP en audit chain.
+  return runWithAuditContext(req, `compliance:${auth.username}`, () => deleteHandler(req, auth));
+}
 
-  const body = await req.json().catch(() => null);
+async function deleteHandler(
+  req: NextRequest,
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
+  const body = await req.json().catch((err) => {
+    void err; // body inválido → 400 abajo con mensaje claro.
+    return null;
+  });
   if (!body) {
     return NextResponse.json(
       { error: "Cuerpo de solicitud inválido" },
@@ -230,7 +242,12 @@ export async function POST(req: NextRequest) {
           tenantId,
         },
       })
-      .catch(() => {});
+      .catch((err) => {
+        logger.error("[COMPLIANCE] activityLog DATA_DELETE_REQUEST failed", {
+          err: err instanceof Error ? err.message : String(err),
+          dni,
+        });
+      });
 
     logger.info("[COMPLIANCE] Data deletion request processed", {
       tenantId,

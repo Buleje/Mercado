@@ -4,6 +4,7 @@ import { normalizePhone } from "@/lib/jsondb";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { CUSTOMER_SESSION, getCustomerPayload } from "@/lib/auth/customer-session";
 import { tryAdmin } from "@/lib/require-admin";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 /**
  * SECURITY/CRITICAL 2026-05-06 (pentest H001): autorización obligatoria.
@@ -83,14 +84,17 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "no valid fields" }, { status: 400 });
   }
 
-  try {
-    const updated = await prisma.customer.update({
-      where: { phone },
-      data,
-      select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
-    });
-    return NextResponse.json(updated);
-  } catch {
-    return NextResponse.json({ error: "customer not found" }, { status: 404 });
-  }
+  // Round 15 M004: audit log de Customer prefs update con phone como actor.
+  return runWithAuditContext(req, phone, async () => {
+    try {
+      const updated = await prisma.customer.update({
+        where: { phone },
+        data,
+        select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
+      });
+      return NextResponse.json(updated);
+    } catch {
+      return NextResponse.json({ error: "customer not found" }, { status: 404 });
+    }
+  });
 }

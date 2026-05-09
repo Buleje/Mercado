@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // SECURITY 2026-05-06 (audit delivery #11): cap de tamaño en photo+signature
 // para evitar inflar la DB con base64 grandes (5+MB cada uno → bloat). Cada
@@ -27,7 +28,14 @@ const BodySchema = z.object({
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+  // Round 15 M004: audit log de Order entregado + DeliveryAssignment delivered.
+  return runWithAuditContext(req, auth.username, () => confirmHandler(req, auth));
+}
 
+async function confirmHandler(
+  req: NextRequest,
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
   try {
     const raw = await req.json();
     const parsed = BodySchema.safeParse(raw);

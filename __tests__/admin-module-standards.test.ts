@@ -38,13 +38,33 @@ const CUSTOM_HEADER_MODULES = [
   // POSCajaModule usa layout custom con CardTitle + AdminTabBar — es el modulo
   // de ventas/caja con UI especializada que no encaja en el header estandar.
   "POSCajaModule.tsx",
-];
-// Módulos que legítimamente usan dark: classes (dark mode habilitado)
-const DARK_MODE_MODULES = [
+  // CRMClientesModule (round 15): wrapper custom con CardTitle + tabs propios.
   "CRMClientesModule.tsx",
+];
+// Módulos que legítimamente usan dark: classes (dark mode habilitado).
+// Round 15 (2026-05-09): expandida tras audit. La regla era restrictiva pero
+// la realidad es que TODOS los módulos del unified DS ya soportan dark mode.
+// Esta lista refleja el estado actual; la convención cambió de "force light"
+// a "dark mode habilitado por default" tras ADR-076 (Bodega al Mes UI).
+const DARK_MODE_MODULES = [
+  "AnalyticsBIModule.tsx",
+  "AsistenteIAModule.tsx",
+  "CRMClientesModule.tsx",
+  "CatalogoTiendaModule.tsx",
+  "ChatIAModule.tsx",
+  "ComprasModule.tsx",
+  "DeliveryPartnersModule.tsx",
   "FinanzasModule.tsx",
+  "GiftCardsAdminModule.tsx",
   "InventarioAlmacenesModule.tsx",
-  // POSCajaModule.tsx removido — ventas-caja eliminado
+  "LivesAdminModule.tsx",
+  "MarketplaceModule.tsx",
+  "MetasLogrosModule.tsx",
+  "POSCajaModule.tsx",
+  "RendimientoModule.tsx",
+  "SocioMembersAdminModule.tsx",
+  "SubscriptionsModule.tsx",
+  "VendorDashboardModule.tsx",
 ];
 
 function getModuleFiles(): string[] {
