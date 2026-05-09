@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Clock, Users, Sparkles, Package, Minus, Plus, ArrowRight } from "@buleje/design-system/icons";
+import { ShoppingCart, Clock, Users, Sparkles, Package, Minus, Plus, ArrowRight, type LucideIcon } from "@buleje/design-system/icons";
+import { Fish, Beef, Salad, Drumstick } from "lucide-react";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
@@ -11,7 +12,7 @@ import { useStoreProducts } from "@/hooks/use-store-products";
 
 type Recipe = {
   name: string;
-  emoji: string;
+  Icon: LucideIcon;
   time: string;
   servings: number;
   gradient: string;
@@ -21,7 +22,7 @@ type Recipe = {
 const RECIPES: Recipe[] = [
   {
     name: "Ceviche Clásico",
-    emoji: "🐟",
+    Icon: Fish,
     time: "20 min",
     servings: 4,
     gradient: "linear-gradient(135deg, #06b6d4, #2563eb)",
@@ -29,7 +30,7 @@ const RECIPES: Recipe[] = [
   },
   {
     name: "Lomo Saltado",
-    emoji: "🥩",
+    Icon: Beef,
     time: "30 min",
     servings: 4,
     gradient: "linear-gradient(135deg, #ef4444, #ea580c)",
@@ -37,7 +38,7 @@ const RECIPES: Recipe[] = [
   },
   {
     name: "Ensalada Fresca",
-    emoji: "🥗",
+    Icon: Salad,
     time: "10 min",
     servings: 2,
     gradient: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
@@ -45,7 +46,7 @@ const RECIPES: Recipe[] = [
   },
   {
     name: "Arroz con Pollo",
-    emoji: "🍗",
+    Icon: Drumstick,
     time: "45 min",
     servings: 6,
     gradient: "linear-gradient(135deg, #f59e0b, #ca8a04)",
@@ -127,7 +128,7 @@ export default function RecipeSuggestions() {
                   <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-bl-full" />
                   <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-tr-full" />
 
-                  <span className="text-4xl block mb-2 drop-shadow-md relative">{recipe.emoji}</span>
+                  <recipe.Icon aria-hidden="true" className="h-10 w-10 mb-2 drop-shadow-md relative text-white/90" />
                   <h3 className="text-lg font-extrabold leading-tight relative">{recipe.name}</h3>
 
                   {/* Meta info row */}

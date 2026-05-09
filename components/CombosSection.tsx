@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { ShoppingCart, Sparkles, Tag, Package, Minus, Plus } from "@buleje/design-system/icons";
+import { ShoppingCart, Sparkles, Tag, Package, Minus, Plus, type LucideIcon } from "@buleje/design-system/icons";
+import { Egg, Beef, Backpack } from "lucide-react";
 import { BLUR_DATA_URL } from "@/lib/image-placeholders";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -15,7 +16,7 @@ type Combo = {
   id: string;
   name: string;
   description: string;
-  emoji: string;
+  Icon: LucideIcon;
   products: Product[];
   originalTotal: number;
   comboPrice: number;
@@ -28,7 +29,7 @@ const COMBO_TEMPLATES = [
     id: "desayuno",
     name: "Combo Desayuno Familiar",
     description: "Todo lo que necesitas para empezar el día con energía",
-    emoji: "🍳",
+    Icon: Egg,
     categories: ["lacteos", "abarrotes", "frutas-verduras"],
     size: 3,
     discount: 10,
@@ -37,7 +38,7 @@ const COMBO_TEMPLATES = [
     id: "parrilla",
     name: "Combo Parrilla",
     description: "Para una parrillada perfecta con la familia",
-    emoji: "🥩",
+    Icon: Beef,
     categories: ["carnes", "bebidas", "abarrotes"],
     size: 3,
     discount: 12,
@@ -46,7 +47,7 @@ const COMBO_TEMPLATES = [
     id: "limpieza-total",
     name: "Combo Limpieza Total",
     description: "Mantén tu hogar impecable con este paquete",
-    emoji: "✨",
+    Icon: Sparkles,
     categories: ["limpieza"],
     size: 3,
     discount: 15,
@@ -55,7 +56,7 @@ const COMBO_TEMPLATES = [
     id: "lonchera",
     name: "Combo Lonchera Escolar",
     description: "Snacks y bebidas para la lonchera de tus hijos",
-    emoji: "🎒",
+    Icon: Backpack,
     categories: ["bebidas", "lacteos", "frutas-verduras"],
     size: 3,
     discount: 8,
@@ -96,7 +97,7 @@ function buildCombos(liveProducts: Product[], templates: ComboTemplate[] = COMBO
       id: tmpl.id,
       name: tmpl.name,
       description: tmpl.description,
-      emoji: tmpl.emoji,
+      Icon: tmpl.Icon,
       products: picked,
       originalTotal: +originalTotal.toFixed(2),
       comboPrice,
@@ -105,7 +106,7 @@ function buildCombos(liveProducts: Product[], templates: ComboTemplate[] = COMBO
   }).filter((c) => c.products.length >= 2); // Only show combos with at least 2 products
 }
 
-function ComboCard({ combo, categories }: { combo: Combo; categories: Category[] }) {
+function ComboCard({ combo }: { combo: Combo; categories: Category[] }) {
   const { addItem, items: cartItems, updateQty } = useCart();
   const { showToast } = useToast();
   const [adding, setAdding] = useState(false);
@@ -117,7 +118,7 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
     // Add combo as a single cart item with the discounted price
     const comboProduct = {
       id: comboId,
-      name: `${combo.emoji} ${combo.name}`,
+      name: combo.name,
       price: combo.comboPrice,
       image: combo.products[0]?.image || "/placeholder-product.png",
       unit: "combo",
@@ -169,7 +170,7 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
       {/* Content */}
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-xl">{combo.emoji}</span>
+          <combo.Icon aria-hidden="true" className="h-5 w-5 text-primary shrink-0" />
           <h3 className="font-extrabold text-foreground text-sm sm:text-base leading-tight line-clamp-1">{combo.name}</h3>
         </div>
         <p className="text-xs text-muted mb-3 line-clamp-2">{combo.description}</p>
@@ -179,7 +180,7 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
           {combo.products.map((p) => (
             <div key={p.id} className="flex items-center justify-between text-xs">
               <span className="text-foreground/70 truncate flex-1 mr-2">
-                {categories.find(c => c.id === p.category)?.emoji} {p.name}
+                {p.name}
               </span>
               <span className="text-muted line-through shrink-0">S/{Number(p.price).toFixed(2)}</span>
             </div>

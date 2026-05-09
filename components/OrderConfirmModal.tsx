@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { X, CheckCircle2, Clock, XCircle, MessageCircleOff, ShoppingBag } from "lucide-react";
+import { X, CheckCircle2, Clock, XCircle, MessageCircleOff, ShoppingBag, Package } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useReviews } from "@/contexts/reviews-context";
 import { useCustomer } from "@/contexts/customer-context";
@@ -135,7 +135,7 @@ export default function OrderConfirmModal() {
                     transition={{ repeat: Infinity, duration: 2.4, ease: "easeInOut" }}
                     className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/8"
                   >
-                    <span className="text-4xl">📦</span>
+                    <Package aria-hidden="true" className="h-10 w-10 text-primary" />
                   </m.div>
                 </div>
 

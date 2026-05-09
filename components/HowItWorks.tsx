@@ -14,7 +14,6 @@ const STEPS = [
     desc: "Explora nuestro catálogo con más de 500 productos y agrega al carrito lo que necesites.",
     color: "#3b82f6",
     shadow: "rgba(59,130,246,0.3)",
-    emoji: "🛒",
   },
   {
     num: 2,
@@ -23,7 +22,6 @@ const STEPS = [
     desc: "Paga con Yape o en efectivo contra entrega. Sin complicaciones ni tarjetas.",
     color: "#f59e0b",
     shadow: "rgba(245,158,11,0.3)",
-    emoji: "💳",
   },
   {
     num: 3,
@@ -32,7 +30,6 @@ const STEPS = [
     desc: "Te llevamos tu pedido a domicilio en menos de 30 minutos.",
     color: "var(--accent)",
     shadow: "rgba(45,106,79,0.3)",
-    emoji: "🚚",
   },
 ];
 

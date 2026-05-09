@@ -2,7 +2,8 @@
 
 import { useEffect, useState, startTransition, useMemo } from "react";
 import Link from "next/link";
-import { ShoppingCart, MessageCircle, ArrowRight, Star, Clock, MapPin } from "@buleje/design-system/icons";
+import { ShoppingCart, MessageCircle, ArrowRight, Star, Clock, MapPin, Leaf, Sparkles, Package, Snowflake, Flame } from "@buleje/design-system/icons";
+import { Beef, Apple, Milk, Croissant, GlassWater, Egg, PawPrint, type LucideIcon } from "lucide-react";
 import { trackCTAClick, trackWhatsAppClick } from "@/lib/analytics";
 import { useSettings } from "@/contexts/settings-context";
 import { useStoreProducts } from "@/hooks/use-store-products";
@@ -16,17 +17,17 @@ function computeGreeting() {
 
 const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-/** Mapa de emojis para categorías conocidas. */
-const CATEGORY_EMOJI: Record<string, string> = {
-  carnes: "🥩", verduras: "🥦", frutas: "🍎", lacteos: "🥛", lácteos: "🥛",
-  panaderia: "🍞", panadería: "🍞", bebidas: "🧃", limpieza: "🧹",
-  snacks: "🍿", huevos: "🥚", abarrotes: "🛒", embutidos: "🌭",
-  congelados: "🧊", higiene: "🧴", mascotas: "🐾",
+/** Mapa de iconos Lucide para categorías conocidas. */
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  carnes: Beef, verduras: Leaf, frutas: Apple, lacteos: Milk, lácteos: Milk,
+  panaderia: Croissant, panadería: Croissant, bebidas: GlassWater, limpieza: Sparkles,
+  snacks: Flame, huevos: Egg, abarrotes: ShoppingCart, embutidos: Beef,
+  congelados: Snowflake, higiene: Package, mascotas: PawPrint,
 };
 
-function getCategoryEmoji(label: string) {
-  const key = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  return CATEGORY_EMOJI[key] ?? "📦";
+function getCategoryIcon(label: string): LucideIcon {
+  const key = label.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return CATEGORY_ICON[key] ?? Package;
 }
 
 export default function Hero() {
@@ -191,20 +192,24 @@ export default function Hero() {
               {/* Category grid */}
               {displayCategories.length > 0 && (
                 <nav aria-label="Categorías de productos" className="relative grid grid-cols-4 gap-2.5">
-                  {displayCategories.map(({ id, label }, i) => (
-                    <Link key={id} href={`/tienda?category=${id}`}
-                      aria-label={`Ver categoría ${label}`}
-                      className="group flex flex-col items-center gap-2 rounded-2xl p-4 bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm hover:bg-white/[0.07] hover:border-white/[0.14] hover:-translate-y-0.5 transition-all duration-200"
-                      style={{ animationDelay: `${0.45 + i * 0.04}s` }}
-                    >
-                      <span className="text-2xl leading-none group-hover:scale-110 transition-transform duration-200">
-                        {getCategoryEmoji(label)}
-                      </span>
-                      <span className="text-[length:var(--ts-2xs)] font-semibold text-white/50 uppercase tracking-wider text-center leading-tight group-hover:text-white/70 transition-colors">
-                        {label}
-                      </span>
-                    </Link>
-                  ))}
+                  {displayCategories.map(({ id, label }, i) => {
+                    const CategoryIcon = getCategoryIcon(label);
+                    return (
+                      <Link key={id} href={`/tienda?category=${id}`}
+                        aria-label={`Ver categoría ${label}`}
+                        className="group flex flex-col items-center gap-2 rounded-2xl p-4 bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm hover:bg-white/[0.07] hover:border-white/[0.14] hover:-translate-y-0.5 transition-all duration-200"
+                        style={{ animationDelay: `${0.45 + i * 0.04}s` }}
+                      >
+                        <CategoryIcon
+                          aria-hidden="true"
+                          className="w-6 h-6 text-white/60 group-hover:text-white/90 group-hover:scale-110 transition-all duration-200"
+                        />
+                        <span className="text-[length:var(--ts-2xs)] font-semibold text-white/50 uppercase tracking-wider text-center leading-tight group-hover:text-white/70 transition-colors">
+                          {label}
+                        </span>
+                      </Link>
+                    );
+                  })}
                 </nav>
               )}
             </div>
@@ -214,16 +219,19 @@ export default function Hero() {
           {displayCategories.length > 0 && (
             <div className="lg:hidden animate-[fadeIn_0.6s_ease-out_0.5s_both] -mt-4">
               <nav aria-label="Categorías de productos" className="flex gap-2 overflow-x-auto scrollbar-none pb-1 -mx-2 px-2" style={{ scrollSnapType: "x mandatory" }}>
-                {displayCategories.map(({ id, label }) => (
-                  <Link key={id} href={`/tienda?category=${id}`}
-                    aria-label={`Ver categoría ${label}`}
-                    className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-colors"
-                    style={{ scrollSnapAlign: "start" }}
-                  >
-                    <span className="text-base leading-none">{getCategoryEmoji(label)}</span>
-                    <span className="text-[length:var(--ts-2xs)] font-semibold text-white/50 whitespace-nowrap">{label}</span>
-                  </Link>
-                ))}
+                {displayCategories.map(({ id, label }) => {
+                  const CategoryIcon = getCategoryIcon(label);
+                  return (
+                    <Link key={id} href={`/tienda?category=${id}`}
+                      aria-label={`Ver categoría ${label}`}
+                      className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-colors"
+                      style={{ scrollSnapAlign: "start" }}
+                    >
+                      <CategoryIcon aria-hidden="true" className="w-4 h-4 text-white/60" />
+                      <span className="text-[length:var(--ts-2xs)] font-semibold text-white/50 whitespace-nowrap">{label}</span>
+                    </Link>
+                  );
+                })}
               </nav>
             </div>
           )}

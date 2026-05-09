@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Clock, MapPin, Truck, Package, CheckCircle2, Zap } from "@buleje/design-system/icons";
+import { Clock, MapPin, Truck, Package, CheckCircle2, Zap, Sunrise, Sun, Moon, type LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 interface DeliveryEstimationProps {
@@ -11,12 +11,12 @@ interface DeliveryEstimationProps {
 }
 
 /* ── Slot definitions ── */
-const SLOTS = [
-  { id: "lo-antes-posible", label: "Lo antes posible", emoji: "⚡", range: "30-45 min" },
-  { id: "manana", label: "Mañana", emoji: "🌅", range: "8:00 - 12:00" },
-  { id: "tarde", label: "Tarde", emoji: "☀️", range: "12:00 - 17:00" },
-  { id: "noche", label: "Noche", emoji: "🌙", range: "17:00 - 20:00" },
-] as const;
+const SLOTS: { id: string; label: string; Icon: LucideIcon; range: string }[] = [
+  { id: "lo-antes-posible", label: "Lo antes posible", Icon: Zap, range: "30-45 min" },
+  { id: "manana", label: "Mañana", Icon: Sunrise, range: "8:00 - 12:00" },
+  { id: "tarde", label: "Tarde", Icon: Sun, range: "12:00 - 17:00" },
+  { id: "noche", label: "Noche", Icon: Moon, range: "17:00 - 20:00" },
+];
 
 /* ── Dynamic ETA calculation ── */
 function computeETA(slotId: string, distanceKm?: number): {
@@ -183,7 +183,8 @@ export default function DeliveryEstimation({
         {slot && (
           <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-muted bg-white dark:bg-card px-2 py-1 rounded-full border border-gray-100 dark:border-card-border">
             <Clock className="h-3 w-3" />
-            {slot.emoji} {slot.label}
+            <slot.Icon aria-hidden="true" className="h-3 w-3" />
+            {slot.label}
           </span>
         )}
         {eta.isToday && deliverySlot === "lo-antes-posible" && (
