@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { csrfHeaders } from "@/lib/csrf-client";
+import {
+  Store,
+  UtensilsCrossed,
+  Boxes,
+  Pill,
+  Wrench,
+  Croissant,
+  Package,
+  Check,
+} from "lucide-react";
 
 // ── Schemas Zod (safeParse siempre) ──────────────────────────────────────────
 
@@ -37,7 +47,16 @@ const InviteCashierSchema = z.object({
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type SetupStep = 1 | 2 | 3;
+type SetupStep = 0 | 1 | 2 | 3;
+
+type IndustryKey =
+  | "bodega"
+  | "restaurante"
+  | "madereria"
+  | "farmacia"
+  | "ferreteria"
+  | "panaderia"
+  | "otro";
 
 interface StoreConfigForm {
   address: string;
@@ -65,23 +84,96 @@ interface InviteCashierForm {
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const STEP_META: Record<SetupStep, { title: string; subtitle: string; icon: string }> = {
+const STEP_META: Record<SetupStep, { title: string; subtitle: string; iconEmoji: string }> = {
+  0: {
+    title: "Tipo de negocio",
+    subtitle: "Personalizamos el panel según lo que vendes",
+    iconEmoji: "🏢",
+  },
   1: {
     title: "Configura tu tienda",
     subtitle: "Cuéntanos dónde estás y en qué horario atiendes",
-    icon: "🏪",
+    iconEmoji: "🏪",
   },
   2: {
     title: "Agrega tu primer producto",
     subtitle: "Empieza con uno — puedes agregar más desde el panel",
-    icon: "📦",
+    iconEmoji: "📦",
   },
   3: {
     title: "Invita a tu cajero",
     subtitle: "Tu equipo puede acceder desde cualquier dispositivo",
-    icon: "👤",
+    iconEmoji: "👤",
   },
 };
+
+interface IndustryOption {
+  key: IndustryKey;
+  label: string;
+  description: string;
+  featured: [string, string, string];
+  comingSoon: boolean;
+  Icon: React.ElementType;
+}
+
+const INDUSTRY_OPTIONS: IndustryOption[] = [
+  {
+    key: "bodega",
+    label: "Bodega / Minimarket",
+    description: "Abarrotes, bebidas y productos del hogar",
+    featured: ["POS táctil", "Fiado y crédito", "Delivery propio"],
+    comingSoon: false,
+    Icon: Store,
+  },
+  {
+    key: "restaurante",
+    label: "Restaurante",
+    description: "Mesas, cocina, comanda y delivery",
+    featured: ["Comandas digitales", "Carta QR", "Control de mesas"],
+    comingSoon: true,
+    Icon: UtensilsCrossed,
+  },
+  {
+    key: "madereria",
+    label: "Maderería",
+    description: "Pietaje, cubicación y guías SUNAT",
+    featured: ["Guía de Remisión", "Control pietaje", "Cotizaciones"],
+    comingSoon: true,
+    Icon: Boxes,
+  },
+  {
+    key: "farmacia",
+    label: "Farmacia",
+    description: "Lotes FEFO, recetas y vencimientos",
+    featured: ["Control FEFO", "Recetas médicas", "Alertas vencimiento"],
+    comingSoon: true,
+    Icon: Pill,
+  },
+  {
+    key: "ferreteria",
+    label: "Ferretería",
+    description: "Catálogo extenso y ventas B2B",
+    featured: ["Catálogo masivo", "Presupuestos B2B", "Proveedores"],
+    comingSoon: true,
+    Icon: Wrench,
+  },
+  {
+    key: "panaderia",
+    label: "Panadería",
+    description: "Producción por lote y recetas",
+    featured: ["Recetas de producción", "Control de lote", "Pedidos anticipados"],
+    comingSoon: true,
+    Icon: Croissant,
+  },
+  {
+    key: "otro",
+    label: "Otro",
+    description: "Cualquier tipo de negocio local",
+    featured: ["Inventario general", "Ventas y caja", "Reportes"],
+    comingSoon: false,
+    Icon: Package,
+  },
+];
 
 const PRODUCT_CATEGORIES = [
   "Abarrotes",
@@ -177,11 +269,14 @@ export default function SetupPage() {
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const { fire: fireConfetti } = useConfetti();
 
-  const [currentStep, setCurrentStep] = useState<SetupStep>(1);
+  const [currentStep, setCurrentStep] = useState<SetupStep>(0);
   const [direction, setDirection] = useState(1);
   const [saving, setSaving] = useState(false);
   const [completingOnboarding, setCompletingOnboarding] = useState(false);
   const [isDone, setIsDone] = useState(false);
+
+  // Step 0: tipo de negocio
+  const [selectedIndustry, setSelectedIndustry] = useState<IndustryKey>("bodega");
 
   // Step 1: configuración de tienda
   const [storeConfig, setStoreConfig] = useState<StoreConfigForm>({
@@ -314,6 +409,29 @@ export default function SetupPage() {
     return true;
   }
 
+  // ── Guardar step 0 → POST /api/onboarding/industry ────────────────────────
+
+  async function saveStep0(): Promise<boolean> {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/onboarding/industry", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ industry: selectedIndustry }),
+      });
+      if (!res.ok) {
+        // Best-effort — no bloqueamos el flujo si falla
+        toastError("No se pudo guardar el tipo de negocio. Puedes cambiarlo desde el panel.");
+      }
+      return true;
+    } catch {
+      // Fire-and-forget style — seguimos
+      return true;
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // ── Guardar step 1 → PATCH /api/settings ───────────────────────────────────
 
   async function saveStep1(): Promise<boolean> {
@@ -424,7 +542,10 @@ export default function SetupPage() {
   // ── Navegación entre pasos ──────────────────────────────────────────────────
 
   async function handleNext() {
-    if (currentStep === 1) {
+    if (currentStep === 0) {
+      await saveStep0();
+      goToStep(1);
+    } else if (currentStep === 1) {
       if (!validateStep1()) return;
       await saveStep1();
       goToStep(2);
@@ -440,7 +561,7 @@ export default function SetupPage() {
   }
 
   function handleBack() {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       goToStep((currentStep - 1) as SetupStep);
     }
     setFieldErrors({});
@@ -462,8 +583,7 @@ export default function SetupPage() {
     }, 3000);
   }
 
-  const progress = ((currentStep - 1) / 3) * 100;
-  const progressDone = isDone ? 100 : (currentStep / 3) * 100;
+  const progressDone = isDone ? 100 : ((currentStep + 1) / 4) * 100;
 
   // ── Pantalla de celebracion ───────────────────────────────────────────────
 
@@ -540,7 +660,7 @@ export default function SetupPage() {
           </div>
           <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm">Buleje ERP</span>
           <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
-            Paso {currentStep} de 3
+            Paso {currentStep + 1} de 4
           </span>
         </div>
 
@@ -556,7 +676,7 @@ export default function SetupPage() {
 
         {/* Indicadores de paso */}
         <div className="flex justify-between mt-3">
-          {([1, 2, 3] as SetupStep[]).map((s) => (
+          {([0, 1, 2, 3] as SetupStep[]).map((s) => (
             <div
               key={s}
               className={[
@@ -583,7 +703,7 @@ export default function SetupPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
-                  s
+                  s + 1
                 )}
               </div>
               <span className="hidden sm:inline">{STEP_META[s].title}</span>
@@ -601,7 +721,7 @@ export default function SetupPage() {
           style={{ background: "linear-gradient(135deg, #2563EB 0%, #007a73 100%)" }}
         >
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-2xl shrink-0">
-            {STEP_META[currentStep].icon}
+            {STEP_META[currentStep].iconEmoji}
           </div>
           <div>
             <h2 className="text-white font-semibold text-base">
@@ -626,6 +746,14 @@ export default function SetupPage() {
               transition={slideTransition}
               className="px-6 py-6"
             >
+              {/* STEP 0: Tipo de negocio */}
+              {currentStep === 0 && (
+                <Step0IndustryPicker
+                  selected={selectedIndustry}
+                  onSelect={setSelectedIndustry}
+                />
+              )}
+
               {/* STEP 1: Configurar tienda */}
               {currentStep === 1 && (
                 <Step1StoreConfig
@@ -662,7 +790,7 @@ export default function SetupPage() {
 
         {/* Botones de navegación */}
         <div className="px-6 pb-6 flex gap-3">
-          {currentStep > 1 && (
+          {currentStep > 0 && (
             <button
               type="button"
               onClick={handleBack}
@@ -685,7 +813,7 @@ export default function SetupPage() {
                 {completingOnboarding ? "Finalizando..." : "Guardando..."}
               </>
             ) : currentStep < 3 ? (
-              "Continuar"
+              currentStep === 0 ? "Siguiente" : "Continuar"
             ) : cashier.skip ? (
               "Finalizar sin cajero"
             ) : (
@@ -729,6 +857,107 @@ export default function SetupPage() {
       {/* Hint de progreso */}
       <p className="text-xs text-gray-400 dark:text-gray-600 mt-4 text-center">
         Puedes completar o editar cualquier dato despues desde el panel de admin
+      </p>
+    </div>
+  );
+}
+
+// ── Step 0: Tipo de negocio ───────────────────────────────────────────────────
+
+const cardStagger = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.055 },
+  },
+};
+
+const cardItem = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.28, ease: [0.32, 0.72, 0, 1] as const } },
+};
+
+function Step0IndustryPicker({
+  selected,
+  onSelect,
+}: {
+  selected: IndustryKey;
+  onSelect: (key: IndustryKey) => void;
+}) {
+  return (
+    <div>
+      <motion.div
+        variants={cardStagger}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+      >
+        {INDUSTRY_OPTIONS.map(({ key, label, description, featured, comingSoon, Icon }) => {
+          const isSelected = selected === key;
+          return (
+            <motion.button
+              key={key}
+              variants={cardItem}
+              type="button"
+              onClick={() => onSelect(key)}
+              className={[
+                "relative text-left rounded-2xl border-2 p-4 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/60",
+                "min-h-[44px]",
+                isSelected
+                  ? "border-[#2563EB] bg-[#e6f7f6] dark:bg-[#2563EB]/10"
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-[#2563EB]/40",
+              ].join(" ")}
+            >
+              {/* Check badge */}
+              {isSelected && (
+                <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#2563EB] flex items-center justify-center">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </span>
+              )}
+
+              {/* Coming soon badge */}
+              {comingSoon && (
+                <span className="absolute top-3 right-3 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 leading-tight">
+                  Beta
+                </span>
+              )}
+
+              {/* Icon */}
+              <div
+                className={[
+                  "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
+                  isSelected
+                    ? "bg-[#2563EB] text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400",
+                ].join(" ")}
+              >
+                <Icon className="w-5 h-5" />
+              </div>
+
+              {/* Label + desc */}
+              <p className={["font-semibold text-sm leading-tight", isSelected ? "text-[#2563EB]" : "text-gray-800 dark:text-gray-100"].join(" ")}>
+                {label}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                {description}
+              </p>
+
+              {/* Featured modules */}
+              <ul className="mt-2.5 space-y-1">
+                {featured.map((f) => (
+                  <li key={f} className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+                    <span className="w-1 h-1 rounded-full bg-[#2563EB]/50 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </motion.button>
+          );
+        })}
+      </motion.div>
+
+      {/* Nota beta */}
+      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-3 text-center">
+        Los modulos marcados como <strong>Beta</strong> estan en desarrollo. Bodega y Otro estan completamente disponibles.
       </p>
     </div>
   );

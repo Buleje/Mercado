@@ -35,6 +35,8 @@ export async function GET(req: NextRequest) {
         logoUrl: true,
         primaryColor: true,
         secondaryColor: true,
+        // Nicho de negocio — usado por AdminSidebar para filtrar módulos por vertical
+        industry: true,
       },
     });
 

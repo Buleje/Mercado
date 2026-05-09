@@ -22,6 +22,8 @@ interface TenantContextValue {
   tenantId: string | null;
   isLoading: boolean;
   branding: TenantBranding;
+  /** Nicho de negocio del tenant. Fallback "bodega" para deploys anteriores. */
+  industry: string;
 }
 
 const DEFAULT_SLUG = "main";
@@ -37,6 +39,7 @@ const TenantCtx = createContext<TenantContextValue>({
   tenantId: null,
   isLoading: true,
   branding: EMPTY_BRANDING,
+  industry: "bodega",
 });
 
 // ─── BroadcastChannel message type ──────────────────────────
@@ -61,6 +64,7 @@ export function TenantSlugProvider({
   const [tenantSlug, setTenantSlug] = useState<string>(resolvedSlug);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [branding, setBranding] = useState<TenantBranding>(EMPTY_BRANDING);
+  const [industry, setIndustry] = useState<string>("bodega");
   const [isLoading, setIsLoading] = useState(true);
 
   // Keep tenantSlug in sync when initialSlug prop changes (derived state pattern)
@@ -99,6 +103,8 @@ export function TenantSlugProvider({
             secondaryColor: data.secondaryColor ?? null,
           };
           setBranding(nextBranding);
+          // industry — fallback "bodega" para tenants sin campo (deploys viejos)
+          setIndustry(typeof data.industry === "string" ? data.industry : "bodega");
           channel?.postMessage({
             type: "tenant-resolved",
             slug,
@@ -120,7 +126,7 @@ export function TenantSlugProvider({
   }, [initialSlug]);
 
   return (
-    <TenantCtx.Provider value={{ tenantSlug, tenantId, isLoading, branding }}>
+    <TenantCtx.Provider value={{ tenantSlug, tenantId, isLoading, branding, industry }}>
       {children}
     </TenantCtx.Provider>
   );

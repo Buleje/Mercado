@@ -263,3 +263,22 @@ export async function seedTenantDefaults(input: SeedDefaultsInput): Promise<void
   }
   // type === "store": la Store ya fue creada en createTenant — nada extra aquí
 }
+
+/**
+ * Actualiza el campo `industry` del tenant.
+ * Llamado desde el step 0 del wizard de onboarding.
+ *
+ * @param tenantId — CUID del tenant autenticado (nunca el slug)
+ * @param industry — valor del enum Industry de Prisma
+ */
+export async function updateTenantIndustry(
+  tenantId: string,
+  industry: import("@/lib/generated/prisma/client").Industry
+): Promise<void> {
+  await prisma.tenant.update({
+    where: { id: tenantId },
+    data: { industry },
+  });
+
+  logger.info("[tenant-onboarding] industry actualizado", { tenantId, industry });
+}

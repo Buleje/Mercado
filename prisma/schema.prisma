@@ -39,6 +39,8 @@ model Tenant {
   stripePriceId          String?
   stripeCurrentPeriodEnd DateTime?
   cancelAtPeriodEnd      Boolean   @default(false)
+  // ── Nicho de negocio ─────────────────────────────────
+  industry               Industry  @default(bodega)
   // ── Mercado Pago billing ─────────────────────────────
   mpCustomerId           String? // ID de customer en Mercado Pago
   mpSubscriptionId       String? // ID de suscripción MP (si aplica)
@@ -76,6 +78,7 @@ model Tenant {
   @@index([slug])
   @@index([active])
   @@index([stripeCustomerId])
+  @@index([industry])
 }
 
 // ─── Products ───────────────────────────────────────────
@@ -4213,4 +4216,17 @@ model EventDeadLetter {
 
   @@index([tenantId, resolvedAt])
   @@index([eventType, resolvedAt])
+}
+
+// ─── Industry (nicho de negocio) ────────────────────────
+// Permite que el panel admin se especialice por tipo de negocio.
+// Default: bodega — todos los tenants actuales quedan en este valor.
+enum Industry {
+  bodega      // minimarket / abarrotes — default
+  restaurante // mesas, cocina, comanda
+  madereria   // pietaje, cubicación, GuiaRemision SUNAT
+  farmacia    // batch FEFO estricto, recetas médicas
+  ferreteria  // catálogo extenso, ventas B2B
+  panaderia   // produccion lote, recetas
+  otro        // genérico / custom
 }

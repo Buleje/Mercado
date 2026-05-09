@@ -24,6 +24,12 @@ import { SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
 import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
 import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
 import { BulejeMark } from "@/components/ui-system/illustrations";
+import { useTenant } from "@/contexts/tenant-context";
+import {
+  getVerticalConfig,
+  filterTabsForVertical,
+  type Industry,
+} from "@/lib/verticals/registry";
 
 // ─── Tipos del tab-item que se usa en esta pantalla ───────────────────────────
 type TabItem = {
@@ -152,6 +158,58 @@ export function AdminSidebar({
   allTabs,
 }: AdminSidebarProps) {
   const { subTabs: _subTabs, activeSubTab: _activeSubTab } = useModuleTabs();
+
+  // ── Vertical filtering via industry ──────────────────────────────────────
+  const { industry } = useTenant();
+  const verticalConfig = React.useMemo(
+    () => getVerticalConfig(industry as Industry | undefined),
+    [industry],
+  );
+  const verticalEnabledSet = React.useMemo(
+    () => new Set(verticalConfig.modules.enabled.map(String)),
+    [verticalConfig],
+  );
+  const verticalHiddenSet = React.useMemo(
+    () => new Set(verticalConfig.modules.hidden.map(String)),
+    [verticalConfig],
+  );
+  const verticalFeaturedSet = React.useMemo(
+    () => new Set(verticalConfig.modules.featured.map(String)),
+    [verticalConfig],
+  );
+  const verticalComingSoonSet = React.useMemo(
+    () => new Set(verticalConfig.modules.comingSoon.map(String)),
+    [verticalConfig],
+  );
+
+  /** Aplica el filtro vertical sobre una lista de tab ids.
+   *  Si el registry no tiene el tab en enabled → lo omite (oculto silencioso).
+   *  Si está en hidden → omitido.
+   *  Si está en comingSoon → pasa como "comingSoon" (UI disabled).
+   */
+  const applyVerticalFilter = React.useCallback(
+    (tabIds: string[]): { visible: string[]; comingSoon: string[] } => {
+      const visible: string[] = [];
+      const comingSoon: string[] = [];
+      for (const id of tabIds) {
+        if (verticalHiddenSet.has(id)) continue;
+        if (verticalComingSoonSet.has(id)) {
+          comingSoon.push(id);
+          continue;
+        }
+        // Si enabled set tiene contenido, filtrar por él; si está vacío → mostrar todo (fallback seguro)
+        if (verticalEnabledSet.size === 0 || verticalEnabledSet.has(id)) {
+          visible.push(id);
+        }
+      }
+      return { visible, comingSoon };
+    },
+    [verticalEnabledSet, verticalHiddenSet, verticalComingSoonSet],
+  );
+
+  // Modal "Cambiar tipo de negocio" — solo visible para owner/admin
+  const [showIndustryModal, setShowIndustryModal] = React.useState(false);
+  const canChangeIndustry = userRole === "owner" || userRole === "admin";
 
   /* "Ver mi tienda" debe apuntar a la tienda real del negocio.
      Si el slug activo es uno de los demos del SaaS (main/previus/demo/preview),
@@ -699,14 +757,31 @@ export function AdminSidebar({
           )}
           {!effectiveCompact && (
             <div className="flex-1 min-w-0">
-              <p className={cn(
-                "font-bold text-sm leading-tight tracking-tight truncate",
-                isDarkTheme
-                  ? "text-white"
-                  : "text-[var(--text-primary)] dark:text-foreground",
-              )}>
-                {activeTenantName ?? "Buleje"}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className={cn(
+                  "font-bold text-sm leading-tight tracking-tight truncate flex-1 min-w-0",
+                  isDarkTheme
+                    ? "text-white"
+                    : "text-[var(--text-primary)] dark:text-foreground",
+                )}>
+                  {verticalConfig.branding?.sidebarTitle ?? activeTenantName ?? "Buleje"}
+                </p>
+                {/* Industry badge — clickable para owner/admin */}
+                <button
+                  onClick={() => canChangeIndustry && setShowIndustryModal(true)}
+                  title={canChangeIndustry ? "Cambiar tipo de negocio" : verticalConfig.label}
+                  className={cn(
+                    "shrink-0 text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-md leading-none transition-all",
+                    isDarkTheme
+                      ? "bg-[color-mix(in_oklab,var(--accent)_20%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_30%,transparent)]"
+                      : "bg-primary/10 text-primary ring-1 ring-inset ring-primary/20",
+                    canChangeIndustry && "cursor-pointer hover:opacity-80",
+                    !canChangeIndustry && "cursor-default"
+                  )}
+                >
+                  {verticalConfig.label}
+                </button>
+              </div>
               <p className="flex items-center gap-1.5 mt-1 leading-none">
                 <span className={cn(
                   "capitalize text-[length:var(--ts-2xs)] truncate",
@@ -734,14 +809,21 @@ export function AdminSidebar({
         )}>
           {/* ── Main modules (expanded mode) ── */}
           {!effectiveCompact && orderedVisibleCategories.map((category, catIdx) => {
-            const catTabs = category.tabs.filter(
+            // 1. Filtros previos (RBAC + hidden user + template)
+            const rbacFiltered = category.tabs.filter(
               t =>
                 allowedTabs.includes(t as Tab) &&
                 !hiddenTabs.has(t as Tab) &&
                 !hiddenSubTabs.has(t as Tab) &&
                 !isHiddenByTemplate(t),
             );
-            if (catTabs.length === 0) return null;
+            // 2. Filtro vertical (industry)
+            const { visible: verticalVisible, comingSoon: catComingSoon } = applyVerticalFilter(rbacFiltered);
+            const catTabs = verticalVisible;
+            // comingSoon items for this category (shown disabled)
+            const catComingSoonItems = catComingSoon;
+
+            if (catTabs.length === 0 && catComingSoonItems.length === 0) return null;
             const CategoryIcon = category.icon;
             const isSingleTab = catTabs.length === 1;
             const sectionLabel = SECTION_BEFORE[category.id];
@@ -911,6 +993,7 @@ export function AdminSidebar({
                               const subTabLabel = resolveLabel(subTabId, subTabInfo.label);
                               const isSubActive = tab === subTabId;
                               const subAlertCount = alerts[subTabId] ?? 0;
+                              const isFeaturedSub = verticalFeaturedSet.has(subTabId);
                               return (
                                 <button
                                   key={subTabId}
@@ -932,6 +1015,11 @@ export function AdminSidebar({
                                       : (isDarkTheme ? "text-white/45" : "text-[var(--text-tertiary)]")
                                   )} />
                                   <span className="truncate">{subTabLabel}</span>
+                                  {isFeaturedSub && subAlertCount === 0 && subTabId !== "asistente-ia" && (
+                                    <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-[var(--data-warning-500)]/20 text-[var(--data-warning-700)] dark:text-[var(--data-warning-400)] leading-none">
+                                      Destacado
+                                    </span>
+                                  )}
                                   {subTabId === "asistente-ia" && subAlertCount === 0 && (
                                     <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground leading-none">
                                       Nuevo
@@ -943,6 +1031,28 @@ export function AdminSidebar({
                                     </span>
                                   )}
                                 </button>
+                              );
+                            })}
+                            {/* ── comingSoon items (vertical filter) ── */}
+                            {catComingSoonItems.map(comingTabId => {
+                              const comingTabInfo = allTabs.find(t => t.id === comingTabId);
+                              const label = comingTabInfo ? resolveLabel(comingTabId, comingTabInfo.label) : comingTabId;
+                              const ComingIcon = comingTabInfo?.icon;
+                              return (
+                                <div
+                                  key={`coming-${comingTabId}`}
+                                  className={cn(
+                                    "relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[length:var(--ts-sm)] opacity-50 cursor-not-allowed select-none",
+                                    themeClasses.text
+                                  )}
+                                  title="Modulo proximento disponible"
+                                >
+                                  {ComingIcon && <ComingIcon className="h-4 w-4 shrink-0" />}
+                                  <span className="truncate">{label}</span>
+                                  <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-[var(--text-tertiary)]/15 text-[var(--text-tertiary)] leading-none">
+                                    Pronto
+                                  </span>
+                                </div>
                               );
                             })}
                           </div>
@@ -1227,6 +1337,50 @@ export function AdminSidebar({
           />
         );
       })()}
+
+      {/* ── Modal: Cambiar tipo de negocio ──────────────────────────────────── */}
+      {showIndustryModal && canChangeIndustry && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setShowIndustryModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-sm mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-bold text-[var(--text-primary)] mb-1">
+              Tipo de negocio
+            </h2>
+            <p className="text-sm text-[var(--text-secondary)] mb-4">
+              El tipo de negocio determina que modulos aparecen en tu panel.
+            </p>
+            <div className={cn(
+              "flex items-center gap-3 p-3 rounded-xl mb-4",
+              isDarkTheme
+                ? "bg-[color-mix(in_oklab,var(--accent)_10%,transparent)] ring-1 ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
+                : "bg-primary/5 ring-1 ring-primary/15"
+            )}>
+              <div>
+                <p className="font-semibold text-sm text-[var(--text-primary)]">{verticalConfig.label}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">{verticalConfig.description}</p>
+              </div>
+            </div>
+            <Link
+              href="/admin?tab=config&section=industry"
+              onClick={() => setShowIndustryModal(false)}
+              className="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              Cambiar tipo de negocio
+            </Link>
+            <button
+              onClick={() => setShowIndustryModal(false)}
+              className="mt-2 w-full text-center text-sm text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors py-1.5"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
