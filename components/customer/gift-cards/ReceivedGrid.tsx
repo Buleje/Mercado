@@ -88,7 +88,7 @@ export default function ReceivedGrid({ cards }: Props) {
 
               {isActive && (
                 <div>
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)] dark:bg-gray-800">
                     <div
                       className="h-full bg-gray-900 dark:bg-white"
                       style={{ width: `${progress}%` }}
@@ -101,7 +101,7 @@ export default function ReceivedGrid({ cards }: Props) {
               )}
 
               {card.message && (
-                <blockquote className="rounded-lg border-l-2 border-gray-300 bg-gray-50 px-3 py-2 text-sm italic text-[var(--text-primary)] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                <blockquote className="rounded-lg border-l-2 border-gray-300 bg-[var(--surface-alt)] px-3 py-2 text-sm italic text-[var(--text-primary)] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
                   &ldquo;{card.message}&rdquo;
                 </blockquote>
               )}
@@ -119,7 +119,7 @@ export default function ReceivedGrid({ cards }: Props) {
                 <button
                   type="button"
                   onClick={() => copyCode(card.code)}
-                  className="inline-flex flex-1 min-h-[40px] items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                  className="inline-flex flex-1 min-h-[40px] items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
                 >
                   {copied === card.code ? (
                     <>
@@ -136,7 +136,7 @@ export default function ReceivedGrid({ cards }: Props) {
                 {isActive && (
                   <button
                     type="button"
-                    className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                    className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-[var(--surface-sunken)]"
                   >
                     <ShoppingBag className="h-3.5 w-3.5" aria-hidden="true" />
                     Usar
@@ -170,7 +170,7 @@ function StatusBadge({
         "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide",
         isUsable
           ? "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-300"
-          : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-gray-400",
+          : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-gray-400",
       ].join(" ")}
     >
       {labels[status]}

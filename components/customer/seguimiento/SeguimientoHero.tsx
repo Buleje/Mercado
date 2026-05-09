@@ -126,7 +126,7 @@ function ProgressBar({ status }: { status: TrackingStatus }) {
 
   return (
     <div className="mt-6" aria-hidden>
-      <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-surface overflow-hidden">
+      <div className="h-2 w-full rounded-full bg-[var(--surface-sunken)] dark:bg-surface overflow-hidden">
         <div
           className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
           style={{ width: `${Math.round(fraction * 100)}%` }}

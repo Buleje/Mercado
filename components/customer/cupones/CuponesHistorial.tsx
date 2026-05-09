@@ -44,14 +44,14 @@ export default function CuponesHistorial({ cupones }: Props) {
           return (
             <li
               key={cupon.id}
-              className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50/60 dark:hover:bg-gray-800/40"
+              className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-[var(--surface-alt)]/60 dark:hover:bg-gray-800/40"
             >
               <span
                 className={[
                   "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
                   wasUsed
                     ? "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-300"
-                    : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+                    : "bg-[var(--surface-sunken)] text-gray-500 dark:bg-gray-800 dark:text-gray-400",
                 ].join(" ")}
               >
                 {wasUsed ? (
@@ -64,7 +64,7 @@ export default function CuponesHistorial({ cupones }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
                   <span className="truncate">{cupon.title}</span>
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  <span className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                     {cupon.code}
                   </span>
                 </div>

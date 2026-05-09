@@ -126,7 +126,7 @@ export function DeliveryMapMock({
       {/* Canvas SVG */}
       <div
         className={cn(
-          "relative bg-gray-50 dark:bg-surface transition-[height] duration-500",
+          "relative bg-[var(--surface-alt)] dark:bg-surface transition-[height] duration-500",
           zoomed ? "h-80 sm:h-96" : "h-64 sm:h-72",
         )}
       >

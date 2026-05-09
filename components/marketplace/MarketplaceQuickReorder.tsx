@@ -141,15 +141,15 @@ export default function MarketplaceQuickReorder() {
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2 text-[length:var(--ts-2xs)] font-semibold text-gray-500 dark:text-gray-400">
-            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 dark:bg-gray-800">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 dark:bg-gray-800">
               <ShoppingCart className="h-3.5 w-3.5 text-primary" />
               {totalUnits} unidade{totalUnits === 1 ? "" : "s"}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 dark:bg-gray-800">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 dark:bg-gray-800">
               <Store className="h-3.5 w-3.5 text-primary" />
               {lastOrder.stores.length} tienda{lastOrder.stores.length === 1 ? "" : "s"}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 dark:bg-gray-800">
+            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 dark:bg-gray-800">
               <Clock3 className="h-3.5 w-3.5 text-primary" />
               {formatRelativeDate(lastOrder.date)}
             </span>

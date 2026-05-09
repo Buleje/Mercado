@@ -28,11 +28,11 @@ interface RecommendedProduct {
 function SkeletonCard() {
   return (
     <div className="w-40 shrink-0 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden animate-pulse">
-      <div className="aspect-[1/1] bg-gray-100 dark:bg-gray-800" />
+      <div className="aspect-[1/1] bg-[var(--surface-sunken)] dark:bg-gray-800" />
       <div className="p-2.5 space-y-1.5">
-        <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-3/4" />
-        <div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
-        <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded w-full" />
+        <div className="h-3 bg-[var(--surface-sunken)] dark:bg-gray-800 rounded w-3/4" />
+        <div className="h-3.5 bg-[var(--surface-sunken)] dark:bg-gray-800 rounded w-1/2" />
+        <div className="h-2.5 bg-[var(--surface-sunken)] dark:bg-gray-800 rounded w-full" />
       </div>
     </div>
   );

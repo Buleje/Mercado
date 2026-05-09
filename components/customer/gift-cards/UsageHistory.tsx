@@ -39,9 +39,9 @@ export default function UsageHistory({ usage }: Props) {
         {usage.map((u) => (
           <li
             key={u.id}
-            className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50/60 dark:hover:bg-gray-800/40"
+            className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-[var(--surface-alt)]/60 dark:hover:bg-gray-800/40"
           >
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-gray-600 dark:bg-gray-800 dark:text-gray-300">
               <ShoppingBag className="h-4 w-4" aria-hidden="true" />
             </span>
 

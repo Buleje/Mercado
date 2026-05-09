@@ -44,7 +44,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
           </h2>
         </div>
         {paymentMethod && (
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted bg-gray-50 dark:bg-surface rounded-full px-2 py-1">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted bg-[var(--surface-alt)] dark:bg-surface rounded-full px-2 py-1">
             {paymentMethod === "yape" ? "Yape" : "Efectivo"}
           </span>
         )}
@@ -56,7 +56,7 @@ export function OrderItemsCard({ items, total, paymentMethod, className }: Props
             key={item.productId}
             className="py-3 first:pt-0 last:pb-0 flex items-center gap-3"
           >
-            <div className="h-12 w-12 shrink-0 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border overflow-hidden flex items-center justify-center">
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-[var(--surface-alt)] dark:bg-surface border border-gray-100 dark:border-card-border overflow-hidden flex items-center justify-center">
               {item.image ? (
                 <Image
                   src={item.image}

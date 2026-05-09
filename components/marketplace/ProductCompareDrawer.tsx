@@ -41,7 +41,7 @@ function ProductColumn({ item, onRemove }: { item: CompareItem; onRemove: () => 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
       {/* Imagen */}
-      <div className="relative mx-auto h-32 w-full overflow-hidden rounded-lg bg-gray-50 dark:bg-gray-800">
+      <div className="relative mx-auto h-32 w-full overflow-hidden rounded-lg bg-[var(--surface-alt)] dark:bg-gray-800">
         {item.image ? (
           <Image
             src={item.image}
@@ -203,7 +203,7 @@ export default function ProductCompareDrawer() {
                 ref={closeButtonRef}
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar comparador"
-                className="rounded-lg p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-gray-100 hover:text-[var(--text-primary)] dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                className="rounded-lg p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] dark:hover:bg-gray-800 dark:hover:text-gray-200"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -263,14 +263,14 @@ export default function ProductCompareDrawer() {
                 onClick={clear}
                 disabled={items.length === 0}
                 aria-label="Vaciar lista de comparacion"
-                className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-900"
+                className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-900"
               >
                 Vaciar lista
               </button>
               <Link
                 href="/marketplace"
                 onClick={() => setOpen(false)}
-                className="rounded-lg bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200"
+                className="rounded-lg bg-gray-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-[var(--rule-soft)]"
               >
                 Ir al marketplace
               </Link>

@@ -65,12 +65,12 @@ function ComboSkeletonCard() {
   return (
     <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
       <div className="flex gap-3">
-        <div className="h-16 w-16 shrink-0 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+        <div className="h-16 w-16 shrink-0 rounded-2xl bg-[var(--surface-sunken)] dark:bg-gray-800" />
         <div className="min-w-0 flex-1 space-y-2">
-          <div className="h-3 w-20 rounded bg-gray-100 dark:bg-gray-800" />
-          <div className="h-4 w-3/4 rounded bg-gray-100 dark:bg-gray-800" />
-          <div className="h-3 w-full rounded bg-gray-100 dark:bg-gray-800" />
-          <div className="h-8 w-28 rounded-xl bg-gray-100 dark:bg-gray-800" />
+          <div className="h-3 w-20 rounded bg-[var(--surface-sunken)] dark:bg-gray-800" />
+          <div className="h-4 w-3/4 rounded bg-[var(--surface-sunken)] dark:bg-gray-800" />
+          <div className="h-3 w-full rounded bg-[var(--surface-sunken)] dark:bg-gray-800" />
+          <div className="h-8 w-28 rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800" />
         </div>
       </div>
     </div>
@@ -187,7 +187,7 @@ export function MarketplaceCrossStoreCombos({
                   className="rounded-2xl border border-white/80 bg-white/90 p-3 shadow-sm dark:border-gray-800 dark:bg-gray-900/90"
                 >
                   <div className="flex gap-3">
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[var(--surface-sunken)] dark:bg-gray-800">
                       {suggestion.image ? (
                         <Image
                           src={suggestion.image}

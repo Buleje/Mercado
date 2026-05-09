@@ -62,7 +62,7 @@ export function OrderTimeline({ timeline, className }: Props) {
       <ol className="relative space-y-5">
         {/* Línea vertical conectora */}
         <span
-          className="absolute left-[13px] top-5 w-px bg-gray-200 dark:bg-card-border"
+          className="absolute left-[13px] top-5 w-px bg-[var(--rule-soft)] dark:bg-card-border"
           style={{ bottom: "20px" }}
           aria-hidden
         />

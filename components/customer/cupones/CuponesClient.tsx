@@ -28,7 +28,7 @@ export default function CuponesClient({ available, history }: Props) {
   }, [available]);
 
   return (
-    <main className="min-h-screen bg-gray-50/60 dark:bg-gray-950">
+    <main className="min-h-screen bg-[var(--surface-alt)]/60 dark:bg-gray-950">
       <div className="border-b border-[var(--rule-muted)] bg-white dark:bg-gray-900">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-3">
           <Breadcrumbs

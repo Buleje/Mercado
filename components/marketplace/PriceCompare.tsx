@@ -109,7 +109,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
           ) : (
             <>
               {/* Sort toggle */}
-              <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-surface">
+              <div className="flex items-center gap-2 px-4 py-2 bg-[var(--surface-alt)] dark:bg-surface">
                 <span className="text-xs text-[var(--text-tertiary)]">Ordenar por:</span>
                 <button
                   onClick={() => setSortBy("price")}
@@ -144,12 +144,12 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                       key={sp.storeSlug}
                       href={`/marketplace/${sp.storeSlug}`}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-accent transition-colors",
+                        "flex items-center gap-3 px-4 py-3 hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors",
                         isCheapest && "bg-emerald-50/50 dark:bg-emerald-950/20"
                       )}
                     >
                       {/* Store icon */}
-                      <div className="h-10 w-10 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0 overflow-hidden">
+                      <div className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center shrink-0 overflow-hidden">
                         {sp.storeLogo ? (
                           <Image src={sp.storeLogo} alt={sp.storeName} width={40} height={40} className="object-cover" />
                         ) : (

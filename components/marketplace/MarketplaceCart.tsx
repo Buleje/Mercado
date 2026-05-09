@@ -31,7 +31,7 @@ function CartItemRow({
   return (
     <div className="flex items-center gap-3 py-3 group/row">
       {/* imagen */}
-      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700">
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700">
         {item.image ? (
           <Image
             src={item.image}
@@ -75,11 +75,11 @@ function CartItemRow({
       </div>
 
       {/* controles cantidad — pill style */}
-      <div className="flex items-center rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700">
+      <div className="flex items-center rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800 overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700">
         <button
           onClick={onDecrease}
           aria-label={`Reducir cantidad de ${item.name}`}
-          className="flex h-8 w-8 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="flex h-8 w-8 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-[var(--rule-soft)] dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
@@ -91,7 +91,7 @@ function CartItemRow({
         <button
           onClick={onIncrease}
           aria-label={`Aumentar cantidad de ${item.name}`}
-          className="flex h-8 w-8 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="flex h-8 w-8 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-[var(--rule-soft)] dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -577,7 +577,7 @@ export default function MarketplaceCart({
                 <button
                   onClick={onClose}
                   aria-label="Cerrar carrito"
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-all hover:bg-gray-100 hover:rotate-90 dark:text-gray-400 dark:hover:bg-gray-800"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-all hover:bg-[var(--surface-sunken)] hover:rotate-90 dark:text-gray-400 dark:hover:bg-gray-800"
                 >
                   <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -588,7 +588,7 @@ export default function MarketplaceCart({
 
             {/* Step bar */}
             {!isEmpty && !orderSuccess && step !== "cart" && (
-              <div className="px-5 py-3 border-b border-gray-200/60 dark:border-gray-800/60 bg-gray-50/50 dark:bg-gray-900/50">
+              <div className="px-5 py-3 border-b border-gray-200/60 dark:border-gray-800/60 bg-[var(--surface-alt)]/50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-2">
                   {[
                     { key: "datos", label: "Datos", num: 1 },
@@ -602,11 +602,11 @@ export default function MarketplaceCart({
                     return (
                       <React.Fragment key={key}>
                         {idx > 0 && (
-                          <div className={`flex-1 h-0.5 rounded-full ${isDone ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"}`} />
+                          <div className={`flex-1 h-0.5 rounded-full ${isDone ? "bg-primary" : "bg-[var(--rule-soft)] dark:bg-gray-700"}`} />
                         )}
                         <div className={`flex items-center gap-1.5 ${isActive ? "text-primary" : isDone ? "text-primary/70" : "text-[var(--text-tertiary)] dark:text-gray-500"}`}>
                           <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black ${
-                            isActive ? "bg-primary text-white" : isDone ? "bg-primary/20 text-primary" : "bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] dark:text-gray-500"
+                            isActive ? "bg-primary text-white" : isDone ? "bg-primary/20 text-primary" : "bg-[var(--rule-soft)] dark:bg-gray-700 text-[var(--text-tertiary)] dark:text-gray-500"
                           }`}>
                             {isDone ? "✓" : num}
                           </div>
@@ -665,7 +665,7 @@ export default function MarketplaceCart({
                 </motion.div>
               ) : isEmpty ? (
                 <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-100/80 dark:bg-gray-800/80 shadow-inner">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--surface-sunken)]/80 dark:bg-gray-800/80 shadow-inner">
                     <svg aria-hidden="true" className="h-9 w-9 text-[var(--text-tertiary)] dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
@@ -761,7 +761,7 @@ export default function MarketplaceCart({
                   </div>
 
                   {/* Cupones por tienda */}
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
+                  <div className="rounded-xl border border-gray-200 bg-[var(--surface-alt)] p-3 dark:border-gray-800 dark:bg-gray-800/50">
                     <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-gray-400 mb-2">Cupones de descuento</p>
                     {Object.keys(byStore).map((sid) => {
                       const g = byStore[sid];
@@ -852,7 +852,7 @@ export default function MarketplaceCart({
                       }`}
                     >
                       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-                        paymentMethod === "efectivo" ? "bg-primary/10 text-primary" : "bg-gray-100 dark:bg-gray-800 text-[var(--text-tertiary)]"
+                        paymentMethod === "efectivo" ? "bg-primary/10 text-primary" : "bg-[var(--surface-sunken)] dark:bg-gray-800 text-[var(--text-tertiary)]"
                       }`}>
                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -879,7 +879,7 @@ export default function MarketplaceCart({
                       }`}
                     >
                       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-                        paymentMethod === "yape" ? "bg-[#6E2B8B]/10 text-[#6E2B8B]" : "bg-gray-100 dark:bg-gray-800 text-[var(--text-tertiary)]"
+                        paymentMethod === "yape" ? "bg-[#6E2B8B]/10 text-[#6E2B8B]" : "bg-[var(--surface-sunken)] dark:bg-gray-800 text-[var(--text-tertiary)]"
                       }`}>
                         <span className="text-lg font-black">Y</span>
                       </div>
@@ -897,7 +897,7 @@ export default function MarketplaceCart({
 
                   {/* Cash change calculator */}
                   {paymentMethod === "efectivo" && (
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-2">
+                    <div className="rounded-xl border border-gray-200 bg-[var(--surface-alt)] p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-2">
                       <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-gray-400">
                         Calculadora de vuelto
                       </p>
@@ -926,7 +926,7 @@ export default function MarketplaceCart({
                           <button
                             key={v}
                             onClick={() => setCashAmount(String(v))}
-                            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-700 transition-colors"
                           >
                             S/{v}
                           </button>
@@ -979,7 +979,7 @@ export default function MarketplaceCart({
                   </h3>
 
                   {/* Datos del cliente */}
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-1.5">
+                  <div className="rounded-xl border border-gray-200 bg-[var(--surface-alt)] p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-1.5">
                     <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-gray-400 mb-2">Datos de entrega</p>
                     <div className="flex justify-between text-sm">
                       <span className="text-[var(--text-secondary)]">Nombre</span>
@@ -1002,7 +1002,7 @@ export default function MarketplaceCart({
                   </div>
 
                   {/* Método de pago */}
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
+                  <div className="rounded-xl border border-gray-200 bg-[var(--surface-alt)] p-3 dark:border-gray-800 dark:bg-gray-800/50">
                     <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-gray-400 mb-2">Método de pago</p>
                     <div className="flex items-center gap-2">
                       {paymentMethod === "yape" ? (
@@ -1026,7 +1026,7 @@ export default function MarketplaceCart({
                   </div>
 
                   {/* Productos por tienda */}
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
+                  <div className="rounded-xl border border-gray-200 bg-[var(--surface-alt)] p-3 dark:border-gray-800 dark:bg-gray-800/50">
                     <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-gray-400 mb-2">Productos</p>
                     {Object.keys(byStore).map((sid) => {
                       const g = byStore[sid];
@@ -1115,7 +1115,7 @@ export default function MarketplaceCart({
                         </div>
 
                         {/* items */}
-                        <div className="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-gray-50/50 px-4 dark:divide-gray-800 dark:border-gray-800 dark:bg-gray-800/30">
+                        <div className="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-[var(--surface-alt)]/50 px-4 dark:divide-gray-800 dark:border-gray-800 dark:bg-gray-800/30">
                           {group.items.map((item) => {
                             const h = item.modifierHash ?? modifierHashOf(item.modifiers);
                             return (
@@ -1163,7 +1163,7 @@ export default function MarketplaceCart({
                                   ✓ Envio gratis a domicilio
                                 </p>
                               )}
-                              <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                              <div className="h-1.5 rounded-full bg-[var(--surface-sunken)] dark:bg-gray-800 overflow-hidden">
                                 <div
                                   className={cn(
                                     "h-full rounded-full transition-all duration-500",

@@ -279,12 +279,12 @@ export default function CatalogView({
               key={i}
               className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden"
             >
-              <div className="aspect-square bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div className="aspect-square bg-[var(--surface-sunken)] dark:bg-gray-800 animate-pulse" />
               <div className="p-2.5 space-y-2">
-                <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-2/3 animate-pulse" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full animate-pulse" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2 animate-pulse" />
-                <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+                <div className="h-4 bg-[var(--surface-sunken)] dark:bg-gray-800 rounded w-2/3 animate-pulse" />
+                <div className="h-3 bg-[var(--surface-sunken)] dark:bg-gray-800 rounded w-full animate-pulse" />
+                <div className="h-3 bg-[var(--surface-sunken)] dark:bg-gray-800 rounded w-1/2 animate-pulse" />
+                <div className="h-8 bg-[var(--surface-sunken)] dark:bg-gray-800 rounded-xl animate-pulse" />
               </div>
             </div>
           ))}
@@ -318,7 +318,7 @@ export default function CatalogView({
       {/* Empty state */}
       {!loading && products.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 mb-4">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] dark:bg-gray-800 mb-4">
             <Package className="h-9 w-9 text-[var(--text-tertiary)] dark:text-gray-600" />
           </div>
           <p className="text-sm font-bold text-[var(--text-primary)] dark:text-gray-300">

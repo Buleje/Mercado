@@ -135,7 +135,7 @@ function PriceRangePopover({
         <span>S/ {min.toFixed(0)}</span>
         <span>S/ {max >= MAX_PRICE_LIMIT ? `${MAX_PRICE_LIMIT}+` : max.toFixed(0)}</span>
       </div>
-      <div className="relative h-1.5 rounded-full bg-gray-200 dark:bg-gray-700">
+      <div className="relative h-1.5 rounded-full bg-[var(--rule-soft)] dark:bg-gray-700">
         <div
           className="absolute h-1.5 rounded-full bg-primary"
           style={{ left: `${minPercent}%`, right: `${100 - maxPercent}%` }}
@@ -225,14 +225,14 @@ function FiltersDrawer({
       <div className="relative w-full max-h-[80vh] min-h-[60vh] rounded-t-3xl bg-white dark:bg-gray-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
         {/* Drag handle */}
         <div className="shrink-0 px-5 pt-5 pb-0">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[var(--rule-soft)] dark:bg-gray-700" aria-hidden="true" />
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Filtros</span>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:bg-gray-800 dark:text-gray-300"
               aria-label="Cerrar filtros"
             >
               <X className="h-4 w-4" />
@@ -438,7 +438,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             </div>
 
             {/* Separador */}
-            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 shrink-0" />
+            <div className="h-6 w-px bg-[var(--rule-soft)] dark:bg-gray-700 mx-1 shrink-0" />
           </>
         )}
 
@@ -473,7 +473,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
                     "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
                     filters.sortBy === opt.value
                       ? "bg-primary/10 text-primary"
-                      : "text-[var(--text-secondary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      : "text-[var(--text-secondary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800"
                   )}
                 >
                   {filters.sortBy === opt.value && <Check className="h-3 w-3" aria-hidden="true" />}

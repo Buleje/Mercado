@@ -127,7 +127,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
 
       {status === "ready" && shareUrl && (
         <div className="mt-4 space-y-2">
-          <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface px-3 py-2">
+          <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface px-3 py-2">
             <code className="text-[length:var(--ts-2xs)] text-foreground truncate flex-1 tabular-nums">
               {shareUrl}
             </code>

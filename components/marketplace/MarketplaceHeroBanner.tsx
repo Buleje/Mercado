@@ -135,7 +135,7 @@ export default function MarketplaceHeroBanner() {
       aria-label="Destacados del marketplace"
       onPointerEnter={() => setPaused(true)}
       onPointerLeave={() => setPaused(false)}
-      className="relative overflow-hidden border-b border-gray-100 dark:border-gray-900 bg-gray-50 dark:bg-gray-950"
+      className="relative overflow-hidden border-b border-gray-100 dark:border-gray-900 bg-[var(--surface-alt)] dark:bg-gray-950"
     >
       {/* Grid pattern sutil (no gradiente de colores) */}
       <div
@@ -265,7 +265,7 @@ export default function MarketplaceHeroBanner() {
                       "h-px transition-all duration-500",
                       i === idx
                         ? "w-12 bg-gray-900 dark:bg-white"
-                        : "w-6 bg-gray-300 dark:bg-gray-700 group-hover:bg-gray-500",
+                        : "w-6 bg-[var(--rule-base)] dark:bg-gray-700 group-hover:bg-gray-500",
                     )}
                   />
                 </button>

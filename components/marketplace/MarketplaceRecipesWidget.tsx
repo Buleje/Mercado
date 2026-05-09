@@ -178,7 +178,7 @@ export default function MarketplaceRecipesWidget() {
               )}
             >
               {/* Hero: illustration line-art sobre off-white con número editorial */}
-              <div className="relative aspect-[4/3] bg-gray-50 dark:bg-gray-950 overflow-hidden">
+              <div className="relative aspect-[4/3] bg-[var(--surface-alt)] dark:bg-gray-950 overflow-hidden">
                 <span className="absolute top-3 left-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   {String(idx + 1).padStart(2, "0")}
                 </span>
@@ -192,7 +192,7 @@ export default function MarketplaceRecipesWidget() {
                   />
                 )}
                 {/* Corner rule */}
-                <div className="absolute bottom-0 left-0 right-0 h-px bg-gray-200 dark:bg-gray-800" />
+                <div className="absolute bottom-0 left-0 right-0 h-px bg-[var(--rule-soft)] dark:bg-gray-800" />
               </div>
 
               <div className="flex-1 flex flex-col p-5">

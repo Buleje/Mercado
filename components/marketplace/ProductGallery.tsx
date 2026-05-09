@@ -52,7 +52,7 @@ export default function ProductGallery({ images, productName, fallbackImage }: P
       <div className="flex flex-col gap-3">
         {/* Imagen principal */}
         <div
-          className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
+          className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[var(--surface-alt)] dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >

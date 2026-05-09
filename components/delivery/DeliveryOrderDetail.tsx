@@ -23,7 +23,7 @@ import SignatureCanvas from "@/components/delivery/SignatureCanvas";
 const DeliveryMap = dynamic(() => import("@/components/delivery/DeliveryMap"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-52 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse flex items-center justify-center">
+    <div className="w-full h-52 rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800 animate-pulse flex items-center justify-center">
       <MapPin className="h-6 w-6 text-gray-400" />
     </div>
   ),
@@ -139,7 +139,7 @@ function ConfirmDeliveryModal({ orderId, onClose, onSuccess }: ConfirmModalProps
       >
         {/* Handle visual */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700" />
+          <div className="w-10 h-1.5 rounded-full bg-[var(--rule-base)] dark:bg-gray-700" />
         </div>
 
         <div className="px-4 pb-6 space-y-5">
@@ -247,10 +247,10 @@ function ConfirmDeliveryModal({ orderId, onClose, onSuccess }: ConfirmModalProps
               disabled={submitting}
               className="
                 min-h-[52px] rounded-xl
-                bg-gray-100 dark:bg-gray-800
+                bg-[var(--surface-sunken)] dark:bg-gray-800
                 text-gray-700 dark:text-gray-300
                 font-bold text-sm
-                hover:bg-gray-200 dark:hover:bg-gray-700
+                hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700
                 active:scale-95 transition-all
                 disabled:opacity-50
               "
@@ -334,11 +334,11 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex flex-col min-h-screen bg-[var(--surface-alt)] dark:bg-gray-950">
         <div className="p-4 space-y-3 max-w-md mx-auto w-full">
-          <div className="h-8 w-32 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
-          <div className="h-52 rounded-xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
-          <div className="h-40 rounded-xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
+          <div className="h-8 w-32 bg-[var(--rule-soft)] dark:bg-gray-800 rounded-lg animate-pulse" />
+          <div className="h-52 rounded-xl bg-[var(--rule-soft)] dark:bg-gray-800 animate-pulse" />
+          <div className="h-40 rounded-xl bg-[var(--rule-soft)] dark:bg-gray-800 animate-pulse" />
         </div>
       </div>
     );
@@ -346,7 +346,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
 
   if (error || !assignment) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex flex-col min-h-screen bg-[var(--surface-alt)] dark:bg-gray-950">
         <div className="p-4 max-w-md mx-auto w-full">
           <button
             type="button"
@@ -380,7 +380,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
 
   return (
     <>
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex flex-col min-h-screen bg-[var(--surface-alt)] dark:bg-gray-950">
         {/* Header */}
         <header
           className="sticky top-0 z-30 bg-primary text-white px-4 py-3 shadow-md flex items-center gap-3"
@@ -458,10 +458,10 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
                 className="
                   flex items-center gap-2
                   min-h-[48px] rounded-xl
-                  bg-gray-100 dark:bg-gray-800
+                  bg-[var(--surface-sunken)] dark:bg-gray-800
                   text-gray-700 dark:text-gray-300
                   font-semibold text-sm px-3
-                  hover:bg-gray-200 dark:hover:bg-gray-700
+                  hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700
                   active:scale-95 transition-all
                 "
               >
@@ -504,7 +504,7 @@ export default function DeliveryOrderDetail({ orderId }: DeliveryOrderDetailProp
             <ul className="divide-y divide-gray-100 dark:divide-gray-800">
               {order.items.map((item) => (
                 <li key={item.id} className="py-2.5 flex items-center gap-3">
-                  <div className="relative h-9 w-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
+                  <div className="relative h-9 w-9 rounded-lg bg-[var(--surface-sunken)] dark:bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
                     {item.image ? (
                       <Image
                         src={item.image}

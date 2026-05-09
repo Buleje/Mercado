@@ -357,7 +357,7 @@ export default function MarketplaceChat({
                       className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
                         isCustomer
                           ? "rounded-br-sm bg-[var(--data-success-700)] text-white"
-                          : "rounded-bl-sm bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white"
+                          : "rounded-bl-sm bg-[var(--surface-sunken)] text-gray-900 dark:bg-gray-800 dark:text-white"
                       }`}
                     >
                       <p className="leading-snug">{msg.message}</p>
@@ -377,7 +377,7 @@ export default function MarketplaceChat({
 
             {/* input */}
             <div className="border-t border-gray-200 px-3 py-2 dark:border-gray-800">
-              <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-1.5 dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-[var(--surface-alt)] px-3 py-1.5 dark:border-gray-700 dark:bg-gray-800">
                 <input
                   type="text"
                   value={input}

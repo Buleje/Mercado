@@ -116,7 +116,7 @@ export function OrderTrackingMini({
                       ? "bg-foreground"
                       : i === currentIdx
                         ? "bg-primary/30"
-                        : "bg-gray-200 dark:bg-card-border",
+                        : "bg-[var(--rule-soft)] dark:bg-card-border",
                   )}
                   aria-hidden
                 />

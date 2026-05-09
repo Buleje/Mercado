@@ -147,10 +147,10 @@ export default function SignatureCanvas({
           className="
             flex items-center justify-center gap-2
             min-h-[44px] rounded-xl
-            bg-gray-100 dark:bg-gray-800
+            bg-[var(--surface-sunken)] dark:bg-gray-800
             text-gray-700 dark:text-gray-300
             font-semibold text-sm
-            hover:bg-gray-200 dark:hover:bg-gray-700
+            hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700
             active:scale-95 transition-all
           "
         >

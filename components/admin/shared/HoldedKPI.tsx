@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, PageTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 interface HoldedKPIProps {
@@ -83,7 +83,7 @@ function HoldedKPI({
         )}
       </div>
 
-      <p className="text-3xl font-bold text-[var(--text-primary)]">
+      <PageTitle as="p">
         {prefix}
         {typeof value === "number"
           ? value.toLocaleString("es-PE", { minimumFractionDigits: 2 })
@@ -93,7 +93,7 @@ function HoldedKPI({
             {suffix}
           </span>
         )}
-      </p>
+      </PageTitle>
 
       {trend && (
         <div className="flex items-center gap-2 mt-2">

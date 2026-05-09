@@ -64,7 +64,7 @@ export default function LiveViewers({ storeSlug, compact = false, className }: P
       <span
         aria-hidden="true"
         className={cn(
-          "inline-block h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700",
+          "inline-block h-4 w-32 animate-pulse rounded bg-[var(--rule-soft)] dark:bg-gray-700",
           className,
         )}
       />
@@ -99,7 +99,7 @@ export default function LiveViewers({ storeSlug, compact = false, className }: P
       role="status"
       aria-live="polite"
       className={cn(
-        "flex items-center gap-1.5 rounded-md bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:ring-gray-700",
+        "flex items-center gap-1.5 rounded-md bg-[var(--surface-alt)] px-2.5 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:ring-gray-700",
         className,
       )}
     >

@@ -197,10 +197,10 @@ function OrderCard({ assignment, onStatusUpdate, updating }: OrderCardProps) {
               className="
                 flex items-center justify-center gap-2
                 min-h-[48px] rounded-xl
-                bg-gray-100 dark:bg-gray-800
+                bg-[var(--surface-sunken)] dark:bg-gray-800
                 text-gray-700 dark:text-gray-300
                 font-semibold text-sm
-                hover:bg-gray-200 dark:hover:bg-gray-700
+                hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700
                 transition-colors active:scale-95
               "
             >
@@ -215,10 +215,10 @@ function OrderCard({ assignment, onStatusUpdate, updating }: OrderCardProps) {
             className={`
               flex items-center justify-center gap-2
               min-h-[48px] rounded-xl
-              bg-gray-100 dark:bg-gray-800
+              bg-[var(--surface-sunken)] dark:bg-gray-800
               text-gray-700 dark:text-gray-300
               font-semibold text-sm
-              hover:bg-gray-200 dark:hover:bg-gray-700
+              hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700
               transition-colors active:scale-95
               ${!assignment.order.customerPhone ? "col-span-2" : ""}
             `}
@@ -443,7 +443,7 @@ export default function DeliveryAppDashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex flex-col min-h-screen bg-[var(--surface-alt)] dark:bg-gray-950">
       {showConfetti && <MiniConfetti />}
 
       {/* Header */}
@@ -528,7 +528,7 @@ export default function DeliveryAppDashboard() {
                 ? "bg-emerald-100 dark:bg-emerald-900/30 text-[var(--data-success-700)] dark:text-emerald-300"
                 : locationStatus === "error"
                 ? "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-700)] dark:text-red-300"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                : "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700"
               }
             `}
           >
