@@ -69,7 +69,7 @@ export default function SetupStatsCard({ stats, allDone }: SetupStatsCardProps) 
       </div>
 
       {allDone && (
-        <div className="bg-[var(--accent)] text-white rounded-xl p-6 flex items-center gap-4">
+        <div className="bg-[var(--accent-600,var(--accent))] text-white rounded-xl p-6 flex items-center gap-4">
           <Sparkles className="w-10 h-10 shrink-0" />
           <div>
             <h2 className="text-xl font-bold">¡Setup completo!</h2>

@@ -350,7 +350,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
   const logoBoxClass = isBuleje
     ? "bg-[linear-gradient(135deg,#00B4A6_0%,#0d9488_100%)] text-white shadow-lg shadow-[#00B4A6]/30"
-    : "bg-[var(--accent)] text-white";
+    : "bg-[var(--accent-600,var(--accent))] text-white";
   const logoLabelClass = isBuleje ? "text-white" : "text-[var(--text-primary)]";
   const logoSubLabelClass = isBuleje ? "text-[#5eead4]" : "text-[var(--accent)]";
   const logoBorderClass = isBuleje ? "border-white/[0.08]" : "border-[var(--rule-base)]";
@@ -653,7 +653,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             </p>
             <button
               onClick={() => router.push("/superadmin/login")}
-              className="w-full px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:brightness-110 transition-colors"
+              className="w-full px-4 py-2.5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-medium hover:brightness-110 transition-colors"
             >
               Iniciar sesión
             </button>

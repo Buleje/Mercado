@@ -159,7 +159,7 @@ export default function ImageUploader({
 
         {isDragging && (
           <div className="absolute inset-0 bg-[var(--accent)]/30 backdrop-blur-sm flex items-center justify-center">
-            <span className="text-xs font-bold text-white bg-[var(--accent)] px-2.5 py-1 rounded-full">
+            <span className="text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] px-2.5 py-1 rounded-full">
               Soltá aquí
             </span>
           </div>

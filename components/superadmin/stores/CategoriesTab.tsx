@@ -369,7 +369,7 @@ export function CategoriesTab() {
       {/* ── Header explicativo ── */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-linear-to-br from-[var(--accent-soft)]/40 to-[var(--surface-raised)] p-4 sm:p-5">
         <div className="flex items-start gap-3">
-          <div className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
+          <div className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-600,var(--accent))] text-white">
             <Sparkles className="h-5 w-5" strokeWidth={2} />
           </div>
           <div className="min-w-0 flex-1">
@@ -603,7 +603,7 @@ function CategoryRow({
                 (status === "saved"
                   ? "bg-emerald-100 text-[var(--data-success-700)]"
                   : dirty && status !== "saving"
-                    ? "bg-[var(--accent)] text-white hover:opacity-90"
+                    ? "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90"
                     : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed")
               }
             >

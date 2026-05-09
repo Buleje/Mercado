@@ -188,7 +188,7 @@ export default function TenantsGrowthRanking() {
                 className={[
                   "px-3 py-1.5 rounded-lg font-bold transition-colors text-sm",
                   range === r
-                    ? "bg-[var(--accent)] text-white"
+                    ? "bg-[var(--accent-600,var(--accent))] text-white"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
                 ].join(" ")}
               >

@@ -435,7 +435,7 @@ export function HealthTab() {
                           tenantName: item.tenantName,
                         });
                       }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg bg-[var(--accent)] text-white hover:opacity-90"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                       Rellenar datos

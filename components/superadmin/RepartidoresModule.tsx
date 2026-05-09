@@ -414,7 +414,7 @@ export default function RepartidoresModule() {
               aria-pressed={statusFilter === f.id}
               className={`h-9 px-4 rounded-lg text-sm font-bold transition-colors ${
                 statusFilter === f.id
-                  ? "bg-[var(--accent)] text-white"
+                  ? "bg-[var(--accent-600,var(--accent))] text-white"
                   : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
               }`}
             >

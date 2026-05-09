@@ -295,7 +295,7 @@ export default function VendorApplicationsModule() {
     <div className="space-y-4">
       {/* Page Header — usa el shell unificado del superadmin (font-display + kicker accent) */}
       <header className="flex items-start gap-3.5">
-        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shrink-0">
+        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
           <Building2 className="h-6 w-6" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="flex-1 min-w-0">

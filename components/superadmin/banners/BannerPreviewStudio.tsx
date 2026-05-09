@@ -1813,7 +1813,7 @@ function AICopySuggester({
               className={cn(
                 "px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider transition-colors",
                 tone === t
-                  ? "bg-[var(--accent)] text-white"
+                  ? "bg-[var(--accent-600,var(--accent))] text-white"
                   : dark
                     ? "bg-[rgb(var(--st-fg)/0.08)] text-[rgb(var(--st-fg)/0.7)] hover:bg-[rgb(var(--st-fg)/0.15)]"
                     : "bg-black/5 text-black/60 hover:bg-black/15",
@@ -1831,7 +1831,7 @@ function AICopySuggester({
             "w-full inline-flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-extrabold transition-all",
             !canSuggest || loading
               ? "bg-[rgb(var(--st-fg)/0.08)] text-[rgb(var(--st-fg)/0.4)] cursor-not-allowed"
-              : "bg-[var(--accent)] text-white hover:brightness-110",
+              : "bg-[var(--accent-600,var(--accent))] text-white hover:brightness-110",
           )}
         >
           {loading ? "Generando…" : data ? "Volver a sugerir" : "Sugerir copy"}
@@ -1941,7 +1941,7 @@ function AnchorControl({
                 className={cn(
                   "h-7 rounded text-[length:var(--ts-2xs)] font-extrabold transition-colors",
                   active
-                    ? "bg-[var(--accent)] text-white"
+                    ? "bg-[var(--accent-600,var(--accent))] text-white"
                     : dark
                       ? "bg-[rgb(var(--st-fg)/0.08)] text-[rgb(var(--st-fg)/0.7)] hover:bg-[rgb(var(--st-fg)/0.15)]"
                       : "bg-black/5 text-black/60 hover:bg-black/10",

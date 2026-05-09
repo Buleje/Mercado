@@ -57,7 +57,7 @@ function Chip({
       className={[
         "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
         active
-          ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+          ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]"
           : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)]",
       ].join(" ")}
     >

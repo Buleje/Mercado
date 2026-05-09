@@ -371,7 +371,7 @@ export function PlantillaPanelTab() {
                 <button
                   type="button"
                   onClick={openAdminPanelInNewTab}
-                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-[var(--accent)] text-white text-xs font-bold hover:bg-[var(--accent)]/90 transition-colors"
+                  className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:bg-[var(--accent)]/90 transition-colors"
                 >
                   Ver en panel
                   <ExternalLink className="h-3 w-3" strokeWidth={2.5} />
@@ -422,7 +422,7 @@ export function PlantillaPanelTab() {
           <button
             type="button"
             onClick={openAdminPanelInNewTab}
-            className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--accent)] text-white text-sm font-bold hover:bg-[var(--accent)]/90 hover:shadow-lg hover:shadow-[var(--accent)]/30 transition-all shrink-0"
+            className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent)]/90 hover:shadow-lg hover:shadow-[var(--accent)]/30 transition-all shrink-0"
           >
             <ExternalLink className="h-4 w-4" strokeWidth={2.25} />
             Abrir panel admin
@@ -462,7 +462,7 @@ export function PlantillaPanelTab() {
               >
                 {/* Badge "Por defecto" cuando está activo */}
                 {isActive && (
-                  <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-black px-2 py-0.5 shadow-md uppercase tracking-wider">
+                  <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-black px-2 py-0.5 shadow-md uppercase tracking-wider">
                     <CheckCircle2 className="h-3 w-3" strokeWidth={3} />
                     Default
                   </span>

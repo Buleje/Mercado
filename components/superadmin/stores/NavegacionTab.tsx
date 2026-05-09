@@ -186,7 +186,7 @@ export function NavegacionTab() {
               >
                 <div className={[
                   "inline-flex h-10 w-10 items-center justify-center rounded-lg",
-                  isActive ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                  isActive ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                 ].join(" ")}>
                   {mode.icon}
                 </div>

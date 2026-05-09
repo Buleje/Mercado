@@ -397,7 +397,7 @@ function ExportDialog({
             <button
               onClick={submit}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--accent)] hover:brightness-110 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 disabled:opacity-50"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
               Generar export

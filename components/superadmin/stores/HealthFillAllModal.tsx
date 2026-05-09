@@ -652,7 +652,7 @@ export default function HealthFillAllModal({
             type="button"
             onClick={saveAll}
             disabled={saving || loading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 disabled:opacity-50"
           >
             {saving ? (
               <>
