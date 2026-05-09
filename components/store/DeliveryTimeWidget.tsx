@@ -85,7 +85,7 @@ export default function DeliveryTimeWidget() {
   const colors = {
     open: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800/50",
     closing: "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-800/50",
-    closed: "bg-gray-50 border-[var(--rule-base)] dark:bg-gray-900 dark:border-[var(--rule-base)]",
+    closed: "bg-[var(--surface-alt)] border-[var(--rule-base)] dark:bg-gray-900 dark:border-[var(--rule-base)]",
   };
 
   const iconColors = {

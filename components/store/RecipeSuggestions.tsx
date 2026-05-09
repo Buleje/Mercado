@@ -173,7 +173,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           <div
             className={cn(
               "h-full rounded-full transition-all",
-              matchPct === 100 ? "bg-[var(--accent)]" : matchPct >= 50 ? "bg-[#f97316]" : "bg-gray-300"
+              matchPct === 100 ? "bg-[var(--accent)]" : matchPct >= 50 ? "bg-[#f97316]" : "bg-[var(--rule-base)]"
             )}
             style={{ width: `${matchPct}%` }}
           />

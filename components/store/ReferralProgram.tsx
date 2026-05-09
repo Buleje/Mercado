@@ -63,8 +63,8 @@ export default function ReferralProgram() {
   if (loading) {
     return (
       <div className="bg-[var(--surface-sunken)] rounded-2xl border border-[var(--accent)]/20 p-6 animate-pulse">
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-3" />
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+        <div className="h-6 bg-[var(--rule-soft)] dark:bg-gray-700 rounded w-2/3 mb-3" />
+        <div className="h-4 bg-[var(--rule-soft)] dark:bg-gray-700 rounded w-1/2" />
       </div>
     );
   }
@@ -158,7 +158,7 @@ export default function ReferralProgram() {
           </span>
           <button
             onClick={handleCopy}
-            className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-[var(--rule-soft)] dark:hover:bg-gray-600 transition-colors"
             aria-label="Copiar codigo"
           >
             {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-gray-500" />}
@@ -191,7 +191,7 @@ export default function ReferralProgram() {
         </button>
         <button
           onClick={handleShareGeneric}
-          className="py-3.5 px-5 rounded-xl bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700 text-[var(--text-secondary)] font-bold text-sm flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
+          className="py-3.5 px-5 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 text-[var(--text-secondary)] font-bold text-sm flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
         >
           <Share2 className="h-4 w-4" />
           Compartir

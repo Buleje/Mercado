@@ -65,7 +65,7 @@ function AnswerItem({
               "inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0",
               answer.isVendor
                 ? "bg-primary text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-[var(--text-primary)] dark:text-gray-300",
+                : "bg-[var(--surface-sunken)] dark:bg-gray-800 text-[var(--text-primary)] dark:text-gray-300",
             )}
           >
             {answer.isVendor ? <Store className="h-3.5 w-3.5" /> : initials(answer.userName)}
@@ -94,7 +94,7 @@ function AnswerItem({
             "mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors",
             voted
               ? "bg-primary/10 text-primary cursor-default"
-              : "text-[var(--text-secondary)] dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[var(--text-primary)] dark:hover:text-white",
+              : "text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 hover:text-[var(--text-primary)] dark:hover:text-white",
           )}
         >
           <ThumbsUp className={cn("h-3 w-3", voted && "fill-current")} />

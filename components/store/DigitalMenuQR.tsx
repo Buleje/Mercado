@@ -157,7 +157,7 @@ export default function DigitalMenuQR() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="h-48 rounded-2xl bg-gray-200 dark:bg-gray-800 animate-pulse"
+                className="h-48 rounded-2xl bg-[var(--rule-soft)] dark:bg-gray-800 animate-pulse"
               />
             ))}
           </div>

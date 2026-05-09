@@ -140,7 +140,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
           {query && (
             <button
               onClick={() => { setQuery(""); setResults([]); setOpen(false); inputRef.current?.focus(); }}
-              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-accent"
+              className="p-1 rounded-full hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"
             >
               <X className="h-3.5 w-3.5 text-gray-400" />
             </button>
@@ -152,7 +152,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
                 "p-1.5 rounded-full transition-colors",
                 isListening
                   ? "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-500)] animate-pulse"
-                  : "hover:bg-gray-100 dark:hover:bg-accent text-gray-400",
+                  : "hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-gray-400",
               )}
               aria-label={isListening ? "Detener dictado" : "Buscar por voz"}
               title={isListening ? "Detener dictado" : "Buscar por voz en espanol"}
@@ -184,7 +184,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
                   setOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-surface transition-colors",
+                  "w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors",
                   i === selected && "bg-primary/5",
                   i < results.length - 1 && "border-b border-[var(--rule-soft)] dark:border-card-border"
                 )}
@@ -192,7 +192,7 @@ export default function SmartSearchBar({ onAddToCart, className }: SmartSearchBa
                 {product.image ? (
                   <Image src={product.image} alt="" width={40} height={40} className="rounded-lg object-cover shrink-0" />
                 ) : (
-                  <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-accent flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center shrink-0">
                     <ShoppingCart className="h-4 w-4 text-gray-400" />
                   </div>
                 )}

@@ -50,7 +50,7 @@ export default function WizardStepper({ currentStep, stepTitles = DEFAULT_STEPS 
                 <div
                   className={[
                     "mx-2 h-px flex-1 transition-colors",
-                    isDone ? "bg-gray-900 dark:bg-white" : "bg-gray-200 dark:bg-gray-700",
+                    isDone ? "bg-gray-900 dark:bg-white" : "bg-[var(--rule-soft)] dark:bg-gray-700",
                   ].join(" ")}
                 />
               )}

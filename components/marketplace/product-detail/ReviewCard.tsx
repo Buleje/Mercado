@@ -120,7 +120,7 @@ export default function ReviewCard({ review, onHelpful }: ReviewCardProps) {
           {review.photos.map((url, i) => (
             <div
               key={`${review.id}-ph-${i}`}
-              className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800"
+              className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)] dark:bg-gray-800"
             >
               <Image
                 src={url}

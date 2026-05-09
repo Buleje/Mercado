@@ -146,9 +146,9 @@ export default function DiscoverMegaMenu({
               onClick={() => {
                 onNavigate?.();
               }}
-              className="flex items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
+              className="flex items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
             >
-              <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-[var(--text-primary)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+              <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-[var(--surface-alt)] text-[var(--text-primary)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
                 <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
               </span>
               <span className="flex-1">
@@ -221,9 +221,9 @@ export default function DiscoverMegaMenu({
                     close();
                     onNavigate?.();
                   }}
-                  className="group flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-900"
+                  className="group flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
                 >
-                  <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-[var(--text-primary)] group-hover:border-primary/40 group-hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 transition-colors">
+                  <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-[var(--surface-alt)] text-[var(--text-primary)] group-hover:border-primary/40 group-hover:text-primary dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 transition-colors">
                     <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                   </span>
                   <span className="flex-1 min-w-0">

@@ -207,7 +207,7 @@ function BadgesSection({ orderCount, totalSpent, hasCouponSavings }: {
                   : "border-dashed border-[var(--rule-base)] opacity-40 grayscale",
               )}
             >
-              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-2", b.earned ? b.color : "bg-gray-300 dark:bg-gray-700")}>
+              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-2", b.earned ? b.color : "bg-[var(--rule-base)] dark:bg-gray-700")}>
                 <Icon className="h-4 w-4 text-white" />
               </div>
               <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">{b.label}</p>

@@ -45,7 +45,7 @@ function RatingBar({ stars, count, percentage, maxCount }: { stars: number; coun
       </span>
       <Star className="h-3 w-3 fill-gray-400 text-[var(--text-tertiary)] flex-shrink-0" aria-hidden />
       <div
-        className="flex-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden"
+        className="flex-1 h-1.5 rounded-full bg-[var(--surface-sunken)] dark:bg-gray-800 overflow-hidden"
         role="progressbar"
         aria-valuenow={percentage}
         aria-valuemin={0}
@@ -53,7 +53,7 @@ function RatingBar({ stars, count, percentage, maxCount }: { stars: number; coun
         aria-label={`${stars} estrellas: ${percentage}%`}
       >
         <div
-          className="h-full rounded-full bg-gray-400 dark:bg-gray-500 transition-all"
+          className="h-full rounded-full bg-[var(--rule-mid)] dark:bg-gray-500 transition-all"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -77,7 +77,7 @@ function ReviewCard({ review }: { review: MockStoreReview }) {
       <div className="flex items-start gap-3">
         {/* Avatar */}
         <div
-          className="flex-shrink-0 w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] dark:text-gray-400"
+          className="flex-shrink-0 w-9 h-9 rounded-full bg-[var(--surface-sunken)] dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] dark:text-gray-400"
           aria-hidden
         >
           {review.authorInitials}
@@ -178,7 +178,7 @@ export default function StoreReviews({ summary, reviews, storeSlug, storeName }:
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 p-8 text-center">
+        <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-800 bg-[var(--surface-alt)] dark:bg-gray-900/40 p-8 text-center">
           <p className="text-sm font-bold text-[var(--text-primary)] dark:text-gray-300">
             Esta tienda todavía no tiene reseñas.
           </p>

@@ -134,7 +134,7 @@ export default function StoreInfoCard({
       </div>
 
       {/* Mapa placeholder */}
-      <div className="mt-2 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/60 p-4 flex flex-col items-center gap-3">
+      <div className="mt-2 rounded-lg border border-gray-100 dark:border-gray-800 bg-[var(--surface-alt)] dark:bg-gray-800/60 p-4 flex flex-col items-center gap-3">
         <div className="text-[var(--text-secondary)] dark:text-gray-400">
           <MapaUcayaliAutentico size={100} strokeWidth={1.5} />
         </div>

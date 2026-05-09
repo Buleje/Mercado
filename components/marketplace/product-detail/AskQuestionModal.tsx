@@ -128,7 +128,7 @@ export default function AskQuestionModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
                 aria-label="Cerrar"
               >
                 <X className="h-4 w-4" />
@@ -155,7 +155,7 @@ export default function AskQuestionModal({
                   rows={3}
                   maxLength={500}
                   placeholder="Ej. ¿Hay delivery a Yarinacocha el mismo día?"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[var(--surface-alt)] dark:bg-gray-950 text-sm text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
                 />
                 <p className="mt-1 text-xs text-[var(--text-tertiary)]">{question.length} / 500</p>
               </div>
@@ -174,7 +174,7 @@ export default function AskQuestionModal({
                   onChange={(e) => setName(e.target.value)}
                   maxLength={80}
                   placeholder="Ej. Ana L."
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[var(--surface-alt)] dark:bg-gray-950 text-sm text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
                 />
               </div>
 
@@ -185,12 +185,12 @@ export default function AskQuestionModal({
               )}
             </div>
 
-            <footer className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+            <footer className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-200 dark:border-gray-800 bg-[var(--surface-alt)] dark:bg-gray-950">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
               >
                 Cancelar
               </button>

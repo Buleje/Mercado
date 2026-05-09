@@ -58,7 +58,7 @@ function MiniChart({ points }: { points: PricePoint[] }) {
                 isLast  ? "bg-[var(--accent)]" :
                 isMax   ? "bg-red-400 dark:bg-[var(--data-error-500)]" :
                 isMin   ? "bg-emerald-400 dark:bg-[var(--data-success-500)]" :
-                "bg-gray-200 dark:bg-gray-700"
+                "bg-[var(--rule-soft)] dark:bg-gray-700"
               )}
               style={{ height: `${Math.max(heightPct, 8)}%` }}
             />

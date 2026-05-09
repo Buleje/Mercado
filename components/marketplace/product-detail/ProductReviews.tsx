@@ -161,7 +161,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
 
       {/* Filtros + Sort */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="inline-flex items-center gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 overflow-x-auto">
+        <div className="inline-flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800 p-1 overflow-x-auto">
           <Filter className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-gray-400 mx-2 shrink-0" />
           {(["all", "with_photos", "helpful", "verified"] as ReviewFilter[]).map((f) => (
             <button
@@ -234,7 +234,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
             <button
               onClick={handleLoadMore}
               disabled={loadingMore}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
               Ver más reseñas

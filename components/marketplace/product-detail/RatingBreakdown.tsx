@@ -54,7 +54,7 @@ function Bar({
       </span>
       <Star className="h-3 w-3 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
       <div
-        className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden"
+        className="flex-1 h-2 rounded-full bg-[var(--surface-sunken)] dark:bg-gray-800 overflow-hidden"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -132,7 +132,7 @@ export default function RatingBreakdown({ data, onFilterClick }: RatingBreakdown
           {data.withPhotos > 0 && (
             <button
               onClick={() => onFilterClick?.("with_photos")}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1 text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1 text-xs font-semibold hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 transition-colors"
             >
               <Camera className="h-3.5 w-3.5" />
               {data.withPhotos} con fotos

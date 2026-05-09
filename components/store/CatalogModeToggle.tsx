@@ -40,7 +40,7 @@ export function CatalogModeToggle({ hidePrices, onToggle, className }: CatalogMo
         "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
         hidePrices
           ? "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400"
-          : "bg-gray-100 text-gray-600 dark:bg-surface dark:text-muted hover:bg-gray-200",
+          : "bg-[var(--surface-sunken)] text-gray-600 dark:bg-surface dark:text-muted hover:bg-[var(--rule-soft)]",
         className
       )}
       title={hidePrices ? "Mostrar precios" : "Ocultar precios (modo catálogo)"}

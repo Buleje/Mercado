@@ -53,13 +53,13 @@ export default function StoreAboutBlock({
         role="img"
         aria-label={`Ilustraciones de ${storeName}`}
       >
-        <div className="flex-1 flex items-center justify-center rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 py-5 text-gray-500 dark:text-gray-400">
+        <div className="flex-1 flex items-center justify-center rounded-xl border border-gray-100 dark:border-gray-800 bg-[var(--surface-alt)] dark:bg-gray-900 py-5 text-gray-500 dark:text-gray-400">
           <DoniaElena size={80} strokeWidth={1.5} />
         </div>
-        <div className="flex-1 flex items-center justify-center rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 py-5 text-gray-500 dark:text-gray-400">
+        <div className="flex-1 flex items-center justify-center rounded-xl border border-gray-100 dark:border-gray-800 bg-[var(--surface-alt)] dark:bg-gray-900 py-5 text-gray-500 dark:text-gray-400">
           <BodegueroCelebrando size={80} strokeWidth={1.5} />
         </div>
-        <div className="flex-1 flex items-center justify-center rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 py-5 text-gray-500 dark:text-gray-400">
+        <div className="flex-1 flex items-center justify-center rounded-xl border border-gray-100 dark:border-gray-800 bg-[var(--surface-alt)] dark:bg-gray-900 py-5 text-gray-500 dark:text-gray-400">
           <CuadernoFiadoReal size={80} strokeWidth={1.5} />
         </div>
       </div>

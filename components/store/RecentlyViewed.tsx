@@ -96,7 +96,7 @@ export default function RecentlyViewed({ maxItems = 6 }: RecentlyViewedProps) {
                   aria-label={`Volver a ver ${item.name}`}
                 >
                   {/* Thumbnail con ilustracion fallback */}
-                  <div className="aspect-square bg-gray-50 dark:bg-gray-950 flex items-center justify-center text-[var(--text-primary)] dark:text-gray-200 group-hover:text-primary transition-colors border-b border-gray-100 dark:border-gray-800">
+                  <div className="aspect-square bg-[var(--surface-alt)] dark:bg-gray-950 flex items-center justify-center text-[var(--text-primary)] dark:text-gray-200 group-hover:text-primary transition-colors border-b border-gray-100 dark:border-gray-800">
                     <Ill size={72} strokeWidth={1.5} />
                   </div>
 
