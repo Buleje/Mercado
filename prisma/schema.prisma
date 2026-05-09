@@ -253,7 +253,13 @@ model VariantCatalogOption {
 
 // ─── Customers ──────────────────────────────────────────
 model Customer {
-  phone             String    @id
+  // TD-040 Phase 1 EXPAND (2026-05-09): new surrogate PK.
+  // phone gets temporary global @unique (same as original @id constraint) so existing
+  // FK relations (references: [phone]) remain valid during this sprint.
+  // Phase 2: backfill customerId in child models; switch relations to references: [id].
+  // Phase 3 (contract): drop @unique on phone; @@unique([tenantId, phone]) becomes sole constraint.
+  id                String    @id @default(cuid())
+  phone             String    @unique // temporary global unique; see TD-040 Phase 3 to relax to @@unique([tenantId,phone])
   name              String
   location          String    @default("")
   reference         String    @default("")
@@ -323,10 +329,9 @@ model Customer {
   cotizaciones        Cotizacion[]
   loyaltyTransactions LoyaltyTransaction[]
 
-  // CLEANUP P2: redundante con @@index([tenantId, createdAt]) y @@index([tenantId, phone]) abajo
-  // @@index([tenantId])
+  // @@unique([tenantId, phone]) -- TARGET for Phase 3 contract; phone @unique is the interim scaffold
+  @@index([phone]) // legacy queries still filter by phone (replaces former @@index([tenantId, phone]))
   @@index([tenantId, createdAt])
-  @@index([tenantId, phone])
   @@index([createdAt])
 }
 
@@ -355,6 +360,7 @@ model LoyaltyTransaction {
 model SavedCart {
   id            String   @id @default(cuid())
   customerPhone String
+  customerId    String? // TD-040 Phase 1 EXPAND: will hold Customer.id after Phase 2 backfill
   tenantId      String
   itemsJson     String // JSON array of cart items
   updatedAt     DateTime @updatedAt
@@ -370,6 +376,7 @@ model SavedLocation {
   location      String
   reference     String   @default("")
   customerPhone String
+  customerId    String? // TD-040 Phase 1 EXPAND: will hold Customer.id after Phase 2 backfill
   customer      Customer @relation(fields: [customerPhone], references: [phone], onDelete: Cascade)
 
   @@index([customerPhone])
@@ -414,6 +421,8 @@ model Order {
 
   // Multi-vendor WhatsApp checkout: agrupa órdenes que comparten una PaymentApproval (Yape)
   paymentApprovalId String?
+  // TD-040 Phase 1 EXPAND: parallel Customer.id FK; backfill in Phase 2 via phone+tenantId join
+  customerId        String?
 
   // ─── Bloque D1 — Delivery vivo (marketplace) ────────────────
   deliveryStatus      String? // preparing|ready|picked_up|in_transit|nearby|delivered|failed|cancelled
@@ -507,6 +516,8 @@ model Review {
   @@index([productId, status, date(sort: Desc)], name: "Review_productId_status_date_idx")
   @@index([tenantId, verified], name: "Review_tenantId_verified_idx")
   @@index([orderId])
+  // PERF wave-2: customers.db.ts getByProduct — {status:"approved", productId≠null, tenantId, deletedAt:null}
+  @@index([tenantId, productId, status, deletedAt], name: "Review_tenantId_productId_status_deletedAt_idx")
 }
 
 // ─── Bloque D3 — ReviewVote (dedupe de votos helpful) ──────
@@ -789,6 +800,7 @@ model Sale {
   amountPaid    Decimal  @default(0) @db.Decimal(12, 2)
   change        Decimal  @default(0) @db.Decimal(12, 2)
   customerPhone String?
+  customerId    String? // TD-040 Phase 1 EXPAND: will hold Customer.id after Phase 2 backfill
   cashierId     String?
   tenantId      String
   createdAt     DateTime @default(now())
@@ -1245,6 +1257,7 @@ model NotificationLog {
 model CustomerNotification {
   id            String   @id @default(cuid())
   customerPhone String
+  customerId    String? // TD-040 Phase 1 EXPAND: will hold Customer.id after Phase 2 backfill
   type          String // order, promo, stock, coupon, general
   title         String
   body          String
