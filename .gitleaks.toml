@@ -1,0 +1,17 @@
+# .gitleaks.toml — Buleje allowlist conservadora
+# Usa los defaults de gitleaks (todos los detectores built-in) más estas
+# excepciones para placeholders de tests y docs. Revisar tras 1 semana
+# de baseline limpio y convertir el step de CI a blocking.
+
+title = "Buleje gitleaks config"
+
+[allowlist]
+  description = "Placeholders de test/docs — no son credenciales reales"
+  regexes = [
+    # Stripe test key placeholder (seed / fixtures de tests)
+    '''sk_test_PLACEHOLDER''',
+    # Stripe webhook placeholder para tests locales
+    '''whsec_test_secret_[A-Za-z0-9_*]+''',
+    # Cadena literal en docs AWS — no es contraseña operacional
+    '''PASSWORD@aws-1-''',
+  ]
