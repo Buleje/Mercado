@@ -523,7 +523,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
           className={cn(
             "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all disabled:opacity-60",
             filters.nearbyEnabled
-              ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm"
+              ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)] shadow-sm"
               : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border-[var(--rule-base)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]/20"
           )}
         >

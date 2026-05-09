@@ -514,8 +514,8 @@ export default function UnifiedProductCard({
                   : justAdded
                     ? "bg-[var(--data-success-500)] text-white scale-90 ring-[var(--data-success-500)]/30"
                     : inCartQty > 0
-                      ? "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/40"
-                      : "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
+                      ? "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/40"
+                      : "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
               )}
             >
               {justAdded ? (

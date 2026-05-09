@@ -90,7 +90,7 @@ export default function CheckoutSummary({
   const ctaCls = cn(
     "group inline-flex w-full items-center justify-center rounded-full px-6 h-14",
     "text-base font-bold tracking-[var(--ls-tight)] transition-all duration-200",
-    "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90",
+    "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90",
     "shadow-[0_6px_20px_-10px_var(--accent)] hover:shadow-[0_10px_28px_-10px_var(--accent)]",
     "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
   );

@@ -57,7 +57,7 @@ export default function PaymentMethodCard({
       {selected && (
         <span
           aria-hidden
-          className="absolute right-3 top-3 inline-flex items-center justify-center h-6 w-6 rounded-full bg-[var(--accent)] text-white shadow-sm"
+          className="absolute right-3 top-3 inline-flex items-center justify-center h-6 w-6 rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-sm"
         >
           <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} />
         </span>
@@ -69,7 +69,7 @@ export default function PaymentMethodCard({
           className={cn(
             "inline-flex h-11 w-11 items-center justify-center rounded-xl shrink-0 transition-colors",
             selected
-              ? "bg-[var(--accent)] text-white"
+              ? "bg-[var(--accent-600,var(--accent))] text-white"
               : brandColor
               ? ""
               : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)]",

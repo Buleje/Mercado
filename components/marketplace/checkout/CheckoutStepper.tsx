@@ -45,7 +45,7 @@ export default function CheckoutStepper({ current }: { current: CheckoutStep }) 
             "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
             "text-[length:var(--ts-xs)] font-bold transition-all duration-200",
             isCurrent &&
-              "bg-[var(--accent)] text-white ring-4 ring-[var(--accent-soft)] scale-105",
+              "bg-[var(--accent-600,var(--accent))] text-white ring-4 ring-[var(--accent-soft)] scale-105",
             isDone && "bg-[var(--accent-soft)] text-[var(--accent)]",
             !isCurrent &&
               !isDone &&
