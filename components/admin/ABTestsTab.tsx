@@ -97,24 +97,24 @@ export default function ABTestsTab() {
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{t.name}</CardTitle>
-                  <span className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted"}`}>
+                  <span className={`text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted"}`}>
                     {t.active ? "Activo" : "Inactivo"}
                   </span>
                 </div>
                 {t.description && <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">{t.description}</p>}
                 <div className="flex gap-2 mt-2 flex-wrap">
                   {t.variants.map(v => (
-                    <span key={v.id} className="text-xs bg-gray-100 dark:bg-surface px-2 py-1 rounded-lg text-[var(--text-primary)] dark:text-muted">
+                    <span key={v.id} className="text-xs bg-[var(--surface-sunken)] dark:bg-surface px-2 py-1 rounded-lg text-[var(--text-primary)] dark:text-muted">
                       {v.label} ({v.weight}%)
                     </span>
                   ))}
                 </div>
               </div>
               <div className="flex flex-wrap gap-1">
-                <button onClick={() => loadResults(t.id)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition" title="Ver resultados">
+                <button onClick={() => loadResults(t.id)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition" title="Ver resultados">
                   <BarChart3 className="w-4 h-4 text-[var(--data-success-500)]" />
                 </button>
-                <button onClick={() => toggle(t.id)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition" title={t.active ? "Desactivar" : "Activar"}>
+                <button onClick={() => toggle(t.id)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition" title={t.active ? "Desactivar" : "Activar"}>
                   {t.active ? <ToggleRight className="w-4 h-4 text-[var(--data-success-500)]" /> : <ToggleLeft className="w-4 h-4 text-[var(--text-tertiary)]" />}
                 </button>
                 <button onClick={() => del(t.id)} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition" title="Eliminar">
@@ -134,7 +134,7 @@ export default function ABTestsTab() {
                     {results[t.id].map(r => {
                       const variant = t.variants.find(v => v.id === r.variantId);
                       return (
-                        <div key={r.variantId} className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+                        <div key={r.variantId} className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">
                           <p className="font-semibold text-sm">{variant?.label || r.variantId}</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2 text-center">
                             <div>
@@ -167,7 +167,7 @@ export default function ABTestsTab() {
           <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-[var(--rule-base)] dark:border-card-border" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <CardTitle className="text-lg font-extrabold text-foreground">Nuevo A/B Test</CardTitle>
-              <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface"><X className="w-4 h-4" /></button>
+              <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-3">
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre del test" className="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-surface dark:border-card-border" />

@@ -255,7 +255,7 @@ export default function AdminUsersTab() {
           <div className="overflow-x-auto -mx-2 px-2">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface">
+              <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface">
                 <th className="text-left px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Usuario</th>
                 <th className="text-left px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Rol</th>
                 <th className="text-left px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">Estado</th>
@@ -267,7 +267,7 @@ export default function AdminUsersTab() {
                 const rc = ROLE_CONFIG[u.role] ?? ROLE_CONFIG.cajero;
                 const RoleIcon = rc.icon;
                 return (
-                  <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                  <tr key={u.id} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -290,7 +290,7 @@ export default function AdminUsersTab() {
                         <button
                           onClick={() => openEditInfo(u)}
                           title="Editar usuario"
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-[var(--text-primary)] dark:hover:text-foreground transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent hover:text-[var(--text-primary)] dark:hover:text-foreground transition-colors"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -437,7 +437,7 @@ export default function AdminUsersTab() {
             <div className="flex flex-wrap gap-3 mt-2">
               <button
                 onClick={() => { setConfirmDeleteId(null); setError(null); }}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors"
               >
                 Cancelar
               </button>
@@ -458,7 +458,7 @@ export default function AdminUsersTab() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-const inputCls = "w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted";
+const inputCls = "w-full px-3 py-2.5 text-sm bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -495,7 +495,7 @@ function FormFooter({ onCancel, saving, label }: { onCancel: () => void; saving:
   return (
     <div className="flex flex-wrap justify-end gap-3 pt-2">
       <button type="button" onClick={onCancel}
-        className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+        className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
         Cancelar
       </button>
       <button type="submit" disabled={saving}
@@ -516,7 +516,7 @@ function ModalWrapper({ title, onClose, children }: { title: string; onClose: ()
             <UserCog className="h-5 w-5 text-primary" />
             {title}
           </CardTitle>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>

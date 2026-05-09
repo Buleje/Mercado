@@ -157,12 +157,12 @@ function AlertSkeleton() {
           className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse"
         >
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl shrink-0" />
+            <div className="h-10 w-10 bg-[var(--rule-soft)] dark:bg-gray-700 rounded-xl shrink-0" />
             <div className="flex-1">
-              <div className="h-4 w-44 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+              <div className="h-4 w-44 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-2" />
               <div className="h-3 w-64 bg-[var(--surface-sunken)] rounded" />
             </div>
-            <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg shrink-0" />
+            <div className="h-8 w-20 bg-[var(--rule-soft)] dark:bg-gray-700 rounded-lg shrink-0" />
           </div>
         </div>
       ))}
@@ -490,7 +490,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
         <button
           onClick={fetchAlerts}
           disabled={loading}
-          className="ml-auto p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+          className="ml-auto p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
           title="Actualizar alertas"
         >
           <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
@@ -509,7 +509,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
               <h4 className="text-xs font-extrabold text-[var(--text-secondary)] dark:text-muted">
                 {catConfig.label}
               </h4>
-              <div className="flex-1 h-px bg-gray-200 dark:bg-card-border" />
+              <div className="flex-1 h-px bg-[var(--rule-soft)] dark:bg-card-border" />
             </div>
 
             {/* Alerts in this category */}
@@ -577,7 +577,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                             );
                           }
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
                       >
                         {alert.action}
                         <ArrowRight className="w-3 h-3" />

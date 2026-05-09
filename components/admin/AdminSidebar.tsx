@@ -65,12 +65,12 @@ const GROUP_ICONS: Record<ModuleGroup, LucideIcon> = {
 };
 
 const GROUP_COLORS: Record<ModuleGroup, { icon: string; bg: string; border: string }> = {
-  operaciones: { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
-  gestion:     { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
-  finanzas:    { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
-  documentos:  { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
-  inteligencia:{ icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
-  config:      { icon: "text-[var(--text-tertiary)]", bg: "bg-gray-100", border: "border-[var(--rule-base)]" },
+  operaciones: { icon: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]" },
+  gestion:     { icon: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]" },
+  finanzas:    { icon: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]" },
+  documentos:  { icon: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]" },
+  inteligencia:{ icon: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]" },
+  config:      { icon: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]" },
 };
 
 const GROUP_ORDER: ModuleGroup[] = ["operaciones", "gestion", "finanzas", "documentos", "inteligencia"];
@@ -442,7 +442,7 @@ function ModuleItem({
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-[var(--dur-base)] group relative",
           isActive
             ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-            : "text-[var(--text-secondary)] hover:bg-gray-100"
+            : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
         )}
       >
         {/* Active indicator bar */}
@@ -537,7 +537,7 @@ function ModuleItem({
                         "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all duration-[var(--dur-fast)]",
                         isTabActive
                           ? "bg-[var(--accent)]/10 text-[var(--accent)] font-semibold"
-                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-100"
+                          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                       )}
                     >
                       <span
@@ -621,7 +621,7 @@ function FlyoutPanel({
                 "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all",
                 isActive
                   ? "bg-[var(--accent)]/10 text-[var(--accent)] font-semibold"
-                  : "text-[var(--text-secondary)] hover:bg-gray-100"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
               <Ic className="h-4 w-4 shrink-0" />
@@ -697,13 +697,13 @@ function CategorySection({
             allowAccordion ? "cursor-pointer" : "cursor-default",
             isAnyActive
               ? "bg-[var(--accent)]/10"
-              : "hover:bg-gray-50"
+              : "hover:bg-[var(--surface-alt)]"
           )}
         >
           {/* Icono de categoría con color */}
           <div className={cn(
             "h-7 w-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
-            accordionOpen || isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100"
+            accordionOpen || isAnyActive ? cn(col.bg, "border", col.border) : "bg-[var(--surface-sunken)]"
           )}>
             <Icon className={cn(
               "h-3.5 w-3.5 transition-colors",
@@ -1012,7 +1012,7 @@ export default function AdminSidebar({
         >
           <button
             onClick={isMobile ? () => setMobileOpen(false) : onToggleCollapse}
-            className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-gray-100 transition-colors shrink-0"
+            className="p-2 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
             aria-label="Toggle sidebar"
           >
             {isMobile ? (
@@ -1080,7 +1080,7 @@ export default function AdminSidebar({
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 editMode
                   ? "bg-[var(--accent-600,var(--accent))] text-white"
-                  : "text-[var(--text-secondary)] hover:bg-gray-100 border border-[var(--rule-base)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)]"
               )}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
@@ -1099,7 +1099,7 @@ export default function AdminSidebar({
                 placeholder="Buscar módulo..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-[var(--rule-base)] bg-gray-50 focus:outline-none focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)] placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)]"
+                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)] placeholder:text-[var(--text-tertiary)] text-[var(--text-primary)]"
               />
               {search && (
                 <button
@@ -1187,10 +1187,10 @@ export default function AdminSidebar({
                         "w-full flex items-center justify-center p-2 rounded-xl transition-all cursor-default",
                         isAnyActive
                           ? "bg-[var(--accent)]/10"
-                          : "hover:bg-gray-100"
+                          : "hover:bg-[var(--surface-sunken)]"
                       )}
                     >
-                      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", isAnyActive ? cn(col.bg, "border", col.border) : "bg-gray-100")}>
+                      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center", isAnyActive ? cn(col.bg, "border", col.border) : "bg-[var(--surface-sunken)]")}>
                         <Icon className={cn("h-3.5 w-3.5", isAnyActive ? col.icon : "text-[var(--text-tertiary)]")} />
                       </div>
                     </button>

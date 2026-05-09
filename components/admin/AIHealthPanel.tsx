@@ -191,7 +191,7 @@ export default function AIHealthPanel() {
         <div className="flex items-center gap-3">
           <button
             onClick={fetchHealth}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[var(--surface-sunken)] text-[var(--text-secondary)] rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[var(--surface-sunken)] text-[var(--text-secondary)] rounded-full hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 transition-colors"
           >
             <RefreshCw className="h-3 w-3" /> Actualizar
           </button>
@@ -238,7 +238,7 @@ export default function AIHealthPanel() {
                 return (
                   <div
                     key={check.name}
-                    className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors"
+                    className="flex items-start gap-3 px-4 py-3 hover:bg-[var(--surface-alt)]/50 dark:hover:bg-gray-800/30 transition-colors"
                     style={{
                       opacity: animateIn ? 1 : 0,
                       transform: animateIn ? "translateX(0)" : "translateX(-10px)",

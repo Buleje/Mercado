@@ -143,7 +143,7 @@ export default function AssetManagerTab() {
           <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Registrar activo
           </button>
-          <button onClick={() => exportToCSV(filtered.map(a => ({ codigo: a.code, nombre: a.name, categoria: CATEGORY_META[a.category].label, estado: STATUS_META[a.status].label, fecha_adq: a.acquisitionDate, costo: a.acquisitionCost, vida_util: a.usefulLifeYears, dep_acum: Number(a.dep.accumulated).toFixed(2), valor_libros: Number(a.dep.bookValue).toFixed(2), ubicacion: a.location, responsable: a.responsible })), "activos-fijos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(a => ({ codigo: a.code, nombre: a.name, categoria: CATEGORY_META[a.category].label, estado: STATUS_META[a.status].label, fecha_adq: a.acquisitionDate, costo: a.acquisitionCost, vida_util: a.usefulLifeYears, dep_acum: Number(a.dep.accumulated).toFixed(2), valor_libros: Number(a.dep.bookValue).toFixed(2), ubicacion: a.location, responsable: a.responsible })), "activos-fijos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -194,7 +194,7 @@ export default function AssetManagerTab() {
             <input value={form.responsible} onChange={e => setForm(p => ({ ...p, responsible: e.target.value }))} placeholder="Responsable" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">Cancelar</button>
             <button onClick={addAsset} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90">Registrar</button>
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function AssetManagerTab() {
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Código</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Activo</th>
@@ -238,7 +238,7 @@ export default function AssetManagerTab() {
               {filtered.map(a => {
                 const st = STATUS_META[a.status];
                 return (
-                  <tr key={a.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
+                  <tr key={a.id} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30 transition-colors">
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono font-bold text-[var(--text-secondary)]">{a.code}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{a.name}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{CATEGORY_META[a.category].label}</td>
@@ -247,7 +247,7 @@ export default function AssetManagerTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-info-500)]">{fmt(a.dep.bookValue)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <div className="flex items-center gap-1.5 justify-center">
-                        <div className="w-12 bg-gray-200 dark:bg-surface rounded-full h-2 overflow-hidden">
+                        <div className="w-12 bg-[var(--rule-soft)] dark:bg-surface rounded-full h-2 overflow-hidden">
                           <div className={cn("h-full rounded-full", a.dep.pctDepreciated >= 90 ? "bg-[var(--data-error-500)]" : a.dep.pctDepreciated >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(100, a.dep.pctDepreciated)}%` }} />
                         </div>
                         <span className="text-xs text-[var(--text-secondary)]">{Number(a.dep.pctDepreciated).toFixed(0)}%</span>
@@ -261,7 +261,7 @@ export default function AssetManagerTab() {
                 );
               })}
             </tbody>
-            <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface/50">
+            <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface/50">
               <tr className="font-extrabold">
                 <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-[var(--text-secondary)]">Totales</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(stats.totalCost)}</td>

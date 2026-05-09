@@ -96,7 +96,7 @@ export default function BankReconciliationTab() {
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Cruce de movimientos bancarios vs registros del sistema</p>
         </div>
-        <button onClick={() => exportToCSV(processed.map(m => ({ fecha: m.date, descripcion: m.description, referencia: m.reference, tipo: m.type, monto: m.amount, cuenta: accountName(m.bankAccount), estado: m.status, ref_sistema: m.systemRef, notas: m.notes })), "conciliacion-bancaria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(processed.map(m => ({ fecha: m.date, descripcion: m.description, referencia: m.reference, tipo: m.type, monto: m.amount, cuenta: accountName(m.bankAccount), estado: m.status, ref_sistema: m.systemRef, notas: m.notes })), "conciliacion-bancaria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -157,7 +157,7 @@ export default function BankReconciliationTab() {
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Estado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Fecha</th>
@@ -175,7 +175,7 @@ export default function BankReconciliationTab() {
                 const meta = STATUS_META[m.status];
                 const Icon = meta.icon;
                 return (
-                  <tr key={m.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
+                  <tr key={m.id} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30 transition-colors">
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span>
                     </td>

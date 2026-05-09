@@ -124,7 +124,7 @@ export default function BCGMatrixTab() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead><tr className="bg-gray-50 dark:bg-surface text-left">
+            <thead><tr className="bg-[var(--surface-alt)] dark:bg-surface text-left">
               <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
               <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</th>
               <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Ingreso</th>
@@ -137,7 +137,7 @@ export default function BCGMatrixTab() {
               {filtered.map(p => {
                 const c = Q_CONFIG[p.quadrant];
                 return (
-                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-surface">
+                  <tr key={p.id} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface">
                     <td className="px-5 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{p.name}</td>
                     <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
                     <td className="px-5 py-3 text-right font-bold">{fmt(p.revenue)}</td>
@@ -145,7 +145,7 @@ export default function BCGMatrixTab() {
                     <td className="px-5 py-3 text-right font-bold">{p.marketShare}%</td>
                     <td className="px-5 py-3"><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
                     <td className="px-5 py-3 text-center">
-                      <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
+                      <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 );
@@ -182,11 +182,11 @@ export default function BCGMatrixTab() {
               <button onClick={() => setDetail(null)} className="text-base sm:text-xl font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
-              <div className="col-span-2 bg-gray-50 dark:bg-surface rounded-xl p-3">
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
+              <div className="col-span-2 bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">
                 <span className="text-xs text-[var(--text-tertiary)]">Cuadrante</span>
                 {(() => {
                   const DIcon = Q_CONFIG[detail.quadrant].Icon;

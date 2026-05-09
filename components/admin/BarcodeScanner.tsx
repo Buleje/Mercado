@@ -149,7 +149,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
           </div>
           <button
             onClick={() => { stopCamera(); onClose(); }}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
           >
             <X className="h-5 w-5" />
           </button>

@@ -312,7 +312,7 @@ export default function AgentsDashboardTab() {
             fetchRecentTasks();
             fetchHistory(historyPage, historyDomain);
           }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -711,7 +711,7 @@ export default function AgentsDashboardTab() {
               <button
                 onClick={() => handleHistoryPageChange(historyPage - 1)}
                 disabled={historyPage <= 1}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Anterior
@@ -722,7 +722,7 @@ export default function AgentsDashboardTab() {
               <button
                 onClick={() => handleHistoryPageChange(historyPage + 1)}
                 disabled={historyPage >= totalHistoryPages}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
               >
                 Siguiente
                 <ChevronRight className="h-4 w-4" />
@@ -749,7 +749,7 @@ function TaskRow({ task }: { task: AgentTask }) {
   const priorityMeta = PRIORITY_LABELS[task.priority];
 
   return (
-    <tr className="hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+    <tr className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
       <td className="px-2 sm:px-4 py-1.5 sm:py-2.5">
         <span className="font-mono text-xs text-[var(--text-secondary)] dark:text-muted" title={task.id}>
           {truncateId(task.id)}

@@ -31,7 +31,7 @@ export default function AdminBottomNav({ currentTab, setTab, toggleSidebar }: Ad
             onClick={() => setTab(item.id)}
             className={cn(
               "flex flex-col items-center justify-center w-20 h-full space-y-1.5 rounded-xl transition-all active:scale-95",
-              isActive ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)]/50 dark:bg-[var(--accent)]/20" : "text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface/50"
+              isActive ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)]/50 dark:bg-[var(--accent)]/20" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50"
             )}
           >
             <Icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-2")} />
@@ -43,7 +43,7 @@ export default function AdminBottomNav({ currentTab, setTab, toggleSidebar }: Ad
       {/* Menu / More Button */}
       <button
         onClick={toggleSidebar}
-        className="flex flex-col items-center justify-center w-20 h-full space-y-1.5 rounded-xl text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface/50 transition-all active:scale-95"
+        className="flex flex-col items-center justify-center w-20 h-full space-y-1.5 rounded-xl text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-all active:scale-95"
       >
         <Menu className="h-5 w-5 stroke-2" />
         <span className="text-[length:var(--ts-2xs)] font-medium leading-none">Menú</span>

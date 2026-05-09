@@ -74,7 +74,7 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
             <Monitor className="h-5 w-5 text-primary" />
             Atajos de teclado
           </CardTitle>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             <X className="h-4 w-4 text-[var(--text-secondary)]" />
           </button>
         </div>
@@ -90,7 +90,7 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
                 {section.shortcuts.map(([key, label]) => (
                   <div key={key} className="flex items-center justify-between py-1">
                     <span className="text-sm text-[var(--text-secondary)] dark:text-muted">{label}</span>
-                    <kbd className="ml-2 bg-gray-100 dark:bg-surface text-foreground px-2 py-0.5 rounded-md text-xs font-mono border border-[var(--rule-base)] dark:border-card-border  shrink-0">
+                    <kbd className="ml-2 bg-[var(--surface-sunken)] dark:bg-surface text-foreground px-2 py-0.5 rounded-md text-xs font-mono border border-[var(--rule-base)] dark:border-card-border  shrink-0">
                       {key}
                     </kbd>
                   </div>
@@ -101,7 +101,7 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface">
+        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface">
           <button
             onClick={onClose}
             className="w-full py-2.5 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors"
@@ -230,9 +230,9 @@ export function ClearDataModal({
                 "h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
                 clearConfirmStep >= n
                   ? "bg-[var(--data-error-500)] text-white"
-                  : "bg-gray-200 dark:bg-surface text-[var(--text-tertiary)]"
+                  : "bg-[var(--rule-soft)] dark:bg-surface text-[var(--text-tertiary)]"
               )}>{n}</div>
-              {n < 3 && <div className={cn("h-0.5 w-6 rounded transition-colors", clearConfirmStep > n ? "bg-[var(--data-error-500)]" : "bg-gray-200 dark:bg-surface")} />}
+              {n < 3 && <div className={cn("h-0.5 w-6 rounded transition-colors", clearConfirmStep > n ? "bg-[var(--data-error-500)]" : "bg-[var(--rule-soft)] dark:bg-surface")} />}
             </div>
           ))}
           <span className="ml-2 text-xs text-[var(--text-tertiary)] dark:text-muted">
@@ -273,7 +273,7 @@ export function ClearDataModal({
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-all",
                       selected
                         ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20"
-                        : "border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface"
+                        : "border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
                     )}
                   >
                     <input
@@ -293,7 +293,7 @@ export function ClearDataModal({
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button onClick={handleCancel} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+              <button onClick={handleCancel} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                 Cancelar
               </button>
               <button
@@ -323,7 +323,7 @@ export function ClearDataModal({
               </ul>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setClearConfirmStep(1)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+              <button onClick={() => setClearConfirmStep(1)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                 ← Volver
               </button>
               <button onClick={() => setClearConfirmStep(3)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">
@@ -350,7 +350,7 @@ export function ClearDataModal({
               />
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setClearConfirmStep(2)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+              <button onClick={() => setClearConfirmStep(2)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                 ← Volver
               </button>
               <button

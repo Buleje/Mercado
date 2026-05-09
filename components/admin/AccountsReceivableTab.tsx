@@ -271,10 +271,10 @@ export default function AccountsReceivableTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Créditos otorgados a clientes y gestión de cobranza</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={load} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={load} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
           </button>
-          <button onClick={() => exportToCSV(filtered.map(r => ({ cliente: r.customerName, teléfono: r.customerPhone, descripcion: r.description, total: r.totalAmount, pagado: r.paidAmount, saldo: r.totalAmount - r.paidAmount, vencimiento: r.dueDate, estado: r.status })), "cuentas-por-cobrar")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(r => ({ cliente: r.customerName, teléfono: r.customerPhone, descripcion: r.description, total: r.totalAmount, pagado: r.paidAmount, saldo: r.totalAmount - r.paidAmount, vencimiento: r.dueDate, estado: r.status })), "cuentas-por-cobrar")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -322,7 +322,7 @@ export default function AccountsReceivableTab() {
             ))}
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface">Cancelar</button>
             <button onClick={handleCreate} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60">
               {saving ? "Guardando..." : "Crear"}
             </button>
@@ -338,7 +338,7 @@ export default function AccountsReceivableTab() {
         </div>
         <div className="flex items-center gap-1">
           {(["all", "pendiente", "parcial", "vencido", "pagado"] as const).map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors capitalize", statusFilter === s ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+            <button key={s} onClick={() => setStatusFilter(s)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors capitalize", statusFilter === s ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
               {s === "all" ? "Todos" : STATUS_LABEL[s]}
             </button>
           ))}
@@ -380,7 +380,7 @@ export default function AccountsReceivableTab() {
                   </div>
                   {ar.paidAmount > 0 && (
                     <div className="mt-2">
-                      <div className="w-full h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                         <div className="h-full bg-[var(--accent-soft)] rounded-full transition-all" style={{ width: `${pctPaid}%` }} />
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{pctPaid.toFixed(0)}% pagado — {fmt(ar.paidAmount)} de {fmt(ar.totalAmount)}</p>
@@ -449,7 +449,7 @@ export default function AccountsReceivableTab() {
                 <button onClick={() => handleDelete(selected.id)} className="w-full py-2 rounded-lg border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 text-[var(--data-error-500)] text-xs font-semibold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">Eliminar registro</button>
               </div>
             ) : (
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-8 text-center text-[var(--text-tertiary)] dark:text-muted text-sm">
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-8 text-center text-[var(--text-tertiary)] dark:text-muted text-sm">
                 Selecciona una cuenta para ver detalles y registrar pagos
               </div>
             )}

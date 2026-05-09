@@ -193,13 +193,13 @@ export default function AutoReorderTab() {
           {(["products", "history"] as const).map(v => (
             <button key={v} onClick={() => setView(v)}
               className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
+                view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
               )}>
               {v === "products" ? "Productos" : <span className="flex items-center gap-1"><History className="h-3 w-3" />Historial</span>}
             </button>
           ))}
           <button onClick={() => setTick(v => v + 1)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition">
             <RefreshCw className="h-3.5 w-3.5" /> Actualizar
           </button>
         </div>
@@ -254,7 +254,7 @@ export default function AutoReorderTab() {
                   {(["all", "critical", "low", "warning"] as const).map(l => (
                     <button key={l} onClick={() => setFilterLevel(l)}
                       className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                        filterLevel === l ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
+                        filterLevel === l ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
                       )}>
                       {l === "all" ? "Todos" : LEVEL_CONFIG[l].label}
                     </button>
@@ -289,7 +289,7 @@ export default function AutoReorderTab() {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[700px] text-sm">
                     <thead>
-                      <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
+                      <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface">
                         <th className="px-4 py-3 w-8"></th>
                         <th className="px-4 py-3">Producto</th>
                         <th className="px-4 py-3">Categoría</th>
@@ -307,7 +307,7 @@ export default function AutoReorderTab() {
                         const level = stockLevel(p);
                         const lvl   = LEVEL_CONFIG[level];
                         return (
-                          <tr key={p.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface/50 transition", selected.has(p.id) && "bg-primary/5")}>
+                          <tr key={p.id} className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition", selected.has(p.id) && "bg-primary/5")}>
                             <td className="px-4 py-3">
                               <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} className="rounded" />
                             </td>
@@ -370,7 +370,7 @@ export default function AutoReorderTab() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
+                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface">
                   <th className="px-4 py-3">Producto</th>
                   <th className="px-4 py-3 text-center">Cantidad</th>
                   <th className="px-4 py-3">Proveedor</th>
@@ -380,7 +380,7 @@ export default function AutoReorderTab() {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                 {history.map(h => (
-                  <tr key={h.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition">
+                  <tr key={h.id} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition">
                     <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{h.productName}</td>
                     <td className="px-4 py-3 text-center font-bold text-primary">{h.quantity}</td>
                     <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{h.supplierName}</td>
@@ -426,12 +426,12 @@ export default function AutoReorderTab() {
                   onChange={e => setThresholdForm(f => ({ ...f, stockMax: +e.target.value }))}
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
               </div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl px-3 py-2 text-xs text-[var(--text-secondary)] dark:text-muted">
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl px-3 py-2 text-xs text-[var(--text-secondary)] dark:text-muted">
                 Cantidad sugerida de reorden: <strong className="text-primary">{Math.max(0, thresholdForm.stockMax - editThresholds.stock)} {editThresholds.unit}</strong>
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setEditThresholds(null)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={() => setEditThresholds(null)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>
               <button onClick={saveThresholds} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
                 Guardar
               </button>

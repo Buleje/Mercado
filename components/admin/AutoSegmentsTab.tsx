@@ -162,7 +162,7 @@ export default function AutoSegmentsTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Reglas dinámicas que se actualizan con datos reales</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={reload} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-card">
+          <button onClick={reload} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-sunken)] dark:bg-surface hover:bg-[var(--rule-soft)] dark:hover:bg-card">
             <RefreshCw className="h-4 w-4" />
           </button>
           <button onClick={openCreate} className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
@@ -198,13 +198,13 @@ export default function AutoSegmentsTab() {
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={cn("h-3 w-3 rounded-full shrink-0", sg.color)} />
                     <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground truncate">{sg.name}</CardTitle>
-                    {!sg.active && <span className="text-[length:var(--ts-2xs)] font-bold bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] px-1.5 py-0.5 rounded">Inactivo</span>}
+                    {!sg.active && <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] px-1.5 py-0.5 rounded">Inactivo</span>}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button onClick={() => toggleActive(sg.id)} className={cn("text-[var(--text-tertiary)] hover:text-primary transition-colors")} title={sg.active ? "Desactivar" : "Activar"}>
                       {sg.active ? <ToggleRight className="h-5 w-5 text-primary" /> : <ToggleLeft className="h-5 w-5" />}
                     </button>
-                    <button onClick={() => openEdit(sg)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Pencil className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => openEdit(sg)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Pencil className="h-3.5 w-3.5" /></button>
                     <button onClick={() => deleteSegment(sg.id)} className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </div>
@@ -212,15 +212,15 @@ export default function AutoSegmentsTab() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="text-center bg-gray-50 dark:bg-surface rounded-lg py-2">
+                  <div className="text-center bg-[var(--surface-alt)] dark:bg-surface rounded-lg py-2">
                     <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{sg.customerCount}</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">clientes</p>
                   </div>
-                  <div className="text-center bg-gray-50 dark:bg-surface rounded-lg py-2">
+                  <div className="text-center bg-[var(--surface-alt)] dark:bg-surface rounded-lg py-2">
                     <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(sg.avgTicket)}</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">ticket prom.</p>
                   </div>
-                  <div className="text-center bg-gray-50 dark:bg-surface rounded-lg py-2">
+                  <div className="text-center bg-[var(--surface-alt)] dark:bg-surface rounded-lg py-2">
                     <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{Number(sg.avgFrequency).toFixed(1)}x</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">pedidos prom.</p>
                   </div>
@@ -231,7 +231,7 @@ export default function AutoSegmentsTab() {
                   {sg.rules.map((r, i) => {
                     const field = FIELDS.find(f => f.id === r.field);
                     return (
-                      <span key={i} className="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-surface px-2 py-1 rounded-lg text-[var(--text-secondary)] dark:text-muted font-mono">
+                      <span key={i} className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-surface px-2 py-1 rounded-lg text-[var(--text-secondary)] dark:text-muted font-mono">
                         {field?.label ?? r.field} {r.operator} {r.value}
                       </span>
                     );
@@ -248,7 +248,7 @@ export default function AutoSegmentsTab() {
 
               {/* Preview de clientes */}
               {isExpanded && sg.matchedCustomers.length > 0 && (
-                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-3 sm:px-5 py-3 bg-gray-50/50 dark:bg-surface/30">
+                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-3 sm:px-5 py-3 bg-[var(--surface-alt)]/50 dark:bg-surface/30">
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-2">Clientes en este segmento</p>
                   <div className="space-y-1.5">
                     {sg.matchedCustomers.slice(0, 5).map(c => (
@@ -344,7 +344,7 @@ export default function AutoSegmentsTab() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>
               <button onClick={save} disabled={!formName.trim()} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1">
                 <Check className="h-4 w-4" />Guardar
               </button>

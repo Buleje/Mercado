@@ -27,7 +27,7 @@ function getIcon(entry: ActivityEntry) {
   for (const [k, v] of Object.entries(ICON_MAP)) {
     if (key.includes(k)) return v;
   }
-  return { icon: AlertTriangle, color: "text-[var(--text-secondary)]", bg: "bg-gray-100 dark:bg-surface" };
+  return { icon: AlertTriangle, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)] dark:bg-surface" };
 }
 
 function timeAgo(iso: string): string {
@@ -122,7 +122,7 @@ export default function ActivityFeed() {
             return (
               <div
                 key={entry.id}
-                className="flex items-start gap-2.5 py-2 px-1 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700/50 transition-colors"
+                className="flex items-start gap-2.5 py-2 px-1 rounded-lg hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-700/50 transition-colors"
               >
                 <div className={cn("flex items-center justify-center w-7 h-7 rounded-lg shrink-0 mt-0.5", iconCfg.bg)}>
                   <Icon className={cn("w-3.5 h-3.5", iconCfg.color)} />

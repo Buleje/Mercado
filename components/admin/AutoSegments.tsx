@@ -189,7 +189,7 @@ export default function AutoSegments() {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-gray-50 disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
+          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-[var(--surface-alt)] disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar

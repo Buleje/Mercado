@@ -134,7 +134,7 @@ export function AdminTopHeader({
         <AdminTooltip content="Abrir menú" side="bottom">
           <button
             onClick={onOpenMobileNav}
-            className="sm:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors shrink-0"
+            className="sm:hidden p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors shrink-0"
             aria-label="Menú"
           >
             <Menu className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />

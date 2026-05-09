@@ -106,7 +106,7 @@ export default function AdminChatTab() {
           <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" /> Chat expandido
           </SectionTitle>
-          <button onClick={() => setExpanded(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+          <button onClick={() => setExpanded(false)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             <Minimize2 className="h-5 w-5 text-[var(--text-secondary)]" />
           </button>
         </div>
@@ -114,7 +114,7 @@ export default function AdminChatTab() {
       {/* Tabs */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><MessageSquare className="h-6 w-6 text-primary" />Chat</SectionTitle>
-        <div className="ml-auto flex flex-wrap gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1">
+        <div className="ml-auto flex flex-wrap gap-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-xl p-1">
           <button onClick={() => setTab("internal")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", tab === "internal" ? "bg-white dark:bg-card shadow text-primary" : "text-[var(--text-secondary)] dark:text-muted")}>
             Interno
           </button>
@@ -125,7 +125,7 @@ export default function AdminChatTab() {
         </div>
         <button
           onClick={() => setExpanded(e => !e)}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors text-[var(--text-secondary)] hover:text-primary"
+          className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors text-[var(--text-secondary)] hover:text-primary"
           title={expanded ? "Minimizar" : "Expandir chat"}
         >
           {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -142,7 +142,7 @@ export default function AdminChatTab() {
               return (
                 <div key={m.id} className={cn("flex flex-col max-w-[75%]", isMe ? "ml-auto items-end" : "items-start")}>
                   <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-0.5">{m.sender}</span>
-                  <div className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm", isMe ? "bg-primary text-white rounded-br-md" : "bg-gray-100 dark:bg-surface text-[var(--text-primary)] dark:text-foreground rounded-bl-md")}>
+                  <div className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm", isMe ? "bg-primary text-white rounded-br-md" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground rounded-bl-md")}>
                     {m.message}
                   </div>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mt-0.5">{new Date(m.createdAt).toLocaleTimeString()}</span>
@@ -178,7 +178,7 @@ export default function AdminChatTab() {
           )}
           {convos.map(c => (
             <button key={c.phone} onClick={() => setActivePhone(c.phone)}
-              className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-surface transition text-left border-b border-[var(--rule-soft)] dark:border-card-border last:border-0"
+              className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition text-left border-b border-[var(--rule-soft)] dark:border-card-border last:border-0"
             >
               <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-sm">
                 {c.name.charAt(0).toUpperCase()}
@@ -199,14 +199,14 @@ export default function AdminChatTab() {
       {tab === "customers" && activePhone && (
         <>
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <button onClick={() => setActivePhone(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition"><ArrowLeft className="w-4 h-4" /></button>
+            <button onClick={() => setActivePhone(null)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition"><ArrowLeft className="w-4 h-4" /></button>
             <span className="font-semibold text-sm">{convos.find(c => c.phone === activePhone)?.name || activePhone}</span>
             <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">({activePhone})</span>
           </div>
           <div className="flex-1 overflow-y-auto bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
             {chatMsgs.map(m => (
               <div key={m.id} className={cn("flex flex-col max-w-[75%]", m.sender === "admin" ? "ml-auto items-end" : "items-start")}>
-                <div className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm", m.sender === "admin" ? "bg-[var(--accent-soft)] text-white rounded-br-md" : "bg-gray-100 dark:bg-surface text-[var(--text-primary)] dark:text-foreground rounded-bl-md")}>
+                <div className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm", m.sender === "admin" ? "bg-[var(--accent-soft)] text-white rounded-br-md" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground rounded-bl-md")}>
                   {m.message}
                 </div>
                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mt-0.5">{new Date(m.createdAt).toLocaleTimeString()}</span>

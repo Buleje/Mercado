@@ -26,7 +26,7 @@ const TYPE_CONFIG: Record<AnomalyType, { label: string; color: string; icon: typ
   "patron-raro": { label: "Patrón Raro", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: ShoppingCart },
 };
 const SEV_COLORS: Record<Severity, string> = {
-  baja: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
+  baja: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
   media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   alta: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   critica: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
@@ -138,7 +138,7 @@ export default function AnomalyDetectionTab() {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  <button onClick={() => setSelected(a)} className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
+                  <button onClick={() => setSelected(a)} className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
                   {!isResolved && (
                     <button onClick={() => setResolvedIds(prev => new Set([...prev, a.id]))} className="px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors">
                       Resolver
@@ -158,15 +158,15 @@ export default function AnomalyDetectionTab() {
           <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{selected.title}</CardTitle>
-              <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent text-base sm:text-xl font-bold">×</button>
+              <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-base sm:text-xl font-bold">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{selected.description}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Fecha</span><p className="font-bold">{fmtDate(selected.date)}</p></div>
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Módulo</span><p className="font-bold">{selected.module}</p></div>
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Detectado</span><p className="font-bold text-[var(--data-error-500)]">{selected.value}</p></div>
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Esperado</span><p className="font-bold text-[var(--data-success-500)]">{selected.expected}</p></div>
+                <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Fecha</span><p className="font-bold">{fmtDate(selected.date)}</p></div>
+                <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Módulo</span><p className="font-bold">{selected.module}</p></div>
+                <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Detectado</span><p className="font-bold text-[var(--data-error-500)]">{selected.value}</p></div>
+                <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Valor Esperado</span><p className="font-bold text-[var(--data-success-500)]">{selected.expected}</p></div>
               </div>
               <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
                 <h4 className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-1">Recomendación</h4>

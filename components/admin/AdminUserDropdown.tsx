@@ -54,8 +54,8 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
         onClick={() => setOpen(v => !v)}
         className={cn(
           "flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all duration-[var(--dur-base)]",
-          "hover:bg-gray-100 dark:hover:bg-accent",
-          open && "bg-gray-100 dark:bg-accent"
+          "hover:bg-[var(--surface-sunken)] dark:hover:bg-accent",
+          open && "bg-[var(--surface-sunken)] dark:bg-accent"
         )}
         aria-expanded={open}
         aria-haspopup="true"
@@ -80,7 +80,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
             className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden z-100"
           >
             {/* User info header */}
-            <div className="px-4 py-3.5 border-b border-[var(--rule-soft)] dark:border-white/5 bg-gray-50/50 dark:bg-surface/50">
+            <div className="px-4 py-3.5 border-b border-[var(--rule-soft)] dark:border-white/5 bg-[var(--surface-alt)]/50 dark:bg-surface/50">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/90 flex items-center justify-center shrink-0">
                   <span className="text-white text-sm font-bold">{initials}</span>
@@ -100,7 +100,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
                   <button
                     key={item.id}
                     onClick={() => { onNavigate(item.id); setOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors"
                   >
                     <Icon className={cn("h-4 w-4 shrink-0", item.color)} />
                     <span>{item.label}</span>

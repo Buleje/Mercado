@@ -139,9 +139,9 @@ export default function AutoAlertEngineTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Configura umbrales y recibe alertas cuando se disparan</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => { setLoading(true); loadAlerts(); }} disabled={loading} title="Actualizar alertas" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /></button>
-          <button onClick={() => setView("rules")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "rules" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Reglas</button>
-          <button onClick={() => setView("logs")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "logs" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+          <button onClick={() => { setLoading(true); loadAlerts(); }} disabled={loading} title="Actualizar alertas" className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /></button>
+          <button onClick={() => setView("rules")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "rules" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Reglas</button>
+          <button onClick={() => setView("logs")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "logs" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
             Historial {logs.filter(l => !l.acknowledged).length > 0 && <span className="ml-1 bg-[var(--data-error-500)] text-white rounded-full px-1.5 text-[length:var(--ts-2xs)]">{logs.filter(l => !l.acknowledged).length}</span>}
           </button>
           {view === "rules" && <button onClick={openCreate} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-colors"><Plus className="h-3.5 w-3.5" /> Nueva regla</button>}
@@ -167,7 +167,7 @@ export default function AutoAlertEngineTab() {
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead><tr className="bg-gray-50 dark:bg-surface text-left">
+              <thead><tr className="bg-[var(--surface-alt)] dark:bg-surface text-left">
                 <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Regla</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Módulo</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Condición</th>
@@ -177,7 +177,7 @@ export default function AutoAlertEngineTab() {
               </tr></thead>
               <tbody>
                 {rules.map(r => (
-                  <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface/50">
+                  <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50">
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={cn("h-2 w-2 rounded-full", r.severity === "critical" ? "bg-[var(--data-error-500)]" : r.severity === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} />
@@ -185,17 +185,17 @@ export default function AutoAlertEngineTab() {
                       </div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><code className="text-xs bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded">{r.condition} {r.operator} {r.threshold}</code></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><code className="text-xs bg-[var(--surface-sunken)] dark:bg-surface px-1.5 py-0.5 rounded">{r.condition} {r.operator} {r.threshold}</code></td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.triggered}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: !x.enabled } : x))} className={cn("flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold", r.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>
+                      <button onClick={() => setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: !x.enabled } : x))} className={cn("flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold", r.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>
                         {r.enabled ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
                         {r.enabled ? "Activa" : "Pausada"}
                       </button>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Pencil className="h-3.5 w-3.5" /></button>
                         <button onClick={() => setRules(prev => prev.filter(x => x.id !== r.id))} className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </td>
@@ -210,7 +210,7 @@ export default function AutoAlertEngineTab() {
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <Filter className="h-4 w-4 text-[var(--text-tertiary)]" />
             {["all", "critical", "warning", "info"].map(s => (
-              <button key={s} onClick={() => setFilterSeverity(s)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterSeverity === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{s === "all" ? "Todos" : s}</button>
+              <button key={s} onClick={() => setFilterSeverity(s)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterSeverity === s ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{s === "all" ? "Todos" : s}</button>
             ))}
             <button onClick={() => exportToCSV(filteredLogs.map(l => ({ regla: l.ruleName, mensaje: l.message, fecha: fmtDate(l.timestamp), severidad: l.severity })), "alertas-log")} className="ml-auto text-xs text-primary font-semibold flex items-center gap-1"><Download className="h-3 w-3" /> CSV</button>
           </div>
@@ -259,7 +259,7 @@ export default function AutoAlertEngineTab() {
               <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acción</label><select value={formAction} onChange={e => setFormAction(e.target.value as AlertRule["action"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(ACTIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4 inline mr-1" />Cancelar</button>
+              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-4 w-4 inline mr-1" />Cancelar</button>
               <button onClick={saveRule} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
             </div>
           </div>

@@ -258,7 +258,7 @@ export default function AuditLogTab() {
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Registro de actividad detallado con trazabilidad completa</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -339,7 +339,7 @@ export default function AuditLogTab() {
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
+            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
           >
             {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
             {loadingMore ? "Cargando…" : "Cargar más eventos"}

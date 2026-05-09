@@ -304,7 +304,7 @@ export default function BarcodeGenerator({ product: initialProduct }: BarcodeGen
               <button
                 key={p.id}
                 onClick={() => addToBatch(p)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
               >
                 <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
                 <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground flex-1 truncate">{p.name}</span>

@@ -25,7 +25,7 @@ export function AdminStatsMobile({ quickStats, navigateTab }: AdminStatsProps) {
         onClick={() => navigateTab("pedidos")}
         className={cn(
           "flex items-center gap-1 px-2 py-1 rounded-full font-semibold shrink-0 transition-colors",
-          quickStats.pendingOrders > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-gray-100 text-[var(--text-secondary)]"
+          quickStats.pendingOrders > 0 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
         )}
       >
         <ShoppingCart className="h-3 w-3" />
@@ -74,7 +74,7 @@ export function AdminStatsDesktop({ quickStats, navigateTab }: AdminStatsProps) 
           "flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold transition-colors",
           quickStats.pendingOrders > 0
             ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]"
-            : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
         )}
       >
         <ShoppingCart className="h-4 w-4" />

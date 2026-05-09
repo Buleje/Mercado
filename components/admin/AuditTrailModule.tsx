@@ -59,7 +59,7 @@ export default function AuditTrailModule() {
     if (action === "CREATE") return "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]";
     if (action === "UPDATE") return "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]";
     if (action === "DELETE") return "bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/30 dark:text-red-400";
-    return "bg-gray-100 text-[var(--text-primary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]";
+    return "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]";
   };
 
   return (
@@ -99,7 +99,7 @@ export default function AuditTrailModule() {
         </select>
         <button
           onClick={fetchLogs}
-          className="min-h-[44px] min-w-[44px] px-3 py-2 bg-[var(--surface-sunken)] rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
+          className="min-h-[44px] min-w-[44px] px-3 py-2 bg-[var(--surface-sunken)] rounded-lg text-sm hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
           title="Actualizar"
         >
           <RefreshCw className="h-4 w-4" />
@@ -150,7 +150,7 @@ export default function AuditTrailModule() {
                 {logs.map(log => (
                   <tr
                     key={log.id}
-                    className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                    className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
                   >
                     <td className="p-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
@@ -196,13 +196,13 @@ export default function AuditTrailModule() {
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-gray-800/30">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-alt)]/50 dark:bg-gray-800/30">
             <span className="text-xs text-[var(--text-secondary)]">{total} registros</span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="p-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700 transition-colors"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
@@ -210,7 +210,7 @@ export default function AuditTrailModule() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700 transition-colors"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>

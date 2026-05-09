@@ -106,7 +106,7 @@ export default function AdvancedReturnsTab() {
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">RMA, inspección, decisiones y estadísticas por motivo</p>
         </div>
-        <button onClick={() => exportToCSV(records.map(r => ({ fecha: r.date, pedido: r.orderRef, cliente: r.clientName, producto: r.product, cantidad: r.quantity, valor: r.totalValue, motivo: REASON_META[r.reason].label, decision: DECISION_META[r.decision].label, inspeccion: INSPECTION_META[r.inspection].label, restock: r.restocked ? "Sí" : "No" })), "devoluciones")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(records.map(r => ({ fecha: r.date, pedido: r.orderRef, cliente: r.clientName, producto: r.product, cantidad: r.quantity, valor: r.totalValue, motivo: REASON_META[r.reason].label, decision: DECISION_META[r.decision].label, inspeccion: INSPECTION_META[r.inspection].label, restock: r.restocked ? "Sí" : "No" })), "devoluciones")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -161,10 +161,10 @@ export default function AdvancedReturnsTab() {
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead><tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Pedido</th><th className="px-2 sm:px-4 py-2 sm:py-3">Producto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Valor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Motivo</th><th className="px-2 sm:px-4 py-2 sm:py-3">Decisión</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
+            <thead><tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Pedido</th><th className="px-2 sm:px-4 py-2 sm:py-3">Producto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Valor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Motivo</th><th className="px-2 sm:px-4 py-2 sm:py-3">Decisión</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(r => (
-                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
+                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20 transition-colors">
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)]">{r.date}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs text-[var(--text-primary)] dark:text-foreground">{r.orderRef}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.product}<br/><span className="text-xs text-[var(--text-tertiary)]">{r.clientName}</span></td>
@@ -192,7 +192,7 @@ export default function AdvancedReturnsTab() {
               ))}
             </div>
             {detail.notes && (
-              <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Notas</p><p className="text-sm text-[var(--text-primary)] dark:text-foreground bg-gray-50 dark:bg-surface rounded-xl p-3">{detail.notes}</p></div>
+              <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Notas</p><p className="text-sm text-[var(--text-primary)] dark:text-foreground bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">{detail.notes}</p></div>
             )}
           </div>
         </div>

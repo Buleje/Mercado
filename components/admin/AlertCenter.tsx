@@ -73,7 +73,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
             ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30"
             : unread > 0
             ? "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30"
-            : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+            : "text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"
         )}
         title="Centro de Alertas"
       >
@@ -103,7 +103,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
                     Marcar todo leído
                   </button>
                 )}
-                <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+                <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
                   <X className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -125,7 +125,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
                       key={alert.id}
                       onClick={() => handleClick(alert)}
                       className={cn(
-                        "w-full flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0",
+                        "w-full flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0",
                         !alert.read && "bg-primary/[0.03]"
                       )}
                     >
@@ -147,7 +147,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
             </div>
 
             {/* Footer */}
-            <div className="px-2 sm:px-4 py-1.5 sm:py-2.5 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border">
+            <div className="px-2 sm:px-4 py-1.5 sm:py-2.5 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border">
               <button
                 onClick={() => { onNavigate("actividad"); setOpen(false); }}
                 className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"

@@ -670,7 +670,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     return safe
       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-[var(--text-primary)] dark:text-foreground">$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/`(.+?)`/g, '<code class="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-accent px-1 py-0.5 rounded font-mono">$1</code>')
+      .replace(/`(.+?)`/g, '<code class="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-accent px-1 py-0.5 rounded font-mono">$1</code>')
       .replace(moduleRegex, (_match, mod) => {
         const safeMod = mod.replace(/[^a-z0-9-]/g, "");
         return `<button onclick="window.__bulejeNavTo&&window.__bulejeNavTo('${safeMod}')" class="text-primary font-bold hover:underline cursor-pointer">&quot;${safeMod}&quot;</button>`;
@@ -805,7 +805,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           <div className="max-w-[85%]">
             <div className={cn(
               "rounded-xl px-3 py-2 text-xs leading-relaxed",
-              msg.role === "user" ? "bg-primary text-white rounded-br-md" : "bg-gray-50 dark:bg-accent/50 text-[var(--text-secondary)] rounded-bl-md border border-[var(--rule-soft)] dark:border-card-border"
+              msg.role === "user" ? "bg-primary text-white rounded-br-md" : "bg-[var(--surface-alt)] dark:bg-accent/50 text-[var(--text-secondary)] rounded-bl-md border border-[var(--rule-soft)] dark:border-card-border"
             )}>
               {msg.role === "assistant" ? renderContent(msg.content) : msg.content}
             </div>
@@ -835,7 +835,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           <div className="w-6 h-6 rounded-lg bg-[var(--text-primary)] flex items-center justify-center shrink-0">
             <Bot className="h-3 w-3 text-white" />
           </div>
-          <div className="bg-gray-50 dark:bg-accent/50 rounded-xl rounded-bl-md px-3 py-2 border border-[var(--rule-soft)] dark:border-card-border">
+          <div className="bg-[var(--surface-alt)] dark:bg-accent/50 rounded-xl rounded-bl-md px-3 py-2 border border-[var(--rule-soft)] dark:border-card-border">
             <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Analizando…
@@ -865,7 +865,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             placeholder={isListening ? "Escuchando..." : isOffline ? "Modo offline..." : "Pregunta algo... (/ para comandos)"}
             rows={1}
             className={cn(
-              "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+              "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
               isListening ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : "border-[var(--rule-base)] dark:border-card-border"
             )}
             style={{ maxHeight: compact ? 60 : 80 }}
@@ -874,7 +874,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         </div>
         <button onClick={toggleVoice}
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
-            isListening ? "bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] animate-pulse" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+            isListening ? "bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] animate-pulse" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent"
           )}
           title={isListening ? "Detener" : "Hablar"}>
           {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
@@ -883,7 +883,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
             input.trim() && !loading
               ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90 "
-              : "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
+              : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
           )}>
           <Send className="h-3.5 w-3.5" />
         </button>
@@ -922,7 +922,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                   if (cmd.navTo && onNavigate) onNavigate(cmd.navTo);
                   else if (cmd.prompt) sendMessage(cmd.prompt);
                 }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
                   <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                   <span className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{cmd.cmd}</span>
                   <span className="flex-1">{cmd.label}</span>
@@ -1057,7 +1057,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                       if (cmd.navTo && onNavigate) onNavigate(cmd.navTo);
                       else if (cmd.prompt) { setOpen(true); setTimeout(() => sendMessage(cmd.prompt), 200); }
                     }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
                       <Icon className="h-4 w-4 text-[var(--text-tertiary)]" />
                       <span className="font-mono text-xs text-[var(--text-secondary)]">{cmd.cmd}</span>
                       <span className="flex-1 text-left">{cmd.label}</span>
@@ -1149,15 +1149,15 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                 return (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 text-center">
+                      <div className="bg-[var(--surface-alt)] dark:bg-accent/30 rounded-xl p-3 text-center">
                         <div className="text-xl font-extrabold text-[var(--text-secondary)]">{stats.total}</div>
                         <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Consultas totales</div>
                       </div>
-                      <div className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 text-center">
+                      <div className="bg-[var(--surface-alt)] dark:bg-accent/30 rounded-xl p-3 text-center">
                         <div className="text-xl font-extrabold text-[var(--text-secondary)]">{stats.todayCount}</div>
                         <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Hoy</div>
                       </div>
-                      <div className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 text-center col-span-2">
+                      <div className="bg-[var(--surface-alt)] dark:bg-accent/30 rounded-xl p-3 text-center col-span-2">
                         <div className="text-xl font-extrabold text-[var(--data-success-500)]">{stats.avgMs > 0 ? `${(stats.avgMs / 1000).toFixed(1)}s` : "—"}</div>
                         <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">Tiempo promedio</div>
                       </div>
@@ -1200,7 +1200,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                 const sessions = getSessions();
                 if (sessions.length === 0) return <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">No hay sesiones guardadas.</p>;
                 return sessions.map(s => (
-                  <div key={s.id} className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
+                  <div key={s.id} className="bg-[var(--surface-alt)] dark:bg-accent/30 rounded-xl p-3 border border-[var(--rule-soft)] dark:border-card-border">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{s.date}</span>
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{s.messageCount} msgs</span>

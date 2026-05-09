@@ -238,7 +238,7 @@ function BadgeCard({
           <button
             onClick={() => onAdjust(definition.id, -1)}
             disabled={current <= 0}
-            className="w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] flex items-center justify-center text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 transition-colors"
+            className="w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] flex items-center justify-center text-sm font-bold hover:bg-[var(--rule-soft)] dark:hover:bg-gray-600 disabled:opacity-30 transition-colors"
           >
             -
           </button>
@@ -248,7 +248,7 @@ function BadgeCard({
           <button
             onClick={() => onAdjust(definition.id, 1)}
             disabled={current >= definition.maxProgress * 2}
-            className="w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] flex items-center justify-center text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30 transition-colors"
+            className="w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] flex items-center justify-center text-sm font-bold hover:bg-[var(--rule-soft)] dark:hover:bg-gray-600 disabled:opacity-30 transition-colors"
           >
             +
           </button>
@@ -336,7 +336,7 @@ export default function AchievementBadges({
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
               editMode
                 ? "bg-primary text-white"
-                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-600"
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:hover:bg-gray-600"
             )}
           >
             {editMode ? "Terminar edicion" : "Modo prueba"}
@@ -352,7 +352,7 @@ export default function AchievementBadges({
             {Math.round((unlockedCount / BADGE_DEFINITIONS.length) * 100)}%
           </span>
         </div>
-        <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-2.5 bg-[var(--rule-soft)] dark:bg-gray-700 rounded-full overflow-hidden">
           <div
             className="h-full bg-[var(--data-success-500)] rounded-full transition-all duration-[var(--dur-slower)]"
             style={{ width: `${(unlockedCount / BADGE_DEFINITIONS.length) * 100}%` }}

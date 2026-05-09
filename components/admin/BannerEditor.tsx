@@ -289,7 +289,7 @@ export default function BannerEditor() {
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
             creating
-              ? "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 cursor-not-allowed"
+              ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:bg-gray-800 cursor-not-allowed"
               : "bg-primary text-white hover:bg-primary-dark"
           )}
         >

@@ -89,13 +89,13 @@ export default function BalanceSheetTab() {
     const subPrev = lines.reduce((s, l) => s + l.previousPeriod, 0);
     return (
       <div key={type}>
-        <h4 className="text-xs font-extrabold uppercase text-[var(--text-secondary)] dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+        <h4 className="text-xs font-extrabold uppercase text-[var(--text-secondary)] dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
           {TYPE_LABELS[type]}
         </h4>
         {lines.map(l => {
           const v = variation(l.currentPeriod, l.previousPeriod);
           return (
-            <div key={l.id} className="flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors text-sm">
+            <div key={l.id} className="flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30 transition-colors text-sm">
               <span className="flex-1 text-[var(--text-primary)] dark:text-foreground">{l.name}</span>
               <span className="w-28 text-right font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(l.currentPeriod)}</span>
               <span className="w-28 text-right text-[var(--text-tertiary)]">{fmt(l.previousPeriod)}</span>
@@ -106,7 +106,7 @@ export default function BalanceSheetTab() {
             </div>
           );
         })}
-        <div className="flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 border-b-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 text-sm font-extrabold">
+        <div className="flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 border-b-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)]/50 dark:bg-surface/30 text-sm font-extrabold">
           <span className="flex-1 text-[var(--text-secondary)] dark:text-muted">Subtotal {TYPE_LABELS[type]}</span>
           <span className="w-28 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(subTotal)}</span>
           <span className="w-28 text-right text-[var(--text-tertiary)]">{fmt(subPrev)}</span>
@@ -127,10 +127,10 @@ export default function BalanceSheetTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Estado de situación patrimonial — Marzo 2026</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowInfo(true)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent">
+          <button onClick={() => setShowInfo(true)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent">
             <Info className="h-4 w-4" />
           </button>
-          <button onClick={() => exportToCSV(accounts.map(a => ({ cuenta: a.name, tipo: TYPE_LABELS[a.type], periodo_actual: a.currentPeriod, periodo_anterior: a.previousPeriod, variacion: variation(a.currentPeriod, a.previousPeriod).toFixed(1) + "%" })), "balance-general")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(accounts.map(a => ({ cuenta: a.name, tipo: TYPE_LABELS[a.type], periodo_actual: a.currentPeriod, periodo_anterior: a.previousPeriod, variacion: variation(a.currentPeriod, a.previousPeriod).toFixed(1) + "%" })), "balance-general")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -215,7 +215,7 @@ export default function BalanceSheetTab() {
             return (
               <div key={type} className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted w-32 truncate">{TYPE_LABELS[type]}</span>
-                <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
+                <div className="flex-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-full h-5 overflow-hidden">
                   <div className={cn("h-full rounded-full transition-all", isAsset ? "bg-[var(--accent-soft)]" : type === "patrimonio" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} style={{ width: `${Math.min(100, pctFill)}%` }} />
                 </div>
                 <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-24 text-right">{fmt(total)}</span>
