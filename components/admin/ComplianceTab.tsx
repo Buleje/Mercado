@@ -7,10 +7,10 @@ import { cn, exportToCSV } from "@/lib/utils";
 import type { ComplianceItem } from "@/app/api/compliance/route";
 
 const STATUS_CONFIG = {
-  "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", border: "border-[var(--rule-base)] dark:border-card-border" },
-  "por-vencer":  { label: "Por vencer",         icon: Calendar,       color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",             border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" },
-  "vencido":     { label: "Vencido",            icon: AlertTriangle,  color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",                 border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30" },
-  "pendiente":   { label: "Pendiente",          icon: Clock,          color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",          border: "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30" },
+  "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", border: "border-[var(--rule-base)] dark:border-card-border" },
+  "por-vencer":  { label: "Por vencer",         icon: Calendar,       color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
+  "vencido":     { label: "Vencido",            icon: AlertTriangle,  color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 border: "border-[var(--data-error)] dark:border-[var(--data-error)]/30" },
+  "pendiente":   { label: "Pendiente",          icon: Clock,          color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",          border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/30" },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -77,15 +77,15 @@ export default function ComplianceTab() {
         <div>
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
             <Scale className="h-6 w-6 text-primary" /> Cumplimiento Regulatorio
-            {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
+            {isDemo && <span className="text-xs font-normal text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">SUNAT · Municipalidad · Defensa Civil · Sanidad</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={load} disabled={loading} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface text-[var(--text-tertiary)]">
+          <button onClick={load} disabled={loading} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface text-[var(--text-tertiary)]">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
-          <button onClick={() => exportToCSV(filtered.map(o => ({ obligacion: o.title, entidad: o.entity, categoria: o.category, frecuencia: o.frequency, próximo_vencimiento: fmtDate(o.nextDue), estado: o.status, último_presentado: fmtDate(o.lastFiled) })), "cumplimiento")}
+          <button onClick={() => exportToCSV(filtered.map(o => ({ obligacion: o.title, entidad: o.entity, categoria: o.category, frecuencia: o.frequency, proximo_vencimiento: fmtDate(o.nextDue), estado: o.status, ultimo_presentado: fmtDate(o.lastFiled) })), "cumplimiento")}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
@@ -94,16 +94,16 @@ export default function ComplianceTab() {
 
       {/* Alertas críticas */}
       {!loading && alertas.length > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-xl p-4">
+        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error)] dark:border-[var(--data-error)]/30 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Bell className="h-4 w-4 text-[var(--data-error-500)]" />
-            <span className="font-bold text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Atención requerida ({alertas.length})</span>
+            <Bell className="h-4 w-4 text-[var(--data-error)]" />
+            <span className="font-bold text-sm text-[var(--data-error)] dark:text-[var(--data-error)]">Atención requerida ({alertas.length})</span>
           </div>
           <div className="space-y-1">
             {alertas.map(a => (
-              <div key={a.id} className="flex items-center gap-2 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
+              <div key={a.id} className="flex items-center gap-2 text-xs text-[var(--data-error)] dark:text-[var(--data-error)]">
                 <span className="font-bold">{a.title}</span>
-                <span className="text-[var(--data-error-500)]">·</span>
+                <span className="text-[var(--data-error)]">·</span>
                 <span>{a.status === "vencido" ? "Vencido" : `Vence en ${daysUntil(a.nextDue)} días (${fmtDate(a.nextDue)})`}</span>
               </div>
             ))}
@@ -114,15 +114,15 @@ export default function ComplianceTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Total obligaciones", value: items.length, color: "text-[var(--data-success-500)]" },
-          { label: "Vigentes",           value: vigente,       color: "text-[var(--data-success-500)]" },
-          { label: "Pendientes / próx.", value: porVencer,     color: "text-[var(--data-warning-500)]" },
-          { label: "Vencidos",           value: vencidos,      color: vencidos > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]" },
+          { label: "Total obligaciones", value: items.length, color: "text-[var(--data-success)]" },
+          { label: "Vigentes",           value: vigente,       color: "text-[var(--data-success)]" },
+          { label: "Pendientes / próx.", value: porVencer,     color: "text-[var(--data-warning)]" },
+          { label: "Vencidos",           value: vencidos,      color: vencidos > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]" },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             {loading
-              ? <div className="h-7 w-12 bg-gray-100 dark:bg-surface rounded animate-pulse mt-1" />
+              ? <div className="h-7 w-12 bg-[var(--surface-sunken)] dark:bg-surface rounded animate-pulse mt-1" />
               : <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>}
           </div>
         ))}
@@ -140,7 +140,7 @@ export default function ComplianceTab() {
           {["all", "vigente", "por-vencer", "pendiente", "vencido"].map(s => (
             <button key={s} onClick={() => setFilterStatus(s)}
               className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors",
-                filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+                filterStatus === s ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
               {s === "all" ? "Todos" : STATUS_CONFIG[s as keyof typeof STATUS_CONFIG].label}
             </button>
           ))}
@@ -149,7 +149,7 @@ export default function ComplianceTab() {
           {["all", "sunat", "municipal", "sanitario", "seguridad"].map(c => (
             <button key={c} onClick={() => setFilterCategory(c)}
               className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors",
-                filterCategory === c ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+                filterCategory === c ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
               {c === "all" ? "Categorías" : CATEGORY_LABELS[c]}
             </button>
           ))}
@@ -183,7 +183,7 @@ export default function ComplianceTab() {
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5", S.color)}>
                         <SIcon className="h-2.5 w-2.5" /> {S.label}
                       </span>
-                      <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted">
+                      <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted">
                         {CATEGORY_LABELS[o.category] ?? o.category}
                       </span>
                     </div>
@@ -191,7 +191,7 @@ export default function ComplianceTab() {
                     <div className="flex items-center gap-3 sm:gap-5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex-wrap">
                       <span className="flex items-center gap-0.5"><Building2 className="h-2.5 w-2.5" />{o.entity}</span>
                       <span className="flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{o.frequency}</span>
-                      <span className={cn("font-semibold", days <= 7 && days >= 0 ? "text-[var(--data-warning-500)]" : days < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]")}>
+                      <span className={cn("font-semibold", days <= 7 && days >= 0 ? "text-[var(--data-warning)]" : days < 0 ? "text-[var(--data-error)]" : "text-[var(--text-secondary)]")}>
                         Próx. venc.: {fmtDate(o.nextDue)}{days <= 30 && days >= 0 ? ` (en ${days} días)` : days < 0 ? ` (hace ${Math.abs(days)} días)` : ""}
                       </span>
                       <span>Último: {fmtDate(o.lastFiled)}</span>

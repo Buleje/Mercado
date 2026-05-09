@@ -4,7 +4,6 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { RefreshCw, Activity, Filter, Trash2, Search, Package, ShoppingCart, Users, Star, Settings, Truck, FileText, HandCoins, Megaphone, Calculator, Boxes } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { csrfHeaders } from "@/lib/csrf-client";
 
 type Entry = {
   id: string;
@@ -32,11 +31,11 @@ const ENTITY_ICONS: Record<string, React.ElementType> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  crear: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  editar: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  eliminar: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
+  crear: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  editar: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",
+  eliminar: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",
   estado: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  otro: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
+  otro: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
 };
 
 function getActionColor(action: string) {
@@ -109,7 +108,7 @@ export default function ActivityLogTab() {
 
   const clearLog = async () => {
     if (!confirm("¿Limpiar todo el log de actividad?")) return;
-    await fetch("/api/activity-log", { method: "DELETE", headers: csrfHeaders() });
+    await fetch("/api/activity-log", { method: "DELETE" });
     setEntries([]);
   };
 
@@ -127,16 +126,16 @@ export default function ActivityLogTab() {
           <button
             onClick={() => setAutoRefresh(p => !p)}
             className={cn("flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border rounded-lg transition-colors",
-              autoRefresh ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5"
+              autoRefresh ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5"
             )}
             title={autoRefresh ? "Auto-refresh activo (30s)" : "Auto-refresh desactivado"}
           >
             <RefreshCw className={cn("h-3.5 w-3.5", autoRefresh && "animate-spin")} /> {autoRefresh ? "Auto" : "Manual"}
           </button>
-          <button onClick={load} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+          <button onClick={load} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors">
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Actualizar
           </button>
-          <button onClick={clearLog} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--data-error-500)] bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors">
+          <button onClick={clearLog} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--data-error)] bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors">
             <Trash2 className="h-3.5 w-3.5" /> Limpiar
           </button>
         </div>
@@ -180,7 +179,7 @@ export default function ActivityLogTab() {
           paginatedLog.map(entry => {
             const Icon = ENTITY_ICONS[entry.entity] ?? Activity;
             return (
-              <div key={entry.id} className="flex flex-wrap items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
+              <div key={entry.id} className="flex flex-wrap items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 hover:bg-[var(--surface-sunken)]/50 dark:hover:bg-white/5 transition-colors">
                 <div className="mt-0.5 h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <Icon className="h-4 w-4 text-primary" />
                 </div>
@@ -208,14 +207,14 @@ export default function ActivityLogTab() {
       {!loading && filtered.length > LOG_PER_PAGE && (
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           <button disabled={safeLogPage <= 1} onClick={() => setLogPage(p => Math.max(1, p - 1))}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             ← Anterior
           </button>
           <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
             Página {safeLogPage} de {logTotalPages} · {filtered.length} registros
           </span>
           <button disabled={safeLogPage >= logTotalPages} onClick={() => setLogPage(p => p + 1)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             Siguiente →
           </button>
         </div>
