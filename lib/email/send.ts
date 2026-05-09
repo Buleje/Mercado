@@ -24,7 +24,20 @@ import WeeklyReportEmail, {
 //  Cliente Resend — singleton por módulo
 // ──────────────────────────────────────────────
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Defensive init (mismo patrón que lib/email/resend.ts y lib/analytics/posthog.ts):
+// si falta RESEND_API_KEY el constructor de Resend tira al evaluar el módulo,
+// rompiendo el build estático ("Failed to collect page data"). No-op silencioso.
+const RESEND_KEY = process.env.RESEND_API_KEY;
+type EmailSendArgs = { from: string; to: string | string[]; subject: string; html: string };
+type EmailSendResult = { data: { id: string } | null; error: { message?: string; name?: string } | null };
+const noopResend = {
+  emails: {
+    send: async (_a: EmailSendArgs): Promise<EmailSendResult> => ({ data: null, error: null }),
+  },
+};
+const resend = (RESEND_KEY ? new Resend(RESEND_KEY) : noopResend) as unknown as {
+  emails: { send: (args: EmailSendArgs) => Promise<EmailSendResult> };
+};
 const FROM =
   process.env.RESEND_FROM_EMAIL ?? "Buleje <noreply@buleje.pe>";
 

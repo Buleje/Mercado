@@ -6,9 +6,12 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 
+// "system" en este proyecto significa "auto-por-horario-local" (no
+// prefers-color-scheme del SO). Brandon decisión 2026-05-09.
 type Theme = "light" | "dark" | "system";
 type Resolved = "light" | "dark";
 
@@ -20,25 +23,25 @@ interface ThemeCtx {
 }
 
 const ThemeContext = createContext<ThemeCtx | null>(null);
-// Brandon decisión 2026-05-02: cada page-load arranca SIEMPRE en light
-// independientemente del sistema o de la elección previa. El toggle se
-// preserva durante la SPA-session vía sessionStorage (sobrevive a
-// navegación cliente Next App Router) pero se reinicia en hard reload
-// y nuevas pestañas.
+
+// Brandon decisión 2026-05-09: theme automático por horario LOCAL del usuario.
+// - Light: 7:00am — 6:00pm
+// - Dark : 6:01pm — 6:59am
+// El toggle manual es OVERRIDE para esa pestaña (sessionStorage). En hard
+// reload o nueva pestaña vuelve al horario.
 const SESSION_KEY = "buleje-theme-session";
 
-function getSystemTheme(): Resolved {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+/** Light entre 7:00am y 6:00pm; dark fuera. Se usa en script inline + acá. */
+function getThemeByTime(): Resolved {
+  const d = new Date();
+  const minutes = d.getHours() * 60 + d.getMinutes();
+  // 7:00am = 420 min · 6:00pm = 1080 min (incl)
+  return minutes < 420 || minutes > 1080 ? "dark" : "light";
 }
 
 function applyDom(resolved: Resolved) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  // Smooth theme transition — adds transition class 200ms, then removes to avoid
-  // interfering with page animations. See globals.css `.theme-transition` rule.
   root.classList.add("theme-transition");
   if (resolved === "dark") root.classList.add("dark");
   else root.classList.remove("dark");
@@ -49,60 +52,58 @@ function applyDom(resolved: Resolved) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Default light SIEMPRE — no respeta system ni localStorage al cargar.
-  const [theme, setThemeState] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>("system");
   const [resolved, setResolved] = useState<Resolved>("light");
+  const intervalRef = useRef<number | null>(null);
 
-  // Hydrate desde sessionStorage (sobrevive a navegación SPA pero se
-  // reinicia en hard reload — exactamente lo que Brandon pidió).
+  // Hydrate: si hay override en sessionStorage usalo; sino auto por horario.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let stored: Theme = "light";
+    let stored: Theme = "system";
     try {
       const raw = window.sessionStorage.getItem(SESSION_KEY);
-      if (raw === "light" || raw === "dark" || raw === "system") {
-        stored = raw;
-      }
+      if (raw === "light" || raw === "dark" || raw === "system") stored = raw;
     } catch {
       /* ignore */
     }
     setThemeState(stored);
-    const r: Resolved = stored === "system" ? getSystemTheme() : stored;
+    const r: Resolved = stored === "system" ? getThemeByTime() : stored;
     setResolved(r);
     applyDom(r);
   }, []);
 
-  // React to system theme changes when in "system" mode
+  // En modo "system" chequeo cada minuto si el horario cambió → toggle automático.
   useEffect(() => {
     if (theme !== "system" || typeof window === "undefined") return;
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      const r: Resolved = mql.matches ? "dark" : "light";
-      setResolved(r);
-      applyDom(r);
+    const tick = () => {
+      const r = getThemeByTime();
+      setResolved((prev) => {
+        if (prev !== r) applyDom(r);
+        return r;
+      });
     };
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
+    intervalRef.current = window.setInterval(tick, 60_000);
+    return () => {
+      if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
+    };
   }, [theme]);
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
-    // sessionStorage en vez de localStorage — la elección dura solo lo
-    // que la pestaña esté abierta. En hard reload vuelve a light.
     try {
       window.sessionStorage.setItem(SESSION_KEY, t);
     } catch {
       /* ignore */
     }
-    const r: Resolved = t === "system" ? getSystemTheme() : t;
+    const r: Resolved = t === "system" ? getThemeByTime() : t;
     setResolved(r);
     applyDom(r);
   }, []);
 
   const toggle = useCallback(() => {
-    // Toggle simple light ↔ dark (sin "system" — Brandon prefirió binary).
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme, setTheme]);
+    // Toggle manual = OVERRIDE temporal hasta hard reload o cambio explícito.
+    setTheme(resolved === "dark" ? "light" : "dark");
+  }, [resolved, setTheme]);
 
   return (
     <ThemeContext.Provider value={{ theme, resolved, setTheme, toggle }}>
