@@ -68,7 +68,7 @@ export default function ExportButton({
         className={cn(
           "inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors",
           "border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900",
-          "text-[var(--text-primary)] dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800",
+          "text-[var(--text-primary)] dark:text-zinc-300 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800",
           className,
         )}
       >
@@ -86,7 +86,7 @@ export default function ExportButton({
                 opt.action();
                 setOpen(false);
               }}
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-zinc-300 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800 transition-colors"
             >
               {opt.label}
             </button>

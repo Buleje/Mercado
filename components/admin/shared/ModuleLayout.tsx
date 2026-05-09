@@ -62,7 +62,7 @@ function KpiSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="h-24 animate-pulse rounded-xl bg-gray-100 dark:bg-zinc-800"
+          className="h-24 animate-pulse rounded-xl bg-[var(--surface-sunken)] dark:bg-zinc-800"
         />
       ))}
     </div>
@@ -75,7 +75,7 @@ function ContentSkeleton() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="h-12 rounded-lg bg-gray-100 dark:bg-zinc-800"
+          className="h-12 rounded-lg bg-[var(--surface-sunken)] dark:bg-zinc-800"
         />
       ))}
     </div>
@@ -131,7 +131,7 @@ export default function ModuleLayout({
 
       {/* 2. TABS */}
       {tabs && tabs.length > 0 && (
-        <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-zinc-800 rounded-xl w-fit">
+        <div className="flex items-center gap-1 p-1 bg-[var(--surface-sunken)] dark:bg-zinc-800 rounded-xl w-fit">
           {tabs.map((tab) => (
             <button
               key={tab.id}

@@ -48,7 +48,7 @@ function AdminTable({
         <thead>
           <tr
             className={cn(
-              "bg-gray-50 dark:bg-zinc-800/50",
+              "bg-[var(--surface-alt)] dark:bg-zinc-800/50",
               stickyHeader && "sticky top-0 z-10 bg-white dark:bg-zinc-900",
             )}
           >

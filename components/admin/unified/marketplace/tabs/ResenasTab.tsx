@@ -231,7 +231,7 @@ export default function ResenasTab() {
                     ? "bg-primary text-white"
                     : isWarning
                     ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:brightness-95"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]",
                 )}
               >
                 {labels[f]}
@@ -249,7 +249,7 @@ export default function ResenasTab() {
                 "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
                 filter === String(star)
                   ? "bg-primary text-white"
-                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
+                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]",
               )}
             >
               {star}
@@ -343,7 +343,7 @@ export default function ResenasTab() {
                       "p-1.5 rounded-lg transition-colors",
                       replyingTo === review.id
                         ? "bg-primary/20 text-primary"
-                        : "bg-gray-50 text-[var(--text-tertiary)] hover:bg-gray-100",
+                        : "bg-[var(--surface-alt)] text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]",
                     )}
                     title="Responder"
                   >
@@ -408,7 +408,7 @@ export default function ResenasTab() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => { setReplyingTo(null); setReplyText(""); }}
-                        className="px-3 py-1.5 rounded-lg bg-gray-100 text-[var(--text-secondary)] text-xs font-bold hover:bg-gray-200 transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-xs font-bold hover:bg-[var(--rule-soft)] transition-colors"
                       >
                         Cancelar
                       </button>

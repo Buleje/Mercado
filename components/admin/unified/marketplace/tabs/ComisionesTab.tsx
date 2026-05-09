@@ -279,7 +279,7 @@ export default function ComisionesTab() {
           ].map((f) => (
             <button key={f.value} onClick={() => setFilterStatus(f.value)}
               className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                filterStatus === f.value ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200")}>
+                filterStatus === f.value ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}>
               {f.label}
             </button>
           ))}
@@ -302,7 +302,7 @@ export default function ComisionesTab() {
         <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
+              <thead className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Orden</th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Total orden</th>
@@ -317,7 +317,7 @@ export default function ComisionesTab() {
                   const sc = COMMISSION_STATUS_CONFIG[e.status] ?? COMMISSION_STATUS_CONFIG.pendiente;
                   const StatusIcon = sc.icon;
                   return (
-                    <tr key={e.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={e.id} className="hover:bg-[var(--surface-alt)] transition-colors">
                       <td className="px-4 py-3">
                         <p className="font-mono text-xs font-bold text-[var(--text-primary)]">#{e.orderId.slice(-8).toUpperCase()}</p>
                       </td>

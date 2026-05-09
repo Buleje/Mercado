@@ -132,7 +132,7 @@ const PLAN_LABELS: Record<SocioMember["plan"], string> = {
 const STATUS_STYLES: Record<SocioMember["status"], string> = {
   activo: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
   pausado: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  cancelado: "bg-gray-100 text-[var(--text-secondary)]",
+  cancelado: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
 };
 
 const STATUS_LABELS: Record<SocioMember["status"], string> = {
@@ -245,7 +245,7 @@ function MembersTab({
         </select>
         <button
           onClick={() => exportCSV(filtered)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
         >
           <Download className="h-4 w-4" />
           CSV
@@ -263,7 +263,7 @@ function MembersTab({
         <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[var(--surface-alt)] border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Miembro</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">Plan</th>
@@ -276,7 +276,7 @@ function MembersTab({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filtered.map((m) => (
-                  <tr key={m.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={m.id} className="hover:bg-[var(--surface-alt)] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--data-success-500)] text-white flex items-center justify-center text-xs font-bold shrink-0">

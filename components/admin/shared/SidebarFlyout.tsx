@@ -75,7 +75,7 @@ export function SidebarFlyout({
       border: "border-[var(--rule-soft)] shadow-lg",
       activeBg: "bg-[var(--accent-soft)] text-primary font-semibold",
       inactiveText: "text-[var(--text-secondary)]",
-      hoverBg: "hover:bg-gray-50 dark:hover:bg-zinc-800/40 hover:text-[var(--text-primary)]",
+      hoverBg: "hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800/40 hover:text-[var(--text-primary)]",
       indicator: "bg-primary",
       activeIcon: "text-primary",
       inactiveIcon: "text-[var(--text-tertiary)]",

@@ -57,7 +57,7 @@ const TYPE_CONFIG: Record<
   system: {
     icon: Shield,
     color: "text-[var(--text-secondary)]",
-    bg: "bg-gray-100 dark:bg-zinc-800",
+    bg: "bg-[var(--surface-sunken)] dark:bg-zinc-800",
   },
 };
 
@@ -180,7 +180,7 @@ export default function NotificationCenter() {
           "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
           open
             ? "bg-primary/10 text-primary"
-            : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary"
+            : "text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent hover:text-primary"
         )}
       >
         <Bell className="h-4 w-4" />
@@ -229,7 +229,7 @@ export default function NotificationCenter() {
             <div className="flex-1 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                  <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-[var(--surface-alt)] dark:bg-zinc-800 flex items-center justify-center mb-3">
                     <Bell className="h-6 w-6 text-[var(--text-tertiary)] dark:text-zinc-600" />
                   </div>
                   <p className="text-sm font-medium text-[var(--text-secondary)] dark:text-muted">
@@ -245,7 +245,7 @@ export default function NotificationCenter() {
                       key={notif.id}
                       onClick={() => markAsRead(notif.id)}
                       className={cn(
-                        "px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-800/50 border-b border-gray-50 dark:border-zinc-800/50 cursor-pointer transition-colors flex items-start gap-3 group",
+                        "px-4 py-3 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800/50 border-b border-gray-50 dark:border-zinc-800/50 cursor-pointer transition-colors flex items-start gap-3 group",
                         !notif.read && "bg-[var(--accent-soft)]/40 dark:bg-[var(--accent-muted)]/40"
                       )}
                     >

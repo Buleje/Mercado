@@ -66,7 +66,7 @@ export default function FilterChip({
         "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
         active
           ? palette.chip
-          : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800",
+          : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800",
       )}
     >
       {label}
@@ -76,7 +76,7 @@ export default function FilterChip({
             "text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
             active
               ? palette.badge
-              : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300",
+              : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300",
           )}
         >
           {count > 99 ? "99+" : count}

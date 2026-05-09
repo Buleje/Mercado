@@ -369,7 +369,7 @@ function InventoryAnalyticsDashboard() {
                   <button onClick={() => setPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
               )}
-              <button onClick={() => setExpandedChart("categoria")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
+              <button onClick={() => setExpandedChart("categoria")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
               <FavStar id="categoria" favs={invFavs} />
             </div>
           </div>
@@ -725,7 +725,7 @@ export default function InventarioAlmacenesModule() {
         {/* Mejora 7: Price labels button */}
         <button
           onClick={() => { setShowPriceLabels(true); void loadLabelProducts(); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-semibold text-[var(--text-primary)] hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
         >
           Imprimir etiquetas
         </button>
@@ -778,11 +778,11 @@ export default function InventarioAlmacenesModule() {
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Conteo Físico</CardTitle>
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
-                  <button onClick={() => setConteoMode("wizard")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "wizard" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Guiado</button>
-                  <button onClick={() => setConteoMode("manual")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "manual" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Manual</button>
-                  <button onClick={() => setConteoMode("scanner")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "scanner" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Escáner</button>
+                  <button onClick={() => setConteoMode("wizard")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "wizard" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Guiado</button>
+                  <button onClick={() => setConteoMode("manual")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "manual" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Manual</button>
+                  <button onClick={() => setConteoMode("scanner")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "scanner" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Escáner</button>
                 </div>
-                <button onClick={() => setShowConteoModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+                <button onClick={() => setShowConteoModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
                   <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -802,7 +802,7 @@ export default function InventarioAlmacenesModule() {
           <div className="bg-white dark:bg-card w-full sm:max-w-5xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Declaración de Inventario</CardTitle>
-              <button onClick={() => setShowDeclaracionModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+              <button onClick={() => setShowDeclaracionModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
                 <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -842,7 +842,7 @@ export default function InventarioAlmacenesModule() {
           <div className="bg-white dark:bg-[var(--color-card)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <CardTitle className="font-bold text-[var(--text-primary)] text-sm">Imprimir Etiquetas de Precio</CardTitle>
-              <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                 <span className="text-[var(--text-tertiary)] text-lg">&times;</span>
               </button>
             </div>
@@ -866,7 +866,7 @@ export default function InventarioAlmacenesModule() {
                     <span className="text-xs text-[var(--text-tertiary)]">{selectedLabelIds.size} seleccionados</span>
                   </div>
                   {labelProducts.map(p => (
-                    <label key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                    <label key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-alt)] cursor-pointer transition-colors">
                       <input
                         type="checkbox"
                         checked={selectedLabelIds.has(p.id)}

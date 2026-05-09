@@ -81,7 +81,7 @@ function MenuOverlay({ items, position, onClose }: MenuOverlayProps) {
                 "w-full px-3 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors",
                 item.variant === "danger"
                   ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20"
-                  : "text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-zinc-800",
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800",
               )}
             >
               {Icon && <Icon className="h-4 w-4 shrink-0" />}

@@ -288,7 +288,7 @@ function ProductsDashboard() {
                   <button onClick={() => setPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
               )}
-              <button onClick={() => setExpandedChart("inv-cat")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
+              <button onClick={() => setExpandedChart("inv-cat")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
           <ResponsiveContainer minWidth={0} width="100%" height={280}>
@@ -458,14 +458,14 @@ function ProductsDashboard() {
           </div>
         )}
         {kpis.sinStock > 0 && (
-          <div className="bg-gray-50 border border-[var(--rule-base)] rounded-xl p-4 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+          <div className="bg-[var(--surface-alt)] border border-[var(--rule-base)] rounded-xl p-4 flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
               <Eye className="h-5 w-5 text-[var(--text-secondary)]" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-[var(--text-primary)]">{kpis.sinStock} sin stock</p>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">Estos productos no se muestran en la tienda</p>
-              <button className="mt-2 text-xs font-semibold text-[var(--text-primary)] bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors">
+              <button className="mt-2 text-xs font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] px-3 py-1 rounded-full hover:bg-[var(--rule-soft)] transition-colors">
                 Ver productos
               </button>
             </div>

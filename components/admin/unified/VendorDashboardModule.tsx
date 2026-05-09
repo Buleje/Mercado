@@ -89,7 +89,7 @@ function KPISkeleton() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-gray-100 rounded-xl h-28 animate-pulse" />
+        <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28 animate-pulse" />
       ))}
     </div>
   );
@@ -98,9 +98,9 @@ function KPISkeleton() {
 function CardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6  space-y-3">
-      <div className="h-4 bg-gray-100 rounded w-1/3 animate-pulse" />
+      <div className="h-4 bg-[var(--surface-sunken)] rounded w-1/3 animate-pulse" />
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />
+        <div key={i} className="h-10 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
       ))}
     </div>
   );

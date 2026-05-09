@@ -387,7 +387,7 @@ function ComprasDashboard() {
                   <button onClick={() => setPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
               )}
-              <button onClick={() => setExpandedChart("proveedor")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
+              <button onClick={() => setExpandedChart("proveedor")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
             </div>
           </div>
           <ResponsiveContainer minWidth={0} width="100%" height={280}>
@@ -423,7 +423,7 @@ function ComprasDashboard() {
                         <span className="text-xs font-mono font-bold text-[var(--text-primary)] shrink-0 ml-2">S/ {s.total.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                         </div>
                         <span className="text-xs text-[var(--text-tertiary)] shrink-0 w-10 text-right">{pct.toFixed(0)}%</span>

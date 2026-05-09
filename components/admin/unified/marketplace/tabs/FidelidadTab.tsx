@@ -44,7 +44,7 @@ interface TopCustomer {
 
 const TIER_CONFIG: Record<string, { label: string; className: string; minPoints: string }> = {
   bronce: { label: "Bronce", className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", minPoints: "0 - 499" },
-  plata:  { label: "Plata",  className: "bg-gray-100 text-[var(--text-secondary)]",                minPoints: "500 - 999" },
+  plata:  { label: "Plata",  className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",                minPoints: "500 - 999" },
   oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", minPoints: "1000+" },
 };
 
@@ -301,7 +301,7 @@ export default function FidelidadTab() {
                 </div>
                 <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold whitespace-nowrap">{r.costPoints} pts</span>
                 <button onClick={() => persistRewards(rewards.map((x) => (x.id === r.id ? { ...x, active: !x.active } : x)))}
-                  title={r.active ? "Desactivar" : "Activar"} className="p-1.5 rounded-lg hover:bg-gray-100 transition shrink-0">
+                  title={r.active ? "Desactivar" : "Activar"} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition shrink-0">
                   {r.active ? <Eye className="h-4 w-4 text-[var(--data-success-500)]" /> : <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
                 </button>
                 <button onClick={() => persistRewards(rewards.filter((x) => x.id !== r.id))} title="Eliminar"
@@ -356,7 +356,7 @@ export default function FidelidadTab() {
             </div>
             <div className="text-right">
               <p className="text-2xl font-extrabold text-primary">{data.points}</p>
-              <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-[var(--text-secondary)]")}>
+              <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
                 {TIER_CONFIG[data.tier]?.label ?? data.tier}
               </span>
             </div>
@@ -399,7 +399,7 @@ export default function FidelidadTab() {
           <Gift className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">Programa de Fidelidad</p>
           <p className="text-xs mt-1">Busca un cliente por teléfono para ver y gestionar sus puntos.</p>
-          <div className="mt-4 bg-gray-50 rounded-xl p-3 text-left max-w-xs mx-auto">
+          <div className="mt-4 bg-[var(--surface-alt)] rounded-xl p-3 text-left max-w-xs mx-auto">
             <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">Reglas de puntos:</p>
             <p className="text-xs text-[var(--text-secondary)]">• 1 punto por cada S/1 de compra</p>
             <p className="text-xs text-[var(--text-secondary)]">• 500 pts = Nivel Plata (5% descuento)</p>

@@ -31,14 +31,14 @@ export default function AutoRefreshControl({
       )}
       <button
         onClick={onTogglePause}
-        className="p-1 rounded hover:bg-gray-100 transition-colors"
+        className="p-1 rounded hover:bg-[var(--surface-sunken)] transition-colors"
         title={paused ? "Reanudar auto-refresh" : "Pausar auto-refresh"}
       >
         {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
       </button>
       <button
         onClick={onRefreshNow}
-        className="p-1 rounded hover:bg-gray-100 transition-colors"
+        className="p-1 rounded hover:bg-[var(--surface-sunken)] transition-colors"
         title="Actualizar ahora"
       >
         <RefreshCw className="h-3 w-3" />

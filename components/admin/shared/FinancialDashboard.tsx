@@ -176,10 +176,10 @@ function SkeletonCard() {
   return (
     <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 animate-pulse">
       <div className="flex items-start justify-between mb-3">
-        <div className="h-8 w-8 rounded-xl bg-gray-200 dark:bg-gray-700" />
-        <div className="h-4 w-12 rounded bg-gray-200 dark:bg-gray-700" />
+        <div className="h-8 w-8 rounded-xl bg-[var(--rule-soft)] dark:bg-gray-700" />
+        <div className="h-4 w-12 rounded bg-[var(--rule-soft)] dark:bg-gray-700" />
       </div>
-      <div className="h-7 w-24 rounded bg-gray-200 dark:bg-gray-700 mb-1" />
+      <div className="h-7 w-24 rounded bg-[var(--rule-soft)] dark:bg-gray-700 mb-1" />
       <div className="h-3 w-20 rounded bg-[var(--surface-sunken)]" />
     </div>
   );
@@ -188,7 +188,7 @@ function SkeletonCard() {
 function SkeletonChart() {
   return (
     <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 animate-pulse">
-      <div className="h-5 w-40 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
+      <div className="h-5 w-40 rounded bg-[var(--rule-soft)] dark:bg-gray-700 mb-4" />
       <div className="flex items-end gap-[3px] h-28">
         {Array.from({ length: 30 }).map((_, i) => (
           <div
@@ -434,7 +434,7 @@ export default function FinancialDashboard() {
         </div>
         <SkeletonChart />
         <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-5 animate-pulse">
-          <div className="h-5 w-32 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
+          <div className="h-5 w-32 rounded bg-[var(--rule-soft)] dark:bg-gray-700 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-8 rounded bg-[var(--surface-sunken)]" />

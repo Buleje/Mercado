@@ -37,7 +37,7 @@ const STATUS_LABELS: Record<GiftCardDetails["status"], string> = {
 const STATUS_STYLES: Record<GiftCardDetails["status"], string> = {
   pendiente: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
   canjeada: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
-  expirada: "bg-gray-100 text-[var(--text-secondary)]",
+  expirada: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
   cancelada: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
 };
 
@@ -103,7 +103,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -141,7 +141,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
           </div>
 
           {/* Estado */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+          <div className="flex items-center justify-between p-3 bg-[var(--surface-alt)] rounded-xl">
             <span className="text-sm font-semibold text-[var(--text-secondary)]">Estado</span>
             <span className={cn("inline-flex px-3 py-1 rounded-full text-xs font-bold", STATUS_STYLES[card.status])}>
               {STATUS_LABELS[card.status]}
@@ -222,7 +222,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
               <div className="flex gap-2">
                 <button
                   onClick={() => setExtending(false)}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200"
+                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)]"
                 >
                   Cancelar
                 </button>
@@ -242,7 +242,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setExtending(true)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
               >
                 Extender vencimiento
               </button>

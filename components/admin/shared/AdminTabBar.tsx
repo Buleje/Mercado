@@ -246,7 +246,7 @@ export default function AdminTabBar({
                 draggable && "cursor-grab active:cursor-grabbing",
                 activeTab === tab.id
                   ? "border-primary bg-primary/5 font-semibold text-primary"
-                  : "border-transparent font-normal text-[var(--text-secondary)] hover:bg-gray-50 hover:text-[var(--text-primary)]",
+                  : "border-transparent font-normal text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]",
                 tab.disabled && "cursor-not-allowed opacity-40",
                 draggedTab === tab.id && "scale-95 opacity-40",
                 dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-primary ring-offset-1",
