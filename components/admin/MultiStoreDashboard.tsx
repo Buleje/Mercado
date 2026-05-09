@@ -70,7 +70,7 @@ function StarRating({ value }: { value: number }) {
               ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
               : half && i === full
               ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
-              : "fill-gray-200 text-gray-200 dark:fill-gray-700 dark:text-[var(--text-primary)]"
+              : "fill-gray-200 text-[var(--text-tertiary)] dark:fill-gray-700 dark:text-[var(--text-primary)]"
           )}
         />
       ))}
@@ -451,7 +451,7 @@ export default function MultiStoreDashboard() {
                   "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors",
                   viewTab === id
                     ? "bg-white text-primary  dark:bg-gray-900"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)]"
                 )}
               >
                 <Icon className="h-4 w-4" />

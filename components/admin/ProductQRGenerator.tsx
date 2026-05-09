@@ -367,7 +367,7 @@ export default function ProductQRGenerator() {
           ) : (
             <div className="flex flex-col items-center gap-3 text-center">
               <div className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-[var(--rule-base)]">
-                <QrCode className="h-12 w-12 text-gray-200 dark:text-[var(--text-primary)]" />
+                <QrCode className="h-12 w-12 text-[var(--text-tertiary)] dark:text-[var(--text-primary)]" />
               </div>
               <p className="text-sm text-[var(--text-tertiary)]">Selecciona un producto para generar su QR</p>
             </div>

@@ -58,7 +58,7 @@ const STATUS_COLORS: Record<AdminReview["status"], string> = {
   pending:  "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   approved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
   rejected: "bg-rose-100 text-[var(--data-error-500)] dark:bg-rose-900/30 dark:text-[var(--data-error-500)]",
-  hidden:   "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  hidden:   "bg-gray-200 text-[var(--text-primary)] dark:bg-gray-800 dark:text-gray-300",
 };
 
 function StarsDisplay({ rating }: { rating: number }) {
@@ -67,7 +67,7 @@ function StarsDisplay({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((n) => (
         <Star
           key={n}
-          className={cn("h-3.5 w-3.5", n <= rating ? "fill-amber-400 text-amber-400" : "text-gray-300 dark:text-gray-700")}
+          className={cn("h-3.5 w-3.5", n <= rating ? "fill-amber-400 text-amber-400" : "text-[var(--text-tertiary)] dark:text-gray-700")}
           strokeWidth={1.5}
           aria-hidden
         />

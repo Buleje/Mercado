@@ -99,7 +99,7 @@ function PayBtn({ active, label, icon, color, onClick }: PayBtnProps) {
         "flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border-2 font-bold text-sm transition-all min-h-[56px]",
         active
           ? `${color} border-transparent text-white scale-105`
-          : "border-gray-700 text-[var(--text-tertiary)] bg-gray-800 hover:border-gray-500 hover:text-gray-200"
+          : "border-gray-700 text-[var(--text-tertiary)] bg-gray-800 hover:border-gray-500 hover:text-[var(--text-tertiary)]"
       )}
     >
       {icon}
@@ -119,7 +119,7 @@ function CategoryPill({ label, active, onClick }: { label: string; active: boole
         "flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap min-h-[40px]",
         active
           ? "bg-[var(--accent-dark)] text-white"
-          : "bg-gray-800 text-[var(--text-tertiary)] hover:bg-gray-700 hover:text-gray-200"
+          : "bg-gray-800 text-[var(--text-tertiary)] hover:bg-gray-700 hover:text-[var(--text-tertiary)]"
       )}
     >
       {label}
@@ -423,7 +423,7 @@ export default function KioskPOS() {
                         )}
                       </div>
 
-                      <p className="text-xs font-semibold text-gray-200 text-center leading-tight line-clamp-2 w-full">
+                      <p className="text-xs font-semibold text-[var(--text-tertiary)] text-center leading-tight line-clamp-2 w-full">
                         {product.name}
                       </p>
                       <p className="text-sm font-bold text-teal-400 mt-1">{fmt(product.price)}</p>
@@ -475,7 +475,7 @@ export default function KioskPOS() {
                   className="flex items-center gap-2 py-2 border-b border-gray-800 last:border-0"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-200 truncate">
+                    <p className="text-sm font-medium text-[var(--text-tertiary)] truncate">
                       {item.product.name}
                     </p>
                     <p className="text-xs text-teal-400 font-semibold">

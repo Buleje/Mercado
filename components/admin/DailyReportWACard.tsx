@@ -18,6 +18,7 @@
  */
 
 import { useCallback } from "react";
+import { CardTitle } from "@buleje/design-system";
 import {
   TrendingUp,
   TrendingDown,
@@ -118,9 +119,7 @@ export default function DailyReportWACard({
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Reporte del día
             </p>
-            <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-              ¿Cómo te fue hoy?
-            </h3>
+            <CardTitle>¿Cómo te fue hoy?</CardTitle>
           </div>
         </div>
       </div>

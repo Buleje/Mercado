@@ -155,7 +155,7 @@ export default function PeriodComparatorTab() {
         <div className="text-center py-10 text-sm text-[var(--text-tertiary)]">Cargando datos de ventas...</div>
       ) : data.length === 0 ? (
         <div className="text-center py-10">
-          <BarChart3 className="h-10 w-10 text-gray-200 dark:text-surface mx-auto mb-2" />
+          <BarChart3 className="h-10 w-10 text-[var(--text-tertiary)] dark:text-surface mx-auto mb-2" />
           <p className="text-sm font-semibold text-[var(--text-tertiary)]">Sin ventas en este período</p>
         </div>
       ) : (

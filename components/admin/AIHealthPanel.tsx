@@ -142,7 +142,7 @@ export default function AIHealthPanel() {
               fill="none"
               stroke="currentColor"
               strokeWidth="8"
-              className="text-gray-200 dark:text-[var(--text-primary)]"
+              className="text-[var(--text-tertiary)] dark:text-[var(--text-primary)]"
             />
             <circle
               cx="70" cy="70" r="60"

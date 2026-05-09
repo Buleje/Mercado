@@ -106,7 +106,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
                 disabled={idx === 0}
                 className={cn(
                   "p-1 rounded transition-colors",
-                  idx === 0 ? "text-gray-200 dark:text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10"
+                  idx === 0 ? "text-[var(--text-tertiary)] dark:text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10"
                 )}
               >
                 <ArrowUp className="h-3.5 w-3.5" />
@@ -116,7 +116,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
                 disabled={idx === items.length - 1}
                 className={cn(
                   "p-1 rounded transition-colors",
-                  idx === items.length - 1 ? "text-gray-200 dark:text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10"
+                  idx === items.length - 1 ? "text-[var(--text-tertiary)] dark:text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10"
                 )}
               >
                 <ArrowDown className="h-3.5 w-3.5" />

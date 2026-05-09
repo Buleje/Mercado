@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
 import {
   UserPlus, Send, Loader2, X, Copy, Check,
   Phone, Trash2,
@@ -120,7 +121,7 @@ export default function AdminInvitationsTab() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-[var(--text-primary)]">Invitaciones</h2>
+          <SectionTitle as="h2">Invitaciones</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             Invitá a tu equipo (cajeros, almaceneros) por WhatsApp con un link único.
           </p>

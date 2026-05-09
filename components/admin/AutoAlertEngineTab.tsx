@@ -219,7 +219,7 @@ export default function AutoAlertEngineTab() {
               <div className="text-center py-8 text-sm text-[var(--text-tertiary)]">Cargando alertas...</div>
             ) : filteredLogs.length === 0 ? (
               <div className="text-center py-8">
-                <Bell className="h-10 w-10 text-gray-200 dark:text-surface mx-auto mb-2" />
+                <Bell className="h-10 w-10 text-[var(--text-tertiary)] dark:text-surface mx-auto mb-2" />
                 <p className="text-sm font-semibold text-[var(--text-tertiary)]">Sin alertas activas</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">Todas las reglas están dentro de sus umbrales</p>
               </div>

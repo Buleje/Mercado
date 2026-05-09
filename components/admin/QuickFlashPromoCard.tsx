@@ -17,6 +17,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { CardTitle } from "@buleje/design-system";
 import { Zap, Clock, Check, Send, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -81,9 +82,7 @@ export default function QuickFlashPromoCard({ onLaunch, defaultMessage }: Props)
           <Zap className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="flex-1">
-          <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-            Promoción flash
-          </h3>
+          <CardTitle>Promoción flash</CardTitle>
           <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
             Lanzá una promo en 10 segundos. Tus clientes la ven ya.
           </p>

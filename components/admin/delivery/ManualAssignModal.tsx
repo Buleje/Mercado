@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
 import {
   X, Loader2, MapPin, Star, CheckCircle2, AlertTriangle, Bike,
 } from "@buleje/design-system/icons";
@@ -88,7 +89,7 @@ export default function ManualAssignModal({ orderId, orderLocation, onClose, onA
       <div className="bg-[var(--surface-canvas)] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         <header className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)]">
           <div>
-            <h2 className="text-lg font-extrabold text-[var(--text-primary)]">Asignar repartidor manualmente</h2>
+            <SectionTitle as="h2">Asignar repartidor manualmente</SectionTitle>
             <p className="text-xs text-[var(--text-tertiary)]">Pedido #{orderId.slice(-8)}{orderLocation ? ` · ${orderLocation}` : ""}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)]">

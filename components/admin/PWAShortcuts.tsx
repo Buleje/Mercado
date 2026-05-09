@@ -171,7 +171,7 @@ export default function PWAShortcuts() {
               "flex-1 py-1.5 rounded-md text-sm font-medium transition-colors",
               activeTab === tab
                 ? "bg-primary text-white"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]"
             )}
           >
             {tab === "config" ? "Configurar" : tab === "preview" ? "Vista previa" : "Instalar"}

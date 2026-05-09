@@ -114,7 +114,7 @@ export default function ShiftHandover() {
                 "px-3 py-1 rounded-md text-sm font-medium transition-colors",
                 view === v
                   ? "bg-primary text-white"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)]"
               )}
             >
               {v === "current" ? "Turno actual" : v === "close" ? "Cerrar turno" : "Historial"}

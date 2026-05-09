@@ -249,7 +249,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-2 pt-1">
-        <button onClick={onCancel} className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] rounded-lg transition-colors">
+        <button onClick={onCancel} className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] rounded-lg transition-colors">
           Cancelar
         </button>
         <button

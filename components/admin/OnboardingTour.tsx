@@ -210,7 +210,7 @@ export function OnboardingTour({
           <button
             onClick={onPrev}
             disabled={currentStep === 0}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="h-4 w-4" />
             Anterior

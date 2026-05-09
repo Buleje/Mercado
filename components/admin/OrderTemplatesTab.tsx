@@ -150,7 +150,7 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           "flex items-center justify-center w-8 h-8 rounded-lg transition-colors",
           canRemove
             ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 hover:text-[var(--data-error-500)]"
-            : "text-gray-200 dark:text-card-border cursor-not-allowed"
+            : "text-[var(--text-tertiary)] dark:text-card-border cursor-not-allowed"
         )}
         title="Quitar fila"
       >

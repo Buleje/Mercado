@@ -80,14 +80,14 @@ export function AdminStatsDesktop({ quickStats, navigateTab }: AdminStatsProps) 
         <ShoppingCart className="h-4 w-4" />
         {quickStats.pendingOrders} pendiente{quickStats.pendingOrders !== 1 ? "s" : ""}
       </button>
-      <span className="text-gray-200 dark:text-card-border">|</span>
+      <span className="text-[var(--text-tertiary)] dark:text-card-border">|</span>
       <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] font-semibold">
         <TrendingUp className="h-4 w-4" />
         S/{Number(quickStats.todayRevenue).toFixed(2)} hoy
       </span>
       {quickStats.lowStockProducts > 0 && (
         <>
-          <span className="text-gray-200 dark:text-card-border">|</span>
+          <span className="text-[var(--text-tertiary)] dark:text-card-border">|</span>
           <button
             onClick={() => navigateTab("inventario")}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] font-semibold hover:bg-[var(--data-error-500)] transition-colors"
@@ -99,7 +99,7 @@ export function AdminStatsDesktop({ quickStats, navigateTab }: AdminStatsProps) 
       )}
       {(quickStats.overduePayables ?? 0) > 0 && (
         <>
-          <span className="text-gray-200 dark:text-card-border">|</span>
+          <span className="text-[var(--text-tertiary)] dark:text-card-border">|</span>
           <button
             onClick={() => navigateTab("plata" as Tab)}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] font-semibold hover:bg-[var(--data-warning-500)] transition-colors"

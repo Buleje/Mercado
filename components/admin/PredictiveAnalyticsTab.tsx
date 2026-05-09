@@ -88,7 +88,7 @@ function ClockVisual({ hour }: { hour: number }) {
   return (
     <div className="flex items-center gap-4">
       <svg width={80} height={80} viewBox="0 0 100 100">
-        <circle cx={50} cy={50} r={44} fill="none" stroke="currentColor" strokeWidth={2} className="text-gray-200 dark:text-[var(--text-primary)]" />
+        <circle cx={50} cy={50} r={44} fill="none" stroke="currentColor" strokeWidth={2} className="text-[var(--text-tertiary)] dark:text-[var(--text-primary)]" />
         {[12, 3, 6, 9].map((n, i) => {
           const a = (i * 90 - 90) * Math.PI / 180;
           return (

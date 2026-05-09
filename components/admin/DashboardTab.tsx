@@ -2403,7 +2403,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${o.notes}</p>` : ""}
                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-1.5">Prioridades de hoy</div>
                 <div className="space-y-1">
                   {st.briefingPriorities.map((p, i) => (
-                    <div key={i} className="text-xs text-gray-200 py-1 px-2 rounded bg-white/5">
+                    <div key={i} className="text-xs text-[var(--text-tertiary)] py-1 px-2 rounded bg-white/5">
                       {p}
                     </div>
                   ))}

@@ -79,9 +79,7 @@ function KpiCard({ label, value, icon, accent }: KpiCardProps) {
       >
         {icon}
       </div>
-      <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight text-center">
-        {value}
-      </p>
+      <PageTitle as="p" className="tracking-tight text-center">{value}</PageTitle>
       <p className="text-xl font-semibold text-[var(--text-secondary)] text-center">
         {label}
       </p>

@@ -222,7 +222,7 @@ export default function NPSTab() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-10 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
-              <Star className="h-10 w-10 text-gray-200 dark:text-surface mx-auto mb-2" />
+              <Star className="h-10 w-10 text-[var(--text-tertiary)] dark:text-surface mx-auto mb-2" />
               <p className="text-sm font-semibold text-[var(--text-tertiary)]">Sin reseñas para este filtro</p>
             </div>
           ) : filtered.map(s => {

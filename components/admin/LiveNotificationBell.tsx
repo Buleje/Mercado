@@ -140,7 +140,7 @@ function MiniToast({
       <button
         type="button"
         onClick={onDismiss}
-        className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 flex-shrink-0 min-w-[28px] min-h-[28px] flex items-center justify-center"
+        className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] flex-shrink-0 min-w-[28px] min-h-[28px] flex items-center justify-center"
       >
         <span className="sr-only">Cerrar</span>
         <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">

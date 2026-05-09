@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, PageTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Clock, LogIn, LogOut } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -157,9 +157,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
         aria-live="polite"
         aria-atomic="true"
       >
-        <p className="font-mono text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-          {timeDisplay}
-        </p>
+        <PageTitle as="p" className="font-mono tabular-nums">{timeDisplay}</PageTitle>
         <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
           {new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}
         </p>

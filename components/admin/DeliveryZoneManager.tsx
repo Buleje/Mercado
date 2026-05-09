@@ -339,7 +339,7 @@ export default function DeliveryZoneManager() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] rounded-lg transition-colors"
           >
             <RefreshCw size={14} />
             Restablecer

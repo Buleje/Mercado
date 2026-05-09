@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
+import { LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -160,9 +160,7 @@ export default function MonthProjectionCard() {
               <p className="text-xs text-[var(--text-tertiary)] mb-1">
                 {MONTHS[curMonth]} {curYear} — dia {daysElapsed} de {daysTotal}
               </p>
-              <p className="text-2xl font-bold text-[var(--text-primary)]">
-                {fmt(projection)}
-              </p>
+              <PageTitle as="p">{fmt(projection)}</PageTitle>
               <p className="text-xs text-[var(--text-tertiary)] mt-0.5">proyeccion de cierre</p>
             </div>
 

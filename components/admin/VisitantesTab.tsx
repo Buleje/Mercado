@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { PageTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Users, Smartphone, Tablet, Monitor, RefreshCw, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 
@@ -84,14 +84,14 @@ export default function VisitantesTab() {
           <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1">
             <Users className="h-3.5 w-3.5" /> Total visitantes
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-foreground">{total}</p>
+          <PageTitle as="p">{total}</PageTitle>
         </div>
         {(["celular", "tablet", "computadora"] as const).map((d) => (
           <div key={d} className="bg-card border border-border rounded-xl p-4">
             <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1 capitalize">
               {DEVICE_ICONS[d]} {d}
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-foreground">{deviceCounts[d] ?? 0}</p>
+            <PageTitle as="p">{deviceCounts[d] ?? 0}</PageTitle>
           </div>
         ))}
       </div>
