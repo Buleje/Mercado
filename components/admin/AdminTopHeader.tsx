@@ -148,7 +148,7 @@ export function AdminTopHeader({
             "group flex items-center gap-2.5 px-3.5 h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all border",
             isBulejeTheme
               ? "bg-white/[0.04] border-[color-mix(in oklab, var(--accent) 15%, transparent)] hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] hover:bg-white/[0.07]"
-              : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-white dark:hover:bg-card hover:shadow-sm"
+              : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-white dark:hover:bg-card hover:shadow-[var(--shadow-sm)]"
           )}
         >
           <Search className={cn(

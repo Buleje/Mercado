@@ -114,7 +114,7 @@ export default function AnomalyDetectionTab() {
           const Icon = config.icon;
           const isResolved = resolvedIds.has(a.id);
           return (
-            <div key={a.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 hover:shadow-sm transition-shadow", isResolved && "opacity-60")}>
+            <div key={a.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 hover:shadow-[var(--shadow-sm)] transition-shadow", isResolved && "opacity-60")}>
               <div className="flex flex-wrap items-start gap-2 sm:gap-4">
                 <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", config.color)}>
                   <Icon className="h-5 w-5" />

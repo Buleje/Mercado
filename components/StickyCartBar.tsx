@@ -35,7 +35,7 @@ export default function StickyCartBar() {
         <button
           onClick={toggle}
           className={cn(
-            "w-full flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]",
+            "w-full flex items-center justify-between gap-3 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 shadow-[var(--shadow-xl)] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]",
             "bg-linear-to-r from-primary to-primary-dark text-white"
           )}
           aria-label={`Ver carrito con ${qty} productos`}
@@ -44,7 +44,7 @@ export default function StickyCartBar() {
           <div className="flex items-center gap-3">
             <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-white/14 shrink-0">
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-secondary px-1 text-[length:var(--ts-2xs)] font-extrabold text-white shadow-sm">
+              <span className="absolute -top-1 -right-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-secondary px-1 text-[length:var(--ts-2xs)] font-extrabold text-white shadow-[var(--shadow-sm)]">
                 {qty > 99 ? "99+" : qty}
               </span>
             </div>

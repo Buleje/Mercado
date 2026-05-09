@@ -151,7 +151,7 @@ export default function AdminOptionsDropdown({
               "absolute right-0 top-full mt-2 w-80 rounded-xl z-50",
               "bg-white dark:bg-[var(--surface-raised)]",
               "border border-[var(--rule-base)]",
-              "shadow-lg shadow-black/5 dark:shadow-black/40",
+              "shadow-[var(--shadow-lg)] shadow-black/5 dark:shadow-black/40",
               "overflow-hidden",
             )}
           >
@@ -235,7 +235,7 @@ export default function AdminOptionsDropdown({
                       className={cn(
                         "relative flex flex-col items-center gap-1 py-2 rounded-md text-xs font-semibold transition-all duration-150",
                         active
-                          ? "bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm border border-[var(--rule-base)]"
+                          ? "bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)] border border-[var(--rule-base)]"
                           : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]",
                       )}
                     >

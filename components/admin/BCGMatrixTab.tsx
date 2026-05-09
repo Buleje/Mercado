@@ -69,7 +69,7 @@ export default function BCGMatrixTab() {
           const items = grouped[q];
           const rev = items.reduce((s, p) => s + p.revenue, 0);
           return (
-            <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-xl border-2 p-3 sm:p-5 text-left transition-all hover:shadow-sm", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
+            <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-xl border-2 p-3 sm:p-5 text-left transition-all hover:shadow-[var(--shadow-sm)]", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
               </div>

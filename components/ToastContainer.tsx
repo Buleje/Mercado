@@ -84,7 +84,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
   return (
     <div
       className={cn(
-        "flex items-start gap-3 w-full max-w-sm rounded-lg border p-4 shadow-lg backdrop-blur-sm",
+        "flex items-start gap-3 w-full max-w-sm rounded-lg border p-4 shadow-[var(--shadow-lg)] backdrop-blur-sm",
         "animate-slide-in-right",
         colors.bg,
         colors.border

@@ -972,7 +972,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                 <div className="grid grid-cols-2 gap-1.5">
                   {actions.slice(0, 2).map(action => (
                     <button key={action.label} onClick={() => sendMessage(action.prompt)}
-                      className={cn("flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[length:var(--ts-2xs)] font-semibold border transition-all hover:scale-[1.02] hover:shadow-sm text-left", action.color)}>
+                      className={cn("flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[length:var(--ts-2xs)] font-semibold border transition-all hover:scale-[1.02] hover:shadow-[var(--shadow-sm)] text-left", action.color)}>
                       <action.icon className="h-3 w-3 shrink-0" />
                       <span className="leading-tight truncate">{action.label}</span>
                     </button>
@@ -1228,7 +1228,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                       <div className="grid grid-cols-2 gap-1.5">
                         {actions.map(action => (
                           <button key={action.label} onClick={() => sendMessage(action.prompt)}
-                            className={cn("flex items-center gap-2 px-2.5 py-2 rounded-xl text-[length:var(--ts-2xs)] font-semibold border transition-all hover:scale-[1.02] hover:shadow-sm text-left", action.color)}>
+                            className={cn("flex items-center gap-2 px-2.5 py-2 rounded-xl text-[length:var(--ts-2xs)] font-semibold border transition-all hover:scale-[1.02] hover:shadow-[var(--shadow-sm)] text-left", action.color)}>
                             <action.icon className="h-3.5 w-3.5 shrink-0" />
                             <span className="leading-tight">{action.label}</span>
                           </button>

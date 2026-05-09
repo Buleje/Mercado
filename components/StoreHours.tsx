@@ -67,7 +67,7 @@ export default function StoreHours() {
         </div>
 
         {/* Card */}
-        <div className="rounded-3xl overflow-hidden shadow-xl" style={{
+        <div className="rounded-3xl overflow-hidden shadow-[var(--shadow-xl)]" style={{
           border: "1px solid rgba(45,106,79,0.18)",
         }}>
 

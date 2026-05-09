@@ -64,7 +64,7 @@ export default function ABCAnalysisTab() {
             key={cls}
             onClick={() => setFilter(f => f === cls ? "all" : cls)}
             className={cn(
-              "text-left p-4 rounded-xl border-2 transition-all hover:shadow-sm",
+              "text-left p-4 rounded-xl border-2 transition-all hover:shadow-[var(--shadow-sm)]",
               CLASS_STYLES[cls].border,
               filter === cls ? "border-primary ring-2 ring-primary/20" : "border-[var(--rule-base)] dark:border-card-border",
               CLASS_STYLES[cls].row

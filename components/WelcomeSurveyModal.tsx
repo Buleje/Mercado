@@ -85,7 +85,7 @@ export default function WelcomeSurveyModal() {
       />
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-400">
+      <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-[var(--shadow-xl)] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-400">
 
         {/* Header strip */}
         <div className="bg-linear-to-r from-indigo-600 via-purple-600 to-pink-500 p-6 text-white text-center relative">

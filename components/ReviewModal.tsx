@@ -156,7 +156,7 @@ export default function ReviewModal() {
           className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
           style={{ zIndex: 9001 }}
         >
-          <div className="pointer-events-auto w-full max-w-md bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="pointer-events-auto w-full max-w-md bg-white dark:bg-background rounded-2xl shadow-[var(--shadow-xl)] overflow-hidden max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="px-6 py-4 flex items-center justify-between shrink-0" style={{ background: "linear-gradient(90deg, var(--color-primary-dark), var(--color-primary), var(--color-primary-dark))" }}>
               <div className="flex items-center gap-3">
@@ -322,7 +322,7 @@ export default function ReviewModal() {
                         maxLength={240}
                         className={`w-full rounded-xl border px-4 py-3 text-sm text-foreground resize-none outline-none transition-all leading-relaxed ${
                           textareaFocused
-                            ? "border-primary ring-2 ring-primary/20 shadow-sm"
+                            ? "border-primary ring-2 ring-primary/20 shadow-[var(--shadow-sm)]"
                             : selectedPreset === null && customText
                             ? "border-primary ring-1 ring-primary/30"
                             : promptPulse
@@ -384,7 +384,7 @@ export default function ReviewModal() {
                       style={{ zIndex: 9100 }}
                       onClick={() => setPhotoPreviewFull(false)}
                     >
-                      <Image src={photoBase64} alt="Foto ampliada" width={800} height={600} className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl object-contain" unoptimized />
+                      <Image src={photoBase64} alt="Foto ampliada" width={800} height={600} className="max-w-full max-h-[80vh] rounded-2xl shadow-[var(--shadow-xl)] object-contain" unoptimized />
                       <button className="absolute top-4 right-4 p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors">
                         <X className="h-6 w-6" />
                       </button>
@@ -420,7 +420,7 @@ export default function ReviewModal() {
                   disabled={!canPublish}
                   whileHover={{ scale: canPublish ? 1.02 : 1 }}
                   whileTap={{ scale: canPublish ? 0.97 : 1 }}
-                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-primary px-5 py-3.5 text-base font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-primary px-5 py-3.5 text-base font-bold text-white shadow-[var(--shadow-lg)] shadow-primary/20 hover:bg-primary-dark transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Send className="h-5 w-5" />
                   Publicar mi opinion

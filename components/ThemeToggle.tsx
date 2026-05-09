@@ -65,7 +65,7 @@ export default function ThemeToggle({ className, variant = "icon" }: Props) {
               className={cn(
                 "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all",
                 active
-                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-[var(--shadow-sm)]"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white",
               )}
             >

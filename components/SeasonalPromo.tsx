@@ -186,7 +186,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
               <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />
 
               <div className="relative z-10 h-full flex flex-col justify-end px-7 sm:px-12 py-8 sm:py-10 max-w-2xl">
-                <div className="inline-flex items-center gap-1.5 self-start mb-4 px-3.5 py-2 rounded-full bg-white/95 backdrop-blur-sm shadow-lg">
+                <div className="inline-flex items-center gap-1.5 self-start mb-4 px-3.5 py-2 rounded-full bg-white/95 backdrop-blur-sm shadow-[var(--shadow-lg)]">
                   <Tag className="w-3.5 h-3.5 text-[var(--color-primary)]" />
                   <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary)]">
                     Oferta de Temporada
@@ -201,7 +201,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 {ctaHref ? (
                   <Link
                     href={ctaHref}
-                    className="mt-6 self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[var(--color-primary)] text-base font-extrabold shadow-2xl hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-[1.03] active:scale-[0.99] transition-all"
+                    className="mt-6 self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[var(--color-primary)] text-base font-extrabold shadow-[var(--shadow-xl)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-[1.03] active:scale-[0.99] transition-all"
                   >
                     {promo.cta}
                     <ArrowRight className="w-5 h-5" />
@@ -209,7 +209,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 ) : (
                   <button
                     onClick={handleCta}
-                    className="mt-6 self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[var(--color-primary)] text-base font-extrabold shadow-2xl hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-[1.03] active:scale-[0.99] transition-all"
+                    className="mt-6 self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[var(--color-primary)] text-base font-extrabold shadow-[var(--shadow-xl)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-[1.03] active:scale-[0.99] transition-all"
                   >
                     {promo.cta}
                     <ArrowRight className="w-5 h-5" />
@@ -220,7 +220,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
           ) : (
             // ─── VARIANTE WASH TEAL — fallback editorial con presencia ──────────────
             <div className="sm:col-span-2 relative flex flex-col sm:flex-row items-center gap-5 sm:gap-10 bg-gradient-to-br from-[color-mix(in_oklch,var(--surface-canvas)_85%,var(--color-primary)_15%)] to-[color-mix(in_oklch,var(--surface-canvas)_92%,var(--color-primary)_8%)] rounded-3xl border-2 border-[var(--color-primary)]/15 px-6 sm:px-10 py-8 sm:py-10 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.10)] min-h-[260px]">
-              <span className="shrink-0 h-20 w-20 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white hidden sm:inline-flex shadow-xl shadow-[var(--color-primary)]/30" aria-hidden="true">
+              <span className="shrink-0 h-20 w-20 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white hidden sm:inline-flex shadow-[var(--shadow-xl)] shadow-[var(--color-primary)]/30" aria-hidden="true">
                 <Tag className="w-9 h-9" strokeWidth={2} />
               </span>
               <div className="flex-1 min-w-0 text-center sm:text-left">
@@ -239,8 +239,8 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 <Link
                   href={ctaHref}
                   className={cn(
-                    "shrink-0 inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-base font-extrabold shadow-lg",
-                    "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] hover:shadow-xl hover:scale-[1.03] active:scale-[0.99] transition-all"
+                    "shrink-0 inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-base font-extrabold shadow-[var(--shadow-lg)]",
+                    "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] hover:shadow-[var(--shadow-xl)] hover:scale-[1.03] active:scale-[0.99] transition-all"
                   )}
                 >
                   {promo.cta}
@@ -250,8 +250,8 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 <button
                   onClick={handleCta}
                   className={cn(
-                    "shrink-0 inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-base font-extrabold shadow-lg",
-                    "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] hover:shadow-xl hover:scale-[1.03] active:scale-[0.99] transition-all"
+                    "shrink-0 inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-base font-extrabold shadow-[var(--shadow-lg)]",
+                    "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] hover:shadow-[var(--shadow-xl)] hover:scale-[1.03] active:scale-[0.99] transition-all"
                   )}
                 >
                   {promo.cta}
@@ -268,7 +268,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 key={sp.category}
                 type="button"
                 onClick={() => setIdx((safeIdx + 1 + i) % PROMOS.length)}
-                className="group flex-1 sm:flex-none text-left bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-soft)] hover:border-[var(--color-primary)]/40 hover:shadow-lg hover:-translate-y-0.5 px-5 py-5 transition-all sm:flex-1 relative overflow-hidden"
+                className="group flex-1 sm:flex-none text-left bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-soft)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 px-5 py-5 transition-all sm:flex-1 relative overflow-hidden"
               >
                 {/* Acento decorativo */}
                 <span className="absolute top-0 right-0 h-16 w-16 rounded-full bg-[var(--color-primary)]/8 blur-2xl group-hover:bg-[var(--color-primary)]/15 transition-colors" aria-hidden="true" />

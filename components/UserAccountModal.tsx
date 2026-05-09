@@ -39,7 +39,7 @@ export default function UserAccountModal() {
 
   return (
     <div className="fixed inset-0 z-7500 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
-      <div role="dialog" aria-modal="true" aria-label="Mi cuenta" className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-[scaleIn_0.2s_ease-out]">
+      <div role="dialog" aria-modal="true" aria-label="Mi cuenta" className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] max-w-md w-full overflow-hidden animate-[scaleIn_0.2s_ease-out]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border bg-primary/5">
           <div className="flex items-center gap-3">
