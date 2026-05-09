@@ -167,6 +167,18 @@ export function verifyMPWebhookSignature(opts: {
   const v1 = parts["v1"];
   if (!ts || !v1) return false;
 
+  // Round 22 P1 (Security Pentester): freshness check — sin esto el replay
+  // window era ilimitado. Si atacante captura un webhook puede replay días
+  // después y mutar órdenes. MP envía ts en milisegundos UNIX. Tolerance 5min
+  // = mismo valor que Stripe usa por default.
+  const tsNum = Number(ts);
+  if (!Number.isFinite(tsNum) || tsNum <= 0) return false;
+  const ageMs = Math.abs(Date.now() - tsNum);
+  if (ageMs > 5 * 60 * 1000) {
+    // Webhook replay attempt detectado — fallar silencioso (no leak info al atacante).
+    return false;
+  }
+
   // El manifest sigue exactamente el formato documentado por MP
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
 

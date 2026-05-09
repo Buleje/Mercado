@@ -324,7 +324,23 @@ export const complianceAuditExtension = Prisma.defineExtension({
               }
             ).prisma;
 
-            if (!globalPrisma) return;
+            // Round 22 P1 fix (Code Reviewer #3): antes el `return` silencioso
+            // perdía entries Ley 29733 sin trazabilidad — auditor SBS encontraba
+            // huecos en el chain inexplicables. Ahora logger.error escala el
+            // gap a Sentry/observability para investigación inmediata.
+            if (!globalPrisma) {
+              logger.error(
+                "[audit/Ley29733] globalThis.prisma ausente — entry NO escrita (compliance gap detectado)",
+                {
+                  model,
+                  operation,
+                  tenantId,
+                  entityId,
+                  hint: "Verificar lib/prisma.ts initialization en este contexto (edge runtime? worker BullMQ? test?)",
+                },
+              );
+              return;
+            }
 
             const previousHash = await getPreviousHash(
               globalPrisma,
