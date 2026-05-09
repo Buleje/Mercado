@@ -191,20 +191,20 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
       <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={onDec}
-          className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center active:scale-90"
+          className="w-11 h-11 rounded-lg bg-gray-700 flex items-center justify-center active:scale-90"
         >
           <Minus className="h-3 w-3 text-white" />
         </button>
         <span className="w-6 text-center text-sm font-extrabold text-white">{item.quantity}</span>
         <button
           onClick={onInc}
-          className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center active:scale-90"
+          className="w-11 h-11 rounded-lg bg-gray-700 flex items-center justify-center active:scale-90"
         >
           <Plus className="h-3 w-3 text-white" />
         </button>
         <button
           onClick={onRemove}
-          className="w-8 h-8 rounded-lg bg-[var(--data-error-500)]/50 flex items-center justify-center active:scale-90 ml-1"
+          className="w-11 h-11 rounded-lg bg-[var(--data-error-500)]/50 flex items-center justify-center active:scale-90 ml-1"
         >
           <Trash2 className="h-3 w-3 text-[var(--data-error-500)]" />
         </button>

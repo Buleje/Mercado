@@ -352,7 +352,7 @@ export default function CartSidebar() {
                 </div>
                 <button
                   onClick={close}
-                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur text-white transition-colors"
+                  className="shrink-0 flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur text-white transition-colors"
                   aria-label="Cerrar carrito"
                 >
                   <X className="h-4.5 w-4.5" strokeWidth={2.5} />

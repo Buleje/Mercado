@@ -87,10 +87,12 @@ export default function KioskMode() {
   // Fullscreen API
   const toggleFullscreen = useCallback(async () => {
     if (!document.fullscreenElement) {
-      await containerRef.current?.requestFullscreen().catch(() => {});
+      // eslint-disable-next-line no-restricted-syntax
+      await containerRef.current?.requestFullscreen().catch(() => { /* Fullscreen API no soportada en este browser — silencio intencional */ });
       setIsFullscreen(true);
     } else {
-      await document.exitFullscreen().catch(() => {});
+      // eslint-disable-next-line no-restricted-syntax
+      await document.exitFullscreen().catch(() => { /* Fullscreen API no soportada en este browser — silencio intencional */ });
       setIsFullscreen(false);
     }
   }, []);
@@ -310,15 +312,15 @@ export default function KioskMode() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button type="button" onClick={() => updateQty(item.product.id, -1)}
-                      className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] dark:text-foreground hover:bg-[var(--rule-soft)]">
+                      className="w-11 h-11 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-secondary)] dark:text-foreground hover:bg-[var(--rule-soft)]">
                       <Minus className="h-3 w-3" />
                     </button>
                     <span className="w-6 text-center text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{item.quantity}</span>
                     <button type="button" onClick={() => updateQty(item.product.id, 1)}
-                      className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20">
+                      className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20">
                       <Plus className="h-3 w-3" />
                     </button>
-                    <button type="button" onClick={() => removeFromCart(item.product.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]">
+                    <button type="button" onClick={() => removeFromCart(item.product.id)} className="w-11 h-11 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]">
                       <X className="h-3 w-3" />
                     </button>
                   </div>

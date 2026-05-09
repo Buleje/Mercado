@@ -6,6 +6,64 @@
  * para que puedan ser testeadas aisladamente.
  */
 
+/**
+ * Obtiene la posición actual del dispositivo con fallback web.
+ *
+ * - En plataforma nativa (Android/iOS via Capacitor) usa `@capacitor/geolocation`
+ *   a través de dynamic import para acceder a GPS nativo con permisos de app.
+ * - En web usa `navigator.geolocation.getCurrentPosition` con timeout 8 s.
+ *
+ * La detección de plataforma nativa se hace via `window.Capacitor.isNativePlatform`
+ * para evitar importar `@capacitor/core` como dependencia de tipos en el bundle web.
+ *
+ * @throws Error si no hay soporte de geolocalización o el usuario deniega permisos.
+ *
+ * @example
+ * const pos = await getCurrentPosition();
+ * console.log(pos.coords.latitude, pos.coords.longitude);
+ */
+export async function getCurrentPosition(): Promise<GeolocationPosition> {
+  // Detección de runtime: Capacitor inyecta window.Capacitor en plataformas nativas.
+  // Usamos acceso dinámico para no requerir @capacitor/core como dependencia de tipos.
+  const isNative =
+    typeof window !== "undefined" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).Capacitor?.isNativePlatform?.() === true;
+
+  if (isNative) {
+    // Dynamic import: solo se resuelve en builds Capacitor (Android/iOS).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { Geolocation } = (await import("@capacitor/geolocation" as any)) as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pos: any = await Geolocation.getCurrentPosition({ timeout: 8000 });
+    return {
+      coords: {
+        latitude: pos.coords.latitude as number,
+        longitude: pos.coords.longitude as number,
+        accuracy: pos.coords.accuracy as number,
+        altitude: (pos.coords.altitude as number | null) ?? null,
+        altitudeAccuracy: (pos.coords.altitudeAccuracy as number | null) ?? null,
+        heading: (pos.coords.heading as number | null) ?? null,
+        speed: (pos.coords.speed as number | null) ?? null,
+      },
+      timestamp: pos.timestamp as number,
+    } as GeolocationPosition;
+  }
+
+  // Fallback web — envuelve el API basado en callbacks en una Promise.
+  return new Promise<GeolocationPosition>((resolve, reject) => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      reject(new Error("navigator.geolocation no disponible"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 8000,
+      maximumAge: 30_000,
+    });
+  });
+}
+
 /** Coordenadas por defecto — Pucallpa, Ucayali (sede Buleje). */
 export const DEFAULT_STORE_LAT = -8.3791;
 export const DEFAULT_STORE_LON = -74.5539;

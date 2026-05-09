@@ -20,6 +20,9 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo, Fragment } from "react";
+import { useBannerHistory } from "./hooks/useBannerHistory";
+import { useBannerCanvas } from "./hooks/useBannerCanvas";
+import { useStudioKeyboard } from "./hooks/useStudioKeyboard";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
@@ -289,29 +292,17 @@ export default function BannerPreviewStudio({
 }: Props) {
   const editable = !!onPatchBanner;
   const [mode, setMode] = useState<Mode>(editable ? "edit" : "solo");
-  const [theme, setTheme] = useState<StudioTheme>("dark");
   const [idx, setIdx] = useState(Math.min(initialIndex, Math.max(0, banners.length - 1)));
-  const [tab, setTab] = useState<EditTab>("frame");
-  const [leftOpen, setLeftOpen] = useState(true);
-  const [rightOpen, setRightOpen] = useState(true);
-  // Anchos persistentes de los paneles laterales (drag-to-resize). Se hidratan
-  // de localStorage en el primer render del cliente para evitar mismatch SSR.
-  const [leftWidth, setLeftWidth] = useState<number>(240);
-  const [rightWidth, setRightWidth] = useState<number>(320);
-  useEffect(() => {
-    try {
-      const l = Number(localStorage.getItem("studio-left-w"));
-      const r = Number(localStorage.getItem("studio-right-w"));
-      if (Number.isFinite(l) && l >= 200 && l <= 520) setLeftWidth(l);
-      if (Number.isFinite(r) && r >= 260 && r <= 600) setRightWidth(r);
-    } catch {}
-  }, []);
-  useEffect(() => {
-    try { localStorage.setItem("studio-left-w", String(leftWidth)); } catch {}
-  }, [leftWidth]);
-  useEffect(() => {
-    try { localStorage.setItem("studio-right-w", String(rightWidth)); } catch {}
-  }, [rightWidth]);
+
+  // ── Panel layout + theme ─────────────────────────────────────────────────
+  const {
+    theme, setTheme,
+    tab, setTab,
+    leftOpen, setLeftOpen,
+    rightOpen, setRightOpen,
+    leftWidth, setLeftWidth,
+    rightWidth, setRightWidth,
+  } = useBannerCanvas();
 
   // Solo / Presentación state
   const [width, setWidth] = useState<Width>("1600");
@@ -319,10 +310,6 @@ export default function BannerPreviewStudio({
   const [speedMs, setSpeedMs] = useState(6000);
   const [playing, setPlaying] = useState(true);
   const [animKey, setAnimKey] = useState(0);
-
-  // Undo/redo de imageAdjust (por banner) en state, así hasUndo/hasRedo es
-  // derivado puro y no rompe la regla react-hooks/refs.
-  const [history, setHistory] = useState<Record<string, { past: ImageAdjust[]; future: ImageAdjust[] }>>({});
 
   useEffect(() => {
     setAnimKey((k) => k + 1);
@@ -337,60 +324,8 @@ export default function BannerPreviewStudio({
 
   const current = banners[idx];
 
-  // ── History helpers ──────────────────────────────────────────────────────
-  const pushHistory = useCallback((bannerId: string, prev: ImageAdjust) => {
-    setHistory((h) => {
-      const entry = h[bannerId] ?? { past: [], future: [] };
-      const past = [...entry.past, prev];
-      if (past.length > HISTORY_CAP) past.shift();
-      return { ...h, [bannerId]: { past, future: [] } };
-    });
-  }, []);
-
-  const patchAdjust = useCallback(
-    (next: ImageAdjust, opts: { record?: boolean } = {}) => {
-      if (!current || !onPatchBanner) return;
-      if (opts.record !== false) pushHistory(current.id, current.imageAdjust ?? DEFAULT_ADJ);
-      onPatchBanner(idx, { imageAdjust: next });
-    },
-    [current, idx, onPatchBanner, pushHistory],
-  );
-
-  const undo = useCallback(() => {
-    if (!current || !onPatchBanner) return;
-    const entry = history[current.id];
-    if (!entry || entry.past.length === 0) return;
-    const prev = entry.past[entry.past.length - 1]!;
-    setHistory((h) => {
-      const e = h[current.id]!;
-      return {
-        ...h,
-        [current.id]: {
-          past: e.past.slice(0, -1),
-          future: [...e.future, current.imageAdjust ?? DEFAULT_ADJ],
-        },
-      };
-    });
-    onPatchBanner(idx, { imageAdjust: prev });
-  }, [current, idx, history, onPatchBanner]);
-
-  const redo = useCallback(() => {
-    if (!current || !onPatchBanner) return;
-    const entry = history[current.id];
-    if (!entry || entry.future.length === 0) return;
-    const next = entry.future[entry.future.length - 1]!;
-    setHistory((h) => {
-      const e = h[current.id]!;
-      return {
-        ...h,
-        [current.id]: {
-          past: [...e.past, current.imageAdjust ?? DEFAULT_ADJ],
-          future: e.future.slice(0, -1),
-        },
-      };
-    });
-    onPatchBanner(idx, { imageAdjust: next });
-  }, [current, idx, history, onPatchBanner]);
+  // ── History / undo-redo ──────────────────────────────────────────────────
+  const { patchAdjust, undo, redo, hasUndo, hasRedo } = useBannerHistory(banners, idx, onPatchBanner);
 
   // ── Patches generales ────────────────────────────────────────────────────
   const patch = useCallback(
@@ -399,67 +334,15 @@ export default function BannerPreviewStudio({
   );
 
   // ── Atajos de teclado ────────────────────────────────────────────────────
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName;
-      const inField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
-      if (e.key === "Escape") {
-        if (!inField) {
-          e.preventDefault();
-          onClose();
-        }
-        return;
-      }
-      if (inField) return;
-
-      if (e.key === "1") setMode(editable ? "edit" : "solo");
-      else if (e.key === "2") setMode("solo");
-      else if (e.key === "3") setMode("show");
-
-      if (mode === "show" && e.key === " ") {
-        e.preventDefault();
-        setPlaying((p) => !p);
-        return;
-      }
-
-      // Cmd/Ctrl+Z / Shift+Z
-      if ((e.metaKey || e.ctrlKey) && (e.key === "z" || e.key === "Z")) {
-        e.preventDefault();
-        if (e.shiftKey) redo();
-        else undo();
-        return;
-      }
-
-      // Navegación entre banners
-      if (mode !== "edit") {
-        if (e.key === "ArrowLeft") setIdx((i) => (i - 1 + banners.length) % banners.length);
-        if (e.key === "ArrowRight") setIdx((i) => (i + 1) % banners.length);
-        return;
-      }
-
-      // En Editar: arrows = nudge, Shift+arrows = nudge rápido
-      if (mode === "edit" && current?.imageUrl && current.imageAdjust !== undefined) {
-        const adj = current.imageAdjust ?? DEFAULT_ADJ;
-        const step = e.shiftKey ? NUDGE_FAST : NUDGE_PCT;
-        const nudge = (dx: number, dy: number) =>
-          patchAdjust({
-            ...adj,
-            position: { x: clamp(adj.position.x + dx, 0, 100), y: clamp(adj.position.y + dy, 0, 100) },
-          });
-        if (e.key === "ArrowLeft") { e.preventDefault(); nudge(-step, 0); }
-        else if (e.key === "ArrowRight") { e.preventDefault(); nudge(step, 0); }
-        else if (e.key === "ArrowUp") { e.preventDefault(); nudge(0, -step); }
-        else if (e.key === "ArrowDown") { e.preventDefault(); nudge(0, step); }
-        else if (e.key === "0") patchAdjust(DEFAULT_ADJ);
-        else if (e.key === "+" || e.key === "=") patchAdjust({ ...adj, scale: clamp(adj.scale + 10, ZOOM_MIN, ZOOM_MAX) });
-        else if (e.key === "-" || e.key === "_") patchAdjust({ ...adj, scale: clamp(adj.scale - 10, ZOOM_MIN, ZOOM_MAX) });
-        else if (e.key === "c" || e.key === "C") patchAdjust({ ...adj, position: { x: 50, y: 50 } });
-        else if (e.key === "f" || e.key === "F") patchAdjust({ ...adj, fit: adj.fit === "cover" ? "contain" : "cover" });
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [mode, banners.length, onClose, current, patchAdjust, undo, redo, editable]);
+  useStudioKeyboard({
+    mode, editable, banners, current, onClose,
+    setMode,
+    setIdx,
+    setPlaying,
+    patchAdjust,
+    undo,
+    redo,
+  });
 
   if (banners.length === 0 && !editable) return null;
 
@@ -556,8 +439,8 @@ export default function BannerPreviewStudio({
           patchAdjust={patchAdjust}
           undo={undo}
           redo={redo}
-          hasUndo={!!current && (history[current.id]?.past.length ?? 0) > 0}
-          hasRedo={!!current && (history[current.id]?.future.length ?? 0) > 0}
+          hasUndo={hasUndo}
+          hasRedo={hasRedo}
           onAddBanner={onAddBanner}
           onMoveBanner={onMoveBanner}
           onDuplicateBanner={onDuplicateBanner}

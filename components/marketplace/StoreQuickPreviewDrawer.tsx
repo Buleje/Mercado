@@ -159,7 +159,7 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose }: Props)
               <button
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="absolute right-2.5 top-2.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white hover:bg-black/75 transition-colors"
+                className="absolute right-2.5 top-2.5 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white hover:bg-black/75 transition-colors"
               >
                 <X className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
