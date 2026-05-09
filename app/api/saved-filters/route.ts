@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 const ConditionSchema = z.object({
   field: z.string(),
@@ -65,23 +66,25 @@ export async function POST(req: NextRequest) {
   const rl = applyRateLimit(req, "MODERATE", "saved-filters");
   if (rl) return rl;
 
-  const body = await req.json();
-  // Accept either conditionsJson string or conditions array
-  if (Array.isArray(body.conditions) && !body.conditionsJson) {
-    const result = z.array(ConditionSchema).safeParse(body.conditions);
-    body.conditionsJson = result.success ? JSON.stringify(result.data) : "[]";
-  }
+  return runWithAuditContext(req, auth.username, async () => {
+    const body = await req.json();
+    // Accept either conditionsJson string or conditions array
+    if (Array.isArray(body.conditions) && !body.conditionsJson) {
+      const result = z.array(ConditionSchema).safeParse(body.conditions);
+      body.conditionsJson = result.success ? JSON.stringify(result.data) : "[]";
+    }
 
-  const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+    const parsed = CreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
 
-  const row = await prisma.savedFilter.create({
-    data: { ...parsed.data, tenantId: auth.tenantId },
+    const row = await prisma.savedFilter.create({
+      data: { ...parsed.data, tenantId: auth.tenantId },
+    });
+
+    return NextResponse.json(mapFilter(row), { status: 201 });
   });
-
-  return NextResponse.json(mapFilter(row), { status: 201 });
 }
 
 // PATCH /api/saved-filters?id=xxx
@@ -89,26 +92,28 @@ export async function PATCH(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  return runWithAuditContext(req, auth.username, async () => {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const body = await req.json();
-  if (Array.isArray(body.conditions) && !body.conditionsJson) {
-    const result = z.array(ConditionSchema).safeParse(body.conditions);
-    body.conditionsJson = result.success ? JSON.stringify(result.data) : "[]";
-  }
+    const body = await req.json();
+    if (Array.isArray(body.conditions) && !body.conditionsJson) {
+      const result = z.array(ConditionSchema).safeParse(body.conditions);
+      body.conditionsJson = result.success ? JSON.stringify(result.data) : "[]";
+    }
 
-  const parsed = UpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+    const parsed = UpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
 
-  const existing = await prisma.savedFilter.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const existing = await prisma.savedFilter.findFirst({ where: { id, tenantId: auth.tenantId } });
+    if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const row = await prisma.savedFilter.update({ where: { id }, data: parsed.data });
+    const row = await prisma.savedFilter.update({ where: { id }, data: parsed.data });
 
-  return NextResponse.json(mapFilter(row));
+    return NextResponse.json(mapFilter(row));
+  });
 }
 
 // DELETE /api/saved-filters?id=xxx
@@ -118,13 +123,15 @@ export async function DELETE(req: NextRequest) {
   const rl = applyRateLimit(req, "MODERATE", "saved-filters");
   if (rl) return rl;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  return runWithAuditContext(req, auth.username, async () => {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const existing = await prisma.savedFilter.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const existing = await prisma.savedFilter.findFirst({ where: { id, tenantId: auth.tenantId } });
+    if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  await prisma.savedFilter.delete({ where: { id } });
+    await prisma.savedFilter.delete({ where: { id } });
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  });
 }

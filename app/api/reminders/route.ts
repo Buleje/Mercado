@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 const CreateSchema = z.object({
   title: z.string().min(1).max(200),
@@ -70,21 +71,23 @@ export async function POST(req: NextRequest) {
   const rl = applyRateLimit(req, "MODERATE", "reminders");
   if (rl) return rl;
 
-  const body = await req.json();
-  const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  return runWithAuditContext(req, auth.username, async () => {
+    const body = await req.json();
+    const parsed = CreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
 
-  const row = await prisma.reminder.create({
-    data: {
-      ...parsed.data,
-      dueDate: new Date(parsed.data.dueDate),
-      tenantId: auth.tenantId,
-    },
+    const row = await prisma.reminder.create({
+      data: {
+        ...parsed.data,
+        dueDate: new Date(parsed.data.dueDate),
+        tenantId: auth.tenantId,
+      },
+    });
+
+    return NextResponse.json(mapReminder(row), { status: 201 });
   });
-
-  return NextResponse.json(mapReminder(row), { status: 201 });
 }
 
 // PATCH /api/reminders?id=xxx
@@ -92,25 +95,27 @@ export async function PATCH(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  return runWithAuditContext(req, auth.username, async () => {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const body = await req.json();
-  const parsed = UpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+    const body = await req.json();
+    const parsed = UpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
 
-  const existing = await prisma.reminder.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const existing = await prisma.reminder.findFirst({ where: { id, tenantId: auth.tenantId } });
+    if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const { dueDate, ...rest } = parsed.data;
-  const row = await prisma.reminder.update({
-    where: { id },
-    data: { ...rest, ...(dueDate && { dueDate: new Date(dueDate) }) },
+    const { dueDate, ...rest } = parsed.data;
+    const row = await prisma.reminder.update({
+      where: { id },
+      data: { ...rest, ...(dueDate && { dueDate: new Date(dueDate) }) },
+    });
+
+    return NextResponse.json(mapReminder(row));
   });
-
-  return NextResponse.json(mapReminder(row));
 }
 
 // DELETE /api/reminders?id=xxx
@@ -120,13 +125,15 @@ export async function DELETE(req: NextRequest) {
   const rl = applyRateLimit(req, "MODERATE", "reminders");
   if (rl) return rl;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  return runWithAuditContext(req, auth.username, async () => {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const existing = await prisma.reminder.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const existing = await prisma.reminder.findFirst({ where: { id, tenantId: auth.tenantId } });
+    if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  await prisma.reminder.delete({ where: { id } });
+    await prisma.reminder.delete({ where: { id } });
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  });
 }
