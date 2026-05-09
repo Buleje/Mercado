@@ -429,7 +429,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
           animate={cardAnimate}
           transition={cardTransition}
           onAnimationComplete={handleFlyComplete}
-          className="relative rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-lg lg:max-w-3xl max-h-[94vh] overflow-hidden flex flex-col dark:bg-[#0f1117]"
+          className="relative rounded-t-3xl sm:rounded-3xl shadow-[var(--shadow-xl)] w-full sm:max-w-lg lg:max-w-3xl max-h-[94vh] overflow-hidden flex flex-col dark:bg-[#0f1117]"
           style={{
             zIndex: 2147483647,
             background:
@@ -505,7 +505,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           <div className={cn(
                             "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2",
                             done ? "bg-white/20 border-white/50" : "bg-white/5 border-white/15",
-                            active && "ring-2 ring-white/40 scale-110 shadow-lg"
+                            active && "ring-2 ring-white/40 scale-110 shadow-[var(--shadow-lg)]"
                           )}>
                             <StepIcon className={cn("w-4 h-4", done ? "text-white" : "text-white/35")} />
                           </div>
@@ -762,7 +762,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
 
                         {/* Status text bottom-right */}
                         <div className="absolute bottom-3 right-3 text-right max-w-[55%]">
-                          <p className="text-base font-extrabold text-white leading-tight drop-shadow-md">
+                          <p className="text-base font-extrabold text-white leading-tight drop-shadow-[var(--shadow-md)]">
                             {vibe.title}
                           </p>
                           <p className="text-xs text-white/90 mt-0.5 drop-shadow">
@@ -814,7 +814,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                 {/* Products table */}
                 {order.items && order.items.length > 0 && (
                   <div
-                    className="rounded-2xl overflow-hidden shadow-sm"
+                    className="rounded-2xl overflow-hidden shadow-[var(--shadow-sm)]"
                     style={{
                       background: "var(--color-card)",
                       border:
@@ -906,7 +906,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                               )}
                               {/* Badge cantidad flotante */}
                               <span
-                                className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-6 min-w-[1.5rem] px-1.5 rounded-full text-xs font-extrabold tabular-nums text-white shadow-md"
+                                className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-6 min-w-[1.5rem] px-1.5 rounded-full text-xs font-extrabold tabular-nums text-white shadow-[var(--shadow-md)]"
                                 style={{
                                   background:
                                     "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",

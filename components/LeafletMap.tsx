@@ -132,7 +132,7 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
     <div
       ref={containerRef}
       style={{ height, width: "100%" }}
-      className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100"
+      className="rounded-xl overflow-hidden border border-gray-200 shadow-[var(--shadow-sm)] bg-gray-100"
     />
   );
 }

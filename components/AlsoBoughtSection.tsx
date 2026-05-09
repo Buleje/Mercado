@@ -170,7 +170,7 @@ export default function AlsoBoughtSection({
         {suggestions.map((product) => (
           <div
             key={product.id}
-            className="group bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden hover:shadow-lg transition-all"
+            className="group bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden hover:shadow-[var(--shadow-lg)] transition-all"
           >
             <div className="relative aspect-square bg-gray-50 dark:bg-surface">
               {product.image && (

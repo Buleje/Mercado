@@ -62,7 +62,7 @@ export default function ProductsPreview() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-12">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm animate-pulse">
+              <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] animate-pulse">
                 <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
                 <div className="p-3 space-y-2">
                   <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
@@ -128,7 +128,7 @@ export default function ProductsPreview() {
             <Link
               key={cat.id}
               href="/tienda"
-              className="group inline-flex items-center gap-2 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all shadow-sm hover:shadow-md"
+              className="group inline-flex items-center gap-2 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)]"
             >
               <span className="text-base">{cat.emoji}</span>
               <span>{cat.label}</span>
@@ -150,14 +150,14 @@ export default function ProductsPreview() {
               key={product.id}
               href="/tienda"
               onClick={() => trackProductView({ id: product.id, name: product.name, category: product.category, price: product.price })}
-              className={`group relative bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${
+              className={`group relative bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300 ${
                 inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
               }`}
               style={inView ? { animationDelay: `${150 + i * 80}ms` } : undefined}
             >
               {/* Badge */}
               {product.badge && (
-                <span className="absolute top-2 left-2 z-10 bg-primary text-white text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+                <span className="absolute top-2 left-2 z-10 bg-primary text-white text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-[var(--shadow-sm)]">
                   {product.badge}
                 </span>
               )}
@@ -195,7 +195,7 @@ export default function ProductsPreview() {
         <div className={`text-center transition-all duration-700 delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <Link
             href="/tienda"
-            className="group inline-flex items-center gap-3 bg-primary hover:bg-primary-dark text-white font-extrabold text-base rounded-2xl px-10 py-4.5 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5"
+            className="group inline-flex items-center gap-3 bg-primary hover:bg-primary-dark text-white font-extrabold text-base rounded-2xl px-10 py-4.5 shadow-[var(--shadow-lg)] shadow-primary/25 hover:shadow-[var(--shadow-xl)] hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5"
           >
             <ShoppingCart className="h-5 w-5" />
             {hp.previewCtaText}

@@ -250,7 +250,7 @@ export function Modal({
         ref={modalRef}
         className={cn(
           "relative bg-white dark:bg-card w-full",
-          "rounded-t-3xl sm:rounded-2xl shadow-2xl",
+          "rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)]",
           "border border-gray-200 dark:border-card-border",
           "max-h-[95vh] sm:max-h-[90vh] overflow-y-auto",
           "pb-[env(safe-area-inset-bottom)]", // Safe area bottom

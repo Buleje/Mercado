@@ -109,7 +109,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeDown_0.25s_ease-out]">
-      <div role="dialog" aria-modal="true" aria-label="Oferta antes de irte" className="relative bg-white dark:bg-card rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
+      <div role="dialog" aria-modal="true" aria-label="Oferta antes de irte" className="relative bg-white dark:bg-card rounded-3xl shadow-[var(--shadow-xl)] max-w-lg w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
         {/* Close button */}
         <button
           onClick={handleClose}
@@ -155,7 +155,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
                     // Open cart sidebar
                     toggle();
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl px-6 py-4 font-bold shadow-md hover:bg-primary-dark transition-all"
+                  className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl px-6 py-4 font-bold shadow-[var(--shadow-md)] hover:bg-primary-dark transition-all"
                 >
                   Ver mi carrito
                   <ArrowRight className="h-5 w-5" />
@@ -188,7 +188,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
                     trackExitIntentAction("cta_clicked");
                     handleClose();
                   }}
-                  className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl px-6 py-4 font-bold shadow-md hover:bg-primary-dark transition-all"
+                  className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl px-6 py-4 font-bold shadow-[var(--shadow-md)] hover:bg-primary-dark transition-all"
                 >
                   Explorar tienda
                   <ArrowRight className="h-5 w-5" />

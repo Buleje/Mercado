@@ -135,7 +135,7 @@ export default function OrderProgress() {
     if (npsSent) {
       // Brief thank-you then auto-hide
       return (
-        <div className="fixed top-20 right-4 z-40 w-72 bg-card border border-border rounded-2xl shadow-2xl p-4 text-center animate-[fadeDown_0.3s_ease-out]">
+        <div className="fixed top-20 right-4 z-40 w-72 bg-card border border-border rounded-2xl shadow-[var(--shadow-xl)] p-4 text-center animate-[fadeDown_0.3s_ease-out]">
           <p className="text-sm font-bold text-foreground">¡Gracias por tu calificación! ⭐</p>
           <p className="text-xs text-muted mt-1">{npsRating >= 4 ? "¡Nos alegra que te gustó!" : "Trabajaremos en mejorar."}</p>
           <button onClick={() => setDismissed(true)} className="mt-2 text-xs text-primary font-semibold hover:underline">Cerrar</button>
@@ -143,7 +143,7 @@ export default function OrderProgress() {
       );
     }
     return (
-      <div className="fixed top-20 right-4 z-40 w-72 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-[fadeDown_0.3s_ease-out]">
+      <div className="fixed top-20 right-4 z-40 w-72 bg-card border border-border rounded-2xl shadow-[var(--shadow-xl)] overflow-hidden animate-[fadeDown_0.3s_ease-out]">
         <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/10 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-[var(--data-success-500)]" />
@@ -238,7 +238,7 @@ export default function OrderProgress() {
     return (
       <div className="fixed inset-0 z-6002 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAsModal(false)} />
-        <div className="relative bg-white dark:bg-card rounded-3xl shadow-2xl border border-gray-100 dark:border-card-border w-full max-w-sm overflow-hidden animate-[scaleIn_0.25s_ease-out]">
+        <div className="relative bg-white dark:bg-card rounded-3xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border w-full max-w-sm overflow-hidden animate-[scaleIn_0.25s_ease-out]">
           {/* Modal header */}
           <div className="px-6 pt-6 pb-4 text-center border-b border-gray-100 dark:border-card-border bg-linear-to-b from-primary/5 to-transparent">
             <div className="flex items-center justify-center gap-2 mb-3">
@@ -284,7 +284,7 @@ export default function OrderProgress() {
             </button>
             <button
               onClick={() => setShowAsModal(false)}
-              className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-md shadow-primary/25"
+              className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-[var(--shadow-md)] shadow-primary/25"
             >
               Seguir comprando
             </button>
@@ -296,7 +296,7 @@ export default function OrderProgress() {
 
   // Floating widget (after modal dismissed)
   return (
-    <div className="fixed top-20 right-4 z-40 w-72 sm:w-80 bg-card border border-border rounded-2xl shadow-2xl shadow-black/8 overflow-hidden animate-[fadeDown_0.3s_ease-out]">
+    <div className="fixed top-20 right-4 z-40 w-72 sm:w-80 bg-card border border-border rounded-2xl shadow-[var(--shadow-xl)] shadow-black/8 overflow-hidden animate-[fadeDown_0.3s_ease-out]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center gap-2">

@@ -256,7 +256,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       role="article"
       aria-label={product.name}
       className={cn(
-        "product-card group relative bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 transition-shadow duration-300 flex flex-col",
+        "product-card group relative bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-[var(--shadow-xl)] hover:shadow-primary/10 hover:border-primary/20 transition-shadow duration-300 flex flex-col",
         isOutOfStock && "opacity-60 pointer-events-none"
       )}
       onMouseEnter={handlePrefetch}
@@ -279,7 +279,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       {/* Y1+M11: Offer countdown with urgency */}
       {offerCountdown && !offerExpired && (
         <span className={cn(
-          "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-sm flex items-center gap-0.5",
+          "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-[var(--shadow-sm)] flex items-center gap-0.5",
           offerUrgent
             ? "bg-[var(--accent-600,var(--accent))] text-white"
             : "bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -290,7 +290,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
 
       {/* U4: Selling fast badge with count */}
       {sellingFast && !isOutOfStock && (
-        <span className="absolute z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-sm flex items-center gap-0.5" style={{ top: product.badge ? "2.5rem" : "0.75rem", left: "0.75rem" }}>
+        <span className="absolute z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-[var(--shadow-sm)] flex items-center gap-0.5" style={{ top: product.badge ? "2.5rem" : "0.75rem", left: "0.75rem" }}>
           {soldCount >= 20 ? (
             <span className="flex items-center gap-0.5 bg-[var(--accent-600,var(--accent))] text-white rounded-full px-2 py-0.5">
               <Star className="h-3 w-3 fill-current" /> Popular
@@ -308,7 +308,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       )}
 
       {isOutOfStock && (
-        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white shadow-sm bg-gray-500">
+        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white shadow-[var(--shadow-sm)] bg-gray-500">
           Agotado
         </span>
       )}
@@ -345,8 +345,8 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
           "absolute z-10 flex items-center justify-center h-11 w-11 rounded-full transition-all duration-200 pointer-events-auto",
           isOutOfStock || isLowStock || product.stock === 1 ? "top-8 right-1.5" : "top-1.5 right-1.5",
           fav
-            ? "bg-[var(--data-error-500)] text-white shadow-md scale-110"
-            : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)] hover:bg-white dark:hover:bg-card shadow-sm"
+            ? "bg-[var(--data-error-500)] text-white shadow-[var(--shadow-md)] scale-110"
+            : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)] hover:bg-white dark:hover:bg-card shadow-[var(--shadow-sm)]"
         )}
       >
         <Heart className={cn("h-5 w-5", fav && "fill-current")} />
@@ -360,8 +360,8 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
           "absolute z-10 flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-full transition-all duration-200 pointer-events-auto opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
           isOutOfStock || isLowStock || product.stock === 1 ? "top-[4.2rem] right-1.5" : "top-[2.8rem] right-2",
           isInCompare(product.id)
-            ? "bg-primary text-white shadow-md scale-105"
-            : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-primary hover:bg-white dark:hover:bg-card shadow-sm"
+            ? "bg-primary text-white shadow-[var(--shadow-md)] scale-105"
+            : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-primary hover:bg-white dark:hover:bg-card shadow-[var(--shadow-sm)]"
         )}
         style={{ opacity: isInCompare(product.id) ? 1 : undefined }}
       >
@@ -407,7 +407,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
             className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
             aria-label={`Vista rápida de ${product.name}`}
           >
-            <span className="flex items-center gap-1.5 bg-white dark:bg-card text-foreground rounded-full px-3 py-1.5 text-xs font-bold shadow-lg scale-90 group-hover:scale-100 transition-transform">
+            <span className="flex items-center gap-1.5 bg-white dark:bg-card text-foreground rounded-full px-3 py-1.5 text-xs font-bold shadow-[var(--shadow-lg)] scale-90 group-hover:scale-100 transition-transform">
               <Eye className="h-3.5 w-3.5" /> Vista rápida
             </span>
           </button>
@@ -548,7 +548,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 }}
                 className={cn(
                   // MK-12: 44px mínimo en todos los tamaños
-                  "flex items-center justify-center h-11 w-11 rounded-2xl text-white shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 shrink-0 animate-[scaleIn_0.15s_ease-out]",
+                  "flex items-center justify-center h-11 w-11 rounded-2xl text-white shadow-[var(--shadow-lg)] hover:scale-105 active:scale-95 transition-all duration-200 shrink-0 animate-[scaleIn_0.15s_ease-out]",
                   justAdded ? "bg-[var(--accent)] scale-95" : "bg-primary hover:bg-primary-dark"
                 )}
                 aria-label={`Agregar ${product.name} al carrito`}
@@ -559,7 +559,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
               </button>
             ) : (
               // MK-12: botones +/- h-11 w-9 (44px alto) en todos los tamaños
-              <div className="flex items-center bg-primary rounded-2xl overflow-hidden shadow-md animate-[scaleIn_0.15s_ease-out] shrink-0">
+              <div className="flex items-center bg-primary rounded-2xl overflow-hidden shadow-[var(--shadow-md)] animate-[scaleIn_0.15s_ease-out] shrink-0">
                 <button
                   onClick={handleDecrement}
                   className="flex items-center justify-center h-11 w-9 text-white hover:bg-primary-dark transition-colors"

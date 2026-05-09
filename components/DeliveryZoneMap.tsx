@@ -43,7 +43,7 @@ export default function DeliveryZoneMap() {
             {ZONES.map((zone, i) => (
               <div
                 key={zone.name}
-                className={`group flex items-center gap-4 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl px-5 py-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-500 ${
+                className={`group flex items-center gap-4 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl px-5 py-4 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 transition-all duration-500 ${
                   inView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"
                 }`}
                 style={{ transitionDelay: inView ? `${i * 80}ms` : "0ms" }}
@@ -57,7 +57,7 @@ export default function DeliveryZoneMap() {
                   </p>
                 </div>
                 {zone.free ? (
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-white bg-[var(--data-success-500)] px-3 py-1.5 rounded-full shadow-sm">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-white bg-[var(--data-success-500)] px-3 py-1.5 rounded-full shadow-[var(--shadow-sm)]">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Gratis
                   </span>
                 ) : (
@@ -100,10 +100,10 @@ export default function DeliveryZoneMap() {
               })}
               {/* Center pin */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
-                <div className="bg-primary text-white rounded-full p-3 shadow-xl shadow-primary/30 ring-4 ring-primary/20">
+                <div className="bg-primary text-white rounded-full p-3 shadow-[var(--shadow-xl)] shadow-primary/30 ring-4 ring-primary/20">
                   <MapPin className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-primary mt-2 whitespace-nowrap bg-white dark:bg-card px-2 py-0.5 rounded-full shadow-sm">Buleje</span>
+                <span className="text-xs font-bold text-primary mt-2 whitespace-nowrap bg-white dark:bg-card px-2 py-0.5 rounded-full shadow-[var(--shadow-sm)]">Buleje</span>
               </div>
             </div>
 

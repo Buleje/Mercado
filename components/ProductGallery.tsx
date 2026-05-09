@@ -80,7 +80,7 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
           <button
-            className="absolute bottom-3 right-3 h-10 w-10 rounded-full bg-white/80 dark:bg-card/80 flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute bottom-3 right-3 h-10 w-10 rounded-full bg-white/80 dark:bg-card/80 flex items-center justify-center shadow-[var(--shadow-md)] opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label="Ampliar imagen"
             onClick={(e) => {
               e.stopPropagation();
@@ -94,14 +94,14 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); navigate(-1); }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 dark:bg-card/80 flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 dark:bg-card/80 flex items-center justify-center shadow-[var(--shadow-md)] opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="Imagen anterior"
               >
                 <ChevronLeft className="h-5 w-5 text-gray-700 dark:text-muted" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); navigate(1); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 dark:bg-card/80 flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 dark:bg-card/80 flex items-center justify-center shadow-[var(--shadow-md)] opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="Imagen siguiente"
               >
                 <ChevronRight className="h-5 w-5 text-gray-700 dark:text-muted" />

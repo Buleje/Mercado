@@ -92,7 +92,7 @@ export default function DailySpecial({ serverProducts, showEmpty = false, emptyV
     <section ref={ref} className="py-6 sm:py-10 bg-surface overflow-hidden">
       <div className="max-w-7xl mx-auto px-4">
         <div
-          className={`relative rounded-3xl overflow-hidden shadow-lg transition-all duration-700 ${
+          className={`relative rounded-3xl overflow-hidden shadow-[var(--shadow-lg)] transition-all duration-700 ${
             inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
           style={{
@@ -107,7 +107,7 @@ export default function DailySpecial({ serverProducts, showEmpty = false, emptyV
 
           <div className="flex flex-col sm:flex-row items-center gap-6 p-6 sm:p-8 lg:p-10">
             {/* Image — sin discount badge rojo overlay; el ProductPrice comunica descuento */}
-            <div className="relative w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-2xl overflow-hidden bg-white dark:bg-white/10 shadow-xl shrink-0">
+            <div className="relative w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-2xl overflow-hidden bg-white dark:bg-white/10 shadow-[var(--shadow-xl)] shrink-0">
               <Image
                 src={imgError ? FALLBACK_IMAGE : (product.image || FALLBACK_IMAGE)}
                 alt={product.name}
@@ -164,7 +164,7 @@ export default function DailySpecial({ serverProducts, showEmpty = false, emptyV
                   if (quickAdd) quickAdd.openQuickAdd(product);
                 }}
                 aria-label={qty > 0 ? `${product.name} en el carrito, cantidad ${qty}` : `Agregar ${product.name} al carrito`}
-                className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-6 py-3.5 rounded-xl hover:bg-primary/90 active:scale-[0.97] transition-all shadow-lg shadow-primary/25"
+                className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-6 py-3.5 rounded-xl hover:bg-primary/90 active:scale-[0.97] transition-all shadow-[var(--shadow-lg)] shadow-primary/25"
               >
                 <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                 {qty > 0 ? `En el carrito (${qty})` : "Agregar al carrito"}

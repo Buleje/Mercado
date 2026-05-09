@@ -248,7 +248,7 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
   return (
     <div
       onClick={() => onQuickView(product)}
-      className="flex items-center gap-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
+      className="flex items-center gap-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 hover:shadow-[var(--shadow-md)] hover:border-primary/20 transition-all cursor-pointer"
     >
       <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-50 dark:bg-surface shrink-0">
         {product.image ? (
@@ -278,13 +278,13 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
         ) : qty === 0 ? (
           <button
             onClick={(e) => { e.stopPropagation(); addItem(product); showToast(product.name, product.image); }}
-            className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all shadow-sm"
+            className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all shadow-[var(--shadow-sm)]"
             aria-label={`Agregar ${product.name}`}
           >
             <Plus className="h-4 w-4" />
           </button>
         ) : (
-          <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-sm" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-[var(--shadow-sm)]" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => updateQty(product.id, qty - 1)} className="h-9 w-8 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Minus className="h-3.5 w-3.5" /></button>
             <span className="w-6 text-center font-bold text-white text-sm">{qty}</span>
             <button onClick={() => { addItem(product); showToast(product.name, product.image); }} className="h-9 w-8 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Plus className="h-3.5 w-3.5" /></button>
@@ -635,7 +635,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
         {/* ── SIDEBAR de categorías (desktop only) ──────────── */}
         <aside className="hidden lg:block">
           <div className="sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 pr-2">
-            <div className="bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 shadow-sm">
+            <div className="bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 shadow-[var(--shadow-sm)]">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-extrabold uppercase tracking-wider text-foreground">Categorías</h3>
                 <span className="text-sm font-mono text-muted bg-gray-100 dark:bg-surface px-2 py-0.5 rounded-md">{categoriesWithCount.length}</span>
@@ -652,7 +652,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 className={cn(
                   "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all mb-1.5",
                   !highlighted
-                    ? "bg-primary text-white shadow-md shadow-primary/20"
+                    ? "bg-primary text-white shadow-[var(--shadow-md)] shadow-primary/20"
                     : "text-foreground hover:bg-primary/8 hover:text-primary"
                 )}
               >
@@ -746,7 +746,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 else if (e.key === "Escape") { setSuggestions([]); setShowHistory(false); }
               }}
               placeholder="Buscar producto…"
-              className="w-full pl-12 pr-11 h-14 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-base sm:text-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm"
+              className="w-full pl-12 pr-11 h-14 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-base sm:text-lg text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)]"
               autoComplete="off"
             />
             {search && (
@@ -756,7 +756,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             )}
             {/* Smart suggestions dropdown */}
             {suggestions.length > 0 && search.trim().length >= 2 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg z-20 overflow-hidden">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-[var(--shadow-lg)] z-20 overflow-hidden">
                 {suggestions.map((p, i) => (
                   <button key={p.id} onMouseDown={() => { setSearch(p.name); setSuggestions([]); setSuggestionIdx(-1); }}
                     className={cn("flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-foreground transition-colors text-left", i === suggestionIdx ? "bg-primary/10" : "hover:bg-gray-50 dark:hover:bg-surface")}>
@@ -773,7 +773,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               if (!dropdown) return null;
               const { recientes, trending } = dropdown;
               return (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg z-20 overflow-hidden">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-[var(--shadow-lg)] z-20 overflow-hidden">
                   {recientes.length > 0 && (
                     <>
                       <p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-muted">Recientes</p>
@@ -802,7 +802,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
-                className="appearance-none pl-11 pr-10 h-14 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-base font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm cursor-pointer"
+                className="appearance-none pl-11 pr-10 h-14 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-base font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)] cursor-pointer"
               >
                 {SORT_OPTIONS.map((o) => (
                   <option key={o.id} value={o.id}>{o.label}</option>
@@ -812,7 +812,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             <button
               onClick={() => setShowPriceFilter(v => !v)}
               className={cn(
-                "flex items-center gap-2 px-5 h-14 rounded-2xl border-2 text-base font-semibold transition-all shadow-sm",
+                "flex items-center gap-2 px-5 h-14 rounded-2xl border-2 text-base font-semibold transition-all shadow-[var(--shadow-sm)]",
                 showPriceFilter
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-primary"
@@ -824,7 +824,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             <button
               onClick={() => setFilterOnSale(v => !v)}
               className={cn(
-                "flex items-center gap-2 px-5 h-14 rounded-2xl border-2 text-base font-semibold transition-all shadow-sm whitespace-nowrap",
+                "flex items-center gap-2 px-5 h-14 rounded-2xl border-2 text-base font-semibold transition-all shadow-[var(--shadow-sm)] whitespace-nowrap",
                 filterOnSale
                   ? "border-red-400 bg-red-50 dark:bg-red-950/30 text-[var(--data-error-600)] dark:text-red-400"
                   : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-red-400"
@@ -835,13 +835,13 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               <span>Oferta</span>
             </button>
             {/* U1: Grid/List toggle — enhanced with active indicator */}
-            <div className="flex items-center bg-gray-100 dark:bg-accent rounded-2xl p-1 shadow-sm relative h-14">
+            <div className="flex items-center bg-gray-100 dark:bg-accent rounded-2xl p-1 shadow-[var(--shadow-sm)] relative h-14">
               <button
                 onClick={() => { setViewMode("grid"); localStorage.setItem("buleje-view-mode", "grid"); }}
                 className={cn(
                   "h-10 w-10 flex items-center justify-center rounded-xl transition-all relative z-10",
                   viewMode === "grid"
-                    ? "bg-white dark:bg-card text-primary shadow-sm font-bold"
+                    ? "bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)] font-bold"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Vista cuadrícula"
@@ -854,7 +854,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 className={cn(
                   "h-10 w-10 flex items-center justify-center rounded-xl transition-all relative z-10",
                   viewMode === "list"
-                    ? "bg-white dark:bg-card text-primary shadow-sm font-bold"
+                    ? "bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)] font-bold"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Vista lista"
@@ -868,7 +868,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
 
         {/* Price Range Filter — Dual range slider */}
         {showPriceFilter && (
-          <div className="max-w-3xl mx-auto mb-6 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 shadow-sm animate-[fadeUp_0.2s_ease-out]">
+          <div className="max-w-3xl mx-auto mb-6 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 shadow-[var(--shadow-sm)] animate-[fadeUp_0.2s_ease-out]">
             <style>{`
               .price-range-slider { position: relative; height: 28px; }
               .price-range-slider input[type="range"] {
@@ -1105,7 +1105,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                               className={cn(
                                 "h-8 w-8 rounded-full text-sm font-bold transition-all",
                                 pg === searchPage
-                                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                                  ? "bg-primary text-white shadow-[var(--shadow-md)] shadow-primary/25"
                                   : "text-gray-500 hover:bg-primary/10 hover:text-primary"
                               )}
                             >
@@ -1152,7 +1152,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                               className={cn(
                                 "h-8 w-8 rounded-full text-sm font-bold transition-all",
                                 pg === searchPage
-                                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                                  ? "bg-primary text-white shadow-[var(--shadow-md)] shadow-primary/25"
                                   : "text-gray-500 hover:bg-primary/10 hover:text-primary"
                               )}
                             >

@@ -330,7 +330,7 @@ export default function CartSidebar() {
 
               <div className="relative flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0 shadow-lg">
+                  <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0 shadow-[var(--shadow-lg)]">
                     <ShoppingCart className="h-5 w-5 text-white" strokeWidth={2.25} />
                   </div>
                   <div className="min-w-0">
@@ -413,7 +413,7 @@ export default function CartSidebar() {
                   </div>
                   <button
                     onClick={close}
-                    className="w-full max-w-48 rounded-xl bg-primary text-white py-2.5 text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
+                    className="w-full max-w-48 rounded-xl bg-primary text-white py-2.5 text-sm font-bold hover:bg-primary/90 transition-colors shadow-[var(--shadow-md)] shadow-primary/20"
                   >
                     Explorar tienda
                   </button>
@@ -494,7 +494,7 @@ export default function CartSidebar() {
 
                       <div className="flex items-center justify-between mt-2">
                         {/* Quantity Controls */}
-                        <div className="flex items-center gap-1 bg-white rounded-lg border shadow-sm">
+                        <div className="flex items-center gap-1 bg-white rounded-lg border shadow-[var(--shadow-sm)]">
                           <button
                             onClick={() =>
                               updateQty(item.id, item.quantity - 1)
@@ -798,7 +798,7 @@ export default function CartSidebar() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     data-testid="checkout-button"
-                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-primary px-6 py-3 text-base font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark transition-all duration-200"
+                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-primary px-6 py-3 text-base font-bold text-white shadow-[var(--shadow-lg)] shadow-primary/25 hover:bg-primary-dark transition-all duration-200"
                   >
                     <Package className="h-5 w-5" />
                     Completar pedido
@@ -810,7 +810,7 @@ export default function CartSidebar() {
                     disabled={sending}
                     whileHover={{ scale: sending ? 1 : 1.02 }}
                     whileTap={{ scale: sending ? 1 : 0.97 }}
-                    className="w-full flex items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-6 py-4 text-base font-extrabold text-white shadow-xl shadow-[#25D366]/30 hover:bg-[#20BD5A] transition-all duration-200 disabled:opacity-70 disabled:cursor-wait"
+                    className="w-full flex items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-6 py-4 text-base font-extrabold text-white shadow-[var(--shadow-xl)] shadow-[#25D366]/30 hover:bg-[#20BD5A] transition-all duration-200 disabled:opacity-70 disabled:cursor-wait"
                   >
                     {sending ? (
                       <>
@@ -856,7 +856,7 @@ export default function CartSidebar() {
                           </button>
                           <button
                             onClick={() => { setShowPreview(false); handleOrder(); }}
-                            className="flex-1 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-extrabold hover:bg-[#20BD5A] transition-colors shadow-lg shadow-[#25D366]/25"
+                            className="flex-1 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-extrabold hover:bg-[#20BD5A] transition-colors shadow-[var(--shadow-lg)] shadow-[#25D366]/25"
                           >
                             Enviar ✓
                           </button>
@@ -943,7 +943,7 @@ export default function CartSidebar() {
               <m.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4"
+                className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-sm p-6 space-y-4"
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center gap-3">

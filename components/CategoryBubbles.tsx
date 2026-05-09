@@ -67,7 +67,7 @@ export default function CategoryBubbles() {
           <button
             onClick={() => scroll("left")}
             className={cn(
-              "absolute left-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-md transition-all dark:border-card-border dark:bg-card/95",
+              "absolute left-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-[var(--shadow-md)] transition-all dark:border-card-border dark:bg-card/95",
               canScrollLeft ? "opacity-100" : "pointer-events-none opacity-35"
             )}
             aria-label="Desplazar a la izquierda"
@@ -119,7 +119,7 @@ export default function CategoryBubbles() {
           <button
             onClick={() => scroll("right")}
             className={cn(
-              "absolute right-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-md transition-all dark:border-card-border dark:bg-card/95",
+              "absolute right-0 top-1/2 z-10 hidden sm:flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-[var(--shadow-md)] transition-all dark:border-card-border dark:bg-card/95",
               canScrollRight ? "opacity-100" : "pointer-events-none opacity-35"
             )}
             aria-label="Desplazar a la derecha"

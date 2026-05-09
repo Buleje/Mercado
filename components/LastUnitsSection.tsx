@@ -133,7 +133,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                   {qty > 0 ? (
                     <div className="flex items-center justify-between gap-2 bg-primary/10 dark:bg-primary/20 rounded-xl px-2 py-1.5">
                       <button
-                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-white dark:bg-card text-primary shadow-sm hover:bg-gray-50 transition-colors"
+                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)] hover:bg-gray-50 transition-colors"
                         onClick={() => updateQty(product.id, qty - 1)}
                         aria-label="Quitar uno"
                       >
@@ -143,7 +143,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                         {qty}
                       </span>
                       <button
-                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-primary text-white shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-primary text-white shadow-[var(--shadow-sm)] hover:bg-primary/90 transition-colors disabled:opacity-50"
                         onClick={() => updateQty(product.id, qty + 1)}
                         disabled={qty >= stockLeft}
                         aria-label="Agregar uno"
@@ -154,7 +154,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                   ) : (
                     <button
                       onClick={() => guardedAdd(product)}
-                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold shadow-sm transition-all duration-200 active:scale-95"
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold shadow-[var(--shadow-sm)] transition-all duration-200 active:scale-95"
                     >
                       <ShoppingCart className="h-3.5 w-3.5" />
                       Agregar al carrito

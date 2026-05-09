@@ -106,7 +106,7 @@ export default function OrderConfirmModal() {
             className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
             style={{ zIndex: 8001 }}
           >
-            <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-label="Confirmar recepción">
+            <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-2xl shadow-[var(--shadow-xl)] overflow-hidden" role="dialog" aria-modal="true" aria-label="Confirmar recepción">
               {/* Header strip */}
               <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, var(--accent-dark), var(--accent), var(--accent-dark))" }}>
                 <div className="flex items-center gap-3">
@@ -180,7 +180,7 @@ export default function OrderConfirmModal() {
                   onClick={handleConfirm}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-5 py-3.5 text-base font-bold text-white shadow-md shadow-[#25D366]/20 hover:bg-[#1fb85a] transition-all"
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-5 py-3.5 text-base font-bold text-white shadow-[var(--shadow-md)] shadow-[#25D366]/20 hover:bg-[#1fb85a] transition-all"
                 >
                   <CheckCircle2 className="h-5 w-5" />
                   Pedido recibido con exito
@@ -191,7 +191,7 @@ export default function OrderConfirmModal() {
                   onClick={handleReject}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[var(--data-error-500)] px-5 py-3.5 text-base font-bold text-white shadow-md shadow-red-500/20 hover:bg-[var(--data-error-600)] transition-all"
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[var(--data-error-500)] px-5 py-3.5 text-base font-bold text-white shadow-[var(--shadow-md)] shadow-red-500/20 hover:bg-[var(--data-error-600)] transition-all"
                 >
                   <XCircle className="h-5 w-5" />
                   Rechazar pedido

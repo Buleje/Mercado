@@ -75,7 +75,7 @@ export default function PageHeroBanner({
           <div className="mt-8">
             <Link
               href={ctaLink}
-              className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold text-sm px-6 py-3 rounded-xl hover:bg-white/90 transition-all shadow-lg"
+              className="inline-flex items-center gap-2 bg-white text-gray-900 font-bold text-sm px-6 py-3 rounded-xl hover:bg-white/90 transition-all shadow-[var(--shadow-lg)]"
             >
               {ctaText}
               <ArrowRight className="h-4 w-4" />

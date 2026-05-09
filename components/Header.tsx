@@ -656,7 +656,7 @@ export default function Header() {
               onMouseEnter={cancelClose}
               onMouseLeave={closeDropdown}
               className={cn(
-                "absolute top-full left-0 mt-2 z-[60] w-145 min-w-135 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden",
+                "absolute top-full left-0 mt-2 z-[60] w-145 min-w-135 bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border overflow-hidden",
                 inicioOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
               )}
             >
@@ -943,7 +943,7 @@ export default function Header() {
         "store-header fixed left-0 right-0 z-50",
         announcementVisible ? "top-11" : "top-0",
         scrolled
-          ? "bg-white/97 backdrop-blur-md shadow-lg dark:bg-card/97"
+          ? "bg-white/97 backdrop-blur-md shadow-[var(--shadow-lg)] dark:bg-card/97"
           : ""
       )}
       style={{
@@ -1041,7 +1041,7 @@ export default function Header() {
                 </button>
               )}
               {inlineSearchFocused && (suggestions.length > 0 || searchQuery.length === 0) && (
-                <div className="absolute top-full mt-2 w-full min-w-72 bg-white dark:bg-card rounded-2xl shadow-xl border border-gray-100 dark:border-card-border overflow-hidden z-50 max-h-96 overflow-y-auto">
+                <div className="absolute top-full mt-2 w-full min-w-72 bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border overflow-hidden z-50 max-h-96 overflow-y-auto">
                   {/* Sugerencias al escribir — con imagen, precio y stock */}
                   {suggestions.length > 0 && (
                     <div className="pt-2 pb-1">
@@ -1162,7 +1162,7 @@ export default function Header() {
               className={cn(
                 "relative flex items-center justify-center rounded-full transition-all shrink-0",
                 hasActiveOrder
-                  ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400 shadow-lg shadow-amber-400/30 hover:bg-amber-200"
+                  ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400 shadow-[var(--shadow-lg)] shadow-amber-400/30 hover:bg-amber-200"
                   : scrolled
                     ? "h-9 w-9 bg-primary/10 text-primary hover:bg-primary/20"
                     : "h-9 w-9 bg-white/15 text-white hover:bg-white/25"
@@ -1202,7 +1202,7 @@ export default function Header() {
               </button>
               
               {userMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-card rounded-xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden animate-[fadeDown_0.15s_ease-out] z-50">
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-card rounded-xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border overflow-hidden animate-[fadeDown_0.15s_ease-out] z-50">
                   <div className="py-1.5">
                     <a
                       href={tenantPath("/mi-panel")}
@@ -1330,7 +1330,7 @@ export default function Header() {
                   <Bell className="h-5 w-5" strokeWidth={2.25} />
                   {_unreadCount > 0 && (
                     <span
-                      className="absolute -top-1 -right-1 flex h-5 min-w-[1.25rem] px-1 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-extrabold text-white shadow-md"
+                      className="absolute -top-1 -right-1 flex h-5 min-w-[1.25rem] px-1 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-extrabold text-white shadow-[var(--shadow-md)]"
                       style={{
                         background:
                           "linear-gradient(135deg, var(--data-error-500) 0%, var(--data-error-600) 100%)",
@@ -1345,7 +1345,7 @@ export default function Header() {
                 {notifOpen && (
                   <div
                     ref={notifRef}
-                    className="absolute right-0 top-full mt-3 w-[24rem] max-w-[calc(100vw-2rem)] rounded-3xl overflow-hidden shadow-2xl z-50 animate-[fadeUp_0.18s_ease-out]"
+                    className="absolute right-0 top-full mt-3 w-[24rem] max-w-[calc(100vw-2rem)] rounded-3xl overflow-hidden shadow-[var(--shadow-xl)] z-50 animate-[fadeUp_0.18s_ease-out]"
                     style={{
                       background: "var(--color-card)",
                       border:
@@ -1571,7 +1571,7 @@ export default function Header() {
               className={cn(
                 "relative flex items-center justify-center h-12 w-12 rounded-full transition-all duration-200",
                 scrolled
-                  ? "bg-primary text-white shadow-lg hover:bg-primary-dark"
+                  ? "bg-primary text-white shadow-[var(--shadow-lg)] hover:bg-primary-dark"
                   : "bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
               )}
               aria-label="Abrir carrito"
@@ -1586,7 +1586,7 @@ export default function Header() {
                   key={count}
                   aria-live="polite"
                   aria-atomic="true"
-                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--data-error-500)] text-[length:var(--ts-2xs)] font-bold text-white shadow-md animate-[cartBadgeBounce_0.3s_ease-out]"
+                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--data-error-500)] text-[length:var(--ts-2xs)] font-bold text-white shadow-[var(--shadow-md)] animate-[cartBadgeBounce_0.3s_ease-out]"
                   style={{ minWidth: count > 9 ? "1.5rem" : undefined }}
                 >
                   {count > 99 ? "99+" : count}
@@ -1641,7 +1641,7 @@ export default function Header() {
             type="button"
             onClick={() => scrollCategoryStrip("left")}
             className={cn(
-              "absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-md transition-all lg:hidden",
+              "absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-[var(--shadow-md)] transition-all lg:hidden",
               scrolled ? "border-gray-200 text-primary" : "border-white/35 text-white bg-black/20 backdrop-blur",
               canScrollCategoriesLeft ? "opacity-100" : "pointer-events-none opacity-30"
             )}
@@ -1689,7 +1689,7 @@ export default function Header() {
             type="button"
             onClick={() => scrollCategoryStrip("right")}
             className={cn(
-              "absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-md transition-all lg:hidden",
+              "absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-[var(--shadow-md)] transition-all lg:hidden",
               scrolled ? "border-gray-200 text-primary" : "border-white/35 text-white bg-black/20 backdrop-blur",
               canScrollCategoriesRight ? "opacity-100" : "pointer-events-none opacity-30"
             )}
@@ -1706,7 +1706,7 @@ export default function Header() {
           id="mobile-menu"
           role="navigation"
           aria-label="Menú principal"
-          className="lg:hidden bg-white dark:bg-card border-t dark:border-card-border shadow-2xl overflow-hidden animate-[fadeDown_0.3s_ease-out] pb-[env(safe-area-inset-bottom)]"
+          className="lg:hidden bg-white dark:bg-card border-t dark:border-card-border shadow-[var(--shadow-xl)] overflow-hidden animate-[fadeDown_0.3s_ease-out] pb-[env(safe-area-inset-bottom)]"
         >
             <div className="px-4 py-5 space-y-1">
               {/* Buscador — mobile */}
@@ -1731,7 +1731,7 @@ export default function Header() {
                   </button>
                 )}
                 {suggestions.length > 0 && (
-                  <div className="absolute top-full mt-1.5 w-full bg-white dark:bg-card rounded-2xl shadow-xl border border-gray-100 dark:border-card-border overflow-hidden z-50 max-h-72 overflow-y-auto">
+                  <div className="absolute top-full mt-1.5 w-full bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border overflow-hidden z-50 max-h-72 overflow-y-auto">
                     {suggestions.map((item) => (
                       <button
                         key={item.id}
@@ -1830,7 +1830,7 @@ export default function Header() {
       {/* Search Overlay */}
       {searchOpen && (
         <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm animate-[fadeDown_0.2s_ease-out]" onClick={() => setSearchOpen(false)}>
-          <div className="bg-white dark:bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto max-w-3xl px-4 py-4">
               <div className="flex items-center gap-3">
                 <Search className="h-5 w-5 text-muted shrink-0" aria-hidden="true" />

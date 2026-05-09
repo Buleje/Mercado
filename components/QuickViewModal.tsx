@@ -142,7 +142,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
         role="dialog"
         aria-modal="true"
         aria-labelledby="quick-view-title"
-        className="relative bg-white dark:bg-card rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-2xl lg:max-w-4xl lg:max-h-[88vh] max-h-[92vh] overflow-hidden flex flex-col lg:flex-row border border-gray-100 dark:border-card-border animate-[scaleIn_0.2s_ease-out]"
+        className="relative bg-white dark:bg-card rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-2xl lg:max-w-4xl lg:max-h-[88vh] max-h-[92vh] overflow-hidden flex flex-col lg:flex-row border border-gray-100 dark:border-card-border animate-[scaleIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
         aria-hidden="false"
       >
@@ -159,13 +159,13 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
               <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-16 w-16" /></div>
             )}
             {product.badge && (
-              <span className="absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-bold uppercase text-white bg-primary shadow-sm">{product.badge}</span>
+              <span className="absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-bold uppercase text-white bg-primary shadow-[var(--shadow-sm)]">{product.badge}</span>
             )}
             <div className="hidden lg:block absolute inset-0 bg-linear-to-t from-black/20 to-transparent pointer-events-none" />
             <button
               onClick={(e) => { e.stopPropagation(); toggleFav(String(product.id)); }}
               className={cn(
-                "absolute top-3 right-14 z-10 flex items-center justify-center h-10 w-10 rounded-full transition-all shadow-md",
+                "absolute top-3 right-14 z-10 flex items-center justify-center h-10 w-10 rounded-full transition-all shadow-[var(--shadow-md)]",
                 fav ? "bg-[var(--data-error-500)] text-white" : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)]"
               )}
               aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
@@ -188,7 +188,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
         </div>
 
         {/* Close button */}
-        <button onClick={onClose} className="absolute top-3 right-3 z-20 p-2 rounded-full bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card transition-colors shadow-md" aria-label="Cerrar">
+        <button onClick={onClose} className="absolute top-3 right-3 z-20 p-2 rounded-full bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card transition-colors shadow-[var(--shadow-md)]" aria-label="Cerrar">
           <X className="h-5 w-5 text-gray-600 dark:text-muted" />
         </button>
 
@@ -225,12 +225,12 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                 )}
               </div>
               {qty === 0 ? (
-                <button onClick={handleAdd} disabled={isOutOfStock} className="flex items-center gap-2 bg-primary text-white rounded-xl px-6 py-3 font-bold shadow-md hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50">
+                <button onClick={handleAdd} disabled={isOutOfStock} className="flex items-center gap-2 bg-primary text-white rounded-xl px-6 py-3 font-bold shadow-[var(--shadow-md)] hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50">
                   <ShoppingCart className="h-5 w-5" /> Agregar al carrito
                 </button>
               ) : (
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-md">
+                  <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-[var(--shadow-md)]">
                     <button onClick={() => updateQty(product.id, qty - 1)} aria-label={`Reducir cantidad de ${product.name}`} className="h-11 w-10 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Minus className="h-4 w-4" /></button>
                     <span className="w-8 text-center font-bold text-white" aria-live="polite" aria-label={`Cantidad: ${qty}`}>{qty}</span>
                     <button onClick={handleAdd} aria-label={`Aumentar cantidad de ${product.name}`} className="h-11 w-10 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Plus className="h-4 w-4" /></button>

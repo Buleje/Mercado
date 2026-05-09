@@ -216,7 +216,7 @@ export default function HowItWorks() {
         <div className={`text-center mt-14 transition-all duration-700 delay-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <Link
             href="/tienda"
-            className="group relative inline-flex items-center gap-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-sm rounded-xl px-7 py-3.5 shadow-lg shadow-primary/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
+            className="group relative inline-flex items-center gap-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-sm rounded-xl px-7 py-3.5 shadow-[var(--shadow-lg)] shadow-primary/20 hover:shadow-[var(--shadow-xl)] transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
           >
             <span className="relative z-10 flex items-center gap-2.5">
               Empezar a comprar

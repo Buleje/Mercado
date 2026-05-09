@@ -102,7 +102,7 @@ function ListProductRow({
     <div
       onClick={() => onQuickView(product)}
       data-testid="product-card"
-      className="flex items-center gap-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
+      className="flex items-center gap-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 hover:shadow-[var(--shadow-md)] hover:border-primary/20 transition-all cursor-pointer"
     >
       <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-50 dark:bg-surface shrink-0">
         {product.image ? (
@@ -119,7 +119,7 @@ function ListProductRow({
           </div>
         )}
         {product.badge && (
-          <span className="absolute top-0.5 left-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase text-white bg-primary shadow-sm leading-none">
+          <span className="absolute top-0.5 left-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase text-white bg-primary shadow-[var(--shadow-sm)] leading-none">
             {product.badge}
           </span>
         )}
@@ -152,14 +152,14 @@ function ListProductRow({
               addItem(product);
               showToast(product.name, product.image);
             }}
-            className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all shadow-sm"
+            className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all shadow-[var(--shadow-sm)]"
             aria-label={`Agregar ${product.name}`}
           >
             <Plus className="h-4 w-4" />
           </button>
         ) : (
           <div
-            className="flex items-center bg-primary rounded-xl overflow-hidden shadow-sm"
+            className="flex items-center bg-primary rounded-xl overflow-hidden shadow-[var(--shadow-sm)]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -223,12 +223,12 @@ function QuickViewModal({
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
-        className="relative bg-white dark:bg-card rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto animate-[scaleIn_0.2s_ease-out] border border-gray-100 dark:border-card-border"
+        className="relative bg-white dark:bg-card rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)] max-w-lg w-full max-h-[85vh] overflow-y-auto animate-[scaleIn_0.2s_ease-out] border border-gray-100 dark:border-card-border"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card transition-colors shadow-md"
+          className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card transition-colors shadow-[var(--shadow-md)]"
           aria-label="Cerrar"
         >
           <X className="h-5 w-5 text-gray-600 dark:text-muted" />
@@ -252,7 +252,7 @@ function QuickViewModal({
             </div>
           )}
           {product.badge && (
-            <span className="absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-bold uppercase text-white bg-primary shadow-sm">
+            <span className="absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-bold uppercase text-white bg-primary shadow-[var(--shadow-sm)]">
               {product.badge}
             </span>
           )}
@@ -262,7 +262,7 @@ function QuickViewModal({
               toggleFav(String(product.id));
             }}
             className={cn(
-              "absolute top-3 right-14 z-10 flex items-center justify-center h-10 w-10 rounded-full transition-all shadow-md",
+              "absolute top-3 right-14 z-10 flex items-center justify-center h-10 w-10 rounded-full transition-all shadow-[var(--shadow-md)]",
               fav
                 ? "bg-[var(--data-error-500)] text-white"
                 : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)]"
@@ -316,14 +316,14 @@ function QuickViewModal({
               <button
                 onClick={handleAdd}
                 disabled={isOutOfStock}
-                className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-white shadow-lg hover:bg-primary-dark active:scale-95 disabled:opacity-50 shrink-0"
+                className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-white shadow-[var(--shadow-lg)] hover:bg-primary-dark active:scale-95 disabled:opacity-50 shrink-0"
                 aria-label="Agregar al carrito"
               >
                 <ShoppingCart className="h-5 w-5" />
               </button>
             ) : (
               <div className="flex items-center gap-3">
-                <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-md">
+                <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-[var(--shadow-md)]">
                   <button
                     onClick={() => updateQty(product.id, qty - 1)}
                     className="h-10 w-9 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"
@@ -518,7 +518,7 @@ export default function CategoryCatalog({
               <Link
                 key={cat.id}
                 href={`/tienda/categoria/${cat.id}`}
-                className="shrink-0 flex items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-200 whitespace-nowrap shadow-sm"
+                className="shrink-0 flex items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-200 whitespace-nowrap shadow-[var(--shadow-sm)]"
               >
                 <Icon size={18} className="text-[var(--text-secondary)] hover:text-[var(--accent)]" />
                 {cat.label}
@@ -536,7 +536,7 @@ export default function CategoryCatalog({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={`Buscar en ${categoryLabel}...`}
-              className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm"
+              className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)]"
             />
             {search && (
               <button
@@ -554,7 +554,7 @@ export default function CategoryCatalog({
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
-                className="appearance-none pl-9 pr-8 py-3 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm cursor-pointer"
+                className="appearance-none pl-9 pr-8 py-3 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-[var(--shadow-sm)] cursor-pointer"
               >
                 {SORT_OPTIONS.map((o) => (
                   <option key={o.id} value={o.id}>
@@ -566,7 +566,7 @@ export default function CategoryCatalog({
             <button
               onClick={() => setShowPriceFilter((v) => !v)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-sm",
+                "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-[var(--shadow-sm)]",
                 showPriceFilter
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-primary"
@@ -575,7 +575,7 @@ export default function CategoryCatalog({
               <SlidersHorizontal className="h-4 w-4" />
               <span className="hidden sm:inline">Precio</span>
             </button>
-            <div className="flex items-center bg-gray-100 dark:bg-accent rounded-xl p-0.5 shadow-sm">
+            <div className="flex items-center bg-gray-100 dark:bg-accent rounded-xl p-0.5 shadow-[var(--shadow-sm)]">
               <button
                 onClick={() => {
                   setViewMode("grid");
@@ -584,7 +584,7 @@ export default function CategoryCatalog({
                 className={cn(
                   "p-2.5 rounded-lg transition-all",
                   viewMode === "grid"
-                    ? "bg-white dark:bg-card text-primary shadow-sm"
+                    ? "bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)]"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Vista cuadrícula"
@@ -599,7 +599,7 @@ export default function CategoryCatalog({
                 className={cn(
                   "p-2.5 rounded-lg transition-all",
                   viewMode === "list"
-                    ? "bg-white dark:bg-card text-primary shadow-sm"
+                    ? "bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)]"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Vista lista"
@@ -612,7 +612,7 @@ export default function CategoryCatalog({
 
         {/* Price filter */}
         {showPriceFilter && (
-          <div className="max-w-3xl mx-auto mb-6 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 shadow-sm animate-[fadeUp_0.2s_ease-out]">
+          <div className="max-w-3xl mx-auto mb-6 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 shadow-[var(--shadow-sm)] animate-[fadeUp_0.2s_ease-out]">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-foreground">
                 Filtrar por precio
@@ -795,7 +795,7 @@ export default function CategoryCatalog({
                         className={cn(
                           "h-8 w-8 rounded-full text-sm font-bold transition-all",
                           pg === page
-                            ? "bg-primary text-white shadow-md shadow-primary/25"
+                            ? "bg-primary text-white shadow-[var(--shadow-md)] shadow-primary/25"
                             : "text-gray-500 hover:bg-primary/10 hover:text-primary"
                         )}
                       >

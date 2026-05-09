@@ -136,7 +136,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
           <div className="max-w-2xl w-full">
-            <div className="bg-white dark:bg-card rounded-2xl shadow-xl border border-gray-200 dark:border-card-border p-8">
+            <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-200 dark:border-card-border p-8">
               {/* Error Icon */}
               <div className="flex justify-center mb-6">
                 <div className="p-4 bg-red-100 dark:bg-red-900/20 rounded-full">
@@ -201,7 +201,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                     "px-6 py-3 rounded-xl",
                     "bg-primary text-white",
                     "hover:bg-primary-dark",
-                    "transition-colors font-semibold shadow-md"
+                    "transition-colors font-semibold shadow-[var(--shadow-md)]"
                   )}
                 >
                   <RefreshCw className="h-5 w-5" />

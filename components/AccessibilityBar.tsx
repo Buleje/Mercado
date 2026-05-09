@@ -62,7 +62,7 @@ export default function AccessibilityBar() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="bg-card border border-border border-l-0 rounded-r-xl p-2 shadow-md hover:shadow-lg transition-all"
+        className="bg-card border border-border border-l-0 rounded-r-xl p-2 shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)] transition-all"
         aria-label="Opciones de accesibilidad"
         title="Accesibilidad"
       >
@@ -71,7 +71,7 @@ export default function AccessibilityBar() {
 
       {/* Panel */}
       {open && (
-        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1 bg-card border border-border rounded-xl shadow-xl p-3 w-44 space-y-3">
+        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1 bg-card border border-border rounded-xl shadow-[var(--shadow-xl)] p-3 w-44 space-y-3">
           <p className="text-xs font-bold text-foreground">Accesibilidad</p>
 
           {/* Font size */}

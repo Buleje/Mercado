@@ -105,10 +105,10 @@ export default function DailyDeal() {
   return (
     <section className="py-10 sm:py-16 bg-white dark:bg-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border-2 border-secondary/30 bg-linear-to-br from-secondary/8 via-white to-primary/8 dark:from-secondary/15 dark:via-card dark:to-primary/15 p-6 sm:p-10 shadow-lg shadow-secondary/5">
+        <div className="relative overflow-hidden rounded-3xl border-2 border-secondary/30 bg-linear-to-br from-secondary/8 via-white to-primary/8 dark:from-secondary/15 dark:via-card dark:to-primary/15 p-6 sm:p-10 shadow-[var(--shadow-lg)] shadow-secondary/5">
           {/* Badge */}
           <div className="absolute top-4 left-4 sm:top-6 sm:left-6">
-            <span className="inline-flex items-center gap-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-md">
+            <span className="inline-flex items-center gap-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-[var(--shadow-md)]">
               <Star className="w-3.5 h-3.5 fill-current" />
               Pedido del d\u00eda
             </span>
@@ -116,7 +116,7 @@ export default function DailyDeal() {
 
           <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10 pt-8 sm:pt-4">
             {/* Image */}
-            <div className="relative w-40 h-40 sm:w-56 sm:h-56 rounded-2xl overflow-hidden bg-gray-50 dark:bg-surface shrink-0 shadow-xl">
+            <div className="relative w-40 h-40 sm:w-56 sm:h-56 rounded-2xl overflow-hidden bg-gray-50 dark:bg-surface shrink-0 shadow-[var(--shadow-xl)]">
               {product.image ? (
                 <Image
                   src={product.image}
@@ -168,7 +168,7 @@ export default function DailyDeal() {
               <button
                 onClick={handleAdd}
                 aria-label={`Agregar ${product.name} al carrito`}
-                className="inline-flex items-center gap-2 bg-primary text-white font-bold px-8 py-3.5 rounded-xl hover:bg-primary/90 active:scale-95 transition-all shadow-lg hover:shadow-xl text-base"
+                className="inline-flex items-center gap-2 bg-primary text-white font-bold px-8 py-3.5 rounded-xl hover:bg-primary/90 active:scale-95 transition-all shadow-[var(--shadow-lg)] hover:shadow-[var(--shadow-xl)] text-base"
               >
                 <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                 Agregar al carrito

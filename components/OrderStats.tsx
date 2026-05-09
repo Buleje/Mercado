@@ -115,7 +115,7 @@ export function OrderStats({
           return (
             <div
               key={stat.label}
-              className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3.5 sm:p-4 transition-all hover:shadow-md hover:border-primary/20 dark:hover:border-primary/30"
+              className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3.5 sm:p-4 transition-all hover:shadow-[var(--shadow-md)] hover:border-primary/20 dark:hover:border-primary/30"
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className={cn("p-2 rounded-lg", stat.bgColor)}>

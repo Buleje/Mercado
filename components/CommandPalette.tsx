@@ -215,7 +215,7 @@ export default function CommandPalette() {
         role="dialog"
         aria-modal="true"
         aria-label="Paleta de comandos"
-        className="w-full max-w-2xl mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+        className="w-full max-w-2xl mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-[var(--shadow-xl)] border border-gray-200 dark:border-gray-700 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         aria-hidden="false"
       >

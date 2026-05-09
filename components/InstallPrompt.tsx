@@ -112,7 +112,7 @@ export default function InstallPrompt() {
       aria-labelledby="install-prompt-title"
       className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-50 animate-slide-up"
     >
-      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-950 shadow-xl border border-gray-200 dark:border-gray-800">
+      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-950 shadow-[var(--shadow-xl)] border border-gray-200 dark:border-gray-800">
         {/* Close */}
         <button
           onClick={installed ? handleDismiss : handleDismiss}

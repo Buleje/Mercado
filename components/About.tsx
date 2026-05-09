@@ -77,7 +77,7 @@ export default function About() {
           >
             {/* Store Photo */}
             <div className="relative mb-10">
-              <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-2xl">
+              <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-[var(--shadow-xl)]">
                 <Image
                   src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&h=600&fit=crop&q=80"
                   alt="Interior de Buleje con productos frescos y abarrotes"
@@ -92,7 +92,7 @@ export default function About() {
               </div>
               {/* Floating Badge */}
               <div
-                className={`absolute -bottom-5 -right-5 bg-secondary text-white rounded-2xl p-4 shadow-xl ${isInView ? "animate-[scaleIn_0.5s_ease-out_0.6s_both]" : "opacity-0"}`}
+                className={`absolute -bottom-5 -right-5 bg-secondary text-white rounded-2xl p-4 shadow-[var(--shadow-xl)] ${isInView ? "animate-[scaleIn_0.5s_ease-out_0.6s_both]" : "opacity-0"}`}
               >
                 <p className="text-3xl font-bold">15+</p>
                 <p className="text-xs font-medium opacity-90">años</p>
@@ -105,7 +105,7 @@ export default function About() {
                 <div
                   key={stat.label}
                   style={isInView ? { animationDelay: `${0.4 + i * 0.1}s` } : undefined}
-                  className={`rounded-2xl bg-muted p-5 text-center hover:shadow-md transition-shadow ${isInView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"}`}
+                  className={`rounded-2xl bg-muted p-5 text-center hover:shadow-[var(--shadow-md)] transition-shadow ${isInView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"}`}
                 >
                   <stat.icon className="h-6 w-6 text-primary mx-auto mb-2" />
                   <p className="text-2xl font-bold text-foreground">

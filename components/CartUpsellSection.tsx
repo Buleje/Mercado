@@ -114,7 +114,7 @@ export default function CartUpsellSection({
               <button
                 key={p.id}
                 onClick={() => onAddItem(resolveProduct(p))}
-                className="flex items-center gap-3 w-full bg-white dark:bg-card rounded-lg px-3 py-2 border border-emerald-100 dark:border-emerald-800/20 hover:border-emerald-300 hover:shadow-sm transition-all text-left group"
+                className="flex items-center gap-3 w-full bg-white dark:bg-card rounded-lg px-3 py-2 border border-emerald-100 dark:border-emerald-800/20 hover:border-emerald-300 hover:shadow-[var(--shadow-sm)] transition-all text-left group"
               >
                 <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-gray-50 shrink-0">
                   {p.image ? (
@@ -149,7 +149,7 @@ export default function CartUpsellSection({
           </div>
           <button
             onClick={() => onAddItem(combo.product)}
-            className="flex items-center gap-3 w-full bg-white dark:bg-card rounded-lg px-3 py-2 border border-amber-100 dark:border-amber-800/20 hover:border-amber-300 hover:shadow-sm transition-all text-left group"
+            className="flex items-center gap-3 w-full bg-white dark:bg-card rounded-lg px-3 py-2 border border-amber-100 dark:border-amber-800/20 hover:border-amber-300 hover:shadow-[var(--shadow-sm)] transition-all text-left group"
           >
             <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-gray-50 shrink-0">
               {combo.product.image ? (

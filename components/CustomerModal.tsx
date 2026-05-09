@@ -51,7 +51,7 @@ function FullMapModal({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", damping: 24, stiffness: 280 }}
-            className="bg-white dark:bg-background rounded-2xl overflow-hidden shadow-2xl w-full max-w-3xl max-h-[95svh] flex flex-col"
+            className="bg-white dark:bg-background rounded-2xl overflow-hidden shadow-[var(--shadow-xl)] w-full max-w-3xl max-h-[95svh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
@@ -172,7 +172,7 @@ function LocationForm({
               "mt-3 w-full flex items-center justify-center gap-2.5 rounded-xl py-3 font-semibold text-sm transition-all duration-200 border-2",
               loadingGeo
                 ? "bg-primary/8 border-primary/15 text-primary/60 cursor-not-allowed"
-                : "bg-primary/8 border-primary/25 text-primary hover:bg-primary hover:text-white hover:border-primary hover:shadow-lg hover:shadow-primary/25"
+                : "bg-primary/8 border-primary/25 text-primary hover:bg-primary hover:text-white hover:border-primary hover:shadow-[var(--shadow-lg)] hover:shadow-primary/25"
             )}
           >
             {loadingGeo ? (
@@ -245,7 +245,7 @@ function LocationForm({
           </button>
           <button
             type="submit"
-            className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20"
+            className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-[var(--shadow-lg)] shadow-primary/20"
           >
             {saveLabel}
           </button>
@@ -398,7 +398,7 @@ export default function CustomerModal() {
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
             className="fixed inset-x-0 bottom-0 sm:inset-0 z-7001 flex items-end sm:items-center justify-center sm:p-4"
           >
-            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[95svh] flex flex-col overflow-hidden">
+            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-[var(--shadow-xl)] w-full sm:max-w-lg max-h-[95svh] flex flex-col overflow-hidden">
 
               {/* Drag handle — mobile only */}
               <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
@@ -504,7 +504,7 @@ export default function CustomerModal() {
                         type="button"
                         onClick={handlePhoneLookup}
                         disabled={lookingUp || !phone.trim()}
-                        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-[var(--shadow-lg)] shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         {lookingUp ? (
                           <><Loader2 className="h-4 w-4 animate-spin" /> Buscando...</>
@@ -571,7 +571,7 @@ export default function CustomerModal() {
                                 onClick={() => setActive(loc.id)}
                                 className={cn(
                                   "w-full text-left flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer",
-                                  isActive ? "border-primary bg-primary/5 shadow-sm" : "border-gray-100 hover:border-primary/30 hover:bg-gray-50"
+                                  isActive ? "border-primary bg-primary/5 shadow-[var(--shadow-sm)]" : "border-gray-100 hover:border-primary/30 hover:bg-gray-50"
                                 )}
                               >
                                 <div className={cn(
@@ -621,7 +621,7 @@ export default function CustomerModal() {
                         <button
                           type="button"
                           onClick={handleOrderSubmit}
-                          className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-dark active:scale-[0.98] transition-all duration-200"
+                          className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-bold text-white shadow-[var(--shadow-lg)] shadow-primary/20 hover:bg-primary-dark active:scale-[0.98] transition-all duration-200"
                         >
                           ✓ Confirmar y Enviar Pedido
                         </button>
@@ -681,7 +681,7 @@ export default function CustomerModal() {
                               Cancelar
                             </button>
                           )}
-                          <button type="submit" className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20">
+                          <button type="submit" className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-[var(--shadow-lg)] shadow-primary/20">
                             {customer ? "Guardar" : "Continuar →"}
                           </button>
                         </div>

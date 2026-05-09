@@ -113,7 +113,7 @@ export default function FavoritesSection() {
             </button>
             <button
               onClick={addAll}
-              className="flex items-center gap-2 bg-primary text-white rounded-xl px-4 py-2.5 text-sm font-bold hover:bg-primary-dark active:scale-95 transition-all shadow-md"
+              className="flex items-center gap-2 bg-primary text-white rounded-xl px-4 py-2.5 text-sm font-bold hover:bg-primary-dark active:scale-95 transition-all shadow-[var(--shadow-md)]"
             >
               <ShoppingCart className="h-5 w-5" />
               <span className="hidden sm:inline">Agregar todos</span>
@@ -124,12 +124,12 @@ export default function FavoritesSection() {
           {favProducts.map((product) => (
             <div
               key={product.id}
-              className="group relative bg-white dark:bg-card rounded-2xl shadow-sm overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-lg transition-all duration-300 flex flex-col"
+              className="group relative bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-[var(--shadow-lg)] transition-all duration-300 flex flex-col"
             >
               <button
                 onClick={() => toggle(String(product.id))}
                 aria-label="Quitar de favoritos"
-                className="absolute top-2 right-2 z-10 flex items-center justify-center h-7 w-7 rounded-full bg-[var(--data-error-500)] text-white shadow-md hover:bg-[var(--data-error-600)] transition-colors"
+                className="absolute top-2 right-2 z-10 flex items-center justify-center h-7 w-7 rounded-full bg-[var(--data-error-500)] text-white shadow-[var(--shadow-md)] hover:bg-[var(--data-error-600)] transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -157,7 +157,7 @@ export default function FavoritesSection() {
                   ) : (
                     <button
                       onClick={() => { addItem(product); showToast(product.name, product.image); }}
-                      className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-primary text-white shadow-md hover:bg-primary-dark active:scale-95 transition-all"
+                      className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-primary text-white shadow-[var(--shadow-md)] hover:bg-primary-dark active:scale-95 transition-all"
                       aria-label={`Agregar ${product.name}`}
                     >
                       <ShoppingCart className="h-5 w-5" />

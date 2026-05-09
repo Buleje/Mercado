@@ -106,7 +106,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
             return (
               <div
                 key={product.id}
-                className={`group relative bg-card rounded-2xl shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${
+                className={`group relative bg-card rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300 ${
                   inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
                 style={{ transitionDelay: inView ? `${i * 80}ms` : "0ms" }}
@@ -163,7 +163,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
                       <button
                         type="button"
                         onClick={() => guardedAdd(product)}
-                        className="bg-primary text-white rounded-full p-3 hover:bg-primary-dark active:scale-90 transition-all shadow-sm hover:shadow-md"
+                        className="bg-primary text-white rounded-full p-3 hover:bg-primary-dark active:scale-90 transition-all shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)]"
                         aria-label={`Agregar ${product.name}`}
                       >
                         <ShoppingCart className="w-5 h-5" />

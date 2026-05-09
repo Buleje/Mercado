@@ -43,7 +43,7 @@ export default function NotificationPrompt() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="notif-prompt-title"
-      className="fixed bottom-44 left-4 right-4 sm:left-auto sm:bottom-20 sm:right-4 sm:max-w-sm z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-4 animate-[fadeUp_0.4s_ease-out_both]"
+      className="fixed bottom-44 left-4 right-4 sm:left-auto sm:bottom-20 sm:right-4 sm:max-w-sm z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-[var(--shadow-xl)] p-4 animate-[fadeUp_0.4s_ease-out_both]"
     >
       <button onClick={handleDismiss} aria-label="Cerrar notificación" className="absolute top-2 right-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
         <X className="h-4 w-4 text-gray-400" />

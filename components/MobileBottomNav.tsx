@@ -95,7 +95,7 @@ export default function MobileBottomNav() {
                   strokeWidth={isActive ? 2.5 : 2}
                 />
                 {isCart && totalQty > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-500)] text-white rounded-full shadow-sm">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-500)] text-white rounded-full shadow-[var(--shadow-sm)]">
                     {totalQty > 99 ? "99+" : totalQty}
                   </span>
                 )}

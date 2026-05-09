@@ -111,7 +111,7 @@ export default function CartRecoveryToast() {
       aria-live="polite"
       className={cn(
         "fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 sm:w-80 z-50",
-        "bg-white dark:bg-card rounded-2xl shadow-xl border border-gray-100 dark:border-card-border",
+        "bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border",
         "p-4 flex items-start gap-3",
         "animate-in slide-in-from-bottom-4 duration-300"
       )}

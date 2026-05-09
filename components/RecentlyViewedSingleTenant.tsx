@@ -165,7 +165,7 @@ export default function RecentlyViewed() {
                 key={product.id}
                 className="shrink-0 w-[calc(33.333%-6px)] sm:w-[calc(25%-6px)] lg:w-[calc(16.666%-7px)]"
               >
-                <div className="group relative bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <div className="group relative bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-200">
                   {/* Remove button */}
                   <button
                     onClick={() => removeItem(product.id)}

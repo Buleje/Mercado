@@ -18,7 +18,7 @@ export default function CompareBar() {
       <div
         role="region"
         aria-label="Comparar productos"
-        className="fixed bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 animate-[fadeUp_0.3s_ease-out_both]"
+        className="fixed bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-[var(--shadow-xl)] px-4 py-3 flex items-center gap-3 animate-[fadeUp_0.3s_ease-out_both]"
       >
         <GitCompareArrows className="h-5 w-5 text-primary shrink-0" />
         <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ function CompareModal() {
         role="dialog"
         aria-modal="true"
         aria-label="Comparar productos"
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto border border-gray-200 dark:border-card-border"
+        className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] max-w-2xl w-full max-h-[80vh] overflow-auto border border-gray-200 dark:border-card-border"
         onClick={e => e.stopPropagation()}
         aria-hidden="false"
       >

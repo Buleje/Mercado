@@ -114,7 +114,7 @@ export default function NewsletterWhatsApp() {
 
           {/* Right — Card with form */}
           <div className="w-full lg:w-96 shrink-0">
-            <div className="bg-white dark:bg-card rounded-3xl p-7 sm:p-8 shadow-2xl shadow-black/20 border border-white/20">
+            <div className="bg-white dark:bg-card rounded-3xl p-7 sm:p-8 shadow-[var(--shadow-xl)] shadow-black/20 border border-white/20">
               {sent ? (
                 <div className="flex flex-col items-center gap-4 text-center py-6">
                   <div className="w-16 h-16 rounded-full bg-[#25D366]/10 flex items-center justify-center animate-[scaleIn_0.4s_ease-out]">
@@ -185,7 +185,7 @@ export default function NewsletterWhatsApp() {
                   <button
                     type="submit"
                     aria-label="Suscribirme a ofertas por WhatsApp"
-                    className="w-full flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-extrabold text-white text-base bg-[#25D366] hover:bg-[#1ebe5a] active:scale-[0.98] transition-all shadow-lg shadow-[#25D366]/30 hover:shadow-xl hover:shadow-[#25D366]/40"
+                    className="w-full flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-extrabold text-white text-base bg-[#25D366] hover:bg-[#1ebe5a] active:scale-[0.98] transition-all shadow-[var(--shadow-lg)] shadow-[#25D366]/30 hover:shadow-[var(--shadow-xl)] hover:shadow-[#25D366]/40"
                   >
                     <MessageCircle className="w-5 h-5 fill-white" />
                     Suscribirme por WhatsApp

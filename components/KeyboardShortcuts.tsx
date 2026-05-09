@@ -89,7 +89,7 @@ function KeyBadge({ children }: { children: string }) {
       "text-xs font-semibold",
       "bg-gray-100 dark:bg-surface",
       "border border-gray-300 dark:border-gray-600",
-      "rounded-md shadow-sm",
+      "rounded-md shadow-[var(--shadow-sm)]",
       "text-gray-700 dark:text-foreground"
     )}>
       {children}
@@ -219,9 +219,9 @@ export function KeyboardShortcutHint() {
           "flex items-center gap-2 px-3 py-2",
           "bg-white dark:bg-card",
           "border border-gray-200 dark:border-card-border",
-          "rounded-full shadow-lg",
+          "rounded-full shadow-[var(--shadow-lg)]",
           "text-xs text-gray-600 dark:text-muted",
-          "hover:shadow-xl hover:scale-105",
+          "hover:shadow-[var(--shadow-xl)] hover:scale-105",
           "transition-all duration-200",
           "group"
         )}

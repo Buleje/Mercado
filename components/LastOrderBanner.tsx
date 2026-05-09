@@ -92,7 +92,7 @@ export default function LastOrderBanner() {
   return (
     <section className="py-4 sm:py-6">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4 sm:p-5 shadow-sm">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4 sm:p-5 shadow-[var(--shadow-sm)]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             {/* Icon */}
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">

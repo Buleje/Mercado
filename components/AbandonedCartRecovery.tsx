@@ -75,7 +75,7 @@ export default function AbandonedCartRecovery() {
           role="alertdialog"
           aria-label="Carrito abandonado"
         >
-          <div className="flex items-center gap-3 bg-primary-dark shadow-2xl shadow-black/40 text-white rounded-2xl px-4 py-3.5 border border-white/10 backdrop-blur-sm">
+          <div className="flex items-center gap-3 bg-primary-dark shadow-[var(--shadow-xl)] shadow-black/40 text-white rounded-2xl px-4 py-3.5 border border-white/10 backdrop-blur-sm">
             {/* Icon */}
             <div className="relative shrink-0">
               <div className="h-11 w-11 rounded-xl bg-white/10 flex items-center justify-center">
@@ -92,7 +92,7 @@ export default function AbandonedCartRecovery() {
             {/* CTA */}
             <button
               onClick={recover}
-              className="flex items-center gap-1 bg-white text-primary font-bold text-xs px-3 py-2 rounded-xl hover:bg-white/90 active:scale-95 transition-all shrink-0 shadow-sm"
+              className="flex items-center gap-1 bg-white text-primary font-bold text-xs px-3 py-2 rounded-xl hover:bg-white/90 active:scale-95 transition-all shrink-0 shadow-[var(--shadow-sm)]"
             >
               Completar
               <ArrowRight className="h-3.5 w-3.5" />
