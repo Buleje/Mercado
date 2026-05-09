@@ -309,7 +309,7 @@ export default function SuperadminMarcaPage() {
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-bold transition-all",
                     dirty
-                      ? "bg-[var(--accent)] text-white hover:opacity-90 shadow-sm"
+                      ? "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 shadow-sm"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                   )}
                 >

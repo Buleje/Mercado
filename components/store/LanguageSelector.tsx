@@ -171,7 +171,7 @@ export default function LanguageSelector({ className, compact = false }: Languag
             className={cn(
               "flex-1 py-2.5 text-sm font-semibold transition-colors",
               lang === opt.value
-                ? "bg-[var(--accent)] text-white"
+                ? "bg-[var(--accent-600,var(--accent))] text-white"
                 : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-gray-700"
             )}
           >

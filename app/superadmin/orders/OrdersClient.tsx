@@ -588,7 +588,7 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
             href={`/t/${order.tenant.slug}/admin?tab=pedidos&_fresh=${Date.now()}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="block w-full text-center px-5 py-3 rounded-2xl bg-[var(--accent)] text-white text-sm font-bold hover:bg-[var(--accent-600)] transition-colors"
+            className="block w-full text-center px-5 py-3 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent-600)] transition-colors"
           >
             Abrir panel admin de {order.tenant.name}
           </a>

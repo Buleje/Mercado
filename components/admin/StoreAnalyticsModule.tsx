@@ -264,7 +264,7 @@ export default function StoreAnalyticsModule() {
               className={cn(
                 "px-3 py-1.5 rounded-md text-xs font-bold transition-colors",
                 days === d
-                  ? "bg-[var(--accent)] text-white"
+                  ? "bg-[var(--accent-600,var(--accent))] text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
               )}
             >

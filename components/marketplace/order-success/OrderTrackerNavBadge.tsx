@@ -43,7 +43,7 @@ export default function OrderTrackerNavBadge({
       title={`Tu pedido en ${storeLabel} — toca para ver`}
       className={`
         relative inline-flex items-center gap-2 rounded-full
-        bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/40
+        bg-[var(--accent-600,var(--accent))] text-white shadow-lg shadow-[var(--accent)]/40
         hover:bg-[var(--accent)]/90 hover:scale-105 transition-all
         ${variant === "expanded" ? "h-10 px-4" : "h-10 w-10 sm:w-auto sm:px-3.5"}
       `}

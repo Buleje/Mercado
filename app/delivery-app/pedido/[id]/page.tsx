@@ -565,7 +565,7 @@ function Stepper({ currentIndex, cancelled }: { currentIndex: number; cancelled:
                     done
                       ? "bg-[var(--data-success-500)] text-white"
                       : active
-                      ? "bg-[var(--accent)] text-white ring-4 ring-[var(--accent-soft)]"
+                      ? "bg-[var(--accent-600,var(--accent))] text-white ring-4 ring-[var(--accent-soft)]"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                   }`}
                 >

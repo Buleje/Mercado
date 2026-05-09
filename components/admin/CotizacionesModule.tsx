@@ -1327,7 +1327,7 @@ export default function CotizacionesModule() {
                   )}
                   {selected.status === "ACEPTADA" && (
                     <button onClick={convertirAOrden} disabled={actionLoading}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors">
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors">
                       <ShoppingCart className="h-4 w-4" /> Convertir a Orden
                     </button>
                   )}

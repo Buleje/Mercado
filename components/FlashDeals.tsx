@@ -244,7 +244,7 @@ function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { origin
           ) : (
             <button
               onClick={onAdd}
-              className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent-600)] active:scale-95 shrink-0 transition-colors"
+              className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-600)] active:scale-95 shrink-0 transition-colors"
               aria-label={`Agregar ${deal.name}`}
             >
               <ShoppingCart className="h-5 w-5" />

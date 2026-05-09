@@ -204,7 +204,7 @@ export default function MarketplaceHeroBanner() {
                     href={slide.href}
                     className={cn(
                       "group inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold",
-                      "bg-[var(--accent)] text-white",
+                      "bg-[var(--accent-600,var(--accent))] text-white",
                       "hover:bg-[var(--accent)]/90",
                       "transition-colors duration-200 active:scale-[0.98]",
                     )}

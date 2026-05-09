@@ -41,7 +41,7 @@ const ACCENT_CLASSES: Record<
     badge: "bg-[var(--accent-soft)] text-[var(--accent)]",
     icon: "text-[var(--accent)]",
     iconBg: "bg-[var(--accent-soft)]",
-    button: "bg-[var(--accent)] text-white hover:scale-[1.02] hover:shadow-lg",
+    button: "bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.02] hover:shadow-lg",
   },
   enterprise: {
     ring:
@@ -61,7 +61,7 @@ const ACCENT_CLASSES: Record<
     icon: "text-[var(--data-warning-600)] dark:text-amber-400",
     iconBg: "bg-amber-50 dark:bg-[var(--data-warning-500)]/10",
     button:
-      "bg-[var(--accent)] text-white hover:scale-[1.02] hover:shadow-lg",
+      "bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.02] hover:shadow-lg",
   },
 };
 
@@ -143,7 +143,7 @@ export default function PlanTierSelector({
       {/* ── Header ───────────────────────────────────────────────── */}
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-canvas)] to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="flex items-start gap-4">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-md">
+          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-md">
             <Crown className="h-5 w-5" strokeWidth={2.25} />
           </span>
           <div className="min-w-0 flex-1">

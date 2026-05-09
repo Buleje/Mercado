@@ -104,7 +104,7 @@ export default function CountdownBanner({
         <button
           type="button"
           onClick={scrollToDeals}
-          className="inline-flex items-center gap-1.5 bg-[var(--accent)] text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-[var(--accent-600)] transition-colors"
+          className="inline-flex items-center gap-1.5 bg-[var(--accent-600,var(--accent))] text-white font-medium text-sm px-4 py-2 rounded-lg hover:bg-[var(--accent-600)] transition-colors"
         >
           {hp.countdownCtaText}
           <ChevronRight className="w-4 h-4" />

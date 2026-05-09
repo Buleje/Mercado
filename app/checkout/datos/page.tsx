@@ -152,7 +152,7 @@ export default function CheckoutDatosPage() {
                 aria-hidden
                 className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[var(--accent)]/[0.12] blur-2xl"
               />
-              <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-white shrink-0 shadow-[0_4px_16px_-6px_var(--accent)]">
+              <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shrink-0 shadow-[0_4px_16px_-6px_var(--accent)]">
                 <Sparkles className="h-5 w-5" strokeWidth={2} aria-hidden />
               </span>
               <div className="relative flex-1 min-w-0">
@@ -321,7 +321,7 @@ export default function CheckoutDatosPage() {
                 className={cn(
                   "group inline-flex w-full items-center justify-center gap-2 rounded-full px-6 h-12",
                   "text-[length:var(--ts-sm)] font-bold tracking-[var(--ls-tight)] transition-all duration-200",
-                  "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
+                  "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
                   "shadow-[0_6px_20px_-10px_var(--accent)]",
                   "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
                 )}

@@ -105,7 +105,7 @@ export default function LandingHero() {
             >
               <Link
                 href="/abrir-tienda"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
               >
                 {t("landing.hero.ctaPrimary")}
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
@@ -449,7 +449,7 @@ function PhoneMockup({ reducedMotion }: { reducedMotion: boolean }) {
           </div>
 
           {/* Footer CTA */}
-          <div className="absolute bottom-3 left-3 right-3 h-11 rounded-xl bg-[var(--accent)] text-white flex items-center justify-between px-4 shadow-[var(--shadow-lg)]">
+          <div className="absolute bottom-3 left-3 right-3 h-11 rounded-xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-between px-4 shadow-[var(--shadow-lg)]">
             <span className="text-xs font-extrabold">Ver todos los pedidos</span>
             <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} />
           </div>

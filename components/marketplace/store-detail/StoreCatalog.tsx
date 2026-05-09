@@ -229,7 +229,7 @@ export default function StoreCatalog({
               className={cn(
                 "h-12 w-12 inline-flex items-center justify-center transition-colors",
                 view === "grid"
-                  ? "bg-[var(--accent)] text-white"
+                  ? "bg-[var(--accent-600,var(--accent))] text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
               )}
             >
@@ -243,7 +243,7 @@ export default function StoreCatalog({
               className={cn(
                 "h-12 w-12 inline-flex items-center justify-center border-l-2 border-[var(--rule-base)] transition-colors",
                 view === "list"
-                  ? "bg-[var(--accent)] text-white"
+                  ? "bg-[var(--accent-600,var(--accent))] text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
               )}
             >

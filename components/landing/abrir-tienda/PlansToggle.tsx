@@ -142,7 +142,7 @@ function PlanCard({
       }`}
     >
       {recommended && (
-        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[var(--accent)] text-white text-xs font-black uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
+        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[var(--accent-600,var(--accent))] text-white text-xs font-black uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
           {t("plans.mostChosen")}
         </span>
       )}
@@ -273,7 +273,7 @@ function PlanCard({
         href={href}
         className={`block text-center font-extrabold py-3.5 rounded-2xl transition-all ${
           recommended
-            ? "bg-[var(--accent)] text-white hover:opacity-90 shadow-md"
+            ? "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 shadow-md"
             : "bg-[var(--surface-sunken)] text-[var(--text-primary)] border-2 border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
         }`}
       >

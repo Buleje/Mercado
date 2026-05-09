@@ -505,7 +505,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                           : "border-gray-200 dark:border-gray-700 hover:border-[var(--accent)]/40"
                       }`}
                     >
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[var(--accent)] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
                         {opt.icon}
                       </div>
                       <div>
@@ -624,7 +624,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                                 : "border-gray-200 dark:border-gray-700 hover:border-[var(--accent)]/40"
                             }`}
                           >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-[var(--accent)] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
                               {TEMPLATE_ICONS[tmpl.icon]}
                             </div>
                             <div className="min-w-0">
@@ -649,7 +649,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 </button>
                 <button
                   onClick={next}
-                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
+                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   Siguiente <ArrowRight className="w-4 h-4" />
                 </button>
@@ -785,7 +785,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 </button>
                 <button
                   onClick={next}
-                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
+                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   Siguiente <ArrowRight className="w-4 h-4" />
                 </button>
@@ -831,7 +831,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                             <div className="flex items-center gap-2">
                               <p className="font-bold text-foreground">{def.name}</p>
                               {def.popular && (
-                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent)] text-white">Popular</span>
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white">Popular</span>
                               )}
                             </div>
                             <p className="text-muted-foreground text-xs mt-0.5">
@@ -862,7 +862,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 </button>
                 <button
                   onClick={next}
-                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
+                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   Siguiente <ArrowRight className="w-4 h-4" />
                 </button>
@@ -918,7 +918,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] disabled:opacity-60 flex items-center justify-center gap-2 min-h-[48px]"
+                  className="flex-[2] px-6 py-3 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white font-bold text-sm hover:bg-[#00a196] disabled:opacity-60 flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                   {submitting ? "Creando tienda…" : "Crear mi tienda"}
@@ -969,7 +969,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 )}
                 <a
                   href="/onboarding"
-                  className="w-full py-3 rounded-2xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
+                  className="w-full py-3 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white font-bold text-sm hover:bg-[#00a196] flex items-center justify-center gap-2 min-h-[48px]"
                 >
                   Configurar mi tienda <ExternalLink className="w-4 h-4" />
                 </a>

@@ -92,7 +92,7 @@ function CategoryRow({
         "w-full flex items-center gap-3 px-3 h-12 rounded-xl text-left transition-colors",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
         active
-          ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/25"
+          ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/25"
           : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
       )}
     >

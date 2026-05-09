@@ -93,7 +93,7 @@ export default function TipWidget({ orderId, partnerName }: Props) {
             onClick={() => { setAmount(a); setCustomAmount(""); }}
             className={`h-12 rounded-xl border-2 font-extrabold transition-colors ${
               amount === a
-                ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                ? "border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white"
                 : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--accent)]"
             }`}
           >

@@ -431,7 +431,7 @@ function ManualPane({
         type="button"
         onClick={submit}
         disabled={loading || !file}
-        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-[var(--accent)] text-white text-sm font-extrabold uppercase tracking-wider shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl disabled:opacity-50 transition-all"
+        className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-extrabold uppercase tracking-wider shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl disabled:opacity-50 transition-all"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
         Enviar comprobante

@@ -340,7 +340,7 @@ export default function CouponsTab() {
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
                   couponScope === "plataforma"
-                    ? "bg-[var(--accent)] text-white "
+                    ? "bg-[var(--accent-600,var(--accent))] text-white "
                     : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
                 )}
               >

@@ -281,7 +281,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         <span className={cn(
           "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-sm flex items-center gap-0.5",
           offerUrgent
-            ? "bg-[var(--accent)] text-white"
+            ? "bg-[var(--accent-600,var(--accent))] text-white"
             : "bg-[var(--accent-soft)] text-[var(--accent)]"
         )}>
           <Clock className="h-3 w-3" /> {offerUrgent ? "Última hora" : offerCountdown}
@@ -292,7 +292,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       {sellingFast && !isOutOfStock && (
         <span className="absolute z-10 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold shadow-sm flex items-center gap-0.5" style={{ top: product.badge ? "2.5rem" : "0.75rem", left: "0.75rem" }}>
           {soldCount >= 20 ? (
-            <span className="flex items-center gap-0.5 bg-[var(--accent)] text-white rounded-full px-2 py-0.5">
+            <span className="flex items-center gap-0.5 bg-[var(--accent-600,var(--accent))] text-white rounded-full px-2 py-0.5">
               <Star className="h-3 w-3 fill-current" /> Popular
             </span>
           ) : soldCount >= 5 ? (

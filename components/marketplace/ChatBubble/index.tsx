@@ -69,7 +69,7 @@ export default function ChatBubble({
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Cerrar chat" : "Abrir chat con la tienda"}
         className={cn(
-          "fixed z-[60] flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg transition ring-2 ring-white/40",
+          "fixed z-[60] flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-lg transition ring-2 ring-white/40",
           "hover:scale-105 hover:bg-[var(--accent)]/90 focus:outline-none focus:ring-4 focus:ring-[var(--accent)]/30",
           // Posición mobile sube por encima de BottomNav (60px) + sticky
           // cart (~76px) + buffer. Desktop esquina inferior clásica.
@@ -305,7 +305,7 @@ function MessageRow({ msg }: { msg: import("./types").PublicMessageView }) {
             "rounded-2xl px-3 py-1.5 text-sm",
             isBuyer
               ? "rounded-br-sm bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100"
-              : "rounded-bl-sm bg-[var(--accent)] text-white",
+              : "rounded-bl-sm bg-[var(--accent-600,var(--accent))] text-white",
           )}
         >
           <div className="whitespace-pre-wrap break-words">{msg.body}</div>
@@ -369,7 +369,7 @@ function Composer({
         type="button"
         onClick={handleSend}
         disabled={disabled || sending || !body.trim()}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-white transition hover:bg-[var(--accent)]/90 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white transition hover:bg-[var(--accent)]/90 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
         aria-label="Enviar"
       >
         <Send className={cn("h-4 w-4", sending && "animate-pulse")} />

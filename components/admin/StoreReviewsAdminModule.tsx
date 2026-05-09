@@ -157,7 +157,7 @@ function ReplyBox({ review, onReplied }: { review: AdminReview; onReplied: () =>
           type="button"
           onClick={submit}
           disabled={submitting || reply.trim().length === 0}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-bold hover:opacity-90 disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:opacity-90 disabled:opacity-40"
         >
           {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
           {review.adminReply ? "Actualizar" : "Publicar respuesta"}
@@ -249,7 +249,7 @@ export default function StoreReviewsAdminModule() {
               className={cn(
                 "px-3 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap",
                 status === s
-                  ? "bg-[var(--accent)] text-white"
+                  ? "bg-[var(--accent-600,var(--accent))] text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
               )}
             >

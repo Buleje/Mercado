@@ -187,7 +187,7 @@ export default function GananciasRepartidorPage() {
               aria-pressed={period === p.id}
               className={`h-11 px-5 rounded-2xl text-sm font-extrabold transition-colors ${
                 period === p.id
-                  ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
+                  ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/20"
                   : "bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               }`}
             >

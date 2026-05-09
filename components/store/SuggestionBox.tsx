@@ -168,7 +168,7 @@ export default function SuggestionBox() {
                 className={cn(
                   "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
                   category === cat.value
-                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                    ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]"
                     : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
                 )}
               >
@@ -203,7 +203,7 @@ export default function SuggestionBox() {
         <button
           onClick={submit}
           disabled={!message.trim() || rating === 0 || submitting}
-          className="w-full py-3.5 rounded-xl bg-[var(--accent)] text-white font-bold text-sm disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white font-bold text-sm disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
         >
           {submitting ? (
             <>

@@ -32,7 +32,7 @@ const cards = [
     title: 'Agrega al carrito',
     demo: (
       <div className="mt-3 flex justify-center">
-        <div className="bg-[var(--accent)] text-white rounded-lg px-4 py-1.5 text-sm font-bold flex items-center gap-1">
+        <div className="bg-[var(--accent-600,var(--accent))] text-white rounded-lg px-4 py-1.5 text-sm font-bold flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
@@ -102,7 +102,7 @@ export default function OnboardingStep4POSDemo({ onNext }: Props) {
 
       <button
         onClick={onNext}
-        className="w-full py-3 rounded-xl bg-[var(--accent)] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20"
+        className="w-full py-3 rounded-xl bg-[var(--accent-600,var(--accent))] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20"
       >
         ¡Entendido, quiero vender! &rarr;
       </button>

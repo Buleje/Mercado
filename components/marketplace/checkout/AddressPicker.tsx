@@ -84,7 +84,7 @@ export default function AddressPicker({
                   className={cn(
                     "inline-flex h-11 w-11 items-center justify-center rounded-full shrink-0",
                     isActive
-                      ? "bg-[var(--accent)] text-white"
+                      ? "bg-[var(--accent-600,var(--accent))] text-white"
                       : "bg-[var(--accent-soft)] text-[var(--accent)]",
                   )}
                   aria-hidden
@@ -111,7 +111,7 @@ export default function AddressPicker({
                 {isActive ? (
                   <span
                     aria-hidden
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-white shrink-0"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shrink-0"
                   >
                     <CheckCircle2 className="h-5 w-5" strokeWidth={2.5} />
                   </span>

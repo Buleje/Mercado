@@ -228,7 +228,7 @@ export default function CategoriaClient({
               type="button"
               onClick={() => setQuery("")}
               aria-label="Quitar filtro de búsqueda"
-              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white text-xs font-bold hover:opacity-90"
+              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:opacity-90"
             >
               ×
             </button>

@@ -69,7 +69,7 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
           "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-bold transition-colors whitespace-nowrap border-2",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           active
-            ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm"
+            ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)] shadow-sm"
             : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/30",
         )}
       >
@@ -113,7 +113,7 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           "hover:-translate-y-0.5 hover:shadow-md",
           active
-            ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_4px_14px_color-mix(in oklab, var(--accent) 35%, transparent)]"
+            ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)] shadow-[0_4px_14px_color-mix(in oklab, var(--accent) 35%, transparent)]"
             : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]",
         )}
       >
@@ -154,7 +154,7 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
         "hover:-translate-y-0.5 hover:shadow-md",
         active
-          ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_4px_14px_color-mix(in oklab, var(--accent) 35%, transparent)]"
+          ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)] shadow-[0_4px_14px_color-mix(in oklab, var(--accent) 35%, transparent)]"
           : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]",
       )}
     >

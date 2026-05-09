@@ -471,7 +471,7 @@ export default function SuperadminBannersPage() {
         <div className="max-w-[1400px] mx-auto">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3.5">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shrink-0">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
                 <Megaphone className="h-6 w-6" strokeWidth={1.75} aria-hidden />
               </span>
               <div>
@@ -675,7 +675,7 @@ export default function SuperadminBannersPage() {
               </button>
               <button
                 onClick={() => addBanner(activeSlot)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-4 py-2 text-sm font-bold hover:opacity-90 transition-opacity shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-2 text-sm font-bold hover:opacity-90 transition-opacity shadow-sm"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                 Nuevo banner
@@ -772,7 +772,7 @@ export default function SuperadminBannersPage() {
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-bold transition-all",
                     dirtySlots.has(activeSlot)
-                      ? "bg-[var(--accent)] text-white hover:opacity-90 shadow-sm"
+                      ? "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 shadow-sm"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
                   )}
                 >
@@ -872,7 +872,7 @@ function EmptyState({
         )}
         <button
           onClick={onAdd}
-          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-4 py-2 text-sm font-bold hover:opacity-90"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-2 text-sm font-bold hover:opacity-90"
         >
           <Plus className="h-4 w-4" aria-hidden />
           Crear primer banner
@@ -1053,7 +1053,7 @@ function BannerCard({
                         className={cn(
                           "inline-flex h-5 w-5 items-center justify-center rounded-md",
                           active
-                            ? "bg-[var(--accent)] text-white"
+                            ? "bg-[var(--accent-600,var(--accent))] text-white"
                             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                         )}
                       >

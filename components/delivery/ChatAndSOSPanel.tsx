@@ -108,7 +108,7 @@ function CustomerContactCard({
         {/* Avatar con inicial */}
         <div
           aria-hidden
-          className="h-14 w-14 shrink-0 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center text-2xl font-extrabold select-none"
+          className="h-14 w-14 shrink-0 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center text-2xl font-extrabold select-none"
         >
           {initial}
         </div>

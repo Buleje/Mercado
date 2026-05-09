@@ -272,7 +272,7 @@ export default function StoreRegistrationForm() {
                   "Tu tienda aparece en el marketplace",
                 ].map((s, i) => (
                   <li key={i} className="flex gap-3 text-sm font-semibold text-[var(--text-primary)]">
-                    <span className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-white text-xs font-black tabular-nums">
+                    <span className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black tabular-nums">
                       {i + 1}
                     </span>
                     <span>{s}</span>
@@ -392,7 +392,7 @@ export default function StoreRegistrationForm() {
                     className={cn(
                       "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black tabular-nums",
                       step === "info"
-                        ? "bg-[var(--accent)] text-white"
+                        ? "bg-[var(--accent-600,var(--accent))] text-white"
                         : stepIndex > 1
                           ? "bg-[var(--data-success-500)] text-white"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
@@ -430,7 +430,7 @@ export default function StoreRegistrationForm() {
                     className={cn(
                       "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black tabular-nums",
                       step === "details"
-                        ? "bg-[var(--accent)] text-white"
+                        ? "bg-[var(--accent-600,var(--accent))] text-white"
                         : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                     )}
                   >

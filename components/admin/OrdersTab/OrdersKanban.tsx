@@ -350,7 +350,7 @@ const OrderCard = memo(function OrderCard({
               onClick={primaryAction.onClick}
               className={cn(
                 "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-extrabold uppercase tracking-[var(--ls-wider)] transition-all",
-                "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] shadow-sm shadow-[var(--accent)]/25 hover:shadow-md hover:shadow-[var(--accent)]/35 active:scale-[0.99]",
+                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] shadow-sm shadow-[var(--accent)]/25 hover:shadow-md hover:shadow-[var(--accent)]/35 active:scale-[0.99]",
               )}
             >
               <primaryAction.icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />

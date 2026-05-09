@@ -94,7 +94,7 @@ export function AdminWizard({
                     done
                       ? "bg-[var(--data-success-500)] text-white"
                       : active
-                        ? "bg-[var(--accent)] text-white"
+                        ? "bg-[var(--accent-600,var(--accent))] text-white"
                         : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                   )}
                 >
@@ -165,7 +165,7 @@ export function AdminWizard({
           type="button"
           onClick={() => void goNext()}
           disabled={finishing}
-          className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50"
         >
           {isLast ? (finishing ? "Guardando..." : finishLabel) : "Siguiente"}
           {!isLast && <ChevronRight className="h-4 w-4" strokeWidth={2} />}

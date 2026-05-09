@@ -121,7 +121,7 @@ export default function AbrirTiendaPage() {
                 <div className="mt-10 flex flex-wrap items-center gap-3">
                   <Link
                     href="/marketplace/registrar"
-                    className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+                    className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-8 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
                   >
                     Activar gratis por 1 mes
                     <ArrowUpRight
@@ -269,7 +269,7 @@ export default function AbrirTiendaPage() {
             <div className="mt-10 flex flex-wrap justify-center gap-3">
               <Link
                 href="/marketplace/registrar"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-8 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
               >
                 <Store className="h-4 w-4" strokeWidth={2.25} />
                 Activar gratis por 1 mes

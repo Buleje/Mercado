@@ -517,7 +517,7 @@ export default function CRMTab() {
             {f.count > 0 && (
               <span className={cn(
                 "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-                filterSegment === f.key ? "bg-[var(--accent)] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+                filterSegment === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
               )}>
                 {f.count > 99 ? "99+" : f.count}
               </span>
@@ -563,7 +563,7 @@ export default function CRMTab() {
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              quickFilter === f.key ? "bg-[var(--accent)] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              quickFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
             )}>
               {quickFilterCounts[f.key] > 99 ? "99+" : quickFilterCounts[f.key]}
             </span>
@@ -594,7 +594,7 @@ export default function CRMTab() {
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              freqFilter === f.key ? "bg-[var(--accent)] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
             )}>
               {freqCounts[f.key] > 99 ? "99+" : freqCounts[f.key]}
             </span>
@@ -887,7 +887,7 @@ export default function CRMTab() {
               <button
                 onClick={() => setShowCompareModal(true)}
                 disabled={comparePhones.size < 2}
-                className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent)] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors"
+                className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors"
               >
                 Ver comparativa
               </button>

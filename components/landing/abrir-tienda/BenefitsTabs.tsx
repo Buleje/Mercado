@@ -180,7 +180,7 @@ export default function BenefitsTabs() {
                     transition={{ delay: 0.08 * i + 0.15, duration: 0.3 }}
                     className="flex items-start gap-3 text-base text-[var(--text-secondary)]"
                   >
-                    <span className="inline-flex h-5 w-5 mt-0.5 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+                    <span className="inline-flex h-5 w-5 mt-0.5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white">
                       <Check className="h-3 w-3" strokeWidth={3} />
                     </span>
                     {f}

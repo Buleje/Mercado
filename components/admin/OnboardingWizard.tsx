@@ -152,7 +152,7 @@ function StepRow({
         className={cn(
           "flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
           done
-            ? "bg-[var(--accent)] text-white"
+            ? "bg-[var(--accent-600,var(--accent))] text-white"
             : "bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white"
         )}
         aria-hidden="true"

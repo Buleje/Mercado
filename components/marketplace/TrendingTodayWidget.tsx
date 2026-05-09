@@ -152,7 +152,7 @@ function TrendingCard({ product, rank, motionIndex }: TrendingCardProps) {
           {/* Badge rank top-left */}
           <span
             aria-hidden
-            className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white text-xs font-bold leading-none"
+            className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold leading-none"
           >
             {rank}
           </span>

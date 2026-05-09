@@ -56,7 +56,7 @@ export default function RepartidoresPage() {
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Link
                 href="/marketplace/repartidor"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
               >
                 Quiero repartir
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
@@ -120,7 +120,7 @@ export default function RepartidoresPage() {
           className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
         />
         <div className="relative max-w-3xl mx-auto px-4 text-center">
-          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)] text-white mb-6">
+          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white mb-6">
             <Bike className="h-7 w-7" strokeWidth={2} />
           </span>
           <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[1.0]">

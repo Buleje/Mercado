@@ -205,7 +205,7 @@ export default function PostDeliverySurvey({
         disabled={!canSubmit}
         className={cn(
           "w-full flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors",
-          "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)]",
+          "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)]",
           "disabled:opacity-50 disabled:cursor-not-allowed"
         )}
       >

@@ -93,7 +93,7 @@ export default function HowItChanges() {
                   </div>
                 </div>
                 <div className="px-5 sm:px-6 py-4 sm:py-5 flex items-start gap-3 bg-[var(--accent-soft)]">
-                  <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-sm">
+                  <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-sm">
                     <Check className="h-4 w-4" strokeWidth={2.75} />
                   </span>
                   <div className="min-w-0">
@@ -114,7 +114,7 @@ export default function HowItChanges() {
         <div className="mt-14 text-center">
           <Link
             href="#planes"
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-7 py-3.5 text-base font-extrabold shadow-md hover:gap-3 hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-3.5 text-base font-extrabold shadow-md hover:gap-3 hover:shadow-lg transition-all"
           >
             Ver los planes
             <ArrowRight className="h-4 w-4" strokeWidth={2.5} />

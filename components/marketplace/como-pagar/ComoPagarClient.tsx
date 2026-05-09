@@ -124,7 +124,7 @@ function MethodCard({ method }: { method: Method }) {
       className={[
         "rounded-2xl border p-6 sm:p-7 flex flex-col gap-4 transition-shadow hover:shadow-md",
         isAccent
-          ? "bg-[var(--accent)] text-white border-transparent"
+          ? "bg-[var(--accent-600,var(--accent))] text-white border-transparent"
           : isInk
             ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-transparent"
             : "bg-[var(--surface-raised)] border-[var(--rule-soft)] text-[var(--text-primary)]",
@@ -157,7 +157,7 @@ function MethodCard({ method }: { method: Method }) {
           <span
             className={[
               "shrink-0 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
-              isAccent || isInk ? "bg-white/15 text-white" : "bg-[var(--accent)] text-white",
+              isAccent || isInk ? "bg-white/15 text-white" : "bg-[var(--accent-600,var(--accent))] text-white",
             ].join(" ")}
           >
             {method.badge}

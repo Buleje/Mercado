@@ -135,7 +135,7 @@ export default function OnboardingStep2Product({ data, onChange, onNext }: Props
       <button
         onClick={handleNext}
         disabled={!hasValidProduct}
-        className="w-full py-3 rounded-xl bg-[var(--accent)] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full py-3 rounded-xl bg-[var(--accent-600,var(--accent))] text-white font-bold hover:bg-[var(--accent-dark)] transition-colors shadow-md shadow-[var(--accent)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Siguiente &rarr;
       </button>

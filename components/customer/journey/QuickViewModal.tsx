@@ -137,7 +137,7 @@ export function QuickViewModal({
                               key={i}
                               className={cn(
                                 "inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]",
-                                b.variant === "accent" && "bg-[var(--accent)] text-white",
+                                b.variant === "accent" && "bg-[var(--accent-600,var(--accent))] text-white",
                                 b.variant === "warning" && "bg-[var(--data-warning-500)] text-white",
                                 !b.variant && "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
                               )}

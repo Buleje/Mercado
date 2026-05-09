@@ -436,7 +436,7 @@ export default function RepartidorPage() {
                           <div
                             className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
                               active
-                                ? "bg-[var(--accent)] text-white"
+                                ? "bg-[var(--accent-600,var(--accent))] text-white"
                                 : "bg-[var(--surface-sunken)] text-[var(--text-primary)]"
                             }`}
                           >
@@ -475,7 +475,7 @@ export default function RepartidorPage() {
                   <div
                     className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${
                       form.anyZone
-                        ? "bg-[var(--accent)] text-white"
+                        ? "bg-[var(--accent-600,var(--accent))] text-white"
                         : "bg-[var(--surface-sunken)] text-[var(--text-primary)]"
                     }`}
                   >
@@ -578,7 +578,7 @@ export default function RepartidorPage() {
             <div className="space-y-5">
               {!isMotor ? (
                 <div className="rounded-2xl bg-[var(--accent-soft)] border-2 border-[var(--accent)] p-5 flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+                  <div className="h-12 w-12 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center shrink-0">
                     <CheckBadge className="h-6 w-6" />
                   </div>
                   <div>
@@ -897,7 +897,7 @@ function Stepper({
                     done
                       ? "bg-[var(--data-success-500)] text-white"
                       : active
-                      ? "bg-[var(--accent)] text-white"
+                      ? "bg-[var(--accent-600,var(--accent))] text-white"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                   }`}
                 >

@@ -1993,7 +1993,7 @@ export default function Header() {
       )}
       {/* Voice ordering confirmation toast */}
       {voiceResult && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[var(--accent)] text-white px-5 py-3 rounded-xl shadow-[var(--shadow-md)] text-sm font-semibold">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[var(--accent-600,var(--accent))] text-white px-5 py-3 rounded-xl shadow-[var(--shadow-md)] text-sm font-semibold">
           {voiceResult.qty}x {voiceResult.product} agregado al carrito
         </div>
       )}

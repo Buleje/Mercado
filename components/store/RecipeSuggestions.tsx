@@ -219,7 +219,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           {missing.length > 0 && onAddIngredient && (
             <button
               onClick={() => missing.forEach((ing) => onAddIngredient(ing))}
-              className="mt-4 w-full py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-semibold flex items-center justify-center gap-2"
+              className="mt-4 w-full py-2.5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-semibold flex items-center justify-center gap-2"
             >
               <ShoppingCart className="w-4 h-4" />
               Agregar {missing.length} ingrediente{missing.length !== 1 ? "s" : ""} faltante{missing.length !== 1 ? "s" : ""}

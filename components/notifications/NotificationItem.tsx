@@ -196,7 +196,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
                 setCobroLoading(false);
               }}
               disabled={cobroLoading || !cobroMonto || Number(cobroMonto) <= 0}
-              className="px-2.5 py-1.5 rounded-lg bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
+              className="px-2.5 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
             >
               {cobroLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirmar"}
             </button>

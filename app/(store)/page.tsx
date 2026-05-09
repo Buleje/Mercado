@@ -214,7 +214,7 @@ function EarlyAdopterPlaceholder() {
         <div className="mt-10 flex flex-wrap justify-center gap-3">
           <Link
             href="/abrir-tienda"
-            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-7 py-4 text-base font-extrabold shadow-md hover:gap-3 transition-all"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-7 py-4 text-base font-extrabold shadow-md hover:gap-3 transition-all"
           >
             Quiero abrir mi tienda
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.5} />
@@ -474,7 +474,7 @@ function FinalCTA() {
         <div className="mt-12 flex justify-center">
           <Link
             href="/abrir-tienda"
-            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-10 py-5 text-lg font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-10 py-5 text-lg font-extrabold shadow-lg shadow-[var(--accent)]/30 hover:gap-3 hover:shadow-xl transition-all"
           >
             Abrir mi tienda gratis
             <ArrowUpRight

@@ -49,7 +49,7 @@ export default function CookieConsent() {
             <div className="flex items-center gap-2 mt-3">
               <button
                 onClick={accept}
-                className="px-4 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-semibold hover:bg-[var(--accent-600,var(--accent))] transition-colors"
+                className="px-4 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-xs font-semibold hover:bg-[var(--accent-600,var(--accent))] transition-colors"
               >
                 Aceptar
               </button>

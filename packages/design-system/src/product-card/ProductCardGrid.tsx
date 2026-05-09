@@ -186,7 +186,7 @@ export function ProductCardGrid({
                   ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
                   : hasInCart
                     ? cn(
-                        "border-[var(--accent)] bg-[var(--accent)] text-white",
+                        "border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white",
                         "hover:opacity-90 focus-visible:outline-none focus-visible:ring-2",
                         "focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2",
                       )

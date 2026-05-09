@@ -228,7 +228,7 @@ export default function LandingHeader({
               aria-label={t("landing.nav.startStore")}
               className={cn(
                 "group inline-flex items-center gap-2 h-10 px-5 rounded-full",
-                "bg-[var(--accent)] text-white text-sm font-extrabold",
+                "bg-[var(--accent-600,var(--accent))] text-white text-sm font-extrabold",
                 "shadow-md shadow-[var(--accent)]/25",
                 "hover:gap-3 hover:shadow-lg hover:shadow-[var(--accent)]/35 hover:bg-[var(--accent)]/95",
                 "active:scale-[0.98] transition-all duration-200",

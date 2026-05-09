@@ -227,7 +227,7 @@ function OrderCard({
             onClick={onAdvance}
             disabled={advancing}
             title={`Pasar a ${nextStage.label}`}
-            className="flex-1 inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-lg bg-[var(--accent)] text-white text-xs font-extrabold uppercase tracking-wide hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
+            className="flex-1 inline-flex items-center justify-center gap-1 h-9 px-2.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-xs font-extrabold uppercase tracking-wide hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
           >
             {advancing ? (
               <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />

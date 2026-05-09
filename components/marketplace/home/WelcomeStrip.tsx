@@ -116,7 +116,7 @@ export default function WelcomeStrip() {
           )}
         >
           <div className="flex items-center gap-3 min-w-0">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white">
               <UserCircle className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             </span>
             <div className="min-w-0">
@@ -144,7 +144,7 @@ export default function WelcomeStrip() {
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[length:var(--ts-xs)] font-semibold transition-colors",
                   reorderDone
-                    ? "bg-[var(--accent)] text-white"
+                    ? "bg-[var(--accent-600,var(--accent))] text-white"
                     : "bg-[var(--surface-raised)] text-[var(--text-primary)] border border-[var(--rule-base)] hover:border-[var(--accent)]",
                 )}
               >

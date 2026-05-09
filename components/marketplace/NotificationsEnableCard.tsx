@@ -101,7 +101,7 @@ export default function NotificationsEnableCard() {
     if (justEnabled) {
       return (
         <section className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] p-4 flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white shrink-0">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
             <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           </span>
           <div className="flex-1">

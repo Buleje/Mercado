@@ -331,7 +331,7 @@ export default function FridgeScanCard({
       {/* Added */}
       {status === "added" && (
         <div className="px-5 py-8 text-center">
-          <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white mb-4">
+          <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white mb-4">
             <Check className="h-7 w-7" strokeWidth={2.5} aria-hidden />
           </span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">

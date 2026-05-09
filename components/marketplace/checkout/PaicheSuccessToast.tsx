@@ -109,7 +109,7 @@ export default function PaicheSuccessToast({
           <div className="flex items-center gap-2 mb-1">
             <span
               aria-hidden
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-sm"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-sm"
             >
               <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.75} />
             </span>

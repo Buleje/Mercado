@@ -350,7 +350,7 @@ function CategoryPlaceholder({
         className={[
           "h-14 w-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110",
           active
-            ? "bg-[var(--accent)] text-white shadow-md"
+            ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md"
             : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
         ].join(" ")}
       >

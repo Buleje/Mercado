@@ -372,8 +372,8 @@ function MobileStickyBar({
             isOutOfStock
               ? "px-5 py-3 rounded-xl font-semibold text-[length:var(--ts-sm)] text-[var(--text-tertiary)] bg-[var(--surface-sunken)] cursor-not-allowed"
               : added
-              ? "px-5 py-3 rounded-xl font-semibold text-[length:var(--ts-sm)] text-white bg-[var(--accent)] active:scale-95 transition-all"
-              : "px-5 py-3 rounded-xl font-semibold text-[length:var(--ts-sm)] text-white bg-[var(--accent)] hover:opacity-90 active:scale-95 transition-all"
+              ? "px-5 py-3 rounded-xl font-semibold text-[length:var(--ts-sm)] text-white bg-[var(--accent-600,var(--accent))] active:scale-95 transition-all"
+              : "px-5 py-3 rounded-xl font-semibold text-[length:var(--ts-sm)] text-white bg-[var(--accent-600,var(--accent))] hover:opacity-90 active:scale-95 transition-all"
           }
           aria-label={isOutOfStock ? "Agotado" : "Agregar al carrito"}
         >

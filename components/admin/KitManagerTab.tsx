@@ -83,7 +83,7 @@ export default function KitManagerTab() {
       {/* Filter */}
       <div className="flex flex-wrap items-center gap-2">
         {(["todos", "activos", "inactivos"] as const).map(f => (
-          <button key={f} onClick={() => setShowActive(f)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold transition-colors", showActive === f ? "bg-[var(--accent)] text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={f} onClick={() => setShowActive(f)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold transition-colors", showActive === f ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}

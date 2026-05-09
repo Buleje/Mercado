@@ -255,7 +255,7 @@ export default function PartnerDashboard() {
           className="block group rounded-3xl border-2 border-[var(--accent)] bg-gradient-to-br from-[var(--accent-soft)] to-transparent p-5 lg:p-6 transition-transform hover:translate-y-[-2px]"
         >
           <div className="flex items-start gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+            <div className="h-14 w-14 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center shrink-0">
               <PackageIcon className="h-7 w-7" />
             </div>
             <div className="flex-1 min-w-0">

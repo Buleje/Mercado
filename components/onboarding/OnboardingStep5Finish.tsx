@@ -103,7 +103,7 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
       <button
         onClick={onComplete}
         disabled={isCompleting}
-        className="w-full py-4 rounded-xl bg-[var(--accent)] text-white font-extrabold text-lg hover:bg-[var(--accent-dark)] transition-colors shadow-lg shadow-[var(--accent)]/25 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-4 rounded-xl bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-lg hover:bg-[var(--accent-dark)] transition-colors shadow-lg shadow-[var(--accent)]/25 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {isCompleting ? (
           <>

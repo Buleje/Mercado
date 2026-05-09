@@ -335,7 +335,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
                 <div className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors",
                   isActive
-                    ? "bg-[var(--accent)] text-white"
+                    ? "bg-[var(--accent-600,var(--accent))] text-white"
                     : "bg-gray-200 text-gray-400 dark:bg-gray-700",
                   isCurrent && "ring-2 ring-[var(--accent)] ring-offset-2 dark:ring-offset-gray-900",
                 )}>

@@ -70,7 +70,7 @@ function PromoCardItem({
         "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
         mobileHidden ? "hidden sm:block" : "block",
         isAccent
-          ? "bg-[var(--accent)] text-white"
+          ? "bg-[var(--accent-600,var(--accent))] text-white"
           : "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
       ].join(" ")}
     >

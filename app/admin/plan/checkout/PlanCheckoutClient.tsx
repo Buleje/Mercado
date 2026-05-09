@@ -354,7 +354,7 @@ export default function PlanCheckoutClient() {
                             className={cn(
                               "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
                               active
-                                ? "bg-[var(--accent)] text-white"
+                                ? "bg-[var(--accent-600,var(--accent))] text-white"
                                 : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                             )}
                           >
@@ -565,19 +565,19 @@ function PayInstructions({
           </div>
           <ol className="space-y-2 text-sm font-semibold text-[var(--text-primary)]">
             <li className="flex gap-3">
-              <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white text-xs font-black">
+              <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black">
                 1
               </span>
               Pagá <strong>{amount}</strong> con el QR o número
             </li>
             <li className="flex gap-3">
-              <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white text-xs font-black">
+              <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black">
                 2
               </span>
               Apretá &ldquo;Ya pagué&rdquo; abajo. Verificamos en menos de 5 min.
             </li>
             <li className="flex gap-3">
-              <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white text-xs font-black">
+              <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs font-black">
                 3
               </span>
               Tu plan {planLabel} se activa automáticamente.

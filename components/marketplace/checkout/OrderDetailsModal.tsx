@@ -215,7 +215,7 @@ export default function OrderDetailsModal({
             className={cn(
               "inline-flex items-center justify-center gap-2 rounded-full px-7 h-12",
               "text-sm font-bold transition-all",
-              "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90",
+              "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90",
               "shadow-[0_6px_20px_-10px_var(--accent)]",
             )}
           >

@@ -1126,7 +1126,7 @@ export default function PrestamosModule() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
             </div>
-            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors", showFilters ? "bg-[var(--accent)] text-white border-[var(--accent)]" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]")}>
+            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors", showFilters ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]")}>
               <Filter className="h-4 w-4" />
               Filtros {activeFilterCount > 0 && <span className="bg-secondary text-white rounded-full text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5">{activeFilterCount}</span>}
             </button>
@@ -1159,7 +1159,7 @@ export default function PrestamosModule() {
       {(activeTab === "activos" || activeTab === "historial") && !loading && prestamos.length > 0 && (() => {
         const counts = { ACTIVO: prestamos.filter(p => p.status === "ACTIVO").length, PAGADO: prestamos.filter(p => p.status === "PAGADO").length, VENCIDO: prestamos.filter(p => p.status === "VENCIDO").length, CANCELADO: prestamos.filter(p => p.status === "CANCELADO").length };
         const pills = [
-          { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[var(--accent)] text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)]" },
+          { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[var(--accent-600,var(--accent))] text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)]" },
           { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-[var(--accent-soft)] text-white", inactiveClass: "bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30" },
           { id: "PAGADO" as PrestamoStatus, label: "Pagados", count: counts.PAGADO, activeBg: "bg-gray-500 text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]" },
           { id: "VENCIDO" as PrestamoStatus, label: "Vencidos", count: counts.VENCIDO, activeBg: "bg-[var(--data-error-500)] text-white", inactiveClass: "bg-red-50 text-[var(--data-error-700)] border border-red-200" },
@@ -1203,7 +1203,7 @@ export default function PrestamosModule() {
               <Landmark className="h-16 w-16 mb-4 text-[var(--text-tertiary)] mx-auto" />
               <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin préstamos</CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Registra préstamos a clientes con cuotas</p>
-              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent)] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[var(--data-success-500)]">Crear préstamo</button>
+              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent-600,var(--accent))] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-[var(--data-success-500)]">Crear préstamo</button>
             </div>
           ) : (
             <>
@@ -1320,7 +1320,7 @@ export default function PrestamosModule() {
             <button
               onClick={fetchCobros}
               disabled={cobrosLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
             >
               <RefreshCcw className={cn("h-3.5 w-3.5", cobrosLoading && "animate-spin")} />
               Actualizar
@@ -1504,7 +1504,7 @@ export default function PrestamosModule() {
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
                 <>
-                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)]  transition-colors">
+                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
                   <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-[var(--accent-soft)] text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
@@ -2103,7 +2103,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 onClick={handlePagoMultiple}
                                 disabled={payingMultiple}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
                               >
                                 {payingMultiple ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                                 Pagar {selectedCuotaIds.size} cuota{selectedCuotaIds.size > 1 ? "s" : ""} ({formatCurrency(selected.cuotas.filter(c => selectedCuotaIds.has(c.id)).reduce((s, c) => s + c.monto, 0))})
@@ -2114,7 +2114,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   const next = selected.cuotas.find(c => !c.pagadoEn);
                                   if (next) { setPagoCuotaId(next.id); setPagoMonto(String(next.monto)); setPagoError(null); setShowPago(true); }
                                 }}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)]  transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors"
                               >
                                 <DollarSign className="h-4 w-4" /> Pagar siguiente cuota
                               </button>
@@ -2301,7 +2301,7 @@ ${cuotas.map(c => { const row = `<tr>
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -2502,7 +2502,7 @@ ${cuotas.map(c => { const row = `<tr>
                       </button>
                       <button
                         onClick={() => { setCreateError(null); setCreateStep(2); }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)]  transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors"
                       >
                         Siguiente
                         <ChevronRight className="h-4 w-4" />
@@ -2679,7 +2679,7 @@ ${cuotas.map(c => { const row = `<tr>
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent)] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
                       >
                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                         Crear Préstamo

@@ -135,7 +135,7 @@ export default function FrequencyRewardCard({
           className={cn(
             "flex h-8 w-8 items-center justify-center rounded-full shrink-0",
             completed
-              ? "bg-[var(--accent)] text-white"
+              ? "bg-[var(--accent-600,var(--accent))] text-white"
               : "bg-muted dark:bg-muted/50 text-muted-foreground"
           )}
         >

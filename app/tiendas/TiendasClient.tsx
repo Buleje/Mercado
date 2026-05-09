@@ -782,7 +782,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     className={cn(
                       "h-9 w-9 rounded-lg flex items-center justify-center",
                       subCategoryId === null
-                        ? "bg-[var(--accent)] text-white"
+                        ? "bg-[var(--accent-600,var(--accent))] text-white"
                         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                     )}
                   >
@@ -819,7 +819,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                         className={cn(
                           "h-9 w-9 rounded-lg overflow-hidden flex items-center justify-center",
                           active
-                            ? "bg-[var(--accent)] text-white"
+                            ? "bg-[var(--accent-600,var(--accent))] text-white"
                             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                         )}
                       >
@@ -881,7 +881,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     <span
                       className={cn(
                         "h-9 w-9 rounded-lg flex items-center justify-center text-[length:var(--ts-2xs)] font-black tracking-tight",
-                        active ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                        active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                       )}
                     >
                       <MapPin className="h-4 w-4" strokeWidth={2} />
@@ -1028,7 +1028,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
             <div className="flex flex-wrap gap-2.5 shrink-0">
               <Link
                 href="/abrir-tienda"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md transition-all"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md transition-all"
               >
                 <Store className="h-4 w-4" strokeWidth={1.75} />
                 Registrar tienda
@@ -1065,7 +1065,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
             <div className="flex flex-wrap gap-2.5 shrink-0">
               <Link
                 href="/marketplace/repartidor"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md transition-all"
+                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md transition-all"
               >
                 <Bike className="h-4 w-4" strokeWidth={2} />
                 Quiero ser repartidor

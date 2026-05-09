@@ -91,7 +91,7 @@ export function ActionableEmptyState({
             const baseCls = cn(
               "inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
               a.primary
-                ? "bg-[var(--accent)] text-white hover:opacity-90"
+                ? "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90"
                 : "border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
             );
 

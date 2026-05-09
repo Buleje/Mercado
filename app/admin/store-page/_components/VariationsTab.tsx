@@ -724,7 +724,7 @@ function GroupCard({
         <button
           type="button"
           onClick={onAddOption}
-          className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] text-white px-3 py-1.5 text-sm font-bold hover:bg-[var(--accent)]/90"
+          className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent-600,var(--accent))] text-white px-3 py-1.5 text-sm font-bold hover:bg-[var(--accent)]/90"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden /> Opción
         </button>
@@ -888,7 +888,7 @@ function OptionRow({
         <label
           className={`inline-flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-colors ${
             isDefault
-              ? "bg-[var(--accent)] text-white"
+              ? "bg-[var(--accent-600,var(--accent))] text-white"
               : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
           }`}
           title="Pre-seleccionada"

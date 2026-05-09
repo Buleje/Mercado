@@ -342,7 +342,7 @@ function SidebarBadge({ moduleId, count }: { moduleId: string; count: number }) 
     moduleId === "pedidos" ? "bg-[var(--data-error-500)] text-white" :
     moduleId === "inventario" ? "bg-[var(--data-warning-500)] text-white" :
     moduleId === "fiados" ? "bg-[var(--data-warning-500)] text-white" :
-    moduleId === "compras" ? "bg-[var(--accent)] text-white" :
+    moduleId === "compras" ? "bg-[var(--accent-600,var(--accent))] text-white" :
     "bg-gray-500 text-white";
 
   return (
@@ -1079,7 +1079,7 @@ export default function AdminSidebar({
               className={cn(
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 editMode
-                  ? "bg-[var(--accent)] text-white"
+                  ? "bg-[var(--accent-600,var(--accent))] text-white"
                   : "text-[var(--text-secondary)] hover:bg-gray-100 border border-[var(--rule-base)]"
               )}
             >

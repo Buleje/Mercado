@@ -139,7 +139,7 @@ function SubscribableCard({ product }: { product: SubscribableProductMock }) {
               "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all duration-200 ring-1",
               justAdded
                 ? "bg-[var(--data-success-500)] text-white scale-90 ring-[var(--data-success-500)]/30"
-                : "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
+                : "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:scale-105 active:scale-95 shadow-md ring-[var(--accent)]/30",
             )}
           >
             {justAdded ? (

@@ -184,10 +184,10 @@ export function ProductActions({
         className={cn(
           "w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-md hover:shadow-lg",
           added
-            ? "bg-[var(--accent)] text-white"
+            ? "bg-[var(--accent-600,var(--accent))] text-white"
             : isOutOfStock
             ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed border-2 border-[var(--rule-base)] shadow-none hover:shadow-none"
-            : "bg-[var(--accent)] text-white hover:opacity-95"
+            : "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-95"
         )}
         aria-label={isOutOfStock ? "Producto agotado" : "Agregar al carrito"}
       >

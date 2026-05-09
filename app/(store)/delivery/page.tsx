@@ -127,7 +127,7 @@ export default function DeliveryPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg w-full max-w-sm p-6 space-y-5">
           <div className="text-center">
-            <div className="h-16 w-16 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center mx-auto mb-3">
+            <div className="h-16 w-16 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center mx-auto mb-3">
               <Truck className="h-7 w-7" strokeWidth={1.75} aria-hidden />
             </div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">Repartidor</h1>
@@ -149,7 +149,7 @@ export default function DeliveryPage() {
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-[var(--accent)] text-white text-base font-bold hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50 shadow-lg shadow-[var(--accent)]/20"
+            className="w-full py-3.5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-base font-bold hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50 shadow-lg shadow-[var(--accent)]/20"
           >
             {loading ? "Verificando..." : "Entrar"}
           </button>
@@ -162,7 +162,7 @@ export default function DeliveryPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-[var(--accent)] text-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+      <div className="bg-[var(--accent-600,var(--accent))] text-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <Truck className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           <div>
@@ -285,7 +285,7 @@ export default function DeliveryPage() {
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
                       isSuccess
                         ? "bg-[var(--data-success-500)] text-white"
-                        : "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] shadow-lg shadow-[var(--accent)]/20"
+                        : "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] shadow-lg shadow-[var(--accent)]/20"
                     } disabled:opacity-60`}
                   >
                     {isUpdating ? "Marcando..." : isSuccess ? "Entregado" : "Marcar como entregado"}

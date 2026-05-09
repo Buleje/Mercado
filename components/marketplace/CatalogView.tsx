@@ -211,7 +211,7 @@ export default function CatalogView({
             className={cn(
               "inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-semibold whitespace-nowrap border transition-colors shrink-0",
               sort === opt.id
-                ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]"
                 : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
             )}
           >

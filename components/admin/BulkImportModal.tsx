@@ -424,7 +424,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
               type="button"
               onClick={submit}
               disabled={rows.length === 0 || submitting || missingRequired.length > 0}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-bold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
             >
               {submitting ? (
                 <>
@@ -443,7 +443,7 @@ export default function BulkImportModal({ open, onClose, onImported }: Props) {
             <button
               type="button"
               onClick={() => { reset(); }}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-bold hover:opacity-90"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:opacity-90"
             >
               Importar otro archivo
             </button>

@@ -924,7 +924,7 @@ export default function SidebarConfigurator({
           className={cn(
             "rounded-lg py-2.5 w-full font-semibold text-sm transition-all",
             isDirty
-              ? "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] shadow-[0_4px_14px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+              ? "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] shadow-[0_4px_14px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
               : "bg-zinc-800 text-zinc-500 cursor-not-allowed",
           )}
         >

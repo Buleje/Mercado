@@ -127,7 +127,7 @@ export default function AdminInvitationsTab() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-2 h-12 px-5 rounded-xl bg-[var(--accent)] text-white text-sm font-extrabold shadow-md"
+          className="inline-flex items-center gap-2 h-12 px-5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-extrabold shadow-md"
         >
           <UserPlus className="h-5 w-5" />
           Nueva invitación
@@ -220,7 +220,7 @@ export default function AdminInvitationsTab() {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 h-12 px-5 rounded-xl bg-[var(--accent)] text-white text-sm font-extrabold shadow-md disabled:opacity-50"
+              className="inline-flex items-center gap-2 h-12 px-5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-extrabold shadow-md disabled:opacity-50"
             >
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
               Enviar por WhatsApp

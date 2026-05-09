@@ -305,7 +305,7 @@ export default function ChefIACard({
                 className={cn(
                   "w-full inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-bold transition-all active:scale-[0.98]",
                   addedIdx === idx
-                    ? "bg-[var(--accent)] text-white"
+                    ? "bg-[var(--accent-600,var(--accent))] text-white"
                     : "border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
                 )}
               >

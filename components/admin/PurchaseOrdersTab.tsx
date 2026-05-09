@@ -588,7 +588,7 @@ export default function PurchaseOrdersTab() {
                     onClick={() => setRecurringInterval(d)}
                     className={cn(
                       "flex-1 py-2 rounded-xl text-sm font-bold transition-colors",
-                      recurringInterval === d ? "bg-[var(--accent)] text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)]"
+                      recurringInterval === d ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)]"
                     )}
                   >
                     {d} dias
@@ -619,7 +619,7 @@ export default function PurchaseOrdersTab() {
               <button onClick={() => setShowRecurringModal(null)} className="flex-1 py-2.5 rounded-lg bg-gray-100 dark:bg-surface text-sm font-bold text-[var(--text-secondary)]">
                 Cancelar
               </button>
-              <button onClick={() => addRecurringOrder(showRecurringModal)} className="flex-1 py-2.5 rounded-lg bg-[var(--accent)] text-white text-sm font-bold hover:bg-[var(--accent)] transition-colors">
+              <button onClick={() => addRecurringOrder(showRecurringModal)} className="flex-1 py-2.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent)] transition-colors">
                 Guardar
               </button>
             </div>

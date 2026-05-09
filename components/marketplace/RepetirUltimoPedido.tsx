@@ -73,7 +73,7 @@ export default function RepetirUltimoPedido() {
         href={`/marketplace/${order.storeSlug}?repeat=${order.orderId}`}
         className="group flex items-center gap-4 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-4 sm:p-5 hover:border-[var(--accent)] hover:shadow-md transition-all"
       >
-        <div className="shrink-0 inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-sm">
+        <div className="shrink-0 inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-sm">
           <Repeat className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
@@ -94,7 +94,7 @@ export default function RepetirUltimoPedido() {
             </span>
           </div>
         </div>
-        <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-4 py-2 text-sm font-bold group-hover:gap-2 transition-all">
+        <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-2 text-sm font-bold group-hover:gap-2 transition-all">
           Repetir
           <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
         </span>

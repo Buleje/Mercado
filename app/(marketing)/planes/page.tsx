@@ -223,7 +223,7 @@ function PlanCard({ plan }: { plan: Plan }) {
         href={plan.ctaHref}
         className={`mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold transition-all hover:scale-[1.01] ${
           plan.highlight
-            ? "bg-[var(--accent)] text-white shadow-md hover:shadow-lg"
+            ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md hover:shadow-lg"
             : "border-2 border-[var(--rule-strong)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
         }`}
       >

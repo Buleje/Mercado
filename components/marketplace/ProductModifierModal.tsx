@@ -688,7 +688,7 @@ function OptionRow({
           "shrink-0 inline-flex h-7 w-7 items-center justify-center transition-colors",
           isMulti ? "rounded-lg" : "rounded-full",
           isSelected
-            ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/40"
+            ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/40"
             : "border-2 border-[var(--rule-strong)] bg-[var(--surface-canvas)]",
         )}
       >

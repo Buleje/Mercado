@@ -90,7 +90,7 @@ export default function OneClickBuyButton({
         className={cn(
           "w-full py-3.5 rounded-xl font-semibold text-[length:var(--ts-sm)]",
           "flex items-center justify-center gap-2 transition-all active:scale-[0.98]",
-          "bg-[var(--accent)] text-white hover:opacity-90",
+          "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90",
           "disabled:bg-[var(--surface-sunken)] disabled:text-[var(--text-tertiary)]",
           "disabled:cursor-not-allowed",
           className,

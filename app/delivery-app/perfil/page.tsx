@@ -121,7 +121,7 @@ export default function PerfilPage() {
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 space-y-6">
       {/* Hero perfil */}
       <header className="rounded-3xl border-2 border-[var(--rule-base)] bg-gradient-to-br from-[var(--accent-soft)] via-[var(--surface-raised)] to-[var(--surface-raised)] p-5 lg:p-7 flex items-center gap-4 lg:gap-6">
-        <div className="h-16 w-16 lg:h-20 lg:w-20 rounded-3xl bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+        <div className="h-16 w-16 lg:h-20 lg:w-20 rounded-3xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center shrink-0">
           <MotoIcon className="h-9 w-9 lg:h-11 lg:w-11" />
         </div>
         <div className="flex-1 min-w-0">

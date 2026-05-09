@@ -130,7 +130,7 @@ export default function GiftCartBanner() {
 
             {sent ? (
               <div className="p-8 text-center">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white mb-4">
+                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white mb-4">
                   <Heart className="h-7 w-7" strokeWidth={2} aria-hidden />
                 </span>
                 <p className="text-base font-extrabold text-[var(--text-primary)]">

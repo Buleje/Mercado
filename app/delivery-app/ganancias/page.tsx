@@ -105,7 +105,7 @@ export default function GananciasPage() {
               aria-pressed={period === p.id}
               className={`h-11 px-5 rounded-2xl text-sm font-extrabold transition-colors ${
                 period === p.id
-                  ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
+                  ? "bg-[var(--accent-600,var(--accent))] text-white shadow-md shadow-[var(--accent)]/20"
                   : "bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               }`}
             >
@@ -149,7 +149,7 @@ export default function GananciasPage() {
                     )}
                   </p>
                 </div>
-                <div className="h-16 w-16 lg:h-20 lg:w-20 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+                <div className="h-16 w-16 lg:h-20 lg:w-20 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center shrink-0">
                   <CashIcon className="h-9 w-9 lg:h-11 lg:w-11" />
                 </div>
               </div>

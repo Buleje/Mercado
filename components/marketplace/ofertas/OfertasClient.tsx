@@ -196,7 +196,7 @@ function EmptyState() {
           <div className="flex flex-wrap gap-2">
             <Link
               href="/registro"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-4 py-2 text-xs font-bold hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-4 py-2 text-xs font-bold hover:opacity-90 transition-opacity"
             >
               Crear mi tienda
               <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />

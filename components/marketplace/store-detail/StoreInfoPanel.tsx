@@ -85,7 +85,7 @@ export default function StoreInfoPanel({
         <MapPattern />
         {/* Pin con accent */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg ring-4 ring-white/85 dark:ring-gray-950/85 transition-transform duration-300 group-hover/map:scale-110">
+          <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-lg ring-4 ring-white/85 dark:ring-gray-950/85 transition-transform duration-300 group-hover/map:scale-110">
             <MapPin className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </span>
         </div>

@@ -598,7 +598,7 @@ export default function CheckoutEntregaPage() {
                 "transition-all duration-300",
                 "disabled:cursor-wait",
                 geoSuccess
-                  ? "border-2 border-[var(--accent)] bg-[var(--accent)] text-white"
+                  ? "border-2 border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white"
                   : "border-2 border-[var(--accent)]/40 bg-linear-to-br from-[var(--accent-soft)] via-[var(--accent-soft)] to-[var(--surface-raised)] text-[var(--accent)] hover:border-[var(--accent)] hover:shadow-[0_12px_36px_-12px_var(--accent)] hover:-translate-y-0.5",
               )}
             >
@@ -623,7 +623,7 @@ export default function CheckoutEntregaPage() {
                     "relative inline-flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-colors",
                     geoSuccess
                       ? "bg-white text-[var(--accent)]"
-                      : "bg-[var(--accent)] text-white",
+                      : "bg-[var(--accent-600,var(--accent))] text-white",
                   )}
                 >
                   {geoSuccess ? (
@@ -1095,7 +1095,7 @@ export default function CheckoutEntregaPage() {
               className={cn(
                 "group inline-flex w-full items-center justify-center gap-2 rounded-full px-6 h-12",
                 "text-[length:var(--ts-sm)] font-bold tracking-[var(--ls-tight)] transition-all duration-200",
-                "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
+                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
                 "shadow-[0_6px_20px_-10px_var(--accent)]",
                 "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
               )}

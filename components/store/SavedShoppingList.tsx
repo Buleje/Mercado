@@ -143,7 +143,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
             "flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
             creating
               ? "bg-muted dark:bg-muted/50 text-muted-foreground"
-              : "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)]"
+              : "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)]"
           )}
         >
           {creating ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
@@ -216,7 +216,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
               disabled={!newName.trim() || newItems.every((i) => !i.name.trim())}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] disabled:opacity-50 disabled:cursor-not-allowed"
+                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
               <Check className="h-3.5 w-3.5" /> Guardar lista

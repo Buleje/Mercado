@@ -190,7 +190,7 @@ export default function StoreDetailClient({
               <Menu className="h-4 w-4" strokeWidth={2.5} />
               <span className="hidden sm:inline">Categorías</span>
               {activeCategory && (
-                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-black">
+                <span className="inline-flex items-center justify-center h-5 px-1.5 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-black">
                   1
                 </span>
               )}

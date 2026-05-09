@@ -417,7 +417,7 @@ export default function KioskPOS() {
 
                         {/* Qty badge */}
                         {inCart && (
-                          <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-[var(--accent)] text-white text-xs flex items-center justify-center font-bold shadow">
+                          <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-xs flex items-center justify-center font-bold shadow">
                             {inCart.quantity}
                           </div>
                         )}

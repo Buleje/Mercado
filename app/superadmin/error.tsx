@@ -30,7 +30,7 @@ export default function SuperAdminError({
         <div className="flex gap-3 justify-center">
           <button
             onClick={reset}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent)]/90 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-medium hover:bg-[var(--accent)]/90 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             Reintentar

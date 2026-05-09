@@ -5215,7 +5215,7 @@ function OrdenTab() {
             type="button"
             onClick={save}
             disabled={!dirty || saving || rows.length === 0}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-[var(--ts-sm)] font-bold hover:bg-[var(--data-success-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-[var(--ts-sm)] font-bold hover:bg-[var(--data-success-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="h-4 w-4" />
             {saving ? "Guardando..." : "Guardar orden"}
@@ -5323,7 +5323,7 @@ function OrdenTab() {
                   <span className={cn(
                     "h-7 w-7 rounded-full flex items-center justify-center text-[var(--ts-xs)] font-bold tabular-nums shrink-0",
                     isFirst
-                      ? "bg-[var(--accent)] text-white shadow-[0_0_0_2px_var(--accent-soft)]"
+                      ? "bg-[var(--accent-600,var(--accent))] text-white shadow-[0_0_0_2px_var(--accent-soft)]"
                       : "bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)]",
                   )}>
                     {i + 1}
@@ -5491,7 +5491,7 @@ function OrdenTab() {
                                   <span className={cn(
                                     "absolute top-2 left-2 z-10 h-7 w-7 rounded-full flex items-center justify-center text-[var(--ts-xs)] font-black tabular-nums shadow-md",
                                     pIsFirst
-                                      ? "bg-[var(--accent)] text-white shadow-[0_0_0_2px_var(--accent-soft)]"
+                                      ? "bg-[var(--accent-600,var(--accent))] text-white shadow-[0_0_0_2px_var(--accent-soft)]"
                                       : "bg-[var(--surface-canvas)] text-[var(--text-primary)] border border-[var(--rule-base)]",
                                   )}>
                                     {j + 1}
@@ -5549,7 +5549,7 @@ function OrdenTab() {
                                       </div>
                                       {/* Mock carrito — decorativo, replica el CTA del storefront */}
                                       <span
-                                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-md group-hover:scale-110 transition-transform"
+                                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-md group-hover:scale-110 transition-transform"
                                         aria-hidden
                                       >
                                         <ShoppingCart className="h-4 w-4" />

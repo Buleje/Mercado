@@ -21,7 +21,7 @@ const COLOR_MAP: Record<ChipColor, { chip: string; badge: string }> = {
   },
   violet: {
     chip: "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
-    badge: "bg-[var(--accent)] text-white",
+    badge: "bg-[var(--accent-600,var(--accent))] text-white",
   },
   blue: {
     chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",

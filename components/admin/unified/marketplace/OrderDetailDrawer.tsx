@@ -508,7 +508,7 @@ export default function OrderDetailDrawer({
                               "inline-flex items-center justify-center gap-1 h-9 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-colors shrink-0",
                               busy
                                 ? "bg-[var(--rule-base)] text-[var(--text-tertiary)] cursor-not-allowed"
-                                : "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)]",
+                                : "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)]",
                             )}
                           >
                             {assigning === p.id ? (
@@ -548,7 +548,7 @@ export default function OrderDetailDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center gap-1.5 h-11 px-6 rounded-xl bg-[var(--accent)] text-white text-xs font-extrabold uppercase tracking-wider hover:bg-[var(--accent-dark)] transition-colors shadow-sm shadow-[var(--accent)]/30"
+            className="inline-flex items-center justify-center gap-1.5 h-11 px-6 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-xs font-extrabold uppercase tracking-wider hover:bg-[var(--accent-dark)] transition-colors shadow-sm shadow-[var(--accent)]/30"
           >
             Listo
           </button>

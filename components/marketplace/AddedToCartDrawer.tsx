@@ -416,7 +416,7 @@ export function AddedToCartDrawerProvider({
                     className={cn(
                       "w-full inline-flex items-center justify-between gap-2 rounded-2xl px-5 h-14",
                       "text-[length:var(--ts-base)] font-extrabold",
-                      "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30",
+                      "bg-[var(--accent-600,var(--accent))] text-white shadow-lg shadow-[var(--accent)]/30",
                       "hover:bg-[var(--accent)]/90 hover:shadow-xl hover:shadow-[var(--accent)]/40",
                       "active:scale-[0.985] transition-all",
                     )}

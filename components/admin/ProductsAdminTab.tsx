@@ -1102,7 +1102,7 @@ export default function ProductsAdminTab() {
           </button>
           <button
             onClick={() => setShowBulkImport(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
             title="Importar productos en masa con preview y validación"
           >
             <Upload className="h-4 w-4" /> Importar en masa

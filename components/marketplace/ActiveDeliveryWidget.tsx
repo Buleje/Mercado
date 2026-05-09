@@ -146,7 +146,7 @@ export default function ActiveDeliveryWidget({
   const config = STATUS_CONFIG[order.status];
   const toneClasses =
     config.tone === "accent"
-      ? "bg-[var(--accent)] text-white"
+      ? "bg-[var(--accent-600,var(--accent))] text-white"
       : config.tone === "warn"
       ? "bg-[var(--data-warning,_#eab308)] text-white"
       : "bg-[var(--text-primary)] text-[var(--surface-canvas)]";
