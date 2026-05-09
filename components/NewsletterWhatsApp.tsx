@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { MessageCircle, CheckCircle, Gift, Zap, Shield } from "@buleje/design-system/icons";
+import { MessageCircle, CheckCircle, Gift, Zap, Shield, ShieldCheck } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export default function NewsletterWhatsApp() {
@@ -192,7 +192,7 @@ export default function NewsletterWhatsApp() {
                   </button>
 
                   <p className="text-[length:var(--ts-2xs)] text-muted text-center leading-relaxed">
-                    🔒 Solo ofertas y novedades. Puedes cancelar cuando quieras.
+                    <ShieldCheck className="inline w-3.5 h-3.5 mr-1 shrink-0" aria-hidden="true" />Solo ofertas y novedades. Puedes cancelar cuando quieras.
                   </p>
                 </form>
               )}

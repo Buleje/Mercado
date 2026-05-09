@@ -12,7 +12,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { Plus, Minus, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock, LayoutGrid, List } from "@buleje/design-system/icons";
+import { Plus, Minus, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock, LayoutGrid, List, AlertTriangle } from "@buleje/design-system/icons";
 import { ProductBadge, ProductPrice, type ProductBadgeIntent } from "@buleje/design-system";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -985,7 +985,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
 
         {apiError && (
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-[var(--data-warning-500)]/40 text-xs text-[var(--data-warning-700)] dark:text-amber-400">
-            <span>⚠️ No se pudo cargar el catálogo actualizado. Mostrando datos de muestra.</span>
+            <span className="flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />No se pudo cargar el catálogo actualizado. Mostrando datos de muestra.</span>
             <button
               onClick={refetchProducts}
               className="shrink-0 font-bold underline hover:no-underline transition-all"

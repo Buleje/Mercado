@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition, useCallback } from "react";
-import { Package, Truck, CheckCircle2, Clock, X, ChevronDown, ChevronUp, AlertCircle, Star, Printer } from "@buleje/design-system/icons";
+import { Package, Truck, CheckCircle2, Clock, X, ChevronDown, ChevronUp, AlertCircle, Star, Printer, Sparkles } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 type TrackedOrder = {
@@ -250,7 +250,7 @@ export default function OrderProgress() {
             <h3 className="text-xl font-extrabold text-foreground">
               {order.customerName ? `¡Gracias, ${order.customerName}!` : "¡Pedido recibido!"}
             </h3>
-            {order.customerName && <p className="text-xs text-primary font-semibold mt-0.5">Tu pedido está en camino 🎉</p>}
+            {order.customerName && <p className="text-xs text-primary font-semibold mt-0.5 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />Tu pedido está en camino</p>}
             <p className="text-sm text-muted mt-1">
               Pedido <span className="font-bold text-primary">#{order.id.slice(-6)}</span> — Confirmado
             </p>

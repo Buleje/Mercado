@@ -769,7 +769,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             })()}
             {priceHistory.length === 1 && (
               <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
-                <p className="text-xs text-gray-400 text-center">📊 Precio estable — sin variaciones recientes</p>
+                <p className="text-xs text-gray-400 text-center flex items-center justify-center gap-1"><TrendingUp className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> Precio estable — sin variaciones recientes</p>
               </div>
             )}
           </div>

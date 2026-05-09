@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { ChevronRight, Package } from "@buleje/design-system/icons";
+import { ChevronRight, Package, BarChart3, Clock } from "@buleje/design-system/icons";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -126,9 +126,11 @@ export default function LastOrderBanner() {
                       ? "bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-400"
                       : "bg-emerald-100 dark:bg-emerald-900/30 text-[var(--data-success-700)] dark:text-emerald-400"
                   )}>
-                    {daysSince >= avgFrequency
-                      ? `⏰ Sueles pedir cada ~${avgFrequency}d — ¡Toca reordenar!`
-                      : `📊 Pides cada ~${avgFrequency} días`}
+                    {daysSince >= avgFrequency ? (
+                      <><Clock className="inline w-3 h-3 mr-0.5 shrink-0" aria-hidden="true" />{`Sueles pedir cada ~${avgFrequency}d — ¡Toca reordenar!`}</>
+                    ) : (
+                      <><BarChart3 className="inline w-3 h-3 mr-0.5 shrink-0" aria-hidden="true" />{`Pides cada ~${avgFrequency} días`}</>
+                    )}
                   </span>
                 )}
               </div>

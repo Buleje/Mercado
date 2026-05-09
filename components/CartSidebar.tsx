@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, startTransition, useCallback } from "react
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
-import { X, Plus, Minus, Trash2, ShoppingCart, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck, Gift, Clock, Star } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingCart, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck, Gift, Clock, Star, Cake } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { useSettings } from "@/contexts/settings-context";
@@ -428,7 +428,7 @@ export default function CartSidebar() {
                   if (customer.birthday !== today) return null;
                   return (
                     <div className="mx-1 mb-2 flex items-center gap-2.5 rounded-xl bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800/30 px-3 py-2.5">
-                      <span className="text-xl">🎂</span>
+                      <Cake className="w-5 h-5 text-pink-500 shrink-0" aria-hidden="true" />
                       <div>
                         <p className="text-xs font-bold text-pink-700 dark:text-pink-300">¡Feliz cumpleaños, {customer.name?.split(" ")[0]}!</p>
                         <p className="text-[length:var(--ts-2xs)] text-pink-500 dark:text-pink-400">Tienes 10% de descuento hoy — aplica automático al pagar</p>

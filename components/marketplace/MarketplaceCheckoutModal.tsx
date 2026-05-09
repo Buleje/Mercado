@@ -1202,7 +1202,7 @@ export default function MarketplaceCheckoutModal({
 
                     {/* Summary: customer data */}
                     <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-4 space-y-2">
-                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400">📍 Entrega</p>
+                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0" aria-hidden="true" /> Entrega</p>
                       <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-sm">
                         <span className="text-gray-500">Nombre</span>
                         <span className="font-medium text-gray-900 dark:text-white">{name}</span>
