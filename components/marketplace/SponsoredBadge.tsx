@@ -27,7 +27,7 @@ export default function SponsoredBadge({ className }: Props) {
       <span
         role="note"
         aria-label="Producto patrocinado"
-        className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide cursor-help select-none"
+        className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-400 dark:text-gray-500 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide cursor-help select-none"
       >
         Patrocinado
       </span>

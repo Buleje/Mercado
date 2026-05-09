@@ -137,7 +137,7 @@ export default function ProductPickerModal({
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" />
@@ -161,7 +161,7 @@ export default function ProductPickerModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               disabled={disabled}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition disabled:opacity-50"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-[var(--surface-alt)] dark:bg-gray-950 text-sm text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition disabled:opacity-50"
             />
             {loading && (
               <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] animate-spin" />
@@ -196,10 +196,10 @@ export default function ProductPickerModal({
                         "w-full flex items-center gap-3 px-5 py-3 text-left transition-colors",
                         already || disabled
                           ? "cursor-not-allowed opacity-50"
-                          : "hover:bg-gray-50 dark:hover:bg-gray-800",
+                          : "hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800",
                       )}
                     >
-                      <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                      <div className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)] dark:bg-gray-800">
                         {it.product.image ? (
                           <Image
                             src={it.product.image}

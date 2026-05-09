@@ -25,7 +25,7 @@ const TESTIMONIALS = [
 
 export default function GiftCardsTestimonials() {
   return (
-    <section className="border-b border-gray-100 bg-gray-50/50 py-14 dark:border-gray-800 dark:bg-gray-950">
+    <section className="border-b border-gray-100 bg-[var(--surface-alt)]/50 py-14 dark:border-gray-800 dark:bg-gray-950">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="mb-8 max-w-2xl">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">

@@ -109,7 +109,7 @@ export default function OfertasFlash() {
               </span>
 
               {/* Ilustracion fallback (no fotos stock) */}
-              <div className="aspect-square bg-gray-50 dark:bg-gray-950 flex items-center justify-center text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors border-b border-gray-100 dark:border-gray-800">
+              <div className="aspect-square bg-[var(--surface-alt)] dark:bg-gray-950 flex items-center justify-center text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors border-b border-gray-100 dark:border-gray-800">
                 <Ill size={80} strokeWidth={1.5} />
               </div>
 

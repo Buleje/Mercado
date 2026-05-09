@@ -53,8 +53,8 @@ interface Props {
 const STATUS_CONFIG: Record<BoostStatus, { label: string; className: string }> = {
   active: { label: "Activo", className: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400" },
   paused: { label: "Pausado", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400" },
-  cancelled: { label: "Cancelado", className: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-gray-400" },
-  expired: { label: "Expirado", className: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-gray-400" },
+  cancelled: { label: "Cancelado", className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-gray-400" },
+  expired: { label: "Expirado", className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-gray-400" },
   scheduled: { label: "Programado", className: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-950/40 dark:text-emerald-400" },
 };
 
@@ -169,7 +169,7 @@ function BoostCard({
           { icon: MousePointerClick, label: "Clicks", value: boost.clicks.toLocaleString("es-PE") },
           { icon: ShoppingCart, label: "Ventas", value: boost.conversions.toLocaleString("es-PE") },
         ].map(({ icon: Icon, label, value }) => (
-          <div key={label} className="text-center rounded-xl bg-gray-50 dark:bg-gray-800 py-2">
+          <div key={label} className="text-center rounded-xl bg-[var(--surface-alt)] dark:bg-gray-800 py-2">
             <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)] mx-auto mb-0.5" />
             <p className="text-xs font-bold text-[var(--text-primary)] dark:text-white">{value}</p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-gray-500">{label}</p>
@@ -283,7 +283,7 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
           {loading && (
             <div className="space-y-3">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="h-24 rounded-2xl bg-gray-50 dark:bg-gray-800 animate-pulse" />
+                <div key={i} className="h-24 rounded-2xl bg-[var(--surface-alt)] dark:bg-gray-800 animate-pulse" />
               ))}
             </div>
           )}
@@ -345,7 +345,7 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
                     {boosts.map((b) => {
                       const status = STATUS_CONFIG[b.status] ?? STATUS_CONFIG.expired;
                       return (
-                        <tr key={b.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                        <tr key={b.id} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-gray-800/30 transition-colors">
                           <td className="py-3 pr-4">
                             <p className="font-semibold text-[var(--text-primary)] dark:text-white line-clamp-1 max-w-36">
                               {b.productName}

@@ -74,7 +74,7 @@ function SubscribableCard({ product }: { product: SubscribableProductMock }) {
       )}
     >
       <Link href={href} className="block">
-        <div className="relative aspect-square bg-gray-50 dark:bg-gray-800 overflow-hidden">
+        <div className="relative aspect-square bg-[var(--surface-alt)] dark:bg-gray-800 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={product.image}

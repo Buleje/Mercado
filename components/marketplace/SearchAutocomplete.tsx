@@ -309,7 +309,7 @@ export default function SearchAutocomplete({
               inputRef.current?.focus();
             }}
             aria-label="Limpiar búsqueda"
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
           >
             <X className="h-4 w-4 text-[var(--text-tertiary)]" />
           </button>
@@ -323,7 +323,7 @@ export default function SearchAutocomplete({
               "absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors",
               isListening
                 ? "text-[var(--data-error-500)] animate-pulse hover:bg-red-50 dark:hover:bg-red-900/20"
-                : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-gray-800",
+                : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800",
             )}
           >
             {isListening ? (
@@ -364,7 +364,7 @@ export default function SearchAutocomplete({
 
                   return (
                     <div key={type} className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-                      <div aria-hidden="true" className="px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] dark:text-gray-500 flex items-center gap-1.5 bg-gray-50/70 dark:bg-gray-900/70">
+                      <div aria-hidden="true" className="px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] dark:text-gray-500 flex items-center gap-1.5 bg-[var(--surface-alt)]/70 dark:bg-gray-900/70">
                         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                         {TYPE_META[type].title}
                       </div>
@@ -383,10 +383,10 @@ export default function SearchAutocomplete({
                               "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors",
                               active
                                 ? "bg-primary/10 dark:bg-primary/15"
-                                : "hover:bg-gray-50 dark:hover:bg-gray-800",
+                                : "hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800",
                             )}
                           >
-                            <div className="h-9 w-9 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center shrink-0">
+                            <div className="h-9 w-9 rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800 overflow-hidden flex items-center justify-center shrink-0">
                               {item.image ? (
                                 <Image
                                   src={item.image}
@@ -424,7 +424,7 @@ export default function SearchAutocomplete({
                 <button
                   onMouseDown={handleSubmitRaw}
                   aria-label={`Buscar "${value.trim()}" en el marketplace`}
-                  className="w-full flex items-center justify-between rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="w-full flex items-center justify-between rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-3 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors"
                 >
                   <span className="text-sm text-[var(--text-secondary)] dark:text-gray-300">
                     Buscar &ldquo;<strong className="text-[var(--text-primary)] dark:text-white">{value.trim()}</strong>&rdquo;

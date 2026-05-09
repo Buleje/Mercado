@@ -84,7 +84,7 @@ export default function ComprarClient() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50/60 py-8 dark:bg-gray-950 sm:py-12">
+    <main className="min-h-screen bg-[var(--surface-alt)]/60 py-8 dark:bg-gray-950 sm:py-12">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <header className="mb-6">
           <Link

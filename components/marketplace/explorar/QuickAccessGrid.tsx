@@ -141,7 +141,7 @@ export default function QuickAccessGrid() {
                 {box.illustrations.map((Ill, idx) => (
                   <div
                     key={idx}
-                    className="aspect-square rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors"
+                    className="aspect-square rounded-lg bg-[var(--surface-alt)] dark:bg-gray-950 border border-gray-100 dark:border-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors"
                   >
                     <Ill size={56} strokeWidth={1.5} />
                   </div>

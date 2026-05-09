@@ -20,7 +20,7 @@ export function PaymentMethodSelector({ paymentMethod, onSelect }: PaymentMethod
         }`}
       >
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-          paymentMethod === "efectivo" ? "bg-primary/10 text-primary" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+          paymentMethod === "efectivo" ? "bg-primary/10 text-primary" : "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-400"
         }`}>
           <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -47,7 +47,7 @@ export function PaymentMethodSelector({ paymentMethod, onSelect }: PaymentMethod
         }`}
       >
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-          paymentMethod === "yape" ? "bg-[var(--brand-yape)]/10 text-[var(--brand-yape)]" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+          paymentMethod === "yape" ? "bg-[var(--brand-yape)]/10 text-[var(--brand-yape)]" : "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-400"
         }`}>
           <span className="text-lg font-black">Y</span>
         </div>

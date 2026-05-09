@@ -80,7 +80,7 @@ export default function StepDestinatario({
                   className={[
                     "flex items-start gap-3 rounded-xl border p-4 text-left transition-colors",
                     isActive
-                      ? "border-gray-900 bg-gray-50 dark:border-white dark:bg-gray-800"
+                      ? "border-gray-900 bg-[var(--surface-alt)] dark:border-white dark:bg-gray-800"
                       : "border-gray-200 bg-white hover:border-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-600",
                   ].join(" ")}
                 >
@@ -132,7 +132,7 @@ export default function StepDestinatario({
           type="button"
           onClick={onNext}
           disabled={!canContinue}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 dark:disabled:bg-gray-700"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-[var(--rule-base)] dark:bg-white dark:text-gray-900 dark:hover:bg-[var(--surface-sunken)] dark:disabled:bg-gray-700"
         >
           Continuar
         </button>

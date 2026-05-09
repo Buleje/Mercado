@@ -106,7 +106,7 @@ export default function ExplorarPorOcasion() {
               key={oc.id}
               className="group flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 sm:p-6 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all duration-200"
             >
-              <div className="mb-4 flex h-36 sm:h-40 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors">
+              <div className="mb-4 flex h-36 sm:h-40 items-center justify-center rounded-lg bg-[var(--surface-alt)] dark:bg-gray-950 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors">
                 <Ill size={120} strokeWidth={1.5} />
               </div>
 

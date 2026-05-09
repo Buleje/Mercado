@@ -178,7 +178,7 @@ export default function ProductQuickView({ product, onClose }: ProductQuickViewP
                   <div className="flex items-center rounded-xl ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden">
                     <button
                       onClick={() => setQty(Math.max(1, qty - 1))}
-                      className="h-11 w-11 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      className="h-11 w-11 flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors"
                     >
                       <Minus className="h-4 w-4 text-gray-600" />
                     </button>
@@ -187,7 +187,7 @@ export default function ProductQuickView({ product, onClose }: ProductQuickViewP
                     </span>
                     <button
                       onClick={() => setQty(Math.min(product.stock || 99, qty + 1))}
-                      className="h-11 w-11 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      className="h-11 w-11 flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors"
                     >
                       <Plus className="h-4 w-4 text-gray-600" />
                     </button>

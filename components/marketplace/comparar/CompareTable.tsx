@@ -27,7 +27,7 @@ const ROWS: RowConfig[] = [
     key: "image",
     label: "",
     render: (p) => (
-      <div className="relative aspect-square w-full max-w-[180px] mx-auto bg-gray-50 dark:bg-gray-950 rounded-xl overflow-hidden">
+      <div className="relative aspect-square w-full max-w-[180px] mx-auto bg-[var(--surface-alt)] dark:bg-gray-950 rounded-xl overflow-hidden">
         {p.image ? (
           <Image
             src={p.image}
@@ -198,9 +198,9 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
         <div className="relative overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
           <table className="w-full border-collapse">
             {/* Header sticky: actions */}
-            <thead className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-950">
+            <thead className="sticky top-0 z-20 bg-[var(--surface-alt)] dark:bg-gray-950">
               <tr>
-                <th className="sticky left-0 z-30 bg-gray-50 dark:bg-gray-950 min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 border-r border-gray-200 dark:border-gray-800">
+                <th className="sticky left-0 z-30 bg-[var(--surface-alt)] dark:bg-gray-950 min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 border-r border-gray-200 dark:border-gray-800">
                   Comparando
                 </th>
                 {products.map((p) => (
@@ -210,7 +210,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                   >
                     <button
                       onClick={() => onRemove(p.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-[var(--text-secondary)] dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-danger transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 hover:text-danger transition-colors"
                       aria-label={`Quitar ${p.name} de la comparación`}
                     >
                       <X className="h-3.5 w-3.5" />
@@ -229,7 +229,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                 >
                   <th
                     scope="row"
-                    className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-950 px-4 py-4 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 align-top"
+                    className="sticky left-0 z-10 bg-[var(--surface-alt)] dark:bg-gray-950 px-4 py-4 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 align-top"
                   >
                     {row.label}
                   </th>
@@ -248,7 +248,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
               <tr className="border-t border-gray-200 dark:border-gray-800">
                 <th
                   scope="row"
-                  className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-950 px-4 py-5 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 align-top"
+                  className="sticky left-0 z-10 bg-[var(--surface-alt)] dark:bg-gray-950 px-4 py-5 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 align-top"
                 >
                   Acciones
                 </th>
@@ -263,7 +263,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                       className={cn(
                         "w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors",
                         p.stock !== null && p.stock <= 0
-                          ? "bg-gray-100 dark:bg-gray-800 text-[var(--text-tertiary)] cursor-not-allowed"
+                          ? "bg-[var(--surface-sunken)] dark:bg-gray-800 text-[var(--text-tertiary)] cursor-not-allowed"
                           : "bg-primary text-white hover:bg-primary-dark",
                       )}
                     >
@@ -286,7 +286,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
             className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden"
           >
             <div className="flex items-start gap-3 p-4">
-              <div className="relative h-24 w-24 shrink-0 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-950">
+              <div className="relative h-24 w-24 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-alt)] dark:bg-gray-950">
                 {p.image ? (
                   <Image src={p.image} alt={p.name} fill sizes="96px" className="object-cover" />
                 ) : (
@@ -329,7 +329,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
               </div>
               <button
                 onClick={() => onRemove(p.id)}
-                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-danger hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-danger hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors"
                 aria-label={`Quitar ${p.name}`}
               >
                 <X className="h-4 w-4" />
@@ -389,7 +389,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                 className={cn(
                   "w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors",
                   p.stock !== null && p.stock <= 0
-                    ? "bg-gray-100 dark:bg-gray-800 text-[var(--text-tertiary)] cursor-not-allowed"
+                    ? "bg-[var(--surface-sunken)] dark:bg-gray-800 text-[var(--text-tertiary)] cursor-not-allowed"
                     : "bg-primary text-white hover:bg-primary-dark",
                 )}
               >

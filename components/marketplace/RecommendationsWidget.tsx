@@ -42,10 +42,10 @@ function SkeletonCard() {
       className="animate-pulse rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900"
       aria-hidden="true"
     >
-      <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
+      <div className="aspect-square bg-[var(--rule-soft)] dark:bg-gray-700" />
       <div className="p-2 space-y-1.5">
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+        <div className="h-3 bg-[var(--rule-soft)] dark:bg-gray-700 rounded w-3/4" />
+        <div className="h-3 bg-[var(--rule-soft)] dark:bg-gray-700 rounded w-1/2" />
       </div>
     </div>
   );
@@ -90,7 +90,7 @@ export function RecommendationsWidget({
   if (loading) {
     return (
       <section aria-label="Cargando recomendaciones" className="mt-8">
-        <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4" />
+        <div className="h-6 w-48 bg-[var(--rule-soft)] dark:bg-gray-700 rounded animate-pulse mb-4" />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <SkeletonCard key={i} />

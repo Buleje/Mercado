@@ -86,18 +86,18 @@ function StarRating({ rating, count }: { rating: number | null; count: number })
 
 function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800 ${className}`} />
+    <div className={`animate-pulse rounded-lg bg-[var(--rule-soft)] dark:bg-gray-800 ${className}`} />
   );
 }
 
 function ProductCardSkeleton() {
   return (
     <div className="animate-pulse rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <div className="aspect-[1/1] rounded-t-xl bg-gray-200 dark:bg-gray-800" />
+      <div className="aspect-[1/1] rounded-t-xl bg-[var(--rule-soft)] dark:bg-gray-800" />
       <div className="p-3 space-y-2">
-        <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-800" />
-        <div className="h-3 w-1/2 rounded bg-gray-200 dark:bg-gray-800" />
-        <div className="h-9 w-full rounded-xl bg-gray-200 dark:bg-gray-800" />
+        <div className="h-4 w-3/4 rounded bg-[var(--rule-soft)] dark:bg-gray-800" />
+        <div className="h-3 w-1/2 rounded bg-[var(--rule-soft)] dark:bg-gray-800" />
+        <div className="h-9 w-full rounded-xl bg-[var(--rule-soft)] dark:bg-gray-800" />
       </div>
     </div>
   );
@@ -490,7 +490,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="min-h-9 rounded-xl px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+              className="min-h-9 rounded-xl px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:text-gray-400 dark:hover:bg-gray-800"
             >
               Cancelar
             </button>
@@ -511,10 +511,10 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
           {[1, 2, 3].map((i) => (
             <div key={i} className="animate-pulse rounded-xl border border-gray-200 p-4 dark:border-gray-700">
               <div className="flex gap-3">
-                <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-800" />
+                <div className="h-8 w-8 rounded-full bg-[var(--rule-soft)] dark:bg-gray-800" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-800" />
-                  <div className="h-3 w-full rounded bg-gray-200 dark:bg-gray-800" />
+                  <div className="h-4 w-32 rounded bg-[var(--rule-soft)] dark:bg-gray-800" />
+                  <div className="h-3 w-full rounded bg-[var(--rule-soft)] dark:bg-gray-800" />
                 </div>
               </div>
             </div>
@@ -701,7 +701,7 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
               </a>
               <a
                 href="tel:+51000000000"
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                 aria-label={`Llamar a ${store.name}`}
               >
                 <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1189,7 +1189,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
                 className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
                   catFilter === ""
                     ? "bg-primary text-white shadow-md shadow-primary/25"
-                    : "border border-gray-200 bg-white text-[var(--text-secondary)] hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    : "border border-gray-200 bg-white text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                 }`}
               >
                 Todos
@@ -1202,7 +1202,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
                   className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold capitalize transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
                     catFilter === c
                       ? "bg-primary text-white shadow-md shadow-primary/25"
-                      : "border border-gray-200 bg-white text-[var(--text-secondary)] hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                      : "border border-gray-200 bg-white text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                   }`}
                 >
                   {c}
@@ -1216,7 +1216,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-[var(--text-secondary)] dark:text-gray-400">
             {loadingProducts ? (
-              <span className="inline-block h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+              <span className="inline-block h-4 w-24 animate-pulse rounded bg-[var(--rule-soft)] dark:bg-gray-700" />
             ) : (
               <>
                 {products.length}{" "}

@@ -134,7 +134,7 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
             type="button"
             onClick={onNext}
             disabled={!canContinue}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 dark:disabled:bg-gray-700"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-[var(--rule-base)] dark:bg-white dark:text-gray-900 dark:hover:bg-[var(--surface-sunken)] dark:disabled:bg-gray-700"
           >
             Continuar
           </button>
@@ -144,7 +144,7 @@ export default function StepMontoDiseno({ amount, design, onChange, onNext }: Pr
       {/* Sidebar preview sticky */}
       <aside className="space-y-3 md:sticky md:top-24 md:self-start">
         <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm dark:border-gray-800">
-          <div className="aspect-[16/10] bg-gray-50 dark:bg-gray-950">
+          <div className="aspect-[16/10] bg-[var(--surface-alt)] dark:bg-gray-950">
             <GiftCardArtwork design={design} className="h-full w-full" />
           </div>
           <div className="border-t border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">

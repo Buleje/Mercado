@@ -13,7 +13,7 @@ interface CashCalculatorProps {
 
 export function CashCalculator({ cashAmount, onCashAmountChange, finalTotal }: CashCalculatorProps) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-2">
+    <div className="rounded-xl border border-gray-200 bg-[var(--surface-alt)] p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-2">
       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">
         Calculadora de vuelto
       </p>
@@ -42,7 +42,7 @@ export function CashCalculator({ cashAmount, onCashAmountChange, finalTotal }: C
           <button
             key={v}
             onClick={() => onCashAmountChange(String(v))}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-700 transition-colors"
           >
             S/{v}
           </button>

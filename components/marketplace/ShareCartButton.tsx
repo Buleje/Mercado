@@ -85,7 +85,7 @@ export default function ShareCartButton() {
         className={[
           "flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all",
           isEmpty
-            ? "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-600"
+            ? "cursor-not-allowed border-gray-200 bg-[var(--surface-alt)] text-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-600"
             : status === "copied"
             ? "border-emerald-300 bg-emerald-50 text-[var(--data-success-700)] dark:border-[var(--data-success-500)]/50 dark:bg-emerald-950/30 dark:text-emerald-400"
             : status === "error"

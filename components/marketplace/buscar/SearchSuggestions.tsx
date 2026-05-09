@@ -246,7 +246,7 @@ function SearchHistory() {
               type="button"
               onClick={() => removeItem(term)}
               aria-label={`Borrar "${term}" del historial`}
-              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[var(--text-primary)] dark:hover:text-gray-200"
+              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 hover:text-[var(--text-primary)] dark:hover:text-gray-200"
             >
               <X className="h-3 w-3" strokeWidth={2.5} aria-hidden />
             </button>
@@ -270,7 +270,7 @@ function CategoryGrid() {
               href={s.href}
               className="group flex flex-col items-center gap-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-5 text-center hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all duration-200"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 text-[var(--text-primary)] dark:text-gray-200 group-hover:text-primary transition-colors">
+              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--surface-alt)] dark:bg-gray-950 border border-gray-100 dark:border-gray-800 text-[var(--text-primary)] dark:text-gray-200 group-hover:text-primary transition-colors">
                 <SIcon
                   className="h-[18px] w-[18px]"
                   strokeWidth={1.5}

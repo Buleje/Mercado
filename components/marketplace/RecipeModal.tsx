@@ -130,7 +130,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
           {(() => {
             const Illustration = RECIPE_ILLUSTRATIONS[recipe.id];
             return (
-              <div className="relative flex items-center gap-5 p-6 shrink-0 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+              <div className="relative flex items-center gap-5 p-6 shrink-0 bg-[var(--surface-alt)] dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
                 {Illustration && (
                   <div className="h-20 w-20 shrink-0 flex items-center justify-center rounded-xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800">
                     <Illustration
@@ -162,7 +162,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                     </span>
                   </div>
                 </div>
-                <Dialog.Close className="absolute top-4 right-4 h-8 w-8 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center">
+                <Dialog.Close className="absolute top-4 right-4 h-8 w-8 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-colors flex items-center justify-center">
                   <X className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-gray-300" strokeWidth={1.75} />
                   <span className="sr-only">Cerrar</span>
                 </Dialog.Close>
@@ -183,7 +183,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                   {checkedIng.size}/{recipe.ingredients.length}
                 </span>
               </div>
-              <div className="h-1 w-full rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden mb-3">
+              <div className="h-1 w-full rounded-full bg-[var(--rule-soft)] dark:bg-gray-800 overflow-hidden mb-3">
                 <div
                   className="h-full bg-linear-to-r from-primary to-[var(--data-success-500)] transition-all duration-500"
                   style={{ width: `${progress}%` }}
@@ -267,7 +267,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                           "h-8 w-8 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0",
                           isActive
                             ? "bg-primary text-white"
-                            : "bg-gray-100 dark:bg-gray-800 text-[var(--text-secondary)]",
+                            : "bg-[var(--surface-sunken)] dark:bg-gray-800 text-[var(--text-secondary)]",
                         )}
                       >
                         {i + 1}

@@ -74,7 +74,7 @@ export default function SearchEmptyState({ query }: SearchEmptyStateProps) {
       <ul className="mt-5 space-y-1 text-sm text-gray-500 dark:text-gray-400">
         <li className="flex items-center gap-2 justify-center">
           <span
-            className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0"
+            className="h-1.5 w-1.5 rounded-full bg-[var(--rule-base)] dark:bg-gray-700 flex-shrink-0"
             aria-hidden="true"
           />
           Prueba con una palabra más corta: &ldquo;arroz&rdquo; en lugar de
@@ -82,14 +82,14 @@ export default function SearchEmptyState({ query }: SearchEmptyStateProps) {
         </li>
         <li className="flex items-center gap-2 justify-center">
           <span
-            className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0"
+            className="h-1.5 w-1.5 rounded-full bg-[var(--rule-base)] dark:bg-gray-700 flex-shrink-0"
             aria-hidden="true"
           />
           Revisa que no haya errores de ortografía
         </li>
         <li className="flex items-center gap-2 justify-center">
           <span
-            className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0"
+            className="h-1.5 w-1.5 rounded-full bg-[var(--rule-base)] dark:bg-gray-700 flex-shrink-0"
             aria-hidden="true"
           />
           Busca el nombre genérico del producto
@@ -110,7 +110,7 @@ export default function SearchEmptyState({ query }: SearchEmptyStateProps) {
                 href={cat.href}
                 className="group flex flex-col items-center gap-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 text-center hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all duration-200"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-alt)] dark:bg-gray-950 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors">
                   <CatIcon
                     className="h-4 w-4"
                     strokeWidth={1.5}

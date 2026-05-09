@@ -136,12 +136,12 @@ const STATE_STYLES: Record<Status["state"], { dot: string; text: string; ring: s
     ring: "ring-amber-200 dark:ring-amber-900",
   },
   "closed-opens-today": {
-    dot: "bg-gray-400",
+    dot: "bg-[var(--rule-mid)]",
     text: "text-gray-600 dark:text-gray-400",
     ring: "ring-gray-200 dark:ring-gray-700",
   },
   "closed-opens-tomorrow": {
-    dot: "bg-gray-400",
+    dot: "bg-[var(--rule-mid)]",
     text: "text-gray-600 dark:text-gray-400",
     ring: "ring-gray-200 dark:ring-gray-700",
   },

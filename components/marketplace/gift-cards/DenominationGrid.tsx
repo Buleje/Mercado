@@ -19,7 +19,7 @@ export default function DenominationGrid({ selectedDesign = "general" }: Props) 
   return (
     <section
       id="denominaciones"
-      className="border-b border-gray-100 bg-gray-50/50 py-14 dark:border-gray-800 dark:bg-gray-950"
+      className="border-b border-gray-100 bg-[var(--surface-alt)]/50 py-14 dark:border-gray-800 dark:bg-gray-950"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="mb-8 max-w-2xl">
@@ -67,8 +67,8 @@ export default function DenominationGrid({ selectedDesign = "general" }: Props) 
                     className={[
                       "mt-4 inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
                       isCustomValid
-                        ? "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-                        : "cursor-not-allowed bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-gray-600",
+                        ? "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-[var(--surface-sunken)]"
+                        : "cursor-not-allowed bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-gray-600",
                     ].join(" ")}
                   >
                     <Plus className="h-3.5 w-3.5" aria-hidden="true" />
