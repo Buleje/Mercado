@@ -96,10 +96,21 @@ export const InventoryMovementsDB = {
       include: { product: { select: { id: true, name: true } } },
     })).map(mapInventoryMovement);
   },
-  async getByProduct(productId: number): Promise<DbInventoryMovement[]> {
+  /**
+   * Round 28 P0 (DB profundo audit): firma cambió de `(productId)` a
+   * `(tenantId, productId, limit?)`. Antes:
+   *   - Sin `tenantId` filter → cross-tenant leak silencioso. Producto ID 42
+   *     del tenant A y producto ID 42 del tenant B comparten Int autoinc;
+   *     los movimientos de ambos aparecían mezclados.
+   *   - Sin `take` → producto con 50k movimientos = OOM en Vercel Fluid.
+   * Caller (`app/api/inventory-movements/route.ts`) actualizado a la nueva
+   * firma. Si aparece un caller legacy con 1 argumento, romperá en compile.
+   */
+  async getByProduct(tenantId: string, productId: number, limit = 500): Promise<DbInventoryMovement[]> {
     return (await prisma.inventoryMovement.findMany({
-      where: { productId },
+      where: { tenantId, productId },
       orderBy: { createdAt: "desc" },
+      take: limit,
       include: { product: { select: { id: true, name: true } } },
     })).map(mapInventoryMovement);
   },

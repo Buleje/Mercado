@@ -44,9 +44,12 @@ export const DashboardDB = {
       }),
 
       // 2. Orders — items necesarios para cost/revenue calc
+      // Round 28 P0 (DB profundo audit): faltaba `deletedAt: null`. Sin él
+      // el dashboard sumaba revenue de pedidos cancelados/eliminados — KPIs
+      // de revenue/ticket promedio inflados.
       // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
       prisma.order.findMany({
-        where: { tenantId },
+        where: { tenantId, deletedAt: null },
         select: {
           id: true,
           customerName: true, customerPhone: true,
@@ -151,9 +154,11 @@ export const DashboardDB = {
 
       // 8. Reviews — todos los campos son scalars, sin relations
       // Round 7 fix: cap a 1000. Tenants con muchos reviews evitan OOM en dashboard load.
+      // Round 28 P0 (DB profundo audit): faltaba `deletedAt: null` — reseñas
+      // soft-deleted por moderación volvían a aparecer en KPIs.
       // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
       prisma.review.findMany({
-        where: { tenantId },
+        where: { tenantId, deletedAt: null },
         select: {
           id: true, name: true, location: true,
           text: true, rating: true, phone: true,

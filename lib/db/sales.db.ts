@@ -156,14 +156,20 @@ export const SalesDB = {
 export const CashRegistersDB = {
   async getAll(tenantId: string): Promise<DbCashRegister[]> {
     const where: Record<string, unknown> = { tenantId };
-    return (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" } } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+    // Round 28 P1 (DB profundo audit): movements include sin take traía 10k+
+    // movimientos de cajas con 6 meses de operación → ~50-200 MB en memoria
+    // por tenant activo, OOM potencial en Vercel Fluid Compute (512 MB).
+    // Frontend usa los movimientos recientes para mostrar últimas operaciones;
+    // historial completo debe ir por endpoint paginado dedicado.
+    return (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" }, take: 100 } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
   },
   async getAllPaginated(tenantId: string, limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
     const rows = await prisma.cashRegister.findMany({
       where: { tenantId },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      include: { movements: { orderBy: { createdAt: "desc" } } },
+      // Round 28 P1: idem getAll — limitar movements include a últimos 100.
+      include: { movements: { orderBy: { createdAt: "desc" }, take: 100 } },
       orderBy: { openedAt: "desc" },
     });
     const hasMore = rows.length > limit;

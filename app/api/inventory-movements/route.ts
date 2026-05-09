@@ -41,7 +41,11 @@ export async function GET(req: NextRequest) {
     const productId = searchParams.get("productId");
 
     if (productId) {
-      const movements = await InventoryMovementsDB.getByProduct(Number(productId));
+      // Round 28 P0 (DB profundo audit): firma cambió a (tenantId, productId)
+      // — antes era cross-tenant leak silencioso (producto ID 42 mezclaba
+      // movimientos del tenant A con tenant B). auth.tenantId garantiza
+      // aislamiento.
+      const movements = await InventoryMovementsDB.getByProduct(auth.tenantId, Number(productId));
       return NextResponse.json(movements);
     }
 
