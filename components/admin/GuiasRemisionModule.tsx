@@ -89,7 +89,7 @@ type DraftItem = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<GuiaStatus, { label: string; color: string; bg: string; dot: string }> = {
-  BORRADOR:    { label: "Borrador",    color: "text-[var(--text-primary)]",       bg: "bg-gray-100",       dot: "bg-gray-400" },
+  BORRADOR:    { label: "Borrador",    color: "text-[var(--text-primary)]",       bg: "bg-[var(--surface-sunken)]",       dot: "bg-gray-400" },
   EMITIDA:     { label: "Emitida",     color: "text-[var(--data-success-500)]",       bg: "bg-[var(--accent-soft)]",       dot: "bg-[var(--accent-soft)]" },
   EN_TRANSITO: { label: "En tránsito", color: "text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-100)]",     dot: "bg-[var(--data-warning-500)]" },
   ENTREGADA:   { label: "Entregada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
@@ -108,8 +108,8 @@ const MOTIVOS = [
 ];
 
 const _PILL_COLORS: Record<string, { active: string; inactive: string }> = {
-  "":          { active: "bg-primary text-white",  inactive: "bg-gray-100 text-[var(--text-secondary)]" },
-  BORRADOR:    { active: "bg-gray-600 text-white",    inactive: "bg-gray-100 text-[var(--text-secondary)]" },
+  "":          { active: "bg-primary text-white",  inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
+  BORRADOR:    { active: "bg-gray-600 text-white",    inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
   EMITIDA:     { active: "bg-[var(--accent-soft)] text-white",    inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
   EN_TRANSITO: { active: "bg-[var(--data-warning-500)] text-white",   inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" },
   ENTREGADA:   { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
@@ -262,9 +262,9 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 animate-pulse">
-            <div className="h-7 w-7 rounded-lg bg-gray-100 mb-2" />
-            <div className="h-3 w-20 rounded bg-gray-100 mb-1.5" />
-            <div className="h-7 w-10 rounded bg-gray-100" />
+            <div className="h-7 w-7 rounded-lg bg-[var(--surface-sunken)] mb-2" />
+            <div className="h-3 w-20 rounded bg-[var(--surface-sunken)] mb-1.5" />
+            <div className="h-7 w-10 rounded bg-[var(--surface-sunken)]" />
           </div>
         ))}
       </div>
@@ -276,7 +276,7 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
     { label: "Guías este mes", value: resumen.totalMes, icon: FileText, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
     { label: "En tránsito", value: resumen.enTransito, icon: Truck, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)]" },
     { label: "Entregadas", value: resumen.entregadas, icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" },
-    { label: "Anuladas", value: resumen.anuladas, icon: XCircle, color: resumen.anuladas > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]", bg: resumen.anuladas > 0 ? "bg-[var(--data-error-100)]" : "bg-gray-100" },
+    { label: "Anuladas", value: resumen.anuladas, icon: XCircle, color: resumen.anuladas > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]", bg: resumen.anuladas > 0 ? "bg-[var(--data-error-100)]" : "bg-[var(--surface-sunken)]" },
   ];
 
   return (
@@ -826,8 +826,8 @@ export default function GuiasRemisionModule() {
           {(["", "BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA", "ANULADA"] as const).map(s => {
             const count = s === "" ? guias.length : guias.filter(g => g.status === s).length;
             const pillColors: Record<string, { active: string; inactive: string }> = {
-              "": { active: "bg-primary text-white", inactive: "bg-gray-100 text-[var(--text-secondary)]" },
-              BORRADOR: { active: "bg-gray-600 text-white", inactive: "bg-gray-100 text-[var(--text-secondary)]" },
+              "": { active: "bg-primary text-white", inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
+              BORRADOR: { active: "bg-gray-600 text-white", inactive: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
               EMITIDA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
               EN_TRANSITO: { active: "bg-[var(--data-warning-500)] text-white", inactive: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" },
               ENTREGADA: { active: "bg-[var(--accent-soft)] text-white", inactive: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
@@ -892,7 +892,7 @@ export default function GuiasRemisionModule() {
                       <tr
                         key={g.id}
                         onClick={() => setSelected(g)}
-                        className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="border-b border-gray-50 hover:bg-[var(--surface-alt)] cursor-pointer transition-colors"
                       >
                         <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                           {/* Mejora 17: Preview al hover */}
@@ -927,10 +927,10 @@ export default function GuiasRemisionModule() {
                   {guias.length} guía{guias.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}
                 </p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors">
+                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -959,7 +959,7 @@ export default function GuiasRemisionModule() {
                   <div className="flex items-center gap-2">
                     {selected.status === "BORRADOR" && (
                       <AdminTooltip content="Crear una copia de esta guía">
-                        <button onClick={handleDuplicate} aria-label="Duplicar" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        <button onClick={handleDuplicate} aria-label="Duplicar" className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                           <Copy className="h-4 w-4 text-[var(--text-tertiary)]" />
                         </button>
                       </AdminTooltip>
@@ -969,13 +969,13 @@ export default function GuiasRemisionModule() {
                         <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                       </button>
                     )}
-                    <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                    <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                       <X className="h-5 w-5 text-[var(--text-secondary)]" />
                     </button>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-bold text-[var(--text-primary)]">{selected.destinatarioNombre}</p>
                     <span className={cn("px-2 py-1 rounded-lg text-xs font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>
@@ -1078,7 +1078,7 @@ export default function GuiasRemisionModule() {
                             <div className="flex flex-col items-center">
                               <div className={cn(
                                 "h-5 w-5 rounded-full flex items-center justify-center",
-                                isDone ? "bg-[var(--accent-soft)]" : "bg-gray-100"
+                                isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--surface-sunken)]"
                               )}>
                                 {isDone ? (
                                   <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]" />
@@ -1086,7 +1086,7 @@ export default function GuiasRemisionModule() {
                                   <div className="h-2 w-2 rounded-full bg-gray-300" />
                                 )}
                               </div>
-                              {idx < 3 && <div className={cn("w-0.5 h-5", isDone ? "bg-[var(--accent-soft)]" : "bg-gray-200")} />}
+                              {idx < 3 && <div className={cn("w-0.5 h-5", isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--rule-soft)]")} />}
                             </div>
                             <div className="pb-2">
                               <p className={cn("text-xs font-bold", isDone ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{meta.label}</p>
@@ -1117,7 +1117,7 @@ export default function GuiasRemisionModule() {
                   <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Items</h4>
                   <div className="space-y-2">
                     {(selected.items ?? []).map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                      <div key={i} className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl">
                         <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
                           <Package className="h-4 w-4 text-[var(--data-success-500)]" />
                         </div>
@@ -1156,7 +1156,7 @@ export default function GuiasRemisionModule() {
                 {/* Mejora 12: Imprimir GRR formato SUNAT */}
                 <div className="flex gap-2">
                   <button onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                     <Printer className="h-4 w-4" /> Imprimir
                   </button>
                   <button
@@ -1190,7 +1190,7 @@ export default function GuiasRemisionModule() {
                 {/* UX Mejora 12: Sticky header */}
                 <div className="sticky top-0 z-10 bg-white dark:bg-[var(--color-card)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
-                  <button onClick={() => setShowNew(false)} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button onClick={() => setShowNew(false)} className="p-1 hover:bg-[var(--surface-sunken)] rounded-lg transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1351,7 +1351,7 @@ export default function GuiasRemisionModule() {
                 {/* UX Mejora 12: Sticky footer */}
                 <div className="sticky bottom-0 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   <button onClick={() => setShowNew(false)}
-                    className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors">
+                    className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-lg transition-colors">
                     Cancelar
                   </button>
                   <button onClick={handleCreate} disabled={creating}

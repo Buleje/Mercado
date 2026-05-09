@@ -57,7 +57,7 @@ function today(): string { return new Date().toISOString().slice(0, 10); }
 
 const STATUS_EMP: Record<EmployeeStatus, { label: string; color: string; bg: string }> = {
   activo:     { label: "Activo",      color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  inactivo:   { label: "Inactivo",    color: "text-[var(--text-secondary)] dark:text-muted",          bg: "bg-gray-100 dark:bg-surface" },
+  inactivo:   { label: "Inactivo",    color: "text-[var(--text-secondary)] dark:text-muted",          bg: "bg-[var(--surface-sunken)] dark:bg-surface" },
   vacaciones: { label: "Vacaciones",  color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",       bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   licencia:   { label: "Licencia",    color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
 };
@@ -179,7 +179,7 @@ export default function HRTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Gestión de empleados, asistencia y recursos del personal</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(employees.map(e => ({ nombre: e.name, dni: e.dni, cargo: e.role, departamento: e.department, teléfono: e.phone, email: e.email, ingreso: e.startDate, antiguedad: yearsOf(e.startDate), salario: e.baseSalary, estado: e.status })), "empleados")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(employees.map(e => ({ nombre: e.name, dni: e.dni, cargo: e.role, departamento: e.department, teléfono: e.phone, email: e.email, ingreso: e.startDate, antiguedad: yearsOf(e.startDate), salario: e.baseSalary, estado: e.status })), "empleados")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -191,7 +191,7 @@ export default function HRTab() {
       {/* KPIs */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {[
-          { label: "Total", value: stats.total, color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-gray-50 dark:bg-surface/50" },
+          { label: "Total", value: stats.total, color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
           { label: "Activos", value: stats.activo, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Vacaciones", value: stats.vacaciones, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Presentes hoy", value: stats.presente, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
@@ -274,7 +274,7 @@ export default function HRTab() {
       {/* View tabs */}
       <div className="flex flex-wrap items-center gap-2">
         {(["empleados", "asistencia"] as const).map(v => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg capitalize transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg capitalize transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
             {v.charAt(0).toUpperCase() + v.slice(1)}
           </button>
         ))}
@@ -335,7 +335,7 @@ export default function HRTab() {
           </div>
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+              <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
                 <tr>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Empleado</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Cargo</th>
@@ -349,7 +349,7 @@ export default function HRTab() {
                   const meta = attStatus ? STATUS_ATT[attStatus] : null;
                   const Icon = meta?.icon ?? Clock;
                   return (
-                    <tr key={emp.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30">
+                    <tr key={emp.id} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30">
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0", emp.color)}>{emp.photoInitials}</div>
@@ -369,7 +369,7 @@ export default function HRTab() {
                             const m = STATUS_ATT[s];
                             const isActive = attStatus === s;
                             return (
-                              <button key={s} onClick={() => updateAttendance(emp.id, s)} className={cn("px-2 py-1 rounded-lg text-xs font-semibold transition-colors", isActive ? `${m.bg} ${m.color} ring-2 ring-inset ring-current` : "bg-gray-50 dark:bg-surface/50 text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}>
+                              <button key={s} onClick={() => updateAttendance(emp.id, s)} className={cn("px-2 py-1 rounded-lg text-xs font-semibold transition-colors", isActive ? `${m.bg} ${m.color} ring-2 ring-inset ring-current` : "bg-[var(--surface-alt)] dark:bg-surface/50 text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent")}>
                                 {m.label}
                               </button>
                             );

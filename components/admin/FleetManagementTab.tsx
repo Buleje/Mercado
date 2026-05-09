@@ -41,7 +41,7 @@ const STATUS_CONFIG: Record<VehicleStatus, { label: string; color: string; dot: 
   activo:        { label: "Disponible",  color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", dot: "bg-[var(--accent-soft)]" },
   "en-ruta":     { label: "En ruta",     color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",             dot: "bg-[var(--accent-soft)]" },
   mantenimiento: { label: "En taller",   color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",         dot: "bg-[var(--data-warning-500)]" },
-  inactivo:      { label: "Inactivo",    color: "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted",                    dot: "bg-gray-400" },
+  inactivo:      { label: "Inactivo",    color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted",                    dot: "bg-gray-400" },
 };
 
 const TYPE_LABEL: Record<string, string> = { moto: "Moto", mototaxi: "Mototaxi", camioneta: "Camioneta" };
@@ -129,7 +129,7 @@ export default function FleetManagementTab() {
           {(["fleet", "maintenance"] as const).map(v => (
             <button key={v} onClick={() => setView(v)}
               className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
+                view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
               )}>
               {v === "fleet" ? "Flota" : "Mantenimiento"}
             </button>
@@ -152,7 +152,7 @@ export default function FleetManagementTab() {
           { label: "Gasto mantenimiento", value: fmt(kpis.maintCost),                color: "text-[var(--data-warning-500)]",   icon: Wrench },
         ].map(({ label, value, color, icon: Icon }) => (
           <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
-            <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
+            <div className={cn("p-2 rounded-lg bg-[var(--surface-alt)] dark:bg-surface", color)}>
               <Icon className="h-4 w-4" />
             </div>
             <div>
@@ -170,7 +170,7 @@ export default function FleetManagementTab() {
             {(["all", "activo", "en-ruta", "mantenimiento", "inactivo"] as const).map(s => (
               <button key={s} onClick={() => setFilterStatus(s)}
                 className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                  filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
+                  filterStatus === s ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted"
                 )}>
                 {s === "all" ? "Todos" : STATUS_CONFIG[s].label}
               </button>
@@ -189,7 +189,7 @@ export default function FleetManagementTab() {
               <div key={v.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
                 <button
                   onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}
-                  className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-4 hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-semibold text-[var(--text-secondary)] shrink-0">{TYPE_LABEL[v.type]?.slice(0, 2) ?? "V"}</span>
@@ -243,7 +243,7 @@ export default function FleetManagementTab() {
                           {v.fuelLevel}%
                         </span>
                       </div>
-                      <div className="w-full h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                      <div className="w-full h-2.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                         <div
                           className={cn("h-full rounded-full transition-all",
                             v.fuelLevel > 50 ? "bg-[var(--accent-soft)]" : v.fuelLevel > 20 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
@@ -265,7 +265,7 @@ export default function FleetManagementTab() {
                     <div className="flex flex-wrap gap-2 pt-1">
                       <button
                         onClick={() => setShowStatusModal(v)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition"
                       >
                         <Pencil className="h-3 w-3" /> Cambiar estado
                       </button>
@@ -284,7 +284,7 @@ export default function FleetManagementTab() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-surface text-left text-xs font-bold text-[var(--text-tertiary)]">
+                <tr className="bg-[var(--surface-alt)] dark:bg-surface text-left text-xs font-bold text-[var(--text-tertiary)]">
                   <th className="px-4 py-3">Vehículo</th>
                   <th className="px-4 py-3">Tipo de trabajo</th>
                   <th className="px-4 py-3">Fecha</th>
@@ -294,7 +294,7 @@ export default function FleetManagementTab() {
               </thead>
               <tbody>
                 {maintLog.map(m => (
-                  <tr key={m.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/10">
+                  <tr key={m.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-accent/10">
                     <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{m.vehicleName}</td>
                     <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
                       <Wrench className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" /> {m.type}
@@ -330,7 +330,7 @@ export default function FleetManagementTab() {
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold border transition",
                     showStatusModal.status === s
                       ? "border-primary bg-primary/5 text-primary"
-                      : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/30 hover:bg-gray-50 dark:hover:bg-surface"
+                      : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/30 hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
                   )}
                 >
                   <span className={cn("w-2.5 h-2.5 rounded-full", STATUS_CONFIG[s].dot)} />
@@ -390,7 +390,7 @@ export default function FleetManagementTab() {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>
               <button onClick={saveMaintenance} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5">
                 <Check className="h-4 w-4" /> Guardar
               </button>

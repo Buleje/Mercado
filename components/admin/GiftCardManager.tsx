@@ -265,7 +265,7 @@ export default function GiftCardManager() {
   const statusLabel: Record<GiftCardStatus, string> = { activo: "Activo", usado: "Usado", vencido: "Vencido" };
   const statusColor: Record<GiftCardStatus, string> = {
     activo: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-    usado: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
+    usado: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
     vencido: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
   };
 

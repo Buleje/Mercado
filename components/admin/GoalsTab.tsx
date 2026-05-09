@@ -199,7 +199,7 @@ function ProgressBar({ current, target }: { current: number; target: number }) {
         <span className="text-[var(--text-primary)]">{current.toLocaleString("es-PE")} / {target.toLocaleString("es-PE")}</span>
         <span className={cn(pct >= 100 ? "text-[var(--data-success-500)]" : pct >= 70 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>{pct}%</span>
       </div>
-      <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+      <div className="h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", barColor)}
           style={{ width: `${pct}%` }}
@@ -738,7 +738,7 @@ export default function GoalsTab() {
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
                     <StatusIcon status={status} />
-                    <button onClick={() => openEdit(g)} aria-label="Editar" className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                    <button onClick={() => openEdit(g)} aria-label="Editar" className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                       <Pencil className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                     </button>
                     <button onClick={() => remove(g.id)} aria-label="Eliminar" className="p-1 rounded-lg hover:bg-[var(--data-error-50)] transition-colors">
@@ -803,7 +803,7 @@ export default function GoalsTab() {
                       const v = parseFloat(e.target.value);
                       if (!isNaN(v) && v !== g.current) void updateProgress(g.id, v);
                     }}
-                    className="flex-1 min-w-0 px-3 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="flex-1 min-w-0 px-3 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     placeholder="Actualizar manualmente"
                   />
                   <span className="text-xs text-[var(--text-tertiary)] font-mono shrink-0">{g.unit}</span>
@@ -820,7 +820,7 @@ export default function GoalsTab() {
           <div className="bg-white dark:bg-[var(--color-card)] rounded-xl w-full max-w-2xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">¿Qué tipo de meta querés crear?</CardTitle>
-              <button onClick={() => setShowTemplates(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onClick={() => setShowTemplates(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -852,7 +852,7 @@ export default function GoalsTab() {
             </div>
             <button
               onClick={() => { setShowTemplates(false); setForm(EMPTY_FORM); setEditId(null); setShowForm(true); }}
-              className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
+              className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
             >
               Crear meta personalizada
             </button>
@@ -866,7 +866,7 @@ export default function GoalsTab() {
           <div className="bg-white dark:bg-[var(--color-card)] rounded-xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">{editId ? "Editar meta" : "Nueva meta"}</CardTitle>
-              <button onClick={() => setShowForm(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onClick={() => setShowForm(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -879,7 +879,7 @@ export default function GoalsTab() {
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="ej. Ventas del mes"
-                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -888,7 +888,7 @@ export default function GoalsTab() {
                   <select
                     value={form.category}
                     onChange={e => setForm(f => ({ ...f, category: e.target.value as GoalCategory }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   >
                     {Object.entries(CATEGORY_META).map(([k, v]) => (
                       <option key={k} value={k}>{v.label}</option>
@@ -900,7 +900,7 @@ export default function GoalsTab() {
                   <select
                     value={form.period}
                     onChange={e => setForm(f => ({ ...f, period: e.target.value as GoalPeriod }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   >
                     {Object.entries(PERIOD_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -917,7 +917,7 @@ export default function GoalsTab() {
                     value={form.target}
                     onChange={e => setForm(f => ({ ...f, target: e.target.value }))}
                     placeholder="5000"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
                 </div>
                 <div>
@@ -927,7 +927,7 @@ export default function GoalsTab() {
                     value={form.unit}
                     onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
                     placeholder="S/ ó pedidos"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
                 </div>
               </div>
@@ -957,7 +957,7 @@ export default function GoalsTab() {
                   type="date"
                   value={form.dueDate}
                   onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                 />
               </div>
 
@@ -969,14 +969,14 @@ export default function GoalsTab() {
                     min={0}
                     value={form.current}
                     onChange={e => setForm(f => ({ ...f, current: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
                 </div>
               )}
             </div>
 
             <div className="flex gap-3 pt-1">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-gray-50 transition-colors">
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-alt)] transition-colors">
                 Cancelar
               </button>
               <button

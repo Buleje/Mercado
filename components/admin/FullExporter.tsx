@@ -223,7 +223,7 @@ export default function FullExporter() {
           className={cn(
             "flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors",
             bulkStatus === "loading"
-              ? "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
+              ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
               : "bg-primary text-white hover:bg-[#235c43]"
           )}
         >

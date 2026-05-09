@@ -229,14 +229,14 @@ export default function ExpiryDashboardTab() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700 transition-colors"
           >
             <Download className="h-4 w-4" />
             Exportar CSV
           </button>
           <button
             onClick={fetchData}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-gray-600 rounded-lg hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700 transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
             Actualizar
@@ -579,7 +579,7 @@ function BatchSection({
               {batches.map((batch) => (
                 <tr
                   key={batch.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                  className="hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700/30 transition-colors"
                 >
                   <td className="py-2.5 px-4">
                     <div>

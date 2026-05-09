@@ -184,7 +184,7 @@ export default function ImageUpload({
           }}
           onDrop={handleDrop}
         >
-          <div className={cn("relative rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface transition-all", ASPECT_MAP[aspectRatio], dragOver && "ring-2 ring-primary ring-offset-2")}>
+          <div className={cn("relative rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface transition-all", ASPECT_MAP[aspectRatio], dragOver && "ring-2 ring-primary ring-offset-2")}>
             <Image
               src={displayUrl}
               alt={label ?? ""}
@@ -232,7 +232,7 @@ export default function ImageUpload({
             ASPECT_MAP[aspectRatio],
             dragOver
               ? "border-primary bg-primary/5 dark:bg-primary/10"
-              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface",
+              : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-[var(--surface-alt)] dark:hover:bg-surface",
             uploading && "pointer-events-none opacity-60",
           )}
         >

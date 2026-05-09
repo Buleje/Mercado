@@ -16,7 +16,7 @@ type Goal = {
 const SEED: Goal[] = [];
 
 const PRIORITY_COLORS = { alta: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", baja: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" };
-const STATUS_COLORS = { pendiente: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700/30 dark:text-[var(--text-tertiary)]", "en-progreso": "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", completado: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", vencido: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
+const STATUS_COLORS = { pendiente: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-700/30 dark:text-[var(--text-tertiary)]", "en-progreso": "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", completado: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", vencido: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
 
 function fmt(v: number, unit: string) { return unit === "S/" ? `S/ ${v.toLocaleString("es-PE")}` : `${v} ${unit}`; }
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -79,7 +79,7 @@ export default function GoalTrackerTab() {
 
               {/* Progress bar */}
               <div className="relative">
-                <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden mb-2">
+                <div className="h-3 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden mb-2">
                   <div className={cn("h-full rounded-full transition-all", g.status === "completado" ? "bg-[var(--accent-soft)]" : progress >= 80 ? "bg-[var(--accent-soft)]" : progress >= 50 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${progress}%` }} />
                 </div>
                 {/* Milestones */}

@@ -86,7 +86,7 @@ function ExpirySection({
       {/* Header */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
       >
         <div className="flex items-center gap-3">
           <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", bgClass.replace("bg-", "bg-"))} />
@@ -99,7 +99,7 @@ function ExpirySection({
           {rows.length > 0 && (
             <button
               onClick={e => { e.stopPropagation(); exportListToExcel(rows, id); }}
-              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/10 transition-colors"
               title="Exportar CSV"
             >
               <Download className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
@@ -120,7 +120,7 @@ function ExpirySection({
           <div className="overflow-x-auto border-t border-[var(--rule-soft)] dark:border-card-border">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-white/5">
+                <tr className="bg-[var(--surface-alt)] dark:bg-white/5">
                   <th className="px-4 py-2.5 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Producto</th>
                   <th className="px-4 py-2.5 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Lote</th>
                   <th className="px-4 py-2.5 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Vence</th>
@@ -131,7 +131,7 @@ function ExpirySection({
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                 {rows.map(row => (
-                  <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                  <tr key={row.id} className="hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
                     <td className="px-4 py-2.5">
                       <p className="font-medium text-[var(--text-primary)] text-xs">{row.productName}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{row.productCategory}</p>
@@ -306,14 +306,14 @@ export default function ExpiryAlertsDashboard() {
           <button
             onClick={handleExportAll}
             disabled={batches.length === 0}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-30 transition-colors min-h-[40px]"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] dark:hover:bg-white/10 disabled:opacity-30 transition-colors min-h-[40px]"
             title="Exportar todo a CSV"
           >
             <Download className="h-3.5 w-3.5" /> Exportar
           </button>
           <button
             onClick={fetchData}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Actualizar"
           >
             <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />

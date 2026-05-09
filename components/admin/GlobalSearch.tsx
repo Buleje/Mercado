@@ -339,10 +339,10 @@ function ResultSkeleton() {
     <div className="px-4 py-3 space-y-3 animate-pulse">
       {[1, 2, 3].map(i => (
         <div key={i} className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-surface shrink-0" />
+          <div className="w-8 h-8 rounded-lg bg-[var(--rule-soft)] dark:bg-surface shrink-0" />
           <div className="flex-1 space-y-1.5">
-            <div className="h-3.5 bg-gray-200 dark:bg-surface rounded w-2/3" />
-            <div className="h-3 bg-gray-200 dark:bg-surface rounded w-1/3" />
+            <div className="h-3.5 bg-[var(--rule-soft)] dark:bg-surface rounded w-2/3" />
+            <div className="h-3 bg-[var(--rule-soft)] dark:bg-surface rounded w-1/3" />
           </div>
         </div>
       ))}
@@ -441,7 +441,7 @@ const QUICK_ACCESS = [
   { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   { label: "Mis clientes",    tab: "crm-clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { label: "Caja",            tab: "pos-caja",             icon: Monitor,        color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-[var(--text-secondary)] bg-gray-50 dark:bg-surface" },
+  { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-[var(--text-secondary)] bg-[var(--surface-alt)] dark:bg-surface" },
   { label: "Promociones",     tab: "precios-promos",       icon: TrendingUp,     color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 ];
 
@@ -600,7 +600,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
               {query && (
                 <button
                   onClick={() => { setQuery(""); setSelected(0); }}
-                  className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+                  className="p-1 rounded-full hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
                   aria-label="Limpiar búsqueda"
                 >
                   <X className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -669,11 +669,11 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                           "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-b border-gray-50 dark:border-card-border last:border-0",
                           isSelected
                             ? "bg-primary/5 dark:bg-primary/10"
-                            : "hover:bg-gray-50 dark:hover:bg-surface"
+                            : "hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
                         )}
                       >
                         <div className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 dark:bg-surface",
+                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[var(--surface-sunken)] dark:bg-surface",
                           meta.color
                         )}>
                           <Icon className="h-4 w-4" />

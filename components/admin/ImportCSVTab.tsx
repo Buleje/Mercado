@@ -160,7 +160,7 @@ export default function ImportCSVTab() {
             Selecciona un archivo CSV
           </p>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-4">
-            Columnas esperadas: <code className="bg-gray-100 dark:bg-surface px-1 rounded">sku, nombre, precio, stock, costo</code>
+            Columnas esperadas: <code className="bg-[var(--surface-sunken)] dark:bg-surface px-1 rounded">sku, nombre, precio, stock, costo</code>
           </p>
           <input
             ref={fileRef}
@@ -233,7 +233,7 @@ export default function ImportCSVTab() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={reset} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
+            <button onClick={reset} className="flex-1 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface">
               Cancelar
             </button>
             <button

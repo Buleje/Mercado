@@ -64,7 +64,7 @@ const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: strin
   ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock,       variant: "warning" },
   PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2, variant: "success" },
   VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle,     variant: "error" },
-  CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-gray-100",     icon: Ban,         variant: "neutral" },
+  CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-[var(--surface-sunken)]",     icon: Ban,         variant: "neutral" },
 };
 
 function formatCurrency(n: number) {
@@ -986,7 +986,7 @@ export default function FiadosModule() {
           <button
             key={d}
             onClick={() => { setTableDensity(d); try { localStorage.setItem("table-density", d); } catch {} }}
-            className={cn("px-2 py-0.5 rounded-full text-xs font-bold transition-colors", tableDensity === d ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200")}
+            className={cn("px-2 py-0.5 rounded-full text-xs font-bold transition-colors", tableDensity === d ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}
           >
             {d === "compact" ? "Compacta" : d === "normal" ? "Normal" : "Amplia"}
           </button>
@@ -1045,7 +1045,7 @@ export default function FiadosModule() {
                       <tr
                         key={f.id}
                         onClick={() => openDetail(f)}
-                        className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="border-b border-gray-50 hover:bg-[var(--surface-alt)] cursor-pointer transition-colors"
                       >
                         <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
                           {(f.status === "ACTIVO" || f.status === "VENCIDO") && (
@@ -1131,14 +1131,14 @@ export default function FiadosModule() {
                   <button
                     disabled={page <= 1}
                     onClick={() => setPage(p => p - 1)}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <button
                     disabled={page >= totalPages}
                     onClick={() => setPage(p => p + 1)}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -1177,12 +1177,12 @@ export default function FiadosModule() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => { const next = !isPanelWide; setIsPanelWide(next); try { localStorage.setItem("panel-width-preference", next ? "wide" : "normal"); } catch {} }}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors hidden sm:flex"
+                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors hidden sm:flex"
                       title={isPanelWide ? "Panel normal" : "Panel ancho"}
                     >
                       {isPanelWide ? <Minimize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /> : <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
                     </button>
-                    <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                    <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                       <X className="h-5 w-5 text-[var(--text-secondary)]" />
                     </button>
                   </div>
@@ -1202,7 +1202,7 @@ export default function FiadosModule() {
                 {panelTab === "Detalle" && (
                   <>
                 {/* Fiado info */}
-                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center">
                       <User className="h-5 w-5 text-secondary" />
@@ -1265,7 +1265,7 @@ export default function FiadosModule() {
                             <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center shrink-0 z-10 border-2 border-white">
                               <DollarSign className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                             </div>
-                            <div className="flex-1 min-w-0 bg-gray-50 rounded-xl p-3">
+                            <div className="flex-1 min-w-0 bg-[var(--surface-alt)] rounded-xl p-3">
                               <div className="flex items-center justify-between gap-2">
                                 <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(c.monto)}</p>
                                 <StatusBadge variant="success" label="Pagado" size="sm" />
@@ -1325,7 +1325,7 @@ export default function FiadosModule() {
                     )}
                     <button
                       onClick={() => window.print()}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                     >
                       <Printer className="h-4 w-4" />
                       Imprimir

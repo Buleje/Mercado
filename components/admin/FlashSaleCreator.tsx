@@ -302,7 +302,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                   <button
                     type="button"
                     onClick={() => selectProduct(p)}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700"
+                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700 focus:outline-none focus:bg-[var(--surface-alt)] dark:focus:bg-gray-700"
                   >
                     <span className="font-medium text-[var(--text-primary)]">{p.name}</span>
                     <span className="text-[var(--text-tertiary)]">{fmtPrice(p.price)}</span>
@@ -320,7 +320,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                 Precio original
               </label>
-              <div className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-gray-50 dark:border-[var(--rule-base)] dark:bg-gray-800 px-3 py-2">
+              <div className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] dark:border-[var(--rule-base)] dark:bg-gray-800 px-3 py-2">
                 <Tag className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />
                 <span className="text-sm font-medium text-[var(--text-tertiary)] line-through">
                   {fmtPrice(selected.price)}
@@ -415,7 +415,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               "transition-colors duration-[var(--dur-fast)]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-warning-500)]",
               saving || !selected || salePriceNum <= 0
-                ? "cursor-not-allowed bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]"
+                ? "cursor-not-allowed bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]"
                 : "bg-[var(--data-warning-500)] text-white hover:bg-[#e08c4a]"
             )}
           >

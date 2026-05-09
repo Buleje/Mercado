@@ -48,7 +48,7 @@ export default function ForecastCard({ className }: Props) {
   const confidenceStyle: Record<string, string> = {
     alta: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
     media: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-yellow-950/40 dark:text-[var(--data-warning-500)]",
-    baja: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
+    baja: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
   };
 
   const TrendIcon =

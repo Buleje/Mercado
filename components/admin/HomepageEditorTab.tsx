@@ -57,7 +57,7 @@ function SectionEditor({
           <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{section.title}</p>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{section.description}</p>
         </div>
-        <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-surface flex items-center justify-center group-hover:bg-primary/8 transition-colors shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] dark:bg-surface flex items-center justify-center group-hover:bg-primary/8 transition-colors shrink-0">
           {expanded ? <ChevronUp className="h-3.5 w-3.5 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
         </div>
       </button>
@@ -92,7 +92,7 @@ function SectionEditor({
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
                     rows={3}
-                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
                   />
                 ) : (
                   <input
@@ -100,7 +100,7 @@ function SectionEditor({
                     value={String(value)}
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 )}
               </div>
@@ -306,14 +306,14 @@ export default function HomepageEditorTab() {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors"
           >
             <Eye className="h-3.5 w-3.5" /> Vista previa
           </a>
           <button
             onClick={handleReset}
             disabled={!hasChanges}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Restaurar
           </button>
@@ -370,7 +370,7 @@ export default function HomepageEditorTab() {
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Preguntas Frecuentes (FAQ)</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{content.faqItems.length} preguntas configuradas</p>
             </div>
-            <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-surface flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] dark:bg-surface flex items-center justify-center">
               {expandedSections.has("faq") ? <ChevronUp className="h-3.5 w-3.5 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
             </div>
           </button>
@@ -378,8 +378,8 @@ export default function HomepageEditorTab() {
             <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
               {content.faqItems.map((item, i) => (
                 <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
-                  <input value={item.question} onChange={(e) => handleListChange("faqItems", i, "question", e.target.value)} placeholder="Pregunta..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <textarea value={item.answer} onChange={(e) => handleListChange("faqItems", i, "answer", e.target.value)} placeholder="Respuesta..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                  <input value={item.question} onChange={(e) => handleListChange("faqItems", i, "question", e.target.value)} placeholder="Pregunta..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <textarea value={item.answer} onChange={(e) => handleListChange("faqItems", i, "answer", e.target.value)} placeholder="Respuesta..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <button onClick={() => handleListRemove("faqItems", i)} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>
                 </div>
               ))}
@@ -398,7 +398,7 @@ export default function HomepageEditorTab() {
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Beneficios</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{content.benefitItems.length} beneficios configurados</p>
             </div>
-            <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-surface flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] dark:bg-surface flex items-center justify-center">
               {expandedSections.has("benefits") ? <ChevronUp className="h-3.5 w-3.5 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
             </div>
           </button>
@@ -406,8 +406,8 @@ export default function HomepageEditorTab() {
             <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
               {content.benefitItems.map((item, i) => (
                 <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
-                  <input value={item.title} onChange={(e) => handleListChange("benefitItems", i, "title", e.target.value)} placeholder="Título del beneficio..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <textarea value={item.description} onChange={(e) => handleListChange("benefitItems", i, "description", e.target.value)} placeholder="Descripción..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                  <input value={item.title} onChange={(e) => handleListChange("benefitItems", i, "title", e.target.value)} placeholder="Título del beneficio..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <textarea value={item.description} onChange={(e) => handleListChange("benefitItems", i, "description", e.target.value)} placeholder="Descripción..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <button onClick={() => handleListRemove("benefitItems", i)} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>
                 </div>
               ))}
@@ -426,7 +426,7 @@ export default function HomepageEditorTab() {
               <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Testimonios</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{content.testimonialItems.length} testimonios configurados</p>
             </div>
-            <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-surface flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] dark:bg-surface flex items-center justify-center">
               {expandedSections.has("testimonials") ? <ChevronUp className="h-3.5 w-3.5 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
             </div>
           </button>
@@ -435,13 +435,13 @@ export default function HomepageEditorTab() {
               {content.testimonialItems.map((item, i) => (
                 <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input value={item.name} onChange={(e) => handleListChange("testimonialItems", i, "name", e.target.value)} placeholder="Nombre..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                    <input value={item.location} onChange={(e) => handleListChange("testimonialItems", i, "location", e.target.value)} placeholder="Ubicación..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input value={item.name} onChange={(e) => handleListChange("testimonialItems", i, "name", e.target.value)} placeholder="Nombre..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input value={item.location} onChange={(e) => handleListChange("testimonialItems", i, "location", e.target.value)} placeholder="Ubicación..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   </div>
-                  <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                  <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="text-xs text-muted">Rating:</label>
-                    <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-2 py-1 text-sm">
+                    <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-2 py-1 text-sm">
                       {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} {r === 1 ? "estrella" : "estrellas"}</option>)}
                     </select>
                     <button onClick={() => handleListRemove("testimonialItems", i)} className="ml-auto text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>

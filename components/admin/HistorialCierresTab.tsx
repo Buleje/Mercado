@@ -129,7 +129,7 @@ export default function HistorialCierresTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+                <tr className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                   <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
                   <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Ventas</th>
                   <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Caja</th>
@@ -143,7 +143,7 @@ export default function HistorialCierresTab() {
                   return (
                     <tr
                       key={s.id}
-                      className="border-b border-[var(--rule-soft)] dark:border-card-border last:border-0 hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                      className="border-b border-[var(--rule-soft)] dark:border-card-border last:border-0 hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
                     >
                       <td className="px-4 py-3 font-medium text-[var(--text-primary)] dark:text-foreground whitespace-nowrap">
                         {formatFecha(s.fecha)}
@@ -189,7 +189,7 @@ export default function HistorialCierresTab() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" /> Anterior
               </button>
@@ -199,7 +199,7 @@ export default function HistorialCierresTab() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors disabled:opacity-40"
               >
                 Siguiente <ChevronRight className="h-4 w-4" />
               </button>
@@ -225,7 +225,7 @@ export default function HistorialCierresTab() {
                 </CardTitle>
                 <button
                   onClick={() => setDetail(null)}
-                  className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+                  className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -259,7 +259,7 @@ export default function HistorialCierresTab() {
                   )}
                 </div>
 
-                <div className="h-px bg-gray-100 dark:bg-card-border" />
+                <div className="h-px bg-[var(--surface-sunken)] dark:bg-card-border" />
 
                 {/* Caja */}
                 <div className="space-y-2">
@@ -288,7 +288,7 @@ export default function HistorialCierresTab() {
                   </div>
                 </div>
 
-                <div className="h-px bg-gray-100 dark:bg-card-border" />
+                <div className="h-px bg-[var(--surface-sunken)] dark:bg-card-border" />
 
                 {/* Fiados */}
                 <div className="space-y-2">
@@ -314,7 +314,7 @@ export default function HistorialCierresTab() {
                 {/* Stock alerts */}
                 {detail.stockAlertas && (
                   <>
-                    <div className="h-px bg-gray-100 dark:bg-card-border" />
+                    <div className="h-px bg-[var(--surface-sunken)] dark:bg-card-border" />
                     <div className="space-y-2">
                       <p className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Alertas de stock</p>
                       <div className="text-sm text-[var(--text-secondary)] dark:text-muted space-y-1">
@@ -339,7 +339,7 @@ export default function HistorialCierresTab() {
                 {/* Notes */}
                 {detail.notas && (
                   <>
-                    <div className="h-px bg-gray-100 dark:bg-card-border" />
+                    <div className="h-px bg-[var(--surface-sunken)] dark:bg-card-border" />
                     <div>
                       <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1">Notas</p>
                       <p className="text-sm text-[var(--text-primary)] dark:text-foreground whitespace-pre-wrap">{detail.notas}</p>
