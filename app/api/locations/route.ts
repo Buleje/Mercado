@@ -112,14 +112,24 @@ export async function PATCH(req: NextRequest) {
     }
 
     const { id, ...rest } = parsed.data;
-    const row = await prisma.location.update({
-      where: { id },
+    // Round 21 P0 (Security): UPDATE sin tenantId guard permitía cross-tenant
+    // write attack. updateMany con filtro tenantId rechaza writes a Locations
+    // de otros tenants aunque el admin conozca el id.
+    const updResult = await prisma.location.updateMany({
+      where: { id, tenantId: auth.tenantId },
       data: {
         ...rest,
         ...(rest.productId === undefined ? {} : { productId: rest.productId ?? null }),
       },
+    });
+    if (updResult.count === 0) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    const row = await prisma.location.findFirst({
+      where: { id, tenantId: auth.tenantId },
       include: { warehouse: true, product: true },
     });
+    if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(mapLocation(row));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
@@ -136,7 +146,13 @@ export async function DELETE(req: NextRequest) {
     const id = new URL(req.url).searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
 
-    await prisma.location.delete({ where: { id } });
+    // Round 21 P0 (Security): tenantId guard previene cross-tenant delete.
+    const result = await prisma.location.deleteMany({
+      where: { id, tenantId: auth.tenantId },
+    });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     const { payload, status } = toErrorPayload(err);

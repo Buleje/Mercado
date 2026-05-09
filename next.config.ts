@@ -62,6 +62,11 @@ const nextConfig: NextConfig = {
     "@opentelemetry/instrumentation",
     "require-in-the-middle",
     "import-in-the-middle",
+    // Round 21 (Performance): jsPDF + ExcelJS solo se usan en server routes
+    // y workers. Marcarlos como server-external evita que bundles cliente
+    // los incluyan accidentalmente vía dynamic imports mal resueltos.
+    "jspdf",
+    "exceljs",
   ],
 
   // No source maps in production browser bundle (saves ~30–50% of chunk sizes)

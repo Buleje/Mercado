@@ -184,10 +184,15 @@ function FiadoStreakBadge({ customerId, fiados }: { customerId: string; fiados: 
   }
 
   if (streak < 3) return null;
+  // Round 21 fix: ambas ramas ten\u00EDan el mismo className \u2192 solo cambiaba emoji.
+  // Streak 3-4 (bueno) usa success token, 5+ (excelente) mantiene gold-warning
+  // con peso visual mayor. Diferenciaci\u00F3n intencional seg\u00FAn dise\u00F1o.
   return (
     <span className={cn(
       "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs font-bold",
-      streak >= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
+      streak >= 5
+        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
+        : "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
     )}>
       {streak >= 5 ? "\u2B50" : "\uD83D\uDD25"} {streak} pagos a tiempo
     </span>
@@ -288,8 +293,9 @@ export default function FiadosModule() {
     try { return (localStorage.getItem("table-density") as "compact" | "normal" | "wide") || "normal"; } catch { return "normal"; }
   });
 
-  // IDEA 1: Libreta Digital — Vista que replica la libreta de fiados de papel
-  const [_libretaPage, _setLibretaPage] = useState(0); // Reserved for pagination
+  // IDEA 1: Libreta Digital — Vista que replica la libreta de fiados de papel.
+  // Round 21 cleanup: removed unused _libretaPage state — feature postpuesta
+  // sin caller actual. Re-añadir si paginación se prioriza.
   const [showQuickFiado, setShowQuickFiado] = useState(false);
   const [quickFiadoForm, setQuickFiadoForm] = useState({ nombre: "", producto: "", monto: "" });
   const [quickFiadoCreating, setQuickFiadoCreating] = useState(false);
@@ -372,9 +378,9 @@ export default function FiadosModule() {
     clientePhone: string;
   } | null>(null);
 
-  // Mejora M2: Calendario de vencimientos state
-  const [_calMes, _setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
-  const [_calDiaSeleccionado, _setCalDiaSeleccionado] = useState<string | null>(null);
+  // Mejora M2: Calendario de vencimientos state. Round 21 cleanup: removed
+  // unused _calMes / _calDiaSeleccionado — feature de calendario sin caller
+  // actual. Re-añadir cuando se priorice (M2 backlog).
 
   // Mejora 3: Cobro masivo
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

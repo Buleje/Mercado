@@ -4,7 +4,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-const TENANT = "main";
+// Round 21 P0 (Security): const TENANT="main" hardcoded reemplazado por
+// auth.tenantId. PATCH/DELETE ahora respetan multi-tenant correctamente.
 const ESTADOS = ["PENDIENTE", "ENVIADA", "RESUELTA"] as const;
 
 /** Fire-and-forget WhatsApp al proveedor cuando se marca ENVIADA */
@@ -51,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json();
 
     const record = await prisma.supplierReturn.findFirst({
-      where: { id, tenantId: TENANT },
+      where: { id, tenantId: auth.tenantId },
       include: { items: true },
     });
     if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -60,11 +61,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Estado inválido" }, { status: 400 });
     }
 
-    const updated = await prisma.supplierReturn.update({
-      where: { id },
+    const updateResult = await prisma.supplierReturn.updateMany({
+      where: { id, tenantId: auth.tenantId },
       data: { ...(body.estado ? { estado: body.estado } : {}) },
+    });
+    if (updateResult.count === 0) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    const updated = await prisma.supplierReturn.findFirst({
+      where: { id, tenantId: auth.tenantId },
       include: { items: true },
     });
+    if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     // Notificar al proveedor por WhatsApp cuando se marca como ENVIADA
     if (body.estado === "ENVIADA" && record.estado !== "ENVIADA") {
@@ -90,10 +98,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;
-    const record = await prisma.supplierReturn.findFirst({ where: { id, tenantId: TENANT } });
-    if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-    await prisma.supplierReturn.delete({ where: { id } });
+    const result = await prisma.supplierReturn.deleteMany({
+      where: { id, tenantId: auth.tenantId },
+    });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[supplier-returns] DELETE error", { err: e instanceof Error ? e.message : String(e) });

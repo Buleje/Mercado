@@ -201,12 +201,19 @@ export const MarketplacePublicDB = {
    */
   async getActivityFeed(): Promise<DbActivityFeedItem[]> {
     return getOrSet(
-      "marketplace:activity-feed:v1",
+      "marketplace:activity-feed:v2",
       60,
       async () => {
         const since = new Date(Date.now() - 6 * 60 * 60 * 1000);
+        // Round 21 P0-1 fix (Bug Hunter): storefront público leakeaba órdenes
+        // POS internas + contaba órdenes borradas en el feed. Filtrar por
+        // source="marketplace" + deletedAt:null cierra el data leak.
         const orders = await prisma.order.findMany({
-          where: { createdAt: { gte: since } },
+          where: {
+            createdAt: { gte: since },
+            source: "marketplace",
+            deletedAt: null,
+          },
           orderBy: { createdAt: "desc" },
           take: 10,
           select: {
@@ -831,12 +838,24 @@ export const MarketplacePublicDB = {
     activeStores: number;
     avgDeliveryMin: number;
   }> {
-    return getOrSet("marketplace:live-stats:v1", 60, async () => {
+    return getOrSet("marketplace:live-stats:v2", 60, async () => {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      // Round 21 P0-1 fix (Bug Hunter): KPIs públicos contaban órdenes POS
+      // internas + soft-deleted. Cierra el data leak con source/deletedAt.
       const [ordersTodayRaw, customersTodayRaw, activeStoresRaw] = await Promise.all([
-        prisma.order.count({ where: { createdAt: { gte: since } } }),
+        prisma.order.count({
+          where: {
+            createdAt: { gte: since },
+            source: "marketplace",
+            deletedAt: null,
+          },
+        }),
         prisma.order.findMany({
-          where: { createdAt: { gte: since } },
+          where: {
+            createdAt: { gte: since },
+            source: "marketplace",
+            deletedAt: null,
+          },
           select: { customerPhone: true },
           distinct: ["customerPhone"],
         }),

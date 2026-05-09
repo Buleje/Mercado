@@ -168,12 +168,13 @@ export async function POST(req: NextRequest) {
       scheduledFor,
     } = parsed.data;
 
-    // F2: Idempotency-Key — revisar caché antes de procesar para evitar doble pedido
-    if (idemKey && customerPhone) {
-      const idemCacheKey = `idem:order:${customerPhone}:${idemKey}`;
+    // F2: Idempotency-Key — revisar caché antes de procesar para evitar doble pedido.
+    // Round 21 P0-3 fix (Bug Hunter): cubrir también pedidos anónimos.
+    if (idemKey) {
+      const idemCacheKey = `idem:order:${customerPhone || "anon"}:${idemKey}`;
       const cached = cacheStore.get<{ orderId: string }>(idemCacheKey);
       if (cached && cached.orderId) {
-        logger.info("[marketplace/orders] idempotent replay", { idemKey, customerPhone });
+        logger.info("[marketplace/orders] idempotent replay", { idemKey, customerPhone: customerPhone ?? "anon" });
         return NextResponse.json(
           { data: { orderId: cached.orderId }, message: "Pedido ya registrado." },
           { status: 200 },
@@ -254,9 +255,13 @@ export async function POST(req: NextRequest) {
         }),
     );
 
-    // F2: persistir idempotency en cache — doble-click en los próximos 300s devuelve este orderId
-    if (idemKey && customerPhone) {
-      const idemCacheKey = `idem:order:${customerPhone}:${idemKey}`;
+    // F2: persistir idempotency en cache — doble-click en los próximos 300s devuelve este orderId.
+    // Round 21 P0-3 fix (Bug Hunter): el guard exigía phone, lo que dejaba
+    // pedidos anónimos sin protección — doble-click creaba 2 pedidos + 2
+    // decrements de stock + 2 commissions. Idempotency-Key del cliente es
+    // UUIDv4 → colisión despreciable con prefijo "anon".
+    if (idemKey) {
+      const idemCacheKey = `idem:order:${customerPhone || "anon"}:${idemKey}`;
       cacheStore.set(idemCacheKey, { orderId: order.id }, 300);
     }
 
