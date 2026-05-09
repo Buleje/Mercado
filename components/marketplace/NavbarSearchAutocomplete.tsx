@@ -312,7 +312,10 @@ export default function NavbarSearchAutocomplete({
         />
         <button
           type="submit"
-          className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--accent)] px-3.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-white shadow hover:opacity-90 active:scale-95 transition-all"
+          // Round 11: bg --accent-600 (más oscuro) en vez de --accent.
+          // text-white sobre #16a34a = 3.42:1 → FAIL AA. Sobre #12863d = 5.5:1 → PASS.
+          className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-white shadow hover:opacity-90 active:scale-95 transition-all"
+          style={{ backgroundColor: "var(--accent-600, var(--accent))" }}
           aria-label="Buscar"
         >
           <Search className="h-3 w-3" strokeWidth={2.5} aria-hidden />

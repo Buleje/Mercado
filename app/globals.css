@@ -1674,7 +1674,9 @@ button,
 
   --text-primary: #0a0a0a;
   --text-secondary: #525252;
-  --text-tertiary: #a3a3a3;
+  /* Round 11: #a3a3a3 daba 2.7:1 (FAIL AA) en labels uppercase, subtitles
+     y placeholders. #737373 da 4.83:1 → PASS AA body text. */
+  --text-tertiary: #737373;
   --text-inverse: #fafafa;
 
   --rule-soft: #f5f5f5;
@@ -1868,7 +1870,9 @@ button,
   /* ── Texto con jerarquía AA-AAA verificada ── */
   --text-primary: #f0f3f7;       /* ~16:1 sobre canvas — AAA, no deslumbra */
   --text-secondary: #b8c0cc;     /* ~9:1 — AAA */
-  --text-tertiary: #8590a3;      /* ~5.7:1 — AA body (antes #525252 fallaba) */
+  /* Round 11: #8590a3 sobre #0d1117 daba 4.04:1 (FAIL AA 4.5:1).
+     #a3aab5 da ~6.5:1 → PASS AA body. */
+  --text-tertiary: #a3aab5;
   --text-inverse: #0d1117;
 
   /* ── Bordes visibles + escala clara ── */

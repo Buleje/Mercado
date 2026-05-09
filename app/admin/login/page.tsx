@@ -241,7 +241,10 @@ export default function AdminLoginPage() {
               <Store className="h-6 w-6 text-white" strokeWidth={2.25} />
             </div>
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+              <p
+                className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]"
+                style={{ color: "color-mix(in oklch, var(--accent-600, var(--accent)) 75%, black)" }}
+              >
                 Buleje · Negocio
               </p>
               <p className="text-base font-extrabold leading-tight">Panel del dueño</p>
@@ -315,7 +318,10 @@ export default function AdminLoginPage() {
           </div>
 
           {/* Eyebrow + título */}
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+          <p
+            className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mb-2"
+            style={{ color: "color-mix(in oklch, var(--accent-600, var(--accent)) 60%, black)" }}
+          >
             Iniciar sesión
           </p>
           <SectionTitle className="text-3xl sm:text-[2.25rem] font-extrabold text-[var(--text-primary)] leading-[1.1] tracking-tight">

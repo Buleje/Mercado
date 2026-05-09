@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePartner } from "@/lib/delivery/partner-session";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 /**
  * POST /api/delivery/assignments/[id]/start-route
@@ -25,18 +26,28 @@ const ALLOWED_FROM_STATES = ["assigned", "picked_up"];
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  ctx: { params: Promise<{ id: string }> },
 ) {
   const session = await requirePartner(req);
   if (session instanceof NextResponse) return session;
 
-  const rawParams = await params;
+  const rawParams = await ctx.params;
   const parsedParams = ParamsSchema.safeParse(rawParams);
   if (!parsedParams.success) {
     return NextResponse.json({ error: "Params inválidos" }, { status: 400 });
   }
   const { id: assignmentId } = parsedParams.data;
 
+  // Round 11 M004: audit log de Order status update + DeliveryAssignment.
+  return runWithAuditContext(req, `partner:${session.partnerId}`, () =>
+    startRouteHandler(assignmentId, session.partnerId),
+  );
+}
+
+async function startRouteHandler(
+  assignmentId: string,
+  partnerId: string,
+): Promise<NextResponse> {
   try {
     const result = await prisma.$transaction(async (tx) => {
       // eslint-disable-next-line no-restricted-properties -- DeliveryAssignmentsDB pendiente
@@ -53,7 +64,7 @@ export async function POST(
       });
 
       if (!assignment) return { error: "Assignment no encontrado", code: 404 };
-      if (assignment.partnerId !== session.partnerId) {
+      if (assignment.partnerId !== partnerId) {
         return { error: "Assignment no es tuyo", code: 403 };
       }
       if (!ALLOWED_FROM_STATES.includes(assignment.status)) {
@@ -93,7 +104,7 @@ export async function POST(
     }
 
     logger.info("[delivery/start-route]", {
-      partnerId: session.partnerId,
+      partnerId,
       assignmentId,
       orderId: result.orderId,
     });
@@ -103,10 +114,14 @@ export async function POST(
       "DeliveryAssignment",
       JSON.stringify({ assignmentId, orderId: result.orderId }),
       assignmentId,
-      session.partnerId,
+      partnerId,
       undefined,
       result.tenantId,
-    ).catch(() => {});
+    ).catch((err) => {
+      logger.error("[delivery/start-route] logActivity failed", {
+        err: err instanceof Error ? err.message : String(err),
+      });
+    });
 
     return NextResponse.json({ ok: true, status: "en_camino" });
   } catch (err) {

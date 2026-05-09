@@ -81,7 +81,9 @@ const TONE_STYLES: Record<
 > = {
   default: {
     section: "",
-    kicker: "text-gray-400",
+    // Round 11: gray-400 (#9ca3af) sobre blanco = 2.85:1 → FAIL WCAG AA 4.5:1.
+    // gray-500 (#6b7280) sobre blanco = 4.83:1 → PASS para texto small.
+    kicker: "text-gray-500 dark:text-gray-400",
     title: "text-gray-900 dark:text-white",
     border: "border-gray-200 dark:border-gray-800",
   },

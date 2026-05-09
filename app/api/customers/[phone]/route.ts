@@ -6,6 +6,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 import type { HealthScore } from "@/app/api/customers/health-scores/route";
 
 const CustomerPatchSchema = z.object({
@@ -121,13 +122,21 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ phone: string }> }
+  ctx: { params: Promise<{ id?: string; phone: string }> }
 ) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "MODERATE", "customers-patch");
   if (rl) return rl;
+  // Round 11 M004: audit log de Customer field updates con admin actor + IP.
+  return runWithAuditContext(req, auth.username, () => patchCustomer(req, ctx, auth));
+}
 
+async function patchCustomer(
+  req: NextRequest,
+  { params }: { params: Promise<{ phone: string }> },
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
   const { phone } = await params;
   const normalized = normalizePhone(phone);
   try {
@@ -211,13 +220,20 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ phone: string }> }
+  ctx: { params: Promise<{ phone: string }> }
 ) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "MODERATE", "customers-delete");
   if (rl) return rl;
+  // Round 11 M004: audit log de Customer DELETE — operación crítica Ley 29733.
+  return runWithAuditContext(req, auth.username, () => deleteCustomer(ctx, auth));
+}
 
+async function deleteCustomer(
+  { params }: { params: Promise<{ phone: string }> },
+  auth: { tenantId: string; username: string },
+): Promise<NextResponse> {
   const { phone } = await params;
   const normalized = normalizePhone(phone);
   if (!/^\d{6,15}$/.test(normalized)) {
