@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { MessageCircle } from "lucide-react";
 import SupplierDashboard from "@/components/supplier/SupplierDashboard";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -43,7 +44,7 @@ export default function SupplierPage() {
     });
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
-      return json.error ?? "API Key inválida";
+      return json.error ?? "Código de acceso inválido";
     }
     const data = await res.json();
     setSupplierData(data.supplier ?? null);
@@ -110,7 +111,7 @@ function SupplierLoginScreen({
           </span>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Portal Proveedor</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Ingresa tu API Key para acceder
+            Ingresa tu código de acceso para continuar
           </p>
         </div>
 
@@ -124,18 +125,22 @@ function SupplierLoginScreen({
               htmlFor="apiKey"
               className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5"
             >
-              API Key
+              Código de acceso
             </label>
             <input
               id="apiKey"
+              name="apiKey"
               type="password"
               autoComplete="current-password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Pega tu clave de acceso aquí"
+              placeholder="Te lo dió el administrador de la tienda"
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-[var(--accent-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-dark)]/20"
               disabled={loading}
             />
+            <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+              Si no lo tienes, contacta al administrador de la tienda.
+            </p>
           </div>
 
           {error && (
@@ -154,9 +159,15 @@ function SupplierLoginScreen({
           </button>
         </form>
 
-        <p className="mt-4 text-center text-xs text-gray-400 dark:text-gray-600">
-          ¿No tienes API Key? Contacta al administrador del marketplace.
-        </p>
+        <a
+          href="https://wa.me/?text=Hola%2C%20necesito%20mi%20c%C3%B3digo%20de%20acceso%20de%20proveedor"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-[var(--accent-dark)] dark:hover:text-[var(--accent)] transition-colors"
+        >
+          <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          Contactar admin por WhatsApp
+        </a>
       </div>
     </div>
   );

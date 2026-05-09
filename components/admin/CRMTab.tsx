@@ -13,7 +13,14 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import type { BadgeVariant } from "@/components/admin/shared/StatusBadge";
 import { m, AnimatePresence } from "@/components/admin/providers";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
+
+const CRMTabChart = dynamic(() => import("./CRMTabChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full animate-pulse bg-[var(--surface-sunken)] rounded-xl" />
+  ),
+});
 import { cn, exportToCSV } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import Customer360Tab from "./Customer360Tab";
@@ -454,13 +461,7 @@ export default function CRMTab() {
         return (
           <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 flex items-center gap-4">
             <div style={{ width: 100, height: 100 }}>
-              <ResponsiveContainer minWidth={0} width="100%" height="100%">
-                <PieChart>
-                  <Pie data={chartData} dataKey="value" cx="50%" cy="50%" outerRadius={45} innerRadius={20} strokeWidth={1}>
-                    {chartData.map((_, i) => <Cell key={i} fill={CHANNEL_COLORS[i % CHANNEL_COLORS.length]} />)}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+              <CRMTabChart data={chartData} colors={CHANNEL_COLORS} />
             </div>
             <div className="flex flex-col gap-1">
               <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Canal de adquisicion</p>

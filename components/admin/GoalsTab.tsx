@@ -227,7 +227,7 @@ function KPISummary({ goals }: { goals: Goal[] }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {cards.map((c) => (
-        <div key={c.label} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
+        <div key={c.label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{c.label}</p>
             <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", c.color)}>{c.value}</p>
@@ -677,7 +677,7 @@ export default function GoalsTab() {
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
                 filter === p.id
                   ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                  : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
               )}
             >
               {p.label}
@@ -698,7 +698,7 @@ export default function GoalsTab() {
       ) : goals.length === 0 ? (
         <EmptyStateWithTemplates onPick={applyTemplate} autoStats={autoStats} />
       ) : visible.length === 0 ? (
-        <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
+        <div className="bg-white dark:bg-[var(--color-card)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
           <Target className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
           <p className="text-[var(--text-secondary)] font-semibold">No hay metas en este filtro</p>
           <button onClick={() => setFilter("todas")} className="mt-3 text-sm text-primary font-semibold hover:underline">Ver todas</button>
@@ -718,7 +718,7 @@ export default function GoalsTab() {
               <div
                 key={g.id}
                 className={cn(
-                  "bg-white border border-[var(--rule-base)] border-l-4 rounded-xl p-5 space-y-4 hover:shadow-sm transition-shadow",
+                  "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] border-l-4 rounded-xl p-5 space-y-4 hover:shadow-sm transition-shadow",
                   getStatusBorder(status)
                 )}
               >
@@ -817,7 +817,7 @@ export default function GoalsTab() {
       {/* Templates picker modal */}
       {showTemplates && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowTemplates(false)}>
-          <div className="bg-white rounded-xl w-full max-w-2xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl w-full max-w-2xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">¿Qué tipo de meta querés crear?</CardTitle>
               <button onClick={() => setShowTemplates(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
@@ -863,7 +863,7 @@ export default function GoalsTab() {
       {/* Create/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">{editId ? "Editar meta" : "Nueva meta"}</CardTitle>
               <button onClick={() => setShowForm(false)} aria-label="Cerrar" className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
@@ -998,7 +998,7 @@ export default function GoalsTab() {
 
 function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) => void; autoStats: AutoStats }) {
   return (
-    <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
+    <div className="bg-white dark:bg-[var(--color-card)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
       <div className="text-center">
         <Target className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
         <p className="text-[var(--text-primary)] font-bold mb-1">Empezá con una plantilla</p>

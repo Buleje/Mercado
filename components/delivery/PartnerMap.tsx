@@ -50,6 +50,7 @@ export default function PartnerMap({ partnerLat, partnerLng }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const partnerMarkerRef = useRef<any>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const prevMapOffersHashRef = useRef<string>("");
 
   // Inicializar mapa una vez.
   useEffect(() => {
@@ -111,7 +112,13 @@ export default function PartnerMap({ partnerLat, partnerLng }: Props) {
         const res = await fetch("/api/delivery/me/offers", { credentials: "include" });
         if (!res.ok) return;
         const data: { offers: Offer[] } = await res.json();
-        if (!cancelled) setOffers(data.offers);
+        if (!cancelled) {
+          const newHash = JSON.stringify(data.offers);
+          if (newHash !== prevMapOffersHashRef.current) {
+            prevMapOffersHashRef.current = newHash;
+            setOffers(data.offers);
+          }
+        }
       } catch {
         // noop
       }

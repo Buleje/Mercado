@@ -74,6 +74,7 @@ export default function PartnerDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const lastCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  const prevOffersHashRef = useRef<string>("");
   // Captura el momento en que se conectó hoy — para "horas online hoy"
   // en el EarningsTodayHero. Se mantiene durante la sesión del cliente.
   const [onlineSinceMs, setOnlineSinceMs] = useState<number | null>(null);
@@ -107,7 +108,11 @@ export default function PartnerDashboard() {
       const res = await fetch("/api/delivery/me/offers", { credentials: "include" });
       if (!res.ok) return;
       const data: { offers: Offer[] } = await res.json();
-      setOffers(data.offers);
+      const newHash = JSON.stringify(data.offers);
+      if (newHash !== prevOffersHashRef.current) {
+        prevOffersHashRef.current = newHash;
+        setOffers(data.offers);
+      }
     } catch { /* silent */ }
   }, []);
 

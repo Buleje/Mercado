@@ -209,7 +209,7 @@ export default function ContentCalendar() {
         className={cn(
           "min-h-[80px] rounded-lg border p-1.5 transition",
           isCurrentMonth
-            ? "border-[var(--rule-base)] bg-white"
+            ? "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]"
             : "border-[var(--rule-soft)] bg-gray-50/50",
           dragOver === ymd && "border-primary bg-primary/5",
           "cursor-pointer hover:border-primary/40"
@@ -372,7 +372,7 @@ export default function ContentCalendar() {
             return (
               <div
                 key={ymd}
-                className="min-h-[120px] rounded-xl border border-[var(--rule-base)] bg-white p-2"
+                className="min-h-[120px] rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-2"
               >
                 <div className={cn(
                   "mb-2 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
@@ -397,7 +397,7 @@ export default function ContentCalendar() {
       {/* Add entry form */}
       {showForm && (
         <div className="modal-backdrop p-4">
-          <div className="w-full max-w-md rounded-xl bg-white">
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-[var(--color-card)]">
             <div className="flex items-center justify-between border-b border-[var(--rule-soft)] p-5">
               <CardTitle className="font-semibold text-[var(--text-primary)]">
                 Nueva entrada

@@ -200,7 +200,7 @@ function KPICard({ label, value, sub, delta, icon: Icon, accent = "neutral" }: K
   }[accent];
 
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</span>
         <Icon className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
@@ -480,7 +480,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
                   aria-invalid={!!editError}
                   aria-describedby={editError ? "daily-goal-error" : undefined}
                   className={cn(
-                    "w-24 px-2 py-1 text-xs rounded-lg border bg-white text-[var(--text-primary)] outline-none",
+                    "w-24 px-2 py-1 text-xs rounded-lg border bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none",
                     editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
                   )}
                 />
@@ -535,7 +535,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
             {/* FIX D1: jerarquía visual reforzada — monto hero text-5xl/6xl,
                 meta como subtítulo claro, status como pill. */}
             <div className="text-center mb-5">
-              <div className="text-5xl sm:text-6xl font-black text-[var(--text-primary)] tracking-[-0.04em] leading-none tabular-nums">
+              <div className="text-5xl sm:text-6xl font-black text-[var(--text-primary)] tracking-tight leading-none tabular-nums">
                 {fmt(stats.todayTotal)}
               </div>
               <div className="text-sm sm:text-base text-[var(--text-secondary)] mt-2 font-medium">

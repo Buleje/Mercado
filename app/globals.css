@@ -1971,6 +1971,14 @@ button,
   --shipibo-red: #C46050;
   --cushma-cream: #2A2920;
   --clay-terracotta: #D89766;
+
+  /* ── WCAG AA fix — gray utility classes sobre fondos dark (P1 2026-05-08) ──
+     Ratio original text-gray-500 sobre card dark: 3.29:1 (falla AA).
+     Con --color-muted-foreground (#8590a3): 4.93:1 — pasa AA body (≥4.5:1).
+     text-gray-300 sube a --color-foreground (#f0f3f7) para texto principal. */
+  .dark .text-gray-500 { color: var(--color-muted-foreground) !important; }
+  .dark .text-gray-400 { color: var(--color-muted-foreground) !important; }
+  .dark .text-gray-300 { color: var(--color-foreground) !important; }
 }
 
 /* ─── Tipografia utility editorial ─── */

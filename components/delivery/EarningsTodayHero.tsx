@@ -17,7 +17,7 @@
  * Polling: cada 60s para mantener live sin spamear DB.
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { CashIcon, MotoIcon, TimerIcon } from "./icons";
 import { ArrowRight, TrendingUp, Flame } from "@buleje/design-system/icons";
@@ -58,6 +58,7 @@ export default function EarningsTodayHero({
   const [data, setData] = useState<EarningsResp | null>(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
+  const prevEarningsHashRef = useRef<string>("");
 
   const load = useCallback(async () => {
     try {
@@ -67,7 +68,11 @@ export default function EarningsTodayHero({
       });
       if (!res.ok) return;
       const json = (await res.json()) as EarningsResp;
-      setData(json);
+      const newHash = JSON.stringify(json);
+      if (newHash !== prevEarningsHashRef.current) {
+        prevEarningsHashRef.current = newHash;
+        setData(json);
+      }
     } catch {
       /* silent — vista degrada bien */
     } finally {

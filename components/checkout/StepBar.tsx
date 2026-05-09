@@ -1,26 +1,27 @@
 "use client";
 
 import { Fragment } from "react";
-import { Check } from "@buleje/design-system/icons";
+import { Check, Phone } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export type Step = "cuenta" | "datos" | "pago" | "confirmar" | "exito";
 
 /**
- * Pasos visibles en el indicador (excluye "cuenta" = pre-step de búsqueda
- * por teléfono y "exito" = post-step de éxito). Replica el patrón de
- * MarketplaceCheckoutModal: 3 circulitos con número + label + línea de
- * progreso que se llena.
+ * Pasos visibles en el indicador (excluye "exito" = pantalla de éxito).
+ * "cuenta" es el paso 0: muestra icono Phone en lugar de número.
+ * Cuando el usuario entra logueado y el step inicial ya es "datos",
+ * "cuenta" aparece automáticamente como completado (currentIdx > 0).
  */
-export const STEPS: { id: Step; label: string; num: number }[] = [
-  { id: "datos", label: "Datos", num: 1 },
-  { id: "pago", label: "Pago", num: 2 },
-  { id: "confirmar", label: "Confirmar", num: 3 },
+export const STEPS: { id: Step; label: string; num: number | null }[] = [
+  { id: "cuenta",    label: "Tu número",  num: null },
+  { id: "datos",     label: "Datos",      num: 1 },
+  { id: "pago",      label: "Pago",       num: 2 },
+  { id: "confirmar", label: "Confirmar",  num: 3 },
 ];
 
 export function StepBar({ current }: { current: Step }) {
-  // Se oculta en pre-step y en success screen.
-  if (current === "cuenta" || current === "exito") return null;
+  // Ocultar solo en la pantalla de éxito.
+  if (current === "exito") return null;
 
   const stepIds = STEPS.map((s) => s.id);
   const currentIdx = stepIds.indexOf(current);
@@ -30,6 +31,7 @@ export function StepBar({ current }: { current: Step }) {
       {STEPS.map(({ id, label, num }, idx) => {
         const isActive = current === id;
         const isDone = currentIdx > idx;
+        const isCuenta = id === "cuenta";
         return (
           <Fragment key={id}>
             {idx > 0 && (
@@ -62,7 +64,13 @@ export function StepBar({ current }: { current: Step }) {
                       : "bg-[var(--surface-sunken)] text-muted border-2 border-[var(--rule-soft)]"
                 )}
               >
-                {isDone ? <Check className="h-4 w-4" strokeWidth={3} /> : num}
+                {isDone ? (
+                  <Check className="h-4 w-4" strokeWidth={3} />
+                ) : isCuenta ? (
+                  <Phone className="h-4 w-4" strokeWidth={2.5} />
+                ) : (
+                  num
+                )}
               </div>
               <span
                 className={cn(

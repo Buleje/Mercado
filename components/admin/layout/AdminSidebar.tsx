@@ -497,7 +497,8 @@ export function AdminSidebar({
   // Track which multi-tab categories are expanded (shows sub-tabs).
   // Desktop: NO auto-expand vertical — los sub-tabs emergen exclusivamente
   // via flyout lateral on hover. Mobile: accordion on-click del usuario.
-  const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(() => new Set());
+  // "inicio" se abre por default para que Chat IA sea visible de entrada.
+  const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(() => new Set(["inicio"]));
 
   // ── Flyout state for expanded sidebar hover ──
   const [hoveredCategory, setHoveredCategory] = React.useState<string | null>(null);
@@ -931,6 +932,11 @@ export function AdminSidebar({
                                       : (isDarkTheme ? "text-white/45" : "text-[var(--text-tertiary)]")
                                   )} />
                                   <span className="truncate">{subTabLabel}</span>
+                                  {subTabId === "asistente-ia" && subAlertCount === 0 && (
+                                    <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground leading-none">
+                                      Nuevo
+                                    </span>
+                                  )}
                                   {subAlertCount > 0 && (
                                     <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none ml-auto animate-pulse">
                                       {subAlertCount}

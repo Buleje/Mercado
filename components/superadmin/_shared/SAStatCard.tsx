@@ -1,7 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { AreaChart, Area, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
+
+const SAStatCardSparkline = dynamic(() => import("./SAStatCardSparkline"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-20 h-8 animate-pulse bg-[var(--surface-sunken)] rounded" />
+  ),
+});
 
 interface SAStatCardProps {
   icon: ReactNode;
@@ -74,25 +81,7 @@ export function SAStatCard({
 
         {sparkline && sparkline.length > 1 && (
           <div className="w-20 h-8 shrink-0">
-            <ResponsiveContainer minWidth={0} width="100%" height="100%">
-              <AreaChart data={sparkline.map((v, i) => ({ i, v }))}>
-                <defs>
-                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="v"
-                  stroke="var(--accent)"
-                  strokeWidth={1.5}
-                  fill={`url(#${gradientId})`}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <SAStatCardSparkline sparkline={sparkline} gradientId={gradientId} />
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import { Geist, Instrument_Serif } from "next/font/google";
 
 // Body — Geist: tipografía moderna, neutral, optimizada para pantalla.

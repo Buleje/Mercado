@@ -208,7 +208,7 @@ export default function MassMessageSender({
   return (
     <div className="flex flex-col gap-6">
       {/* Segment selector */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
         <div className="mb-3 flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
           <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
@@ -270,7 +270,7 @@ export default function MassMessageSender({
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Template editor */}
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
           <div className="mb-3 flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-primary" />
             <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
@@ -323,7 +323,7 @@ export default function MassMessageSender({
         </div>
 
         {/* Preview */}
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
           <div className="mb-3 flex items-center justify-between">
             <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
               Vista previa
@@ -380,7 +380,7 @@ export default function MassMessageSender({
       </div>
 
       {/* Action */}
-      <div className="flex flex-col gap-3 rounded-xl border border-[var(--rule-base)] bg-white p-5">
+      <div className="flex flex-col gap-3 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
         <p className="text-sm text-[var(--text-secondary)]">
           Se generara una lista con <strong>{filtered.length}</strong> destinatario
           {filtered.length !== 1 ? "s" : ""} para copiar y usar en WhatsApp o SMS.
@@ -444,7 +444,7 @@ export default function MassMessageSender({
                     href={waUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 transition-colors"
+                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-[var(--color-card)] border border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 transition-colors"
                   >
                     <span className="font-bold text-[var(--text-primary)] truncate">{c.name}</span>
                     <span className="text-[var(--text-tertiary)] text-xs">{c.phone}</span>

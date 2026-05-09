@@ -14,7 +14,14 @@ import {
   MessageCircle, ShieldCheck, ShieldAlert, ShieldX, BookmarkPlus,
   Bookmark, FileDown, Activity, Users, Kanban,
 } from "@buleje/design-system/icons";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar } from "recharts";
+import dynamic from "next/dynamic";
+
+const NotasCreditoChart = dynamic(() => import("./NotasCreditoChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-48 animate-pulse bg-[var(--surface-sunken)] rounded-xl" />
+  ),
+});
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -927,55 +934,11 @@ export default function NotasCreditoModule() {
 
       {/* ── Trend Chart + Donut + Weekday ──────────────────────────────── */}
       {!loading && trendData.length > 2 && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 bg-white border border-[var(--rule-base)] rounded-xl p-4">
-            <p className="text-xs font-bold text-[var(--text-primary)] mb-2">NC por semana ({"\u00fa"}ltimos 3 meses)</p>
-            <ResponsiveContainer minWidth={0} width="100%" height={130}>
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="week" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                <Line type="monotone" dataKey="count" stroke="var(--accent)" strokeWidth={2} dot={{ r: 3, fill: "var(--accent)" }} />
-                <RechartsTooltip />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex flex-col gap-3">
-            {donutData.length > 1 && (
-              <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex-1">
-                <p className="text-xs font-bold text-[var(--text-primary)] mb-1">Motivos del mes</p>
-                <ResponsiveContainer minWidth={0} width="100%" height={80}>
-                  <PieChart>
-                    <Pie data={donutData} dataKey="value" cx="50%" cy="50%" innerRadius={20} outerRadius={36} paddingAngle={2}>
-                      {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                    </Pie>
-                    <RechartsTooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-0.5">
-                  {donutData.map((d, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-                      <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                      <span className="truncate">{d.name}: {d.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Días con más devoluciones */}
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex-1">
-              <p className="text-xs font-bold text-[var(--text-primary)] mb-1">Días con más devoluciones</p>
-              <ResponsiveContainer minWidth={0} width="100%" height={80}>
-                <BarChart data={weekdayData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 9 }} />
-                  <YAxis tick={{ fontSize: 9 }} allowDecimals={false} />
-                  <Bar dataKey="count" fill="var(--accent)" radius={[3, 3, 0, 0]} />
-                  <RechartsTooltip />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+        <NotasCreditoChart
+          trendData={trendData}
+          donutData={donutData}
+          weekdayData={weekdayData}
+        />
       )}
 
       {/* ── Doc Type Tabs + Search + Filters ───────────────────────────── */}
