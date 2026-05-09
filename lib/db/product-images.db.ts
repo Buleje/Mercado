@@ -76,7 +76,7 @@ export const ProductImagesDB = {
       data: params,
     });
     if (row.count === 0) return null;
-    const updated = await prisma.productImage.findUnique({ where: { id } });
+    const updated = await prisma.productImage.findFirst({ where: { id, tenantId } });
     return updated ? mapImage(updated) : null;
   },
 

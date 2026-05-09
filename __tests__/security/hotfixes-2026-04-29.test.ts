@@ -20,6 +20,8 @@ vi.mock("@/lib/logger", () => ({
 }));
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: vi.fn(() => null),
+  rateLimit: vi.fn(() => ({ allowed: true, remaining: 100 })),
+  getClientIp: vi.fn(() => "127.0.0.1"),
 }));
 
 // ── Mocks centralizados de Prisma ────────────────────────────────────────────

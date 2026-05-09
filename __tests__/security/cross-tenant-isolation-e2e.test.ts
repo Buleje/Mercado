@@ -146,9 +146,12 @@ describe("E2E cross-tenant — customer-lookup", () => {
     const res = await GET(req);
     const json = await res.json();
     expect(res.status).toBe(200);
-    // CRITICO: debe ver "Juan-A" del tenant A, no "Juan-B" del tenant B.
-    expect(json.customer?.name).toBe("Juan-A");
-    expect(json.customer?.dni).toBe("11111111");
+    // CRITICO: el endpoint retorna flags (no PII raw) desde 2026-05-06 pentest H006.
+    // El aislamiento se verifica estructuralmente: findFirst usa tenantId, NO
+    // findUnique global. El atacante tenant-A ve { exists: true, hasDni: true }
+    // de su propio registro — no datos del tenant B.
+    expect(json.customer?.exists).toBe(true);
+    expect(json.customer?.hasDni).toBe(true);
     // Verifica que la query usa findFirst con tenantId, NO findUnique global.
     expect(prismaMocks.customerFindFirst).toHaveBeenCalledWith({
       where: { phone: SHARED_PHONE, tenantId: TENANT_A },
@@ -168,8 +171,10 @@ describe("E2E cross-tenant — customer-lookup", () => {
     );
     const res = await GET(req);
     const json = await res.json();
-    expect(json.customer?.name).toBe("Juan-B"); // su propio data
-    expect(json.customer?.dni).toBe("22222222");
+    // Desde 2026-05-06 el endpoint retorna flags (no PII): existe + hasDni.
+    // El aislamiento esta garantizado porque findFirst filtra por tenantId.
+    expect(json.customer?.exists).toBe(true);
+    expect(json.customer?.hasDni).toBe(true);
   });
 
   it("sin header x-tenant-id (request sin proxy) → null (no leakea nada)", async () => {

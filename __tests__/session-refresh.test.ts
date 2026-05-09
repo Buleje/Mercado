@@ -213,7 +213,10 @@ describe("lib/session.ts — token creation & verification", () => {
     });
 
     it("rejects tokens with an invalid role (forged payload)", async () => {
-      // Manually create a token with an invalid role by forging the payload
+      // Manually create a token with an invalid role by forging the payload.
+      // NOTE: "superadmin" ES un rol válido en getSessionPayload (whitelist
+      // actualizada 2026-05-06). Usamos un rol completamente inexistente para
+      // probar el rechazo de roles desconocidos.
       const secret = process.env.AUTH_SECRET!;
       const enc = new TextEncoder();
       const key = await crypto.subtle.importKey(
@@ -225,7 +228,7 @@ describe("lib/session.ts — token creation & verification", () => {
       );
 
       const fakePayload = JSON.stringify({
-        role: "superadmin", // not a valid role
+        role: "god_mode", // not a valid role — completely fabricated
         username: "hacker",
         tenantId: "main",
         name: "",

@@ -17,8 +17,18 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { categories } from "@/data/products";
 import type { Product } from "@/types/erp";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
-import ExcelProductImporter from "./ExcelProductImporter";
+import dynamic from "next/dynamic";
 import BulkImportModal from "./BulkImportModal";
+
+// exceljs pesa ~1 MB — lazy para que no llegue al bundle inicial del admin
+const ExcelProductImporter = dynamic(() => import("./ExcelProductImporter"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-32 text-sm text-[var(--text-tertiary)]">
+      Cargando importador...
+    </div>
+  ),
+});
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 

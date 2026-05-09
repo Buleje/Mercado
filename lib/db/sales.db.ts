@@ -119,7 +119,7 @@ export const SalesDB = {
     // Pre-validate product IDs to avoid FK violations (products may have been deleted since the sale was queued offline)
     const requestedIds = [...new Set(sale.items.map(i => i.productId))];
     const existingProducts = await prisma.product.findMany({
-      where: { id: { in: requestedIds } },
+      where: { id: { in: requestedIds }, tenantId },
       select: { id: true },
     });
     const validIds = new Set(existingProducts.map(p => p.id));
