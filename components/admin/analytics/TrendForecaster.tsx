@@ -237,7 +237,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
                 </span>
               )}
               {i === 13 && (
-                <div className="w-px h-3 bg-gray-300 dark:bg-gray-600 mx-auto -mt-3" />
+                <div className="w-px h-3 bg-[var(--rule-base)] dark:bg-gray-600 mx-auto -mt-3" />
               )}
             </div>
           ))}

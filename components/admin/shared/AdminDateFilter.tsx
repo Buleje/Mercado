@@ -54,7 +54,7 @@ export default function AdminDateFilter({
   return (
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       {/* Preset buttons */}
-      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+      <div className="flex items-center gap-1 bg-[var(--surface-sunken)] rounded-lg p-0.5">
         {PRESETS.map((p) => (
           <button
             key={p.id}
@@ -63,7 +63,7 @@ export default function AdminDateFilter({
               "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
               value === p.id && !showCustom
                 ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] "
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-50",
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-alt)]",
             )}
           >
             {p.label}
@@ -75,7 +75,7 @@ export default function AdminDateFilter({
             "px-2 py-1.5 rounded-md text-xs font-medium transition-all",
             showCustom
               ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] "
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-50",
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-alt)]",
           )}
           title="Rango personalizado"
         >
@@ -117,7 +117,7 @@ export default function AdminDateFilter({
       {showRefresh && onRefresh && (
         <button
           onClick={onRefresh}
-          className="p-1.5 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 transition-colors"
+          className="p-1.5 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           title="Actualizar"
         >
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

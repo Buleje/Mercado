@@ -41,7 +41,7 @@ const STATUS_CONFIG: Record<VehicleStatus, { label: string; color: string; dot: 
   activo:        { label: "Disponible",  color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", dot: "bg-[var(--accent-soft)]" },
   "en-ruta":     { label: "En ruta",     color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",             dot: "bg-[var(--accent-soft)]" },
   mantenimiento: { label: "En taller",   color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",         dot: "bg-[var(--data-warning-500)]" },
-  inactivo:      { label: "Inactivo",    color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted",                    dot: "bg-gray-400" },
+  inactivo:      { label: "Inactivo",    color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted",                    dot: "bg-[var(--rule-mid)]" },
 };
 
 const TYPE_LABEL: Record<string, string> = { moto: "Moto", mototaxi: "Mototaxi", camioneta: "Camioneta" };

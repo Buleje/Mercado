@@ -89,7 +89,7 @@ type NCTemplate = {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<NCStatus, { label: string; color: string; bg: string; dot: string }> = {
-  BORRADOR: { label: "Borrador", color: "text-[var(--text-primary)]", bg: "bg-gray-100", dot: "bg-gray-400" },
+  BORRADOR: { label: "Borrador", color: "text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", dot: "bg-[var(--rule-mid)]" },
   EMITIDA:  { label: "Emitida",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
   ANULADA:  { label: "Anulada",  color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)]", dot: "bg-[var(--data-error-500)]" },
 };
@@ -169,7 +169,7 @@ function StatusTimeline({ nc }: { nc: NotaCredito }) {
   ];
   return (
     <div className="relative pl-6 space-y-4">
-      <div className="absolute left-2.75 top-2 bottom-2 w-0.5 bg-gray-200" />
+      <div className="absolute left-2.75 top-2 bottom-2 w-0.5 bg-[var(--rule-soft)]" />
       {steps.map((step, i) => (
         <div key={i} className="relative flex items-start gap-3">
           <div className={cn("absolute -left-3.25 w-4 h-4 rounded-full border-2 flex items-center justify-center",
@@ -259,12 +259,12 @@ function WizardProgress({ step }: { step: number }) {
           <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-[var(--dur-base)]",
             i < step ? "bg-primary text-white " :
             i === step ? "bg-primary/10 text-primary border-2 border-primary" :
-            "bg-gray-100 text-[var(--text-tertiary)]")}>
+            "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>
             {i < step ? "\u2713" : i + 1}
           </div>
           <span className={cn("text-xs font-semibold hidden sm:block", i <= step ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{label}</span>
           {i < WIZARD_STEPS.length - 1 && (
-            <div className="flex-1 h-0.5 rounded-full overflow-hidden bg-gray-200">
+            <div className="flex-1 h-0.5 rounded-full overflow-hidden bg-[var(--rule-soft)]">
               <m.div className="h-full bg-primary" initial={{ width: "0%" }} animate={{ width: i < step ? "100%" : "0%" }} transition={{ duration: 0.4 }} />
             </div>
           )}
@@ -354,12 +354,12 @@ function MotivoCard({ motivo, selected, onClick }: { motivo: typeof MOTIVOS_SUNA
         "text-left p-3 rounded-xl border-2 transition-all duration-[var(--dur-base)]",
         selected
           ? "border-primary bg-primary/5 ring-1 ring-primary/20 "
-          : "border-[var(--rule-base)] hover:border-gray-300 hover:bg-gray-50"
+          : "border-[var(--rule-base)] hover:border-gray-300 hover:bg-[var(--surface-alt)]"
       )}>
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{motivo.icon}</span>
         <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded",
-          selected ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)]")}>{motivo.code}</span>
+          selected ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{motivo.code}</span>
       </div>
       <p className={cn("text-xs font-semibold mb-0.5", selected ? "text-primary" : "text-[var(--text-primary)]")}>{motivo.label}</p>
       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-tight">{motivo.desc}</p>
@@ -379,7 +379,7 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
             <span className="text-[var(--text-tertiary)]">NC respecto al documento original</span>
             <span className="font-bold text-[var(--text-primary)]">{pct.toFixed(0)}%</span>
           </div>
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
             <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, ease: "easeOut" }}
               className="h-full rounded-full bg-[var(--data-error-500)]" />
           </div>
@@ -390,7 +390,7 @@ function AmountBreakdown({ monto, igv, total, originalTotal }: { monto: number; 
         </div>
       )}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-gray-50 rounded-xl p-3 text-center">
+        <div className="bg-[var(--surface-alt)] rounded-xl p-3 text-center">
           <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">Monto</p>
           <p className="text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(monto)}</p>
         </div>
@@ -878,9 +878,9 @@ export default function NotasCreditoModule() {
       {showShortcuts && (
         <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-xs text-[var(--text-secondary)]">
           <div className="grid grid-cols-3 gap-2">
-            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[length:var(--ts-2xs)]">N</kbd> Nueva NC</div>
-            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[length:var(--ts-2xs)]">F</kbd> Buscar</div>
-            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-[length:var(--ts-2xs)]">Esc</kbd> Cerrar</div>
+            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)]">N</kbd> Nueva NC</div>
+            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)]">F</kbd> Buscar</div>
+            <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)]">Esc</kbd> Cerrar</div>
           </div>
         </div>
       )}
@@ -949,7 +949,7 @@ export default function NotasCreditoModule() {
             return (
               <button key={dt.id} onClick={() => setDocTypeFilter(dt.id)}
                 className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap",
-                  docTypeFilter === dt.id ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200")}>
+                  docTypeFilter === dt.id ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}>
                 <Icon className="h-3.5 w-3.5" />
                 {dt.label}
               </button>
@@ -970,18 +970,18 @@ export default function NotasCreditoModule() {
               return (
                 <button key={s} onClick={() => setStatusFilter(s)}
                   className={cn("shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5",
-                    statusFilter === s ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200")}>
+                    statusFilter === s ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}>
                   {s === "" ? "Todos" : STATUS_META[s].label}
-                  {count > 0 && <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold min-w-4.5 text-center", statusFilter === s ? "bg-white/20" : "bg-gray-200")}>{count}</span>}
+                  {count > 0 && <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold min-w-4.5 text-center", statusFilter === s ? "bg-white/20" : "bg-[var(--rule-soft)]")}>{count}</span>}
                 </button>
               );
             })}
             <button onClick={() => setShowAdvFilters(s => !s)}
-              className={cn("p-2 rounded-lg transition-colors relative", showAdvFilters ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200")}>
+              className={cn("p-2 rounded-lg transition-colors relative", showAdvFilters ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}>
               <Filter className="h-4 w-4" />
               {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">{activeFilterCount}</span>}
             </button>
-            <div className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-1">
+            <div className="flex items-center gap-0.5 bg-[var(--surface-sunken)] rounded-xl p-1">
               {([["table", LayoutList], ["cards", LayoutGrid], ["kanban", Kanban]] as const).map(([mode, Icon]) => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   title={mode === "table" ? "Tabla" : mode === "cards" ? "Tarjetas" : "Kanban"}
@@ -996,7 +996,7 @@ export default function NotasCreditoModule() {
         <AnimatePresence>
           {showAdvFilters && (
             <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-gray-50 rounded-xl p-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[var(--surface-alt)] rounded-xl p-3">
                 <div>
                   <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">Desde</label>
                   <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
@@ -1036,7 +1036,7 @@ export default function NotasCreditoModule() {
                   <Send className="h-3.5 w-3.5" />Emitir {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length} NC
                 </button>
               )}
-              <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-gray-50 transition-colors">
+              <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors">
                 <Download className="h-3.5 w-3.5" />Exportar CSV
               </button>
               <button onClick={() => setCheckedIds(new Set())} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">Deseleccionar</button>
@@ -1052,7 +1052,7 @@ export default function NotasCreditoModule() {
             const col = filteredNotas.filter(nc => nc.status === status);
             const meta = STATUS_META[status];
             return (
-              <div key={status} className="bg-gray-50 border border-[var(--rule-base)] rounded-xl overflow-hidden">
+              <div key={status} className="bg-[var(--surface-alt)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
                 <div className={cn("px-4 py-3 flex items-center gap-2 border-b border-[var(--rule-base)]", meta.bg)}>
                   <span className={cn("w-2 h-2 rounded-full shrink-0", meta.dot)} />
                   <span className={cn("text-xs font-bold", meta.color)}>{meta.label}</span>
@@ -1084,7 +1084,7 @@ export default function NotasCreditoModule() {
                             </button>
                           )}
                           <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }}
-                            className="p-1 rounded hover:bg-gray-100 text-[var(--text-tertiary)]" title="Duplicar">
+                            className="p-1 rounded hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Duplicar">
                             <Copy className="h-3 w-3" />
                           </button>
                         </div>
@@ -1159,7 +1159,7 @@ export default function NotasCreditoModule() {
                   {paginated.map(nc => {
                     const meta = STATUS_META[nc.status];
                     return (
-                      <tr key={nc.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors group">
+                      <tr key={nc.id} className="border-b border-gray-50 hover:bg-[var(--surface-alt)] transition-colors group">
                         <td className="px-3 py-3">
                           <button onClick={() => toggleCheck(nc.id)} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
                             checkedIds.has(nc.id) ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
@@ -1204,7 +1204,7 @@ export default function NotasCreditoModule() {
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
-                            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }} className="p-1 rounded-lg hover:bg-gray-100 text-[var(--text-tertiary)]" title="Duplicar">
+                            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Duplicar">
                               <Copy className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -1219,8 +1219,8 @@ export default function NotasCreditoModule() {
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-[var(--text-secondary)]">{filteredNotas.length} doc{filteredNotas.length !== 1 ? "s" : ""} {"\u2014"} P{"\u00e1"}g. {page}/{totalPages}</p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                 </div>
               </div>
             )}
@@ -1247,7 +1247,7 @@ export default function NotasCreditoModule() {
                     </CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada {formatDateTime(selected.createdAt)}</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1272,7 +1272,7 @@ export default function NotasCreditoModule() {
                       <Trash2 className="h-3.5 w-3.5" />Anular
                     </button>
                   )}
-                  <button onClick={() => handleDuplicate(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 transition-colors">
+                  <button onClick={() => handleDuplicate(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] transition-colors">
                     <Copy className="h-3.5 w-3.5" />Duplicar
                   </button>
                   <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors" title="Enviar por WhatsApp">
@@ -1283,7 +1283,7 @@ export default function NotasCreditoModule() {
                   </button>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-3">
                   <p className="text-sm font-bold text-[var(--text-primary)]">[{selected.codigoMotivo}] {selected.descripcionMotivo}</p>
                   {selected.clienteNombre && (
                     <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
@@ -1299,7 +1299,7 @@ export default function NotasCreditoModule() {
                 </div>
 
                 {selected.items && selected.items.length > 0 && (
-                  <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="bg-[var(--surface-alt)] rounded-xl p-4">
                     <p className="text-xs font-bold text-[var(--text-primary)] mb-2">Items</p>
                     <div className="space-y-1.5">
                       {selected.items.map((it, i) => (
@@ -1312,7 +1312,7 @@ export default function NotasCreditoModule() {
                   </div>
                 )}
 
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-4">
                   <p className="text-xs font-bold text-[var(--text-primary)] mb-3 flex items-center gap-1.5">
                     <History className="h-3.5 w-3.5" />Historial
                   </p>
@@ -1320,7 +1320,7 @@ export default function NotasCreditoModule() {
                 </div>
 
                 {selected.notas && (
-                  <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="bg-[var(--surface-alt)] rounded-xl p-4">
                     <p className="text-xs font-bold text-[var(--text-primary)] mb-1">Notas</p>
                     <p className="text-sm text-[var(--text-secondary)]">{selected.notas}</p>
                   </div>
@@ -1343,7 +1343,7 @@ export default function NotasCreditoModule() {
 
                 {/* ── Historial del cliente ───────────────────────────── */}
                 {selected.clienteNombre && (
-                  <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="bg-[var(--surface-alt)] rounded-xl p-4">
                     <p className="text-xs font-bold text-[var(--text-primary)] mb-1.5 flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />Historial de {selected.clienteNombre}
                     </p>
@@ -1385,7 +1385,7 @@ export default function NotasCreditoModule() {
                       </div>
                       Nueva Nota de Cr{"\u00e9"}dito
                     </CardTitle>
-                    <button onClick={resetWizard} className="p-1.5 rounded-lg hover:bg-gray-100 text-[var(--text-tertiary)]">
+                    <button onClick={resetWizard} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
@@ -1403,7 +1403,7 @@ export default function NotasCreditoModule() {
                       </p>
 
                       {/* Doc Type Picker Tabs */}
-                      <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
+                      <div className="flex items-center gap-1 p-1 bg-[var(--surface-sunken)] rounded-xl">
                         {PICKER_TABS.map(tab => (
                           <button key={tab.id} onClick={() => setPickerDocType(tab.id)}
                             className={cn("flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
@@ -1413,7 +1413,7 @@ export default function NotasCreditoModule() {
                             <span>{tab.icon}</span>
                             <span>{tab.label}</span>
                             <span className={cn("px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
-                              pickerDocType === tab.id ? "bg-primary text-white" : "bg-gray-200 text-[var(--text-secondary)]")}>
+                              pickerDocType === tab.id ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>
                               {pickerCounts[tab.id]}
                             </span>
                           </button>
@@ -1489,7 +1489,7 @@ export default function NotasCreditoModule() {
                           className={cn("px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
                             selectedVenta
                               ? "text-white bg-primary hover:bg-primary-dark "
-                              : "text-[var(--text-tertiary)] bg-gray-100 cursor-not-allowed")}>
+                              : "text-[var(--text-tertiary)] bg-[var(--surface-sunken)] cursor-not-allowed")}>
                           Siguiente {"\u2192"}
                         </button>
                       </div>
@@ -1566,7 +1566,7 @@ export default function NotasCreditoModule() {
                           </label>
                           <div className="border border-[var(--rule-base)] rounded-xl divide-y divide-gray-100 overflow-hidden">
                             {selectedVenta.items.map((item, idx) => (
-                              <div key={idx} className={cn("flex items-center gap-3 p-3 transition-colors", item.selected ? "bg-primary/5" : "hover:bg-gray-50")}>
+                              <div key={idx} className={cn("flex items-center gap-3 p-3 transition-colors", item.selected ? "bg-primary/5" : "hover:bg-[var(--surface-alt)]")}>
                                 <button type="button" onClick={() => handleItemToggle(idx)}
                                   className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0",
                                     item.selected ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
@@ -1579,12 +1579,12 @@ export default function NotasCreditoModule() {
                                 {item.selected && (
                                   <div className="flex items-center gap-1.5">
                                     <button type="button" onClick={() => handleItemQty(idx, item.cantidadDevolver - 1)}
-                                      className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                      className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-[var(--rule-soft)] transition-colors">
                                       <Minus className="h-3 w-3 text-[var(--text-secondary)]" />
                                     </button>
                                     <span className="w-8 text-center text-sm font-bold text-[var(--text-primary)]">{item.cantidadDevolver}</span>
                                     <button type="button" onClick={() => handleItemQty(idx, item.cantidadDevolver + 1)}
-                                      className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                      className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center hover:bg-[var(--rule-soft)] transition-colors">
                                       <Plus className="h-3 w-3 text-[var(--text-secondary)]" />
                                     </button>
                                   </div>
@@ -1632,7 +1632,7 @@ export default function NotasCreditoModule() {
                           <div className="flex items-center gap-3">
                             <button type="button" onClick={() => setDevolverStock(!devolverStock)}
                               className={cn("relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-                                devolverStock ? "bg-primary" : "bg-gray-300")}>
+                                devolverStock ? "bg-primary" : "bg-[var(--rule-base)]")}>
                               <span className={cn("inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform", devolverStock ? "translate-x-4" : "translate-x-0")} />
                             </button>
                             <span className="text-xs font-bold text-[var(--data-warning-500)]">{"\u{1F4E6}"} Devolver items al stock</span>
@@ -1644,7 +1644,7 @@ export default function NotasCreditoModule() {
 
                       {/* Navigation */}
                       <div className="flex gap-2 pt-2">
-                        <button onClick={() => setWizardStep(0)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <button onClick={() => setWizardStep(0)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                           {"\u2190"} Atr{"\u00e1"}s
                         </button>
                         <button onClick={() => {
@@ -1699,7 +1699,7 @@ export default function NotasCreditoModule() {
                       )}
 
                       {/* Motivo Summary */}
-                      <div className="bg-gray-50 rounded-xl p-4">
+                      <div className="bg-[var(--surface-alt)] rounded-xl p-4">
                         <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-2">Motivo</p>
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{MOTIVOS_SUNAT.find(m => m.code === form.codigoMotivo)?.icon || "\u{1F4DD}"}</span>
@@ -1720,7 +1720,7 @@ export default function NotasCreditoModule() {
 
                       {/* Actions */}
                       <div className="flex gap-2 pt-2">
-                        <button onClick={() => setWizardStep(1)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <button onClick={() => setWizardStep(1)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                           {"\u2190"} Atr{"\u00e1"}s
                         </button>
                         <button onClick={handleCreate} disabled={creating}

@@ -89,7 +89,7 @@ type DraftItem = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<GuiaStatus, { label: string; color: string; bg: string; dot: string }> = {
-  BORRADOR:    { label: "Borrador",    color: "text-[var(--text-primary)]",       bg: "bg-[var(--surface-sunken)]",       dot: "bg-gray-400" },
+  BORRADOR:    { label: "Borrador",    color: "text-[var(--text-primary)]",       bg: "bg-[var(--surface-sunken)]",       dot: "bg-[var(--rule-mid)]" },
   EMITIDA:     { label: "Emitida",     color: "text-[var(--data-success-500)]",       bg: "bg-[var(--accent-soft)]",       dot: "bg-[var(--accent-soft)]" },
   EN_TRANSITO: { label: "En tránsito", color: "text-[var(--data-warning-500)]",     bg: "bg-[var(--data-warning-100)]",     dot: "bg-[var(--data-warning-500)]" },
   ENTREGADA:   { label: "Entregada",   color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
@@ -1083,7 +1083,7 @@ export default function GuiasRemisionModule() {
                                 {isDone ? (
                                   <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]" />
                                 ) : (
-                                  <div className="h-2 w-2 rounded-full bg-gray-300" />
+                                  <div className="h-2 w-2 rounded-full bg-[var(--rule-base)]" />
                                 )}
                               </div>
                               {idx < 3 && <div className={cn("w-0.5 h-5", isDone ? "bg-[var(--accent-soft)]" : "bg-[var(--rule-soft)]")} />}

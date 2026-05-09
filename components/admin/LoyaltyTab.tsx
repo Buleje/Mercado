@@ -11,7 +11,7 @@ type Tier = { name: string; minSpent: number; pointsMultiplier: number; color: s
 
 const TIER_COLORS: Record<string, string> = {
   bronce: "bg-[var(--data-warning-500)] text-white",
-  plata: "bg-gray-400 text-white",
+  plata: "bg-[var(--rule-mid)] text-white",
   oro: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)]",
   diamante: "bg-[var(--data-info-500)] text-[var(--data-info-500)]",
 };
@@ -209,26 +209,26 @@ export default function LoyaltyTab() {
     <div className="space-y-5 animate-pulse">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="h-7 w-56 bg-gray-200 dark:bg-surface rounded-lg" />
-        <div className="h-8 w-32 bg-gray-200 dark:bg-surface rounded-lg" />
+        <div className="h-7 w-56 bg-[var(--rule-soft)] dark:bg-surface rounded-lg" />
+        <div className="h-8 w-32 bg-[var(--rule-soft)] dark:bg-surface rounded-lg" />
       </div>
       {/* Tier badges */}
       <div className="flex flex-wrap gap-2">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-6 w-20 bg-gray-200 dark:bg-surface rounded-full" />)}
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-6 w-20 bg-[var(--rule-soft)] dark:bg-surface rounded-full" />)}
       </div>
       {/* Search */}
-      <div className="h-10 w-full max-w-sm bg-gray-200 dark:bg-surface rounded-xl" />
+      <div className="h-10 w-full max-w-sm bg-[var(--rule-soft)] dark:bg-surface rounded-xl" />
       {/* Customer rows */}
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
         {[1, 2, 3, 4, 5, 6].map(i => (
           <div key={i} className="flex flex-wrap items-center gap-3">
-            <div className="h-10 w-10 bg-gray-200 dark:bg-surface rounded-xl shrink-0" />
+            <div className="h-10 w-10 bg-[var(--rule-soft)] dark:bg-surface rounded-xl shrink-0" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-3.5 bg-gray-200 dark:bg-surface rounded w-1/3" />
-              <div className="h-3 bg-gray-200 dark:bg-surface rounded w-1/4" />
+              <div className="h-3.5 bg-[var(--rule-soft)] dark:bg-surface rounded w-1/3" />
+              <div className="h-3 bg-[var(--rule-soft)] dark:bg-surface rounded w-1/4" />
             </div>
-            <div className="h-5 w-16 bg-gray-200 dark:bg-surface rounded-full" />
-            <div className="h-5 w-14 bg-gray-200 dark:bg-surface rounded" />
+            <div className="h-5 w-16 bg-[var(--rule-soft)] dark:bg-surface rounded-full" />
+            <div className="h-5 w-14 bg-[var(--rule-soft)] dark:bg-surface rounded" />
           </div>
         ))}
       </div>
@@ -280,8 +280,8 @@ export default function LoyaltyTab() {
         <div className="lg:col-span-2 space-y-2 max-h-125 overflow-y-auto">
           {filtered.length === 0 && <p className="text-center text-[var(--text-tertiary)] py-8">No se encontraron clientes</p>}
           {filtered.map(c => (
-            <button key={c.phone ?? c.id} onClick={() => c.phone && loadLoyalty(c.phone)} disabled={!c.phone} className={cn("w-full text-left flex items-center gap-3 p-3 rounded-lg border transition", selected?.phone === c.phone ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-surface")}>
-              <div className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase shrink-0", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-[var(--text-secondary)]")}>{c.loyaltyTier}</div>
+            <button key={c.phone ?? c.id} onClick={() => c.phone && loadLoyalty(c.phone)} disabled={!c.phone} className={cn("w-full text-left flex items-center gap-3 p-3 rounded-lg border transition", selected?.phone === c.phone ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:bg-[var(--surface-alt)] dark:hover:bg-surface")}>
+              <div className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase shrink-0", TIER_COLORS[c.loyaltyTier] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>{c.loyaltyTier}</div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">{c.name}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
@@ -313,7 +313,7 @@ export default function LoyaltyTab() {
           ) : (
             <>
               <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 text-center">
-                <div className={cn("inline-block px-4 py-1 rounded-full text-sm font-extrabold uppercase mb-3", TIER_COLORS[selected.loyaltyTier] ?? "bg-gray-200 text-[var(--text-secondary)]")}>{selected.loyaltyTier}</div>
+                <div className={cn("inline-block px-4 py-1 rounded-full text-sm font-extrabold uppercase mb-3", TIER_COLORS[selected.loyaltyTier] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>{selected.loyaltyTier}</div>
                 <p className="font-extrabold text-lg text-[var(--text-primary)] dark:text-foreground">{selected.name}</p>
                 <p className="text-sm text-[var(--text-tertiary)]">{selected.phone}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-4">
@@ -413,7 +413,7 @@ export default function LoyaltyTab() {
                           <span>{daysRemaining} días restantes</span>
                           <span>{Math.round(percentRemaining)}%</span>
                         </div>
-                        <div className="w-full h-2 bg-gray-200 dark:bg-surface rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-[var(--rule-soft)] dark:bg-surface rounded-full overflow-hidden">
                           <div
                             className={cn("h-full transition-all", getExpirationColor(daysRemaining))}
                             style={{ width: `${Math.min(100, Math.max(0, percentRemaining))}%` }}
@@ -448,7 +448,7 @@ export default function LoyaltyTab() {
                 </div>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {customers.filter(c => c.loyaltyPoints > 0 && c.phone).slice(0, 5).map(c => (
-                    <div key={c.phone} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-surface rounded-lg">
+                    <div key={c.phone} className="flex items-center justify-between p-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{c.name}</p>
                         <p className="text-xs text-[var(--text-tertiary)]">{c.loyaltyPoints} pts · S/{(c.loyaltyPoints * 0.1).toFixed(2)}</p>
@@ -495,11 +495,11 @@ export default function LoyaltyTab() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="text-center p-2 bg-gray-50 dark:bg-surface rounded-lg">
+                      <div className="text-center p-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg">
                         <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{referralCount}</p>
                         <p className="text-xs text-[var(--text-tertiary)]">Referidos</p>
                       </div>
-                      <div className="text-center p-2 bg-gray-50 dark:bg-surface rounded-lg">
+                      <div className="text-center p-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg">
                         <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{customers.filter(c => c.referralCode).length}</p>
                         <p className="text-xs text-[var(--text-tertiary)]">Total sistema</p>
                       </div>
@@ -515,13 +515,13 @@ export default function LoyaltyTab() {
 
                     <div className="space-y-2">
                       <p className="text-xs text-[var(--text-secondary)]">Mensaje para compartir:</p>
-                      <div className="p-2 bg-gray-50 dark:bg-surface rounded-lg relative">
+                      <div className="p-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg relative">
                         <p className="text-xs text-[var(--text-secondary)]">
                           ¡Únete a Buleje con mi código <span className="font-bold text-primary">{referralCode}</span>!
                         </p>
                         <button
                           onClick={() => copyToClipboard(`¡Únete a Buleje con mi código ${referralCode}!`, 'referral-message')}
-                          className="absolute top-2 right-2 p-1 hover:bg-gray-200 dark:hover:bg-card rounded transition"
+                          className="absolute top-2 right-2 p-1 hover:bg-[var(--rule-soft)] dark:hover:bg-card rounded transition"
                         >
                           {copiedMessage === 'referral-message' ? (
                             <span className="text-xs text-[var(--data-success-500)] font-bold">OK</span>
@@ -551,7 +551,7 @@ export default function LoyaltyTab() {
                 <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-2">
                   <h4 className="font-bold text-sm">Niveles</h4>
                   {tiers.map(t => (
-                    <div key={t.name} className={cn("flex items-center justify-between text-xs px-3 py-2 rounded-lg", selected.loyaltyTier === t.name ? "bg-primary/10 border border-primary" : "bg-gray-50 dark:bg-surface")}>
+                    <div key={t.name} className={cn("flex items-center justify-between text-xs px-3 py-2 rounded-lg", selected.loyaltyTier === t.name ? "bg-primary/10 border border-primary" : "bg-[var(--surface-alt)] dark:bg-surface")}>
                       <span className="font-bold capitalize">{t.name}</span>
                       <span>S/{t.minSpent}+ gastado</span>
                       <span className="font-bold">{t.pointsMultiplier}x puntos</span>

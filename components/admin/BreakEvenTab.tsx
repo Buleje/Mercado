@@ -542,7 +542,7 @@ export default function BreakEvenTab() {
                 <div className="w-4 h-0.5 bg-[var(--data-error-500)]" /> Costos totales
               </span>
               <span className="flex items-center gap-1.5">
-                <div className="w-4 h-px bg-gray-400" style={{ borderTop: "1.5px dashed" }} /> Costos fijos
+                <div className="w-4 h-px bg-[var(--rule-mid)]" style={{ borderTop: "1.5px dashed" }} /> Costos fijos
               </span>
               <span className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-[var(--data-error-500)] border-2 border-white" /> Punto equilibrio

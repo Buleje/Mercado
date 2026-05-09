@@ -275,7 +275,7 @@ export default function RevenuePerSquareMeter() {
                   "p-4 rounded-xl border",
                   index === 0
                     ? "border-primary/30 bg-primary/5"
-                    : "border-[var(--rule-soft)] bg-gray-50"
+                    : "border-[var(--rule-soft)] bg-[var(--surface-alt)]"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -285,7 +285,7 @@ export default function RevenuePerSquareMeter() {
                         "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold",
                         index === 0
                           ? "bg-primary text-white"
-                          : "bg-gray-200 text-[var(--text-secondary)]"
+                          : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
                       )}
                     >
                       {index === 0 ? <Star className="w-3.5 h-3.5" /> : index + 1}
@@ -302,7 +302,7 @@ export default function RevenuePerSquareMeter() {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       onClick={() => setEditingId(area.id)}
-                      className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-[var(--rule-soft)] transition-colors"
                       aria-label="Editar"
                     >
                       <Edit3 className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
@@ -338,11 +338,11 @@ export default function RevenuePerSquareMeter() {
                   </div>
                   {/* Bar */}
                   <div className="flex-1">
-                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                       <div
                         className={cn(
                           "h-full rounded-full",
-                          index === 0 ? "bg-primary" : "bg-gray-400"
+                          index === 0 ? "bg-primary" : "bg-[var(--rule-mid)]"
                         )}
                         style={{
                           width: topArea

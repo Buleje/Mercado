@@ -124,7 +124,7 @@ function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) 
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={onPreview}
-          className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="p-1.5 rounded-lg hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 transition-colors"
           title="Ver preview"
         >
           <Eye className="w-4 h-4 text-[var(--text-secondary)]" />
@@ -135,7 +135,7 @@ function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) 
           onClick={onToggle}
           className={cn(
             "relative w-11 h-6 rounded-full transition-colors flex-shrink-0",
-            enabled ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
+            enabled ? "bg-primary" : "bg-[var(--rule-base)] dark:bg-gray-600"
           )}
         >
           <span

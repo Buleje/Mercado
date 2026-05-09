@@ -150,11 +150,11 @@ export default function VentasHeatmap() {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
+        <div className="h-5 w-48 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="space-y-1">
           {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="flex gap-1">
-              <div className="w-8 h-7 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="w-8 h-7 bg-[var(--rule-soft)] dark:bg-gray-700 rounded animate-pulse" />
               {Array.from({ length: 9 }).map((_, j) => (
                 <div key={j} className="w-7 h-7 bg-[var(--surface-sunken)] rounded-sm animate-pulse" />
               ))}

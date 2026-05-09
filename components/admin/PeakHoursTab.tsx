@@ -103,7 +103,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
         <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" /> Horas Pico de Venta
         </CardTitle>
-        <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
+        <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5">
           <button
             onClick={() => setViewTab("horas")}
             className={cn(
@@ -176,10 +176,10 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                         : isPeak
                           ? "bg-[var(--data-warning-500)]/80"
                           : isValley
-                            ? "bg-gray-300 dark:bg-gray-600"
+                            ? "bg-[var(--rule-base)] dark:bg-gray-600"
                             : h.count > 0
                               ? "bg-primary group-hover:bg-primary/80"
-                              : "bg-gray-100 dark:bg-surface",
+                              : "bg-[var(--surface-sunken)] dark:bg-surface",
                       isCurrent && "ring-2 ring-primary ring-offset-1"
                     )}
                     style={{ height: `${Math.max(pct, 2)}%` }}
@@ -219,7 +219,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                   <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-10 text-right shrink-0">
                     {DAY_LABELS[d.day] ?? d.day}
                   </span>
-                  <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-7 overflow-hidden">
+                  <div className="flex-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-full h-7 overflow-hidden">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all flex items-center justify-end pr-3",

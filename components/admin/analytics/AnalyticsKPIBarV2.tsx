@@ -100,9 +100,9 @@ export default function AnalyticsKPIBarV2() {
             key={i}
             className="h-24 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] animate-pulse p-3"
           >
-            <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-            <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-            <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-3 w-16 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-2" />
+            <div className="h-6 w-20 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-2" />
+            <div className="h-4 w-12 bg-[var(--rule-soft)] dark:bg-gray-700 rounded" />
           </div>
         ))}
       </div>

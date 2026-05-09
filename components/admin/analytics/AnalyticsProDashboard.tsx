@@ -109,7 +109,7 @@ function WidgetCard({
         {onRefresh && (
           <button
             onClick={handleRefresh}
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1 rounded hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-700 transition-colors"
             aria-label="Actualizar"
           >
             <svg
@@ -212,7 +212,7 @@ export default function AnalyticsProDashboard() {
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-surface p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-[var(--surface-alt)] dark:bg-surface p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
@@ -318,7 +318,7 @@ export default function AnalyticsProDashboard() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-64 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse"
+              className="h-64 rounded-xl bg-[var(--rule-soft)] dark:bg-gray-700 animate-pulse"
             />
           ))}
         </div>

@@ -220,7 +220,7 @@ export default function FiadoAnalyticsPanel() {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-4">
-        <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+        <div className="h-5 w-40 bg-[var(--rule-soft)] dark:bg-gray-700 rounded animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-20 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />

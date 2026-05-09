@@ -224,7 +224,7 @@ export default function SalesTrendChart() {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
+        <div className="h-5 w-40 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="h-64 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
       </div>
     );

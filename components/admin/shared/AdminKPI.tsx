@@ -31,8 +31,8 @@ function AdminKPI({ label, value, icon: Icon, iconColor = "#6b7280", trend, load
 
         {loading ? (
           <div className="space-y-2">
-            <div className="h-8 w-24 bg-gray-100 dark:bg-zinc-800 rounded animate-pulse" />
-            <div className="h-4 w-16 bg-gray-100 dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="h-8 w-24 bg-[var(--surface-sunken)] dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="h-4 w-16 bg-[var(--surface-sunken)] dark:bg-zinc-800 rounded animate-pulse" />
           </div>
         ) : (
           <>

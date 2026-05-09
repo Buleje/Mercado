@@ -305,7 +305,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
           </div>
 
           {/* Transcript display */}
-          <div className="px-3 py-2 bg-gray-50 dark:bg-surface min-h-[3rem]">
+          <div className="px-3 py-2 bg-[var(--surface-alt)] dark:bg-surface min-h-[3rem]">
             {transcript || interimTranscript ? (
               <p className="text-xs text-[var(--text-primary)] dark:text-foreground">
                 {transcript}
@@ -384,7 +384,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                 {items.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 p-1.5 rounded-lg bg-gray-50 dark:bg-surface"
+                    className="flex items-center gap-2 p-1.5 rounded-lg bg-[var(--surface-alt)] dark:bg-surface"
                   >
                     {item.matchedProductId ? (
                       <Check className="h-3.5 w-3.5 text-[var(--data-success-500)] shrink-0" />
@@ -427,8 +427,8 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
           )}
 
           {/* Keyboard shortcut hint */}
-          <div className="px-3 py-1.5 bg-gray-50 dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border text-center">
-            <kbd className="text-[length:var(--ts-2xs)] bg-gray-200 dark:bg-gray-700 text-[var(--text-secondary)] px-1.5 py-0.5 rounded font-mono">
+          <div className="px-3 py-1.5 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border text-center">
+            <kbd className="text-[length:var(--ts-2xs)] bg-[var(--rule-soft)] dark:bg-gray-700 text-[var(--text-secondary)] px-1.5 py-0.5 rounded font-mono">
               Ctrl+M
             </kbd>
           </div>

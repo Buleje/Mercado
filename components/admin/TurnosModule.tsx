@@ -374,7 +374,7 @@ export default function TurnosModule() {
 
       {/* ── Fila única: Tabs Turnos/Cajeros + chip estado de turno ───────────── */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex bg-gray-100 dark:bg-accent rounded-xl p-1 w-fit">
+        <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-xl p-1 w-fit">
           <button
             onClick={() => { setMainTab("turnos"); try { localStorage.setItem("turnos-subtab", "turnos"); } catch {} }}
             className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
@@ -517,7 +517,7 @@ export default function TurnosModule() {
                           </div>
                         </div>
                         {/* Mini performance bar */}
-                        <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-[var(--surface-sunken)] dark:bg-white/5 rounded-full overflow-hidden">
                           <div
                             className={cn("h-full rounded-full transition-all", isTop ? "bg-[var(--data-warning-500)]" : "bg-primary")}
                             style={{ width: `${barWidth}%` }}
@@ -1060,7 +1060,7 @@ export default function TurnosModule() {
           <div className="flex items-center gap-3">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Historial de turnos</CardTitle>
             {historial.length > 0 && (
-              <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
+              <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5">
                 <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
                 <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
               </div>
@@ -1114,8 +1114,8 @@ export default function TurnosModule() {
                 return (
                   <div key={t.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-gray-300" : cuadro ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} />
-                      {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-700 my-1" />}
+                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-[var(--rule-base)]" : cuadro ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} />
+                      {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-[var(--rule-soft)] dark:bg-gray-700 my-1" />}
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
                       <p className="text-sm font-bold text-[var(--text-primary)] truncate">
@@ -1146,7 +1146,7 @@ export default function TurnosModule() {
                   </thead>
                   <tbody>
                     {paginated.map(t => (
-                      <tr key={t.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                      <tr key={t.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
                         <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)] truncate max-w-[160px]">{cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"}</td>
                         <td className="px-4 py-4 text-sm text-[var(--text-secondary)] tabular-nums">{formatDateTime(t.abrioEn)}</td>
                         <td className="px-4 py-4 text-sm text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
@@ -1171,14 +1171,14 @@ export default function TurnosModule() {
                     <button
                       disabled={page <= 1}
                       onClick={() => setPage(p => p - 1)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button
                       disabled={page >= totalPages}
                       onClick={() => setPage(p => p + 1)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -1221,7 +1221,7 @@ export default function TurnosModule() {
                     <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y confirma el cierre</p>
                   </div>
                 </div>
-                <button onClick={() => setShowCierre(false)} aria-label="Cerrar" className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
+                <button onClick={() => setShowCierre(false)} aria-label="Cerrar" className="p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 rounded-lg transition-colors">
                   <X className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -1229,7 +1229,7 @@ export default function TurnosModule() {
               {/* Body */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                 {/* Resumen — card destacado */}
-                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-5 space-y-2.5">
+                <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-5 space-y-2.5">
                   <div className="flex justify-between items-center text-base">
                     <span className="text-[var(--text-secondary)]">Efectivo inicial</span>
                     <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(turnoActivo.inicioEfectivo)}</span>
@@ -1317,7 +1317,7 @@ export default function TurnosModule() {
               <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 flex gap-3">
                 <button
                   onClick={() => setShowCierre(false)}
-                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-card hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1359,7 +1359,7 @@ export default function TurnosModule() {
                     <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                     Resumen del Turno
                   </CardTitle>
-                  <button onClick={() => setShowResumen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
+                  <button onClick={() => setShowResumen(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1403,7 +1403,7 @@ export default function TurnosModule() {
                 )}
 
                 {/* Card 3: Caja */}
-                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
+                <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4">
                   <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-3 flex items-center gap-1.5">
                     <DollarSign className="h-3.5 w-3.5" /> Caja
                   </h4>
@@ -1453,7 +1453,7 @@ export default function TurnosModule() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">
+                    <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-3 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">
                       Sin descuentos aplicados en este turno
                     </div>
                   );
@@ -1498,11 +1498,11 @@ export default function TurnosModule() {
                       </p>
                     </m.div>
                   ) : (
-                    <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
+                    <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4 space-y-2">
                       <p className="text-sm text-[var(--text-secondary)]">
                         Ventas: {formatCurrency(ventas)} de {formatCurrency(meta)} ({porcentaje}%)
                       </p>
-                      <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-3">
+                      <div className="w-full bg-[var(--rule-soft)] dark:bg-white/10 rounded-full h-3">
                         <div
                           className="h-3 rounded-full bg-primary transition-all"
                           style={{ width: `${Math.min(100, porcentaje)}%` }}
@@ -1631,7 +1631,7 @@ export default function TurnosModule() {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] dark:hover:bg-white/10 transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Imprimir resumen

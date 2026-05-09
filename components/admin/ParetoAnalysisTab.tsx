@@ -83,7 +83,7 @@ export default function ParetoAnalysisTab() {
           { key: "units" as const, label: "Unidades", icon: Package },
           { key: "margin" as const, label: "Margen Bruto", icon: BarChart3 },
         ].map(m => (
-          <button key={m.key} onClick={() => setMetric(m.key)} className={cn("flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold transition-colors", metric === m.key ? "bg-[var(--text-primary)] text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={m.key} onClick={() => setMetric(m.key)} className={cn("flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold transition-colors", metric === m.key ? "bg-[var(--text-primary)] text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
             <m.icon className="h-4 w-4" /> {m.label}
           </button>
         ))}
@@ -98,19 +98,19 @@ export default function ParetoAnalysisTab() {
               <span className="w-5 text-xs font-bold text-[var(--text-tertiary)] text-right">{i + 1}</span>
               <span className="w-40 text-xs font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</span>
               <div className="flex-1 flex flex-wrap items-center gap-2">
-                <div className="flex-1 h-6 bg-gray-100 dark:bg-surface rounded-full overflow-hidden relative">
-                  <div className={cn("h-full rounded-full transition-all", p.isTop ? "bg-[var(--text-primary)]" : "bg-gray-300 dark:bg-gray-600")} style={{ width: `${(p.value / maxValue) * 100}%` }} />
+                <div className="flex-1 h-6 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden relative">
+                  <div className={cn("h-full rounded-full transition-all", p.isTop ? "bg-[var(--text-primary)]" : "bg-[var(--rule-base)] dark:bg-gray-600")} style={{ width: `${(p.value / maxValue) * 100}%` }} />
                 </div>
                 <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-14 text-right">{Number(p.pct).toFixed(1)}%</span>
               </div>
               {/* Cumulative line marker */}
               <div className="w-20 flex items-center gap-1">
-                <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                <div className="flex-1 h-1.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                   <div className={cn("h-full rounded-full", p.cumPct <= 80 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} style={{ width: `${p.cumPct}%` }} />
                 </div>
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] w-10 text-right">{Number(p.cumPct).toFixed(0)}%</span>
               </div>
-              <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", p.isTop ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]")}>{p.isTop ? "TOP" : "—"}</span>
+              <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", p.isTop ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]")}>{p.isTop ? "TOP" : "—"}</span>
             </div>
           ))}
         </div>

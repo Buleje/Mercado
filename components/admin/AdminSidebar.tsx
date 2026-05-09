@@ -545,7 +545,7 @@ function ModuleItem({
                           "shrink-0 h-1.5 w-1.5 rounded-full",
                           isTabActive
                             ? "bg-[var(--accent)]"
-                            : "bg-gray-300"
+                            : "bg-[var(--rule-base)]"
                         )}
                       />
                       <span className="truncate" title={tab.label}>{tab.label}</span>

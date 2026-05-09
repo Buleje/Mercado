@@ -26,7 +26,7 @@ const iconBgMap: Record<string, string> = {
   amber: "bg-amber-50 dark:bg-amber-900/20",
   red: "bg-red-50 dark:bg-red-900/20",
   violet: "bg-[var(--surface-sunken)]",
-  gray: "bg-gray-50 dark:bg-zinc-800",
+  gray: "bg-[var(--surface-alt)] dark:bg-zinc-800",
 };
 
 function getIconBg(color?: string): string {

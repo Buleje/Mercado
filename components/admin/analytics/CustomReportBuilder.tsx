@@ -105,7 +105,7 @@ function StepBadge({ step, current }: { step: number; current: number }) {
           ? "bg-primary text-white"
           : current > step
           ? "bg-primary/30 text-primary"
-          : "bg-gray-100 text-[var(--text-tertiary)]"
+          : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
       )}
     >
       {step}
@@ -354,7 +354,7 @@ export default function CustomReportBuilder({
                 {s === 1 ? "Metricas" : s === 2 ? "Periodo" : "Filtros"}
               </span>
             </button>
-            {s < 3 && <div className="w-8 h-px bg-gray-200" />}
+            {s < 3 && <div className="w-8 h-px bg-[var(--rule-soft)]" />}
           </div>
         ))}
       </div>
@@ -442,7 +442,7 @@ export default function CustomReportBuilder({
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => setStep(1)}
-              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-gray-50 transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-[var(--surface-alt)] transition-colors"
             >
               Atras
             </button>
@@ -495,7 +495,7 @@ export default function CustomReportBuilder({
           <div className="flex gap-2 mt-1">
             <button
               onClick={() => setStep(2)}
-              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-gray-50 transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] text-sm hover:bg-[var(--surface-alt)] transition-colors"
             >
               Atras
             </button>
@@ -516,7 +516,7 @@ export default function CustomReportBuilder({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setStep(1)}
-              className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] text-xs hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] text-xs hover:bg-[var(--surface-alt)] transition-colors"
             >
               Editar reporte
             </button>
@@ -540,7 +540,7 @@ export default function CustomReportBuilder({
           <div className="overflow-auto max-h-64 rounded-lg border border-[var(--rule-base)]">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-50 border-b border-[var(--rule-base)] sticky top-0">
+                <tr className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)] sticky top-0">
                   <th className="text-left px-2 py-1.5 font-semibold text-[var(--text-secondary)] whitespace-nowrap">
                     Periodo
                   </th>
@@ -562,7 +562,7 @@ export default function CustomReportBuilder({
                 {reportRows.map((row, i) => (
                   <tr
                     key={i}
-                    className="border-b border-[var(--rule-soft)] hover:bg-gray-50"
+                    className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)]"
                   >
                     <td className="px-2 py-1.5 text-[var(--text-primary)] font-medium whitespace-nowrap">
                       {row.period}
@@ -582,7 +582,7 @@ export default function CustomReportBuilder({
           </p>
 
           {/* Save template */}
-          <div className="rounded-lg border border-[var(--rule-base)] bg-gray-50 p-3">
+          <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] p-3">
             <p className="text-xs font-semibold text-[var(--text-primary)] mb-2">Guardar como plantilla</p>
             <div className="flex gap-2">
               <input

@@ -183,7 +183,7 @@ export default function CashFlowChart() {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse" />
+        <div className="h-5 w-40 bg-[var(--rule-soft)] dark:bg-gray-700 rounded mb-4 animate-pulse" />
         <div className="grid grid-cols-3 gap-3 mb-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-16 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />

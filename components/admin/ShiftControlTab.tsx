@@ -260,7 +260,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
               </button>
             </AdminTooltip>
           )}
-          <button onClick={() => exportToCSV(closedShifts.map(s => ({ cajero: s.userName, apertura: s.openedAt, cierre: s.closedAt ?? "", duracion: duration(s.openedAt, s.closedAt), ventas_total: s.totalSales, pedidos: s.totalOrders, efectivo: s.cashSales, digital: s.digitalSales, fondo_inicio: s.openingCash, efectivo_contado: s.closingCash ?? 0, esperado: s.expectedCash, diferencia: s.difference ?? 0 })), "historial-turnos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(closedShifts.map(s => ({ cajero: s.userName, apertura: s.openedAt, cierre: s.closedAt ?? "", duracion: duration(s.openedAt, s.closedAt), ventas_total: s.totalSales, pedidos: s.totalOrders, efectivo: s.cashSales, digital: s.digitalSales, fondo_inicio: s.openingCash, efectivo_contado: s.closingCash ?? 0, esperado: s.expectedCash, diferencia: s.difference ?? 0 })), "historial-turnos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowOpenForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -325,7 +325,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
               <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Square className="h-4 w-4 text-[var(--data-error-500)]" /> Cerrar turno</CardTitle>
               <button onClick={() => setShowCloseForm(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-2 text-sm">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Cajero</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{showCloseForm.userName}</span></div>
               <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Turno abierto</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtDatetime(showCloseForm.openedAt)}</span></div>
               <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Duración</span><span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{duration(showCloseForm.openedAt)}</span></div>
@@ -368,7 +368,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* View tabs */}
       <div className="flex flex-wrap items-center gap-2">
         {(["activos", "historial"] as const).map(v => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
             {v === "activos" ? `Turnos activos (${activeShifts.length})` : `Historial (${closedShifts.length})`}
           </button>
         ))}
@@ -380,14 +380,14 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
           {[1, 2].map(i => (
             <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 animate-pulse">
               <div className="flex flex-wrap items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-surface" />
+                <div className="w-10 h-10 rounded-xl bg-[var(--rule-soft)] dark:bg-surface" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 dark:bg-surface rounded w-32" />
-                  <div className="h-3 bg-gray-100 dark:bg-surface/50 rounded w-48" />
+                  <div className="h-4 bg-[var(--rule-soft)] dark:bg-surface rounded w-32" />
+                  <div className="h-3 bg-[var(--surface-sunken)] dark:bg-surface/50 rounded w-48" />
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {[1,2,3,4].map(j => <div key={j} className="h-12 rounded-xl bg-gray-100 dark:bg-surface/50" />)}
+                {[1,2,3,4].map(j => <div key={j} className="h-12 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface/50" />)}
               </div>
             </div>
           ))}
@@ -408,7 +408,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
             <div key={sh.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5 transition-all", isOpen ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 " : "border-[var(--rule-base)] dark:border-card-border")}>
               <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0", isOpen ? "bg-[var(--accent-soft)]" : "bg-gray-400 dark:bg-surface")}>
+                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm shrink-0", isOpen ? "bg-[var(--accent-soft)]" : "bg-[var(--rule-mid)] dark:bg-surface")}>
                     <User className="h-5 w-5" />
                   </div>
                   <div>
@@ -417,7 +417,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", isOpen ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>
+                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", isOpen ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>
                     {isOpen ? "Activo" : sh.status === "revisando" ? "Revisando" : `Cerrado — ${duration(sh.openedAt, sh.closedAt)}`}
                   </span>
                   {isOpen && (
@@ -458,7 +458,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 
       {/* Cargar más (historial client-side pagination) */}
       {!loadingData && view === "historial" && historialVisible < closedShifts.length && (
-        <button onClick={() => setHistorialVisible(v => v + 10)} className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => setHistorialVisible(v => v + 10)} className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           Cargar más — {closedShifts.length - historialVisible} turnos restantes
         </button>
       )}
@@ -522,7 +522,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 function SCell({ label, value, accent }: { label: string; value: string; accent?: string }) {
   const col = accent === "blue" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : accent === "violet" ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : accent === "amber" ? "text-[var(--data-warning-600)] dark:text-amber-400" : accent === "sky" ? "text-sky-600 dark:text-sky-400" : accent === "green" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : accent === "red" ? "text-[var(--data-error-500)] dark:text-red-400" : "text-[var(--text-primary)] dark:text-foreground";
   return (
-    <div className="bg-gray-50 dark:bg-surface/50 rounded-xl px-3 py-2.5">
+    <div className="bg-[var(--surface-alt)] dark:bg-surface/50 rounded-xl px-3 py-2.5">
       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-0.5">{label}</p>
       <p className={cn("font-extrabold text-base leading-tight", col)}>{value}</p>
     </div>

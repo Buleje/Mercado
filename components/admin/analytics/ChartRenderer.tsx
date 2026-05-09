@@ -42,7 +42,7 @@ export function BarChart({
                 <span className="text-[var(--text-primary)] dark:text-foreground font-medium truncate">{item.label}</span>
                 {showValues && <span className="text-[var(--text-secondary)] dark:text-muted font-bold shrink-0">{formatValue(item.value)}</span>}
               </div>
-              <div className="h-2 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--surface-sunken)] dark:bg-accent rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{ width: `${pct}%`, backgroundColor: item.color ?? "var(--accent)" }}
