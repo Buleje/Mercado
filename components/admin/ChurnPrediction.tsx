@@ -200,7 +200,7 @@ export default function ChurnPrediction() {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-gray-50 disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
+          className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-[var(--surface-alt)] disabled:opacity-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -249,7 +249,7 @@ export default function ChurnPrediction() {
                   "rounded-lg px-3 py-1.5 text-xs font-medium transition",
                   filterRisk === r
                     ? "bg-primary text-white"
-                    : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 dark:bg-gray-800 dark:text-[var(--text-tertiary)] dark:hover:bg-gray-700"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:bg-gray-800 dark:text-[var(--text-tertiary)] dark:hover:bg-gray-700"
                 )}
               >
                 {r.charAt(0).toUpperCase() + r.slice(1)}

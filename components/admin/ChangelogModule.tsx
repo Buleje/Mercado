@@ -183,7 +183,7 @@ export default function ChangelogModule() {
                       </span>
                     )}
                     {release.status === "planned" && (
-                      <span className="rounded-full px-2 py-0.5 bg-gray-200 dark:bg-surface text-[var(--text-secondary)] dark:text-muted text-[length:var(--ts-2xs)] font-bold">
+                      <span className="rounded-full px-2 py-0.5 bg-[var(--rule-soft)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted text-[length:var(--ts-2xs)] font-bold">
                         Planificado
                       </span>
                     )}

@@ -273,7 +273,7 @@ export default function BulkPriceUpdater() {
                   "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                   percentChange > 0
                     ? "bg-primary text-white hover:bg-[#235c43]"
-                    : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
                 )}
               >
                 Ver cambios
@@ -328,7 +328,7 @@ export default function BulkPriceUpdater() {
                   "px-5 py-2 rounded-lg text-sm font-medium transition-colors",
                   csvPriceMap
                     ? "bg-primary text-white hover:bg-[#235c43]"
-                    : "bg-gray-100 text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed dark:bg-gray-800"
                 )}
               >
                 Ver cambios

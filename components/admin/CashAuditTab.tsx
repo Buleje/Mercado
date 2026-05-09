@@ -307,11 +307,11 @@ function CashCounter({
 
           {/* Resumen */}
           <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-center">
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Esperado</p>
               <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">{fmt(expectedAmount)}</p>
             </div>
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-center">
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Contado</p>
               <p className={cn("font-extrabold text-sm", hasCount ? "text-[var(--text-primary)] dark:text-foreground" : "text-[var(--text-tertiary)]")}>
                 {hasCount ? fmt(counted) : "—"}
@@ -319,7 +319,7 @@ function CashCounter({
             </div>
             <div className={cn(
               "rounded-xl p-3 text-center",
-              !hasCount ? "bg-gray-50 dark:bg-surface" :
+              !hasCount ? "bg-[var(--surface-alt)] dark:bg-surface" :
               difference === 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
               difference > 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" :
               "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20"
@@ -443,7 +443,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
           <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} aria-label="Refrescar" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} strokeWidth={1.75} aria-hidden />
           </button>
-          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Descargar
           </button>
         </div>
@@ -538,8 +538,8 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-center">
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Esperado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(detail.expectedAmount)}</p></div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Contado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.status !== "pendiente" ? fmt(detail.countedAmount) : "-"}</p></div>
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Esperado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(detail.expectedAmount)}</p></div>
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Contado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.status !== "pendiente" ? fmt(detail.countedAmount) : "-"}</p></div>
               <div className={cn("rounded-xl p-3", STATUS_MAP[detail.status].bg)}><p className="text-xs text-[var(--text-tertiary)]">Diferencia</p><p className={cn("font-extrabold", STATUS_MAP[detail.status].color)}>{detail.status !== "pendiente" ? (detail.difference > 0 ? "+" : "") + fmt(detail.difference) : "-"}</p></div>
             </div>
 
@@ -548,7 +548,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                 <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-2 flex items-center gap-1"><Coins className="h-4 w-4" /> Desglose de denominaciones</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                   {detail.denominations.filter(d => d.count > 0).map(d => (
-                    <div key={`${d.type}-${d.value}`} className="flex items-center justify-between bg-gray-50 dark:bg-surface rounded-lg px-3 py-1.5 text-xs">
+                    <div key={`${d.type}-${d.value}`} className="flex items-center justify-between bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-3 py-1.5 text-xs">
                       <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted">
                         {d.type === "billete" ? <Banknote className="h-3 w-3" /> : <Coins className="h-3 w-3" />}
                         S/ {d.value < 1 ? Number(d.value).toFixed(2) : d.value}

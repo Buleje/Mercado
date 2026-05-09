@@ -85,7 +85,7 @@ export default function BusinessIntelligenceTab() {
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Proyecciones, tendencias, anomalías y KPIs clave</p>
         </div>
-        <button onClick={() => exportToCSV(CATEGORY_TRENDS.map(t => ({ categoria: t.category, ventas_actual: t.currentSales, ventas_anterior: t.previousSales, crecimiento: t.growthPct + "%", top_producto: t.topProduct })), "bi-tendencias")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(CATEGORY_TRENDS.map(t => ({ categoria: t.category, ventas_actual: t.currentSales, ventas_anterior: t.previousSales, crecimiento: t.growthPct + "%", top_producto: t.topProduct })), "bi-tendencias")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -111,7 +111,7 @@ export default function BusinessIntelligenceTab() {
           <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Target className="h-4 w-4 text-primary" /> Proyección de ventas</CardTitle>
           <div className="flex flex-wrap gap-1">
             {(["7d", "30d", "90d"] as ForecastPeriod[]).map(p => (
-              <button key={p} onClick={() => setForecastPeriod(p)} className={cn("px-3 py-1 rounded-lg text-xs font-bold transition-colors", forecastPeriod === p ? "bg-primary text-white" : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}>{p === "7d" ? "7 días" : p === "30d" ? "30 días" : "90 días"}</button>
+              <button key={p} onClick={() => setForecastPeriod(p)} className={cn("px-3 py-1 rounded-lg text-xs font-bold transition-colors", forecastPeriod === p ? "bg-primary text-white" : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent")}>{p === "7d" ? "7 días" : p === "30d" ? "30 días" : "90 días"}</button>
             ))}
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function BusinessIntelligenceTab() {
           <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Ticket promedio</p><p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(forecast.avgTicket)}</p></div>
         </div>
         {/* Confidence bar */}
-        <div className="mt-4 relative h-6 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+        <div className="mt-4 relative h-6 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
           <div className="absolute inset-y-0 bg-primary/20 rounded-full" style={{ left: `${(forecast.confidenceLow / forecast.confidenceHigh) * 100 * 0.5}%`, right: `${100 - 95}%` }} />
           <div className="absolute inset-y-0 left-0 bg-primary/60 rounded-full" style={{ width: `${(forecast.predictedRevenue / forecast.confidenceHigh) * 100}%` }} />
           <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(forecast.predictedRevenue)}</span>

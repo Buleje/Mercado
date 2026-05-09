@@ -154,7 +154,7 @@ export default function BudgetAlertWidget({ monthlyBudget = 5000 }: BudgetAlertW
 
           {/* Barra de progreso */}
           <div>
-            <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+            <div className="h-2.5 w-full rounded-full bg-[var(--rule-soft)] dark:bg-gray-700 overflow-hidden">
               <div
                 className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", cfg.bar)}
                 style={{ width: `${pct}%` }}

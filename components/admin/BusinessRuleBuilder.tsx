@@ -163,7 +163,7 @@ export default function BusinessRuleBuilder() {
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
             atLimit || showForm
-              ? "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)] cursor-not-allowed"
+              ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)] cursor-not-allowed"
               : "bg-primary text-white hover:bg-primary-dark"
           )}
         >

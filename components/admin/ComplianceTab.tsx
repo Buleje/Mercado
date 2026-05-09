@@ -199,7 +199,7 @@ export default function ComplianceTab() {
                     {o.documents.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {o.documents.map(d => (
-                          <span key={d} className="text-[length:var(--ts-2xs)] bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted px-2 py-0.5 rounded flex items-center gap-0.5">
+                          <span key={d} className="text-[length:var(--ts-2xs)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted px-2 py-0.5 rounded flex items-center gap-0.5">
                             <FileText className="h-2.5 w-2.5" />{d}
                           </span>
                         ))}

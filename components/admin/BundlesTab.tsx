@@ -152,7 +152,7 @@ export default function BundlesTab() {
               {filteredProducts.length > 0 && (
                 <div className="border border-[var(--rule-base)] dark:border-card-border rounded-xl max-h-32 overflow-y-auto divide-y divide-gray-100 dark:divide-card-border">
                   {filteredProducts.slice(0, 8).map(p => (
-                    <button key={String(p.id)} onClick={() => addItem(String(p.id))} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-surface flex justify-between">
+                    <button key={String(p.id)} onClick={() => addItem(String(p.id))} className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--surface-alt)] dark:hover:bg-surface flex justify-between">
                       <span>{p.name}</span><span className="text-[var(--text-tertiary)]">S/{Number(p.price).toFixed(2)}</span>
                     </button>
                   ))}
@@ -164,7 +164,7 @@ export default function BundlesTab() {
                     const p = getProduct(i.productId);
                     if (!p) return null;
                     return (
-                      <div key={i.productId} className="flex flex-wrap items-center gap-2 bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
+                      <div key={i.productId} className="flex flex-wrap items-center gap-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-3 py-2">
                         <span className="text-sm font-bold flex-1 truncate">{p.name}</span>
                         <span className="text-xs text-[var(--text-tertiary)]">S/{Number(p.price).toFixed(2)}</span>
                         <input type="number" min={1} value={i.quantity} onChange={e => updateQty(i.productId, Number(e.target.value))} className="w-14 text-center text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-card py-1" />

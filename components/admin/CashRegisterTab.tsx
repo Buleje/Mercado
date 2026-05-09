@@ -86,7 +86,7 @@ const MOVEMENT_COLORS: Record<string, string> = {
   ingreso: "text-[var(--data-success-500)] bg-[var(--accent-soft)]",
   egreso: "text-[var(--data-error-500)] bg-[var(--data-error-50)]",
   apertura: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
-  cierre: "text-[var(--text-secondary)] dark:text-muted bg-gray-100 dark:bg-accent",
+  cierre: "text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-sunken)] dark:bg-accent",
 };
 
 // ── IDEA 3: Conciliacion Yape/Plin ──────────────────────────────────────────
@@ -120,7 +120,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
       <div className="flex gap-1 mb-3">
         {(["yape", "plin"] as const).filter(m => breakdown[m]).map(m => (
           <button key={m} onClick={() => { setConcilTab(m); setConcilAmount(""); }}
-            className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors capitalize", concilTab === m ? (m === "yape" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-info-100)] text-[var(--data-info-500)]") : "bg-gray-100 text-[var(--text-secondary)]")}>
+            className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors capitalize", concilTab === m ? (m === "yape" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-info-100)] text-[var(--data-info-500)]") : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
             {m}
           </button>
         ))}
@@ -506,7 +506,7 @@ export default function CashRegisterTab() {
           <div className="relative">
             <button
               onClick={() => setShowToleranceConfig(p => !p)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white hover:bg-gray-50 dark:hover:bg-accent text-sm font-medium text-[var(--text-secondary)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white hover:bg-[var(--surface-alt)] dark:hover:bg-accent text-sm font-medium text-[var(--text-secondary)] transition-colors"
               title={`Tolerancia: ±S/${cashTolerance}`}
             >
               <Settings className="h-4 w-4" />
@@ -538,12 +538,12 @@ export default function CashRegisterTab() {
             )}
           </div>
           <AdminTooltip content="Refrescar datos de caja">
-            <button onClick={fetchData} aria-label="Refrescar" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white hover:bg-gray-50 dark:hover:bg-accent text-sm font-medium text-[var(--text-secondary)] transition-colors">
+            <button onClick={fetchData} aria-label="Refrescar" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white hover:bg-[var(--surface-alt)] dark:hover:bg-accent text-sm font-medium text-[var(--text-secondary)] transition-colors">
               <RefreshCw className="h-4 w-4" />
               Refrescar
             </button>
           </AdminTooltip>
-          <div className="flex bg-gray-100 dark:bg-accent rounded-xl p-1">
+          <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-xl p-1">
             <button
               onClick={() => setView("current")}
               className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "current" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
@@ -734,7 +734,7 @@ export default function CashRegisterTab() {
                     const w = window.open("", "_blank", "width=420,height=600");
                     if (w) { w.document.write(content); w.document.close(); w.print(); }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-accent text-[var(--text-primary)] dark:text-foreground font-bold text-xs hover:bg-gray-200 dark:hover:bg-surface transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-primary)] dark:text-foreground font-bold text-xs hover:bg-[var(--rule-soft)] dark:hover:bg-surface transition-colors"
                 >
                   <Printer className="h-4 w-4" /> Imprimir reporte
                 </button>
@@ -749,7 +749,7 @@ export default function CashRegisterTab() {
               </div>
 
               {/* Info bar */}
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 flex items-center justify-between text-xs">
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 flex items-center justify-between text-xs">
                 <span className="text-[var(--text-secondary)] dark:text-muted">
                   <Clock className="h-3 w-3 inline mr-1" />
                   Abierta: {fmtDate(currentRegister.openedAt)}
@@ -790,7 +790,7 @@ export default function CashRegisterTab() {
                 return (
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {Object.entries(computedPaymentBreakdown).map(([method, amount]) => {
-                      const config = METHOD_CONFIG[method] ?? { icon: Banknote, bg: "bg-gray-50", color: "text-[var(--text-primary)]" };
+                      const config = METHOD_CONFIG[method] ?? { icon: Banknote, bg: "bg-[var(--surface-alt)]", color: "text-[var(--text-primary)]" };
                       const pct = totalSales > 0 ? (amount / totalSales) * 100 : 0;
                       const Icon = config.icon;
                       return (
@@ -801,7 +801,7 @@ export default function CashRegisterTab() {
                           </div>
                           <p className="text-lg font-extrabold font-mono text-[var(--text-primary)] dark:text-foreground">{fmt(amount)}</p>
                           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{pct.toFixed(0)}%</p>
-                          <div className="mt-1.5 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="mt-1.5 h-1.5 bg-[var(--rule-soft)] dark:bg-gray-700 rounded-full overflow-hidden">
                             <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
@@ -832,7 +832,7 @@ export default function CashRegisterTab() {
                         item.type === "venta" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
                         item.type === "egreso" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
                         item.type === "ingreso" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                        "bg-gray-100 text-[var(--text-primary)]";
+                        "bg-[var(--surface-sunken)] text-[var(--text-primary)]";
                       const isExpanded = expandedMovIdx === idx;
                       return (
                         <div key={idx} className="flex gap-3">
@@ -843,7 +843,7 @@ export default function CashRegisterTab() {
                           </div>
                           {/* Content — clickable */}
                           <div
-                            className="pb-3 flex-1 min-w-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg px-1.5 -mx-1.5 transition-colors"
+                            className="pb-3 flex-1 min-w-0 cursor-pointer hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 rounded-lg px-1.5 -mx-1.5 transition-colors"
                             onClick={() => setExpandedMovIdx(isExpanded ? null : idx)}
                           >
                             <div className="flex flex-wrap items-center gap-2">
@@ -939,7 +939,7 @@ export default function CashRegisterTab() {
                           "shrink-0 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors",
                           mvFilter === m
                             ? "bg-primary text-white"
-                            : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200"
+                            : "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
                         )}
                       >
                         {m === "all" ? "Todos" : m.charAt(0).toUpperCase() + m.slice(1)}
@@ -957,8 +957,8 @@ export default function CashRegisterTab() {
                     {filteredMovements.map(m => {
                       const isPos = ["venta", "ingreso", "apertura"].includes(m.type);
                       return (
-                        <div key={m.id} className="px-5 py-3.5 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
-                          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", MOVEMENT_COLORS[m.type] || "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted")}>
+                        <div key={m.id} className="px-5 py-3.5 flex items-center gap-4 hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors">
+                          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", MOVEMENT_COLORS[m.type] || "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted")}>
                             {isPos ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1000,9 +1000,9 @@ export default function CashRegisterTab() {
               const avgPrev = prev5.reduce((s, v) => s + v, 0) / 5;
               if (avgLast < avgPrev * 0.8) tendencia = { label: "Mejorando", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" };
               else if (avgLast > avgPrev * 1.2) tendencia = { label: "Empeorando", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
-              else tendencia = { label: "Estable", color: "bg-gray-100 text-[var(--text-secondary)] dark:bg-zinc-700 dark:text-zinc-400" };
+              else tendencia = { label: "Estable", color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-zinc-700 dark:text-zinc-400" };
             } else if (diffs.length >= 5) {
-              tendencia = { label: "Sin suficientes datos para tendencia", color: "bg-gray-100 text-[var(--text-secondary)] dark:bg-zinc-700 dark:text-zinc-400" };
+              tendencia = { label: "Sin suficientes datos para tendencia", color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-zinc-700 dark:text-zinc-400" };
             }
 
             return (
@@ -1046,7 +1046,7 @@ export default function CashRegisterTab() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-accent flex items-center justify-center">
+                      <div className="h-8 w-8 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center">
                         <Lock className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
                       </div>
                       <div>
@@ -1265,7 +1265,7 @@ export default function CashRegisterTab() {
                   <p className="text-sm text-[var(--text-tertiary)]">Registra el efectivo inicial del día</p>
                 </div>
               </div>
-              <button onClick={() => setShowOpen(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowOpen(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -1323,10 +1323,10 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
               <button
                 onClick={() => setShowOpen(false)}
-                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Cancelar
               </button>
@@ -1388,7 +1388,7 @@ export default function CashRegisterTab() {
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y cierra el día</p>
                 </div>
               </div>
-              <button onClick={() => { setShowClose(false); setDenominations({}); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => { setShowClose(false); setDenominations({}); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -1402,7 +1402,7 @@ export default function CashRegisterTab() {
                 <Clock className="h-4 w-4" />
                 Resumen del turno
               </p>
-              <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 grid grid-cols-2 gap-3">
+              <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4 grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-sm text-[var(--text-tertiary)]">Duración</p>
                   <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{durationStr}</p>
@@ -1444,7 +1444,7 @@ export default function CashRegisterTab() {
             </div>
             <div className="space-y-4">
               {/* Denomination Helper */}
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border">
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border">
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1">
                     <Banknote className="h-4 w-4 text-primary" />
@@ -1521,10 +1521,10 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
               <button
                 onClick={() => { setShowClose(false); setDenominations({}); }}
-                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Cancelar
               </button>
@@ -1566,7 +1566,7 @@ export default function CashRegisterTab() {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowMovement(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowMovement(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -1628,10 +1628,10 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
               <button
                 onClick={() => setShowMovement(false)}
-                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Cancelar
               </button>
@@ -1682,7 +1682,7 @@ export default function CashRegisterTab() {
                     <p className="text-sm text-[var(--text-tertiary)]">Verificación rápida sin cerrar caja</p>
                   </div>
                 </div>
-                <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
                   <X className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -1690,7 +1690,7 @@ export default function CashRegisterTab() {
               {/* Body */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                 {/* Summary card */}
-                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
+                <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4 space-y-2">
                   <div className="flex justify-between items-center text-base">
                     <span className="text-[var(--text-secondary)]">Esperado en caja</span>
                     <span className="font-bold text-[var(--data-success-500)] tabular-nums">{fmt(expectedCash)}</span>
@@ -1706,7 +1706,7 @@ export default function CashRegisterTab() {
 
                 <div className="space-y-4">
                 {/* Quick Denomination Counter */}
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border">
+                <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1">
                       <Banknote className="h-4 w-4 text-primary" />
@@ -1809,10 +1809,10 @@ export default function CashRegisterTab() {
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+              <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
                 <button
                   onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }}
-                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-alt)] transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1845,7 +1845,7 @@ export default function CashRegisterTab() {
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta billetes, monedas y métodos de pago</p>
                 </div>
               </div>
-              <button onClick={() => setShowArqueoGuiado(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowArqueoGuiado(false)} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
                 <X className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -1853,7 +1853,7 @@ export default function CashRegisterTab() {
             {/* Body scrollable */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
             {/* Expected */}
-            <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
+            <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4 space-y-2">
               <div className="flex justify-between items-center text-base">
                 <span className="text-[var(--text-secondary)]">Saldo esperado</span>
                 <span className="font-bold text-[var(--text-primary)] tabular-nums">{fmt(guiadoExpected)}</span>
@@ -1865,7 +1865,7 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Billetes section */}
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
               <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1 mb-2">
                 <Banknote className="h-4 w-4 text-[var(--data-success-500)]" />
                 Billetes
@@ -1895,7 +1895,7 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Monedas section */}
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
               <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1 mb-2">
                 <DollarSign className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Monedas
@@ -1925,7 +1925,7 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Mejora 9: Arqueo por metodo de pago */}
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
               <div className="flex gap-1 mb-3">
                 {(["efectivo", "yape", "plin", "tarjeta"] as const).map(tab => (
                   <button
@@ -1935,7 +1935,7 @@ export default function CashRegisterTab() {
                       "flex-1 py-1.5 rounded-lg text-sm font-bold transition-colors capitalize",
                       arqueoTab === tab
                         ? "bg-primary text-white"
-                        : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
+                        : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)]"
                     )}
                   >
                     {tab}
@@ -2004,7 +2004,7 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Mejora 10: Foto de evidencia */}
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-card-border mb-3">
               <label className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1 mb-2">
                 <Camera className="h-4 w-4 text-[var(--text-secondary)]" />
                 Foto del cajon (opcional, recomendado)
@@ -2094,10 +2094,10 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
+            <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
               <button
                 onClick={() => { setShowArqueoGuiado(false); setGuiadoBilletes({}); setGuiadoMonedas({}); }}
-                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Cancelar
               </button>
@@ -2124,16 +2124,16 @@ export default function CashRegisterTab() {
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{fmtDate(detailRegister.openedAt)} → {detailRegister.closedAt ? fmtDate(detailRegister.closedAt) : "—"}</p>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => window.print()} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent print:hidden" title="Imprimir resumen">
+                <button onClick={() => window.print()} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent print:hidden" title="Imprimir resumen">
                   <Printer className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
                 </button>
-                <button onClick={() => setDetailRegister(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent print:hidden">
+                <button onClick={() => setDetailRegister(null)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent print:hidden">
                   <X className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
                 </button>
               </div>
             </div>
             {/* Summary */}
-            <div className="px-2 sm:px-4 py-2 sm:py-3 border-b bg-gray-50 dark:bg-surface grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center">
+            <div className="px-2 sm:px-4 py-2 sm:py-3 border-b bg-[var(--surface-alt)] dark:bg-surface grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center">
               <div>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-bold">Apertura</p>
                 <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(detailRegister.openingAmount)}</p>
@@ -2184,7 +2184,7 @@ export default function CashRegisterTab() {
                 const isPos = ["venta", "ingreso", "apertura"].includes(m.type);
                 return (
                   <div key={m.id} className="px-2 sm:px-4 py-1.5 sm:py-2.5 flex flex-wrap items-center gap-3">
-                    <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center shrink-0", MOVEMENT_COLORS[m.type] || "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted")}>
+                    <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center shrink-0", MOVEMENT_COLORS[m.type] || "bg-[var(--surface-sunken)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted")}>
                       {isPos ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                     </div>
                     <div className="flex-1 min-w-0">

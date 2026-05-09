@@ -214,7 +214,7 @@ export default function BulkInvoiceGenerator() {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Tipo</label>
-            <div className="flex bg-gray-100 dark:bg-white/5 rounded-xl p-0.5 gap-0.5">
+            <div className="flex bg-[var(--surface-sunken)] dark:bg-white/5 rounded-xl p-0.5 gap-0.5">
               {(["boleta", "factura"] as InvoiceType[]).map(t => (
                 <button
                   key={t}
@@ -346,7 +346,7 @@ export default function BulkInvoiceGenerator() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-white/5">
+                <tr className="bg-[var(--surface-alt)] dark:bg-white/5">
                   <th className="px-4 py-2.5 w-8" />
                   <th className="px-4 py-2.5 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Nro.</th>
                   <th className="px-4 py-2.5 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Cliente</th>
@@ -360,7 +360,7 @@ export default function BulkInvoiceGenerator() {
                   <tr
                     key={order.id}
                     onClick={() => toggleOne(order.id)}
-                    className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                    className="hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-2.5">
                       {selected.has(order.id)

@@ -199,10 +199,10 @@ export default function CashFlowTab() {
           <select value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
           </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -252,7 +252,7 @@ export default function CashFlowTab() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">Cancelar</button>
             <button onClick={handleAddEntry} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors">
               {saving ? "Guardando..." : "Registrar"}
             </button>
@@ -297,7 +297,7 @@ export default function CashFlowTab() {
           {/* View toggle */}
           <div className="flex flex-wrap items-center gap-2">
             {(["summary", "detail"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
                 {v === "summary" ? "Vista diaria" : "Movimientos"}
               </button>
             ))}
@@ -306,7 +306,7 @@ export default function CashFlowTab() {
           {view === "summary" ? (
             <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
+                <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
                   <tr>
                     <th className="text-left px-3 sm:px-6 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs">Fecha</th>
                     <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs">Ingresos</th>
@@ -317,7 +317,7 @@ export default function CashFlowTab() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {dailySummaries.map(day => (
-                    <tr key={day.date} className={cn("hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors", day.hasWarning && "bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10")}>
+                    <tr key={day.date} className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors", day.hasWarning && "bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10")}>
                       <td className="px-3 sm:px-6 py-3 font-medium text-[var(--text-primary)] dark:text-foreground">{day.label}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)] font-semibold">{day.inflow > 0 ? fmt(day.inflow) : "—"}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-error-500)] font-semibold">{day.outflow > 0 ? fmt(day.outflow) : "—"}</td>
@@ -339,7 +339,7 @@ export default function CashFlowTab() {
           ) : (
             <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-y-hidden overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
+                <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
                   <tr>
                     <th className="text-left px-3 sm:px-6 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs">Fecha</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs">Descripción</th>
@@ -349,11 +349,11 @@ export default function CashFlowTab() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {entries.map(e => (
-                    <tr key={e.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
+                    <tr key={e.id} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors">
                       <td className="px-3 sm:px-6 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{e.date}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-foreground">{e.description}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-surface capitalize text-[var(--text-secondary)] dark:text-muted">{e.category}</span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-[var(--surface-sunken)] dark:bg-surface capitalize text-[var(--text-secondary)] dark:text-muted">{e.category}</span>
                         {e.projected && <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Proyectado</span>}
                       </td>
                       <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", e.type === "ingreso" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>

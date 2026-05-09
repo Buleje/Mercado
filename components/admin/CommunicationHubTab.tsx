@@ -79,7 +79,7 @@ export default function CommunicationHubTab() {
         </div>
         <div className="flex items-center gap-1.5">
           {["all", "whatsapp", "sms", "email", "llamada"].map(c => (
-            <button key={c} onClick={() => setFilterChannel(c)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterChannel === c ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{c === "all" ? "Todos" : CHANNEL_CONFIG[c].label}</button>
+            <button key={c} onClick={() => setFilterChannel(c)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterChannel === c ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{c === "all" ? "Todos" : CHANNEL_CONFIG[c].label}</button>
           ))}
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function CommunicationHubTab() {
       <div className="flex items-center gap-1.5">
         <Filter className="h-4 w-4 text-[var(--text-tertiary)]" />
         {["all", "pendiente", "enviado", "leido", "respondido"].map(s => (
-          <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{s === "all" ? "Todos" : s.charAt(0).toUpperCase() + s.slice(1)}</button>
+          <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterStatus === s ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{s === "all" ? "Todos" : s.charAt(0).toUpperCase() + s.slice(1)}</button>
         ))}
       </div>
 
@@ -104,8 +104,8 @@ export default function CommunicationHubTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{m.customer}</span>
-                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded", m.direction === "in" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{m.direction === "in" ? "← Entrante" : "→ Saliente"}</span>
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface px-1.5 py-0.5 rounded">{m.category}</span>
+                    <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded", m.direction === "in" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{m.direction === "in" ? "← Entrante" : "→ Saliente"}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface px-1.5 py-0.5 rounded">{m.category}</span>
                     {m.status === "pendiente" && <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><AlertTriangle className="h-2.5 w-2.5" /> Pendiente</span>}
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-auto flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{fmtDate(m.timestamp)}</span>
                   </div>

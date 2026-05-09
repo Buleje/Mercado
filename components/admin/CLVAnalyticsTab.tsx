@@ -96,7 +96,7 @@ export default function CLVAnalyticsTab() {
         {([["customers", "Clientes"], ["top10", "Top 10"], ["cohorts", "Cohortes"]] as const).map(([v, label]) => (
           <button key={v} onClick={() => setView(v)}
             className={cn("px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors",
-              view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-card"
+              view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-card"
             )}>
             {v === "top10" && <Medal className="h-3.5 w-3.5 inline mr-1" />}{label}
           </button>
@@ -138,7 +138,7 @@ export default function CLVAnalyticsTab() {
                         <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-semibold">Proy. 6m: {fmt(predicted)}</p>
                       </div>
                     </div>
-                    <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                    <div className="h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                       <div className="h-full bg-[var(--text-primary)] rounded-full transition-all" style={{ width: `${barPct}%` }} />
                     </div>
                   </div>
@@ -201,7 +201,7 @@ export default function CLVAnalyticsTab() {
                     const prev = data.cohorts[i - 1];
                     const delta = prev ? cohort.avgLTV - prev.avgLTV : 0;
                     return (
-                      <tr key={cohort.month} className="hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                      <tr key={cohort.month} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                         <td className="px-4 py-2.5 font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtMonth(cohort.month)}</td>
                         <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-foreground">{cohort.customers}</td>
                         <td className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(cohort.totalRevenue)}</td>
@@ -250,7 +250,7 @@ export default function CLVAnalyticsTab() {
                   const urgency = c.daysSinceLast > 60 ? "text-[var(--data-error-500)] font-semibold" : c.daysSinceLast > 30 ? "text-[var(--data-warning-500)] font-semibold" : "text-[var(--text-secondary)] dark:text-muted";
                   const predicted = predictFutureCLV(c);
                   return (
-                    <tr key={c.phone} className="hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                    <tr key={c.phone} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                       <td className="px-4 py-2.5 text-[var(--text-tertiary)] dark:text-muted text-xs">{idx + 1}</td>
                       <td className="px-4 py-2.5">
                         <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{c.name}</p>

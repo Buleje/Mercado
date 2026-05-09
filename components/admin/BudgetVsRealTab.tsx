@@ -162,7 +162,7 @@ function ProgressBar({
           {pct.toFixed(0)}% {isSales ? "logrado" : "utilizado"}
         </span>
       </div>
-      <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
+      <div className="w-full h-4 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", color)}
           style={{ width: `${display}%` }}
@@ -207,7 +207,7 @@ function CategoryChart({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] w-14 shrink-0">Presup.</span>
-              <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="flex-1 h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full bg-[var(--accent-soft)]"
                   style={{ width: `${(c.budgeted / max) * 100}%` }}
@@ -217,7 +217,7 @@ function CategoryChart({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] w-14 shrink-0">Real</span>
-              <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="flex-1 h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                 <div
                   className={cn("h-full rounded-full", isOver ? "bg-[var(--data-error-500)]" : isUnder ? "bg-[var(--accent-soft)]" : "bg-primary")}
                   style={{ width: `${Math.min((c.actual / max) * 100, 100)}%` }}
@@ -532,7 +532,7 @@ export default function BudgetVsRealTab() {
             Proyeccion al {totalDays} de {monthName}
           </CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-gray-50 rounded-xl p-3">
+            <div className="bg-[var(--surface-alt)] rounded-xl p-3">
               <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Ventas proyectadas</p>
               <div className="flex items-center gap-2">
                 {projection.sales >= (budgetConfig.salesGoal || projection.sales)
@@ -546,7 +546,7 @@ export default function BudgetVsRealTab() {
                 Al ritmo actual ({fmt(currentMonthSales)} en {day} días)
               </p>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
+            <div className="bg-[var(--surface-alt)] rounded-xl p-3">
               <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Gastos proyectados</p>
               <div className="flex items-center gap-2">
                 {projection.expenses > (budgetConfig.expensesGoal || projection.expenses)
@@ -560,7 +560,7 @@ export default function BudgetVsRealTab() {
                 Al ritmo actual ({fmt(currentMonthExpenses)} en {day} días)
               </p>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
+            <div className="bg-[var(--surface-alt)] rounded-xl p-3">
               <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Ganancia proyectada</p>
               <div className="flex items-center gap-2">
                 {(projection.sales - projection.expenses) >= 0
@@ -677,7 +677,7 @@ export default function BudgetVsRealTab() {
                 "px-3 py-2 text-sm font-semibold transition-colors min-h-[44px]",
                 alertFilter === val
                   ? "bg-primary text-white"
-                  : "text-[var(--text-secondary)] hover:bg-gray-50"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
               )}
             >
               {lbl}
@@ -691,7 +691,7 @@ export default function BudgetVsRealTab() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-[var(--rule-base)]">
+              <tr className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)]">
                 <th className="text-left px-4 py-3 text-[var(--text-secondary)] font-semibold">Categoría</th>
                 <th className="text-left px-4 py-3 text-[var(--text-secondary)] font-semibold">Depto</th>
                 <th className="text-left px-4 py-3 text-[var(--text-secondary)] font-semibold">Mes</th>
@@ -710,7 +710,7 @@ export default function BudgetVsRealTab() {
                 return (
                   <tr
                     key={b.id}
-                    className="border-b border-[var(--rule-soft)] hover:bg-gray-50 transition-colors"
+                    className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)] transition-colors"
                   >
                     <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">{b.category}</td>
                     <td className="px-4 py-3 text-[var(--text-secondary)]">{b.department}</td>
@@ -724,7 +724,7 @@ export default function BudgetVsRealTab() {
                       {fmtPct(variance)}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="w-full h-2.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",

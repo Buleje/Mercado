@@ -38,8 +38,8 @@ const SUGGESTION_CONFIG: Record<
 > = {
   Subir:     { label: "Subir precio",  badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]", icon: TrendingUp,   kpiColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
   Bajar:     { label: "Bajar precio",  badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",                 icon: TrendingDown, kpiColor: "text-[var(--data-error-600)] dark:text-red-400" },
-  OK:        { label: "Precio OK",     badge: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",                icon: Minus,        kpiColor: "text-[var(--text-tertiary)]" },
-  "Sin datos": { label: "Sin datos",   badge: "bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]",                icon: HelpCircle,   kpiColor: "text-[var(--text-tertiary)]" },
+  OK:        { label: "Precio OK",     badge: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",                icon: Minus,        kpiColor: "text-[var(--text-tertiary)]" },
+  "Sin datos": { label: "Sin datos",   badge: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-[var(--text-secondary)]",                icon: HelpCircle,   kpiColor: "text-[var(--text-tertiary)]" },
 };
 
 // ── Barra mini de comparación ──────────────────────────────────────────────
@@ -60,7 +60,7 @@ function PriceBar({
   const avgPct = Math.min(100, Math.max(0, ((avgPrice - minPrice) / range) * 100));
 
   return (
-    <div className="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-full overflow-visible">
+    <div className="relative h-2 bg-[var(--rule-soft)] dark:bg-gray-700 rounded-full w-full overflow-visible">
       {/* Barra promedio */}
       <div
         className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-gray-400 dark:bg-gray-500 rounded-full"

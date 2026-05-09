@@ -299,7 +299,7 @@ export default function BatchesTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Control FIFO de lotes, fechas de caducidad y alertas de vencimiento</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(processed.map(b => ({ lote: b.lote, producto: b.productName, categoria: b.productCategory, cantidad: b.quantity, unidad: b.unit, proveedor: b.supplierName, ingreso: b.entryDate, vencimiento: b.expiryDate, dias_restantes: b.daysLeft, estado: b.status, costo_unit: b.costUnit })), "lotes-vencimientos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(processed.map(b => ({ lote: b.lote, producto: b.productName, categoria: b.productCategory, cantidad: b.quantity, unidad: b.unit, proveedor: b.supplierName, ingreso: b.entryDate, vencimiento: b.expiryDate, dias_restantes: b.daysLeft, estado: b.status, costo_unit: b.costUnit })), "lotes-vencimientos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => { setEditingId(null); setForm({ ...EMPTY_FORM }); setShowForm(v => !v); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -311,7 +311,7 @@ export default function BatchesTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total lotes", count: stats.total, color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-gray-50 dark:bg-surface/50" },
+          { label: "Total lotes", count: stats.total, color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
           { label: "Vigentes", count: stats.vigente, color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Por vencer", count: stats.por_vencer, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Críticos (≤7d)", count: stats.critico, color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
@@ -408,7 +408,7 @@ export default function BatchesTab() {
         </div>
         <div className="flex gap-2 flex-wrap">
           {(["todos", "vigente", "por-vencer", "critico", "vencido"] as const).map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors capitalize", filterStatus === s ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+            <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors capitalize", filterStatus === s ? "bg-primary text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
               {s === "todos" ? "Todos" : s === "por-vencer" ? "Por vencer" : s === "critico" ? "Crítico" : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
@@ -418,17 +418,17 @@ export default function BatchesTab() {
       {/* Table */}
       {loading ? (
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden animate-pulse">
-          <div className="h-10 bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border" />
+          <div className="h-10 bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border" />
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3.5 border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
-              <div className="h-5 w-16 bg-gray-200 dark:bg-surface rounded-full" />
-              <div className="h-3.5 w-20 bg-gray-200 dark:bg-surface rounded-full" />
-              <div className="h-3.5 flex-1 bg-gray-100 dark:bg-surface/60 rounded-full" />
-              <div className="h-3.5 w-16 bg-gray-100 dark:bg-surface/60 rounded-full" />
-              <div className="h-3.5 w-12 bg-gray-100 dark:bg-surface/60 rounded-full" />
-              <div className="h-3.5 w-24 bg-gray-100 dark:bg-surface/60 rounded-full" />
-              <div className="h-3.5 w-16 bg-gray-100 dark:bg-surface/60 rounded-full" />
-              <div className="h-5 w-8 bg-gray-100 dark:bg-surface/60 rounded-full ml-auto" />
+              <div className="h-5 w-16 bg-[var(--rule-soft)] dark:bg-surface rounded-full" />
+              <div className="h-3.5 w-20 bg-[var(--rule-soft)] dark:bg-surface rounded-full" />
+              <div className="h-3.5 flex-1 bg-[var(--surface-sunken)] dark:bg-surface/60 rounded-full" />
+              <div className="h-3.5 w-16 bg-[var(--surface-sunken)] dark:bg-surface/60 rounded-full" />
+              <div className="h-3.5 w-12 bg-[var(--surface-sunken)] dark:bg-surface/60 rounded-full" />
+              <div className="h-3.5 w-24 bg-[var(--surface-sunken)] dark:bg-surface/60 rounded-full" />
+              <div className="h-3.5 w-16 bg-[var(--surface-sunken)] dark:bg-surface/60 rounded-full" />
+              <div className="h-5 w-8 bg-[var(--surface-sunken)] dark:bg-surface/60 rounded-full ml-auto" />
             </div>
           ))}
         </div>
@@ -436,7 +436,7 @@ export default function BatchesTab() {
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Lote</th>
@@ -459,7 +459,7 @@ export default function BatchesTab() {
                 const meta = STATUS_META[b.status];
                 const Icon = meta.icon;
                 return (
-                  <tr key={b.id} className={cn("hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors", b.status === "vencido" ? "bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : b.status === "critico" ? "bg-[var(--data-warning-50)]/30 dark:bg-orange-950/10" : "")}>
+                  <tr key={b.id} className={cn("hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30 transition-colors", b.status === "vencido" ? "bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : b.status === "critico" ? "bg-[var(--data-warning-50)]/30 dark:bg-orange-950/10" : "")}>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full", meta.bg, meta.color)}>
                         <Icon className="h-3 w-3" /> {meta.label}

@@ -80,9 +80,9 @@ export default function BusinessRulesTab() {
 
       {/* Filter */}
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={() => setFilterCat("all")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterCat === "all" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Todas</button>
+        <button onClick={() => setFilterCat("all")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterCat === "all" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Todas</button>
         {(Object.entries(CATEGORIES) as [Rule["category"], { label: string }][]).map(([k, v]) => (
-          <button key={k} onClick={() => setFilterCat(k)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterCat === k ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{v.label}</button>
+          <button key={k} onClick={() => setFilterCat(k)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterCat === k ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{v.label}</button>
         ))}
       </div>
 
@@ -95,7 +95,7 @@ export default function BusinessRulesTab() {
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{r.name}</CardTitle>
                   <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", CATEGORIES[r.category].color)}>{CATEGORIES[r.category].label}</span>
-                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{r.enabled ? "Activa" : "Pausada"}</span>
+                  <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{r.enabled ? "Activa" : "Pausada"}</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">{r.description}</p>
 
@@ -114,8 +114,8 @@ export default function BusinessRulesTab() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: !x.enabled } : x))} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Play className="h-4 w-4" /></button>
-                <button onClick={() => openEdit(r)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Pencil className="h-4 w-4" /></button>
+                <button onClick={() => setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: !x.enabled } : x))} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Play className="h-4 w-4" /></button>
+                <button onClick={() => openEdit(r)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent text-[var(--text-tertiary)] hover:text-primary"><Pencil className="h-4 w-4" /></button>
                 <button onClick={() => setRules(prev => prev.filter(x => x.id !== r.id))} className="p-2 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
@@ -137,7 +137,7 @@ export default function BusinessRulesTab() {
               <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acción (ENTONCES…)</label><input value={form.action} onChange={e => setForm({ ...form, action: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: Crear orden de compra" /></div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>
               <button onClick={save} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
             </div>
           </div>

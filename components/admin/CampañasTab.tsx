@@ -90,7 +90,7 @@ const STATUS_LABEL: Record<CampaignStatus, string> = {
   borrador: "Borrador", programada: "Programada", activa: "Activa", completada: "Completada", cancelada: "Cancelada",
 };
 const STATUS_COLOR: Record<CampaignStatus, string> = {
-  borrador: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
+  borrador: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
   programada: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   activa: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
   completada: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
@@ -187,7 +187,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
                   {showTemplates && (
                     <div className="absolute right-0 top-7 z-10 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl w-64 max-h-48 overflow-y-auto">
                       {templates.map(t => (
-                        <button key={t.id} onClick={() => applyTemplate(t)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-accent text-xs border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
+                        <button key={t.id} onClick={() => applyTemplate(t)} className="w-full text-left px-3 py-2 hover:bg-[var(--surface-alt)] dark:hover:bg-accent text-xs border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
                           <p className="font-bold text-[var(--text-primary)] dark:text-foreground truncate">{t.name}</p>
                           <p className="text-[var(--text-secondary)] dark:text-muted truncate mt-0.5">{t.body.slice(0, 60)}…</p>
                         </button>
@@ -245,7 +245,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
           )}
         </div>
         <div className="p-6 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Cancelar</button>
+          <button onClick={onClose} className="flex-1 py-2.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent">Cancelar</button>
           <button onClick={handleSave} disabled={!name.trim() || !message.trim()} className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center justify-center gap-2">
             <Plus className="h-4 w-4" /> Crear campaña
           </button>
@@ -471,7 +471,7 @@ export default function CampañasTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">WhatsApp, notificaciones y mensajes masivos segmentados</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Exportar</button>
+          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent">Exportar</button>
           <button onClick={() => setShowModal(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2">
             <Plus className="h-4 w-4" /> Nueva campaña
           </button>
@@ -512,7 +512,7 @@ export default function CampañasTab() {
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
               <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 animate-pulse">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/5 mb-2" />
+                <div className="h-4 bg-[var(--rule-soft)] dark:bg-gray-700 rounded w-2/5 mb-2" />
                 <div className="h-3 bg-[var(--surface-sunken)] rounded w-3/5" />
               </div>
             ))}
@@ -548,7 +548,7 @@ export default function CampañasTab() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button onClick={() => setDetail(c)} className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex items-center gap-1">
+                <button onClick={() => setDetail(c)} className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent flex items-center gap-1">
                   <Eye className="h-3.5 w-3.5" /> Ver
                 </button>
                 {(c.status === "borrador" || c.status === "programada") && (
@@ -579,7 +579,7 @@ export default function CampañasTab() {
                 <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLOR[detail.status])}>{STATUS_LABEL[detail.status]}</span>
                 <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", CHANNEL_COLOR[detail.channel])}>{CHANNEL_LABEL[detail.channel]}</span>
               </div>
-              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">
                 <p className="text-sm text-[var(--text-primary)] dark:text-foreground">{detail.message}</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -591,7 +591,7 @@ export default function CampañasTab() {
                   { label: "Conversiones", value: detail.conversions.toString() },
                   { label: "Ingresos", value: fmt(detail.revenue) },
                 ].map(r => (
-                  <div key={r.label} className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+                  <div key={r.label} className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-bold mb-0.5">{r.label}</p>
                     <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{r.value}</p>
                   </div>
@@ -599,7 +599,7 @@ export default function CampañasTab() {
               </div>
               {/* Metric bars — shown only for completed/active campaigns with data */}
               {detail.totalAudience > 0 && (
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 space-y-3">
                   <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Embudo de campaña</p>
                   {[
                     { label: "Entregados", value: detail.delivered, base: detail.totalAudience, color: "bg-primary" },
@@ -613,7 +613,7 @@ export default function CampañasTab() {
                           <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{bar.label}</span>
                           <span className="text-[var(--text-secondary)] dark:text-muted">{bar.value.toLocaleString("es-PE")} <span className="font-bold text-[var(--text-primary)] dark:text-foreground">({safePct}%)</span></span>
                         </div>
-                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-2 bg-[var(--rule-soft)] dark:bg-gray-700 rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full transition-all", bar.color)} style={{ width: `${safePct}%` }} />
                         </div>
                       </div>
@@ -625,7 +625,7 @@ export default function CampañasTab() {
             </div>
             <div className="p-6 border-t border-[var(--rule-soft)] dark:border-card-border flex gap-3 flex-wrap">
               <button onClick={() => handleDelete(detail.id)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] rounded-lg text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/10">Eliminar</button>
-              <button onClick={() => exportCampaignPDF(detail)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
+              <button onClick={() => exportCampaignPDF(detail)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent flex flex-wrap items-center gap-2">
                 <FileDown className="h-4 w-4" /> PDF
               </button>
               {(detail.status === "borrador" || detail.status === "programada") && (

@@ -260,10 +260,10 @@ export default function ComisionesTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Seguimiento de ventas por cajero y cálculo de comisiones</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setShowConfig(!showConfig)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 border rounded-lg text-sm font-bold flex items-center gap-2 transition-all", showConfig ? "border-primary text-primary bg-primary/10" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button onClick={() => setShowConfig(!showConfig)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 border rounded-lg text-sm font-bold flex items-center gap-2 transition-all", showConfig ? "border-primary text-primary bg-primary/10" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
             <Settings className="h-4 w-4" /> Tasas
           </button>
-          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
+          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent flex flex-wrap items-center gap-2">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={loadData} disabled={loading} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-60">
@@ -415,7 +415,7 @@ export default function ComisionesTab() {
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
+                <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
                   <tr>
                     {["Empleado", "Rol", "Ventas", "Ingresos", "Ganancia", "Tasa", "Comisión", "Estado"].map(h => (
                       <th key={h} className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-extrabold text-[var(--text-secondary)] dark:text-muted">{h}</th>
@@ -424,7 +424,7 @@ export default function ComisionesTab() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {withCommissions.map(s => (
-                    <tr key={s.cashierId} className="hover:bg-gray-50 dark:hover:bg-accent/50 transition-colors">
+                    <tr key={s.cashierId} className="hover:bg-[var(--surface-alt)] dark:hover:bg-accent/50 transition-colors">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{s.cashierName}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-foreground">{s.sales}</td>
@@ -442,7 +442,7 @@ export default function ComisionesTab() {
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-gray-50 dark:bg-surface border-t border-[var(--rule-base)] dark:border-card-border">
+                <tfoot className="bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-base)] dark:border-card-border">
                   <tr>
                     <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-primary)] dark:text-foreground text-xs uppercase">TOTAL</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.revenue)}</td>

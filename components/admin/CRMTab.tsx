@@ -510,14 +510,14 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filterSegment === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
             )}
           >
             {f.label}
             {f.count > 0 && (
               <span className={cn(
                 "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-                filterSegment === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+                filterSegment === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
               )}>
                 {f.count > 99 ? "99+" : f.count}
               </span>
@@ -535,7 +535,7 @@ export default function CRMTab() {
 
         {/* Acciones */}
         <AdminTooltip content="Recargar clientes desde la base de datos">
-          <button onClick={load} aria-label="Actualizar" className="p-2 rounded-lg bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+          <button onClick={load} aria-label="Actualizar" className="p-2 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface hover:bg-[var(--rule-soft)] dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
           </button>
         </AdminTooltip>
@@ -557,13 +557,13 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               quickFilter === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
             )}
           >
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              quickFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              quickFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
             )}>
               {quickFilterCounts[f.key] > 99 ? "99+" : quickFilterCounts[f.key]}
             </span>
@@ -588,13 +588,13 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               freqFilter === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
             )}
           >
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-gray-200 dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
             )}>
               {freqCounts[f.key] > 99 ? "99+" : freqCounts[f.key]}
             </span>
@@ -611,7 +611,7 @@ export default function CRMTab() {
             className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filterTag === "todos"
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
             )}
           >
             Todas
@@ -625,7 +625,7 @@ export default function CRMTab() {
                 className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
                   isActive
                     ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                    : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                    : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
                 )}
               >
                 {tag}
@@ -649,7 +649,7 @@ export default function CRMTab() {
       <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
         <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="sticky top-0 bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border z-10 shadow-[var(--shadow-sm)]">
+            <thead className="sticky top-0 bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border z-10 shadow-[var(--shadow-sm)]">
               <tr>
                 {compareMode && <th className="w-10 px-2 py-3"><span className="sr-only">Seleccionar</span></th>}
                 <th className="text-center px-3 py-3 text-xs font-bold text-[var(--text-tertiary)] w-14">Rank</th>
@@ -688,7 +688,7 @@ export default function CRMTab() {
                     key={c.phone}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className={cn("hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors", compareMode && comparePhones.has(c.phone) && "bg-[var(--surface-sunken)]")}
+                    className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 transition-colors", compareMode && comparePhones.has(c.phone) && "bg-[var(--surface-sunken)]")}
                   >
                     {/* Mejora 13: Checkbox para comparar */}
                     {compareMode && (
@@ -707,9 +707,9 @@ export default function CRMTab() {
                       {(() => {
                         const rank = rankingMap.get(c.phone) ?? 999;
                         if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">1</span>;
-                        if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-[var(--text-primary)] text-xs font-extrabold">2</span>;
+                        if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)] text-xs font-extrabold">2</span>;
                         if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">3</span>;
-                        if (rank <= 10) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted text-xs font-bold">#{rank}</span>;
+                        if (rank <= 10) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted text-xs font-bold">#{rank}</span>;
                         return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
                       })()}
                     </td>
@@ -830,7 +830,7 @@ export default function CRMTab() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50 dark:bg-surface">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface">
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
               Página {effectivePage} de {totalPages} · {filtered.length} clientes
             </p>
@@ -880,7 +880,7 @@ export default function CRMTab() {
             <div className="flex gap-2">
               <button
                 onClick={() => { setComparePhones(new Set()); }}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
               >
                 Limpiar
               </button>
@@ -921,7 +921,7 @@ export default function CRMTab() {
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparativa de Clientes
                   </CardTitle>
-                  <button onClick={() => setShowCompareModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface">
+                  <button onClick={() => setShowCompareModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>

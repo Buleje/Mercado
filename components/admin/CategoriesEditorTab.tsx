@@ -281,7 +281,7 @@ export default function CategoriesEditorTab() {
                 <input
                   value={cat.label}
                   onChange={(e) => updateField(i, "label", e.target.value)}
-                  className="flex-1 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-background px-3 py-1.5 text-sm font-medium"
+                  className="flex-1 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-1.5 text-sm font-medium"
                 />
                 <span className="text-xs text-muted font-mono">{cat.id}</span>
                 
@@ -301,13 +301,13 @@ export default function CategoriesEditorTab() {
                 </button>
 
                 <div className="flex items-center gap-1">
-                  <button onClick={() => moveUp(i)} disabled={i === 0} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent disabled:opacity-20 transition-colors">
+                  <button onClick={() => moveUp(i)} disabled={i === 0} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent disabled:opacity-20 transition-colors">
                     <ArrowUp className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => moveDown(i)} disabled={i === cats.length - 1} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent disabled:opacity-20 transition-colors">
+                  <button onClick={() => moveDown(i)} disabled={i === cats.length - 1} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent disabled:opacity-20 transition-colors">
                     <ArrowDown className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => toggleVisibility(i)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                  <button onClick={() => toggleVisibility(i)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
                     {cat.visible ? <Eye className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <EyeOff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
                   </button>
                 </div>
@@ -315,7 +315,7 @@ export default function CategoriesEditorTab() {
 
               {/* SEO Expanded Section */}
               {isSeoExpanded && (
-                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-4 py-4 space-y-4 bg-gray-50/50 dark:bg-background/50">
+                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-4 py-4 space-y-4 bg-[var(--surface-alt)]/50 dark:bg-background/50">
                   <div className="flex items-center justify-between mb-2">
                     <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
                       <Globe className="h-4 w-4 text-primary" />

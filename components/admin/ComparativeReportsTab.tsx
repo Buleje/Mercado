@@ -212,7 +212,7 @@ export default function ComparativeReportsTab() {
         </div>
         <div className="flex items-center gap-2">
           {/* Selector */}
-          <div className="flex bg-gray-100 dark:bg-white/5 rounded-xl p-0.5 gap-0.5">
+          <div className="flex bg-[var(--surface-sunken)] dark:bg-white/5 rounded-xl p-0.5 gap-0.5">
             {(["mes_pasado", "mismo_mes_anyo"] as Comparison[]).map(opt => (
               <button
                 key={opt}
@@ -230,7 +230,7 @@ export default function ComparativeReportsTab() {
           </div>
           <button
             onClick={fetchData}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Actualizar"
           >
             <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -245,7 +245,7 @@ export default function ComparativeReportsTab() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-card-border">
+                  <tr className="bg-[var(--surface-alt)] dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-card-border">
                     <th className="px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Métrica</th>
                     <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-primary">{periods.labelA}</th>
                     <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">{periods.labelB}</th>
@@ -259,7 +259,7 @@ export default function ComparativeReportsTab() {
                     const valB = dataB[m.key];
                     const change = calcChange(valA, valB);
                     return (
-                      <tr key={m.key} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                      <tr key={m.key} className="hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
                         <td className="px-4 py-3">
                           <span className="text-xs font-medium text-[var(--text-secondary)]">{m.label}</span>
                         </td>

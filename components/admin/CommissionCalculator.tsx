@@ -160,7 +160,7 @@ export default function CommissionCalculator() {
               "p-1.5 rounded-lg border transition-colors",
               showSettings
                 ? "border-primary bg-primary/10 text-primary"
-                : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-750"
+                : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750"
             )}
           >
             <Settings className="w-4 h-4" />
@@ -168,7 +168,7 @@ export default function CommissionCalculator() {
           <button
             onClick={load}
             disabled={loading}
-            className="p-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+            className="p-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750 transition-colors"
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
           </button>
@@ -293,7 +293,7 @@ export default function CommissionCalculator() {
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--rule-soft)] bg-gray-50/50">
+              <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-alt)]/50">
                 <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-left font-semibold text-[var(--text-tertiary)]">
                   Cajero
                 </th>
@@ -315,7 +315,7 @@ export default function CommissionCalculator() {
               {summaries.map((s) => (
                 <tr
                   key={s.cashierId}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                  className="hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750 transition-colors"
                 >
                   <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)]">
                     {s.cashierName}
@@ -334,7 +334,7 @@ export default function CommissionCalculator() {
                   </td>
                 </tr>
               ))}
-              <tr className="bg-gray-50 dark:bg-gray-750 font-bold">
+              <tr className="bg-[var(--surface-alt)] dark:bg-gray-750 font-bold">
                 <td className="px-4 py-4 text-base text-[var(--text-primary)]">Total</td>
                 <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
                   {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}

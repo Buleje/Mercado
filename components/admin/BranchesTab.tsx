@@ -86,7 +86,7 @@ export default function BranchesTab() {
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Gestión de sucursales, inventario y transferencias inter-sede</p>
         </div>
-        <button onClick={() => exportToCSV(branches.map(b => ({ codigo: b.code, nombre: b.name, distrito: b.district, estado: b.status, venta_mensual: b.monthlyRevenue, responsable: b.responsible })), "sucursales")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(branches.map(b => ({ codigo: b.code, nombre: b.name, distrito: b.district, estado: b.status, venta_mensual: b.monthlyRevenue, responsable: b.responsible })), "sucursales")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -109,7 +109,7 @@ export default function BranchesTab() {
       {/* Tabs */}
       <div className="flex flex-wrap gap-2">
         {([["branches", "Sucursales"], ["transfers", "Transferencias"]] as const).map(([k, label]) => (
-          <button key={k} onClick={() => setView(k)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold transition-colors", view === k ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
+          <button key={k} onClick={() => setView(k)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold transition-colors", view === k ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent")}>
             {label}
           </button>
         ))}
@@ -160,7 +160,7 @@ export default function BranchesTab() {
         <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+              <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
                 <tr>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Fecha</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Origen → Destino</th>
@@ -173,7 +173,7 @@ export default function BranchesTab() {
                 {transfers.map(t => {
                   const st = TRANSFER_STATUS[t.status];
                   return (
-                    <tr key={t.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
+                    <tr key={t.id} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30 transition-colors">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)]">{t.date}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-semibold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1">{t.from} <ArrowRightLeft className="h-3 w-3 text-[var(--text-tertiary)]" /> {t.to}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{t.product}</td>
@@ -202,7 +202,7 @@ export default function BranchesTab() {
                     <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{b.name}</span>
                     <span className="font-bold text-[var(--data-success-500)]">{fmt(b.monthlyRevenue)}</span>
                   </div>
-                  <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                  <div className="h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                     <div className="h-full bg-[var(--accent-soft)] rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
@@ -224,7 +224,7 @@ export default function BranchesTab() {
             {detail.inventory.length > 0 ? (
               <div className="space-y-1">
                 {detail.inventory.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-surface rounded-xl px-3 py-2">
+                  <div key={i} className="flex items-center justify-between text-xs bg-[var(--surface-alt)] dark:bg-surface rounded-xl px-3 py-2">
                     <span className="text-[var(--text-secondary)] dark:text-muted">{item.product}</span>
                     <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{item.stock} {item.unit}</span>
                   </div>

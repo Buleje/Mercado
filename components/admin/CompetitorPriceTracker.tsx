@@ -238,7 +238,7 @@ export default function CompetitorPriceTracker() {
               {suggestions.slice(0, 6).map(s => {
                 if (!s) return null;
                 return (
-                  <div key={s.productId} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-surface/50">
+                  <div key={s.productId} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--surface-alt)] dark:bg-surface/50">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{s.productName}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
@@ -305,7 +305,7 @@ export default function CompetitorPriceTracker() {
         {data.competitors.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {data.competitors.map(c => (
-              <span key={c.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 dark:bg-surface text-xs font-medium text-[var(--text-secondary)]">
+              <span key={c.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface text-xs font-medium text-[var(--text-secondary)]">
                 {c.name}
                 <button onClick={() => removeCompetitor(c.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
                   <Trash2 className="h-3 w-3" />
@@ -364,7 +364,7 @@ export default function CompetitorPriceTracker() {
         <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] dark:border-card-border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-surface">
+              <tr className="bg-[var(--surface-alt)] dark:bg-surface">
                 <th className="text-left px-3 py-2.5 text-xs font-bold text-[var(--text-tertiary)]">Producto</th>
                 <th className="text-right px-3 py-2.5 text-xs font-bold text-primary">Mi precio</th>
                 {data.competitors.map(c => (
@@ -375,7 +375,7 @@ export default function CompetitorPriceTracker() {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filtered.map(product => (
-                <tr key={product.productId} className="hover:bg-gray-50/50 dark:hover:bg-surface/50 transition-colors">
+                <tr key={product.productId} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/50 transition-colors">
                   <td className="px-3 py-2.5 font-medium text-[var(--text-primary)] text-xs">{product.productName}</td>
                   <td className="px-3 py-2.5 text-right">
                     {editingCell?.productId === product.productId && editingCell?.competitorId === "my" ? (

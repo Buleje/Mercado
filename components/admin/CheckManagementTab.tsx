@@ -182,7 +182,7 @@ export default function CheckManagementTab() {
               "cheques"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -312,7 +312,7 @@ export default function CheckManagementTab() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
+              <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface">
                 <th className="px-4 py-3">Nro</th>
                 <th className="px-4 py-3">Banco</th>
                 <th className="px-4 py-3">Tipo</th>
@@ -331,7 +331,7 @@ export default function CheckManagementTab() {
                   <tr
                     key={c.id}
                     className={cn(
-                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
+                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20",
                       c.status === "rebotado" && "bg-[var(--data-error-50)]/50 dark:bg-red-950/10",
                       isOverdue && "bg-[var(--data-warning-50)]/30 dark:bg-amber-950/5"
                     )}

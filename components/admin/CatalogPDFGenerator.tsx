@@ -192,7 +192,7 @@ export default function CatalogPDFGenerator() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               >
                 <option value="todas">Todas las categorias</option>
                 {categories.map((c) => (
@@ -207,7 +207,7 @@ export default function CatalogPDFGenerator() {
           <div className="flex items-end gap-2">
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-gray-50 dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
+              className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-[var(--surface-alt)] dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
             >
               <Eye className="h-4 w-4" />
               {showPreview ? "Ocultar" : "Vista previa"}
@@ -220,7 +220,7 @@ export default function CatalogPDFGenerator() {
         )}
 
         {/* Stats */}
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-800">
+        <div className="mt-4 flex items-center gap-2 rounded-lg bg-[var(--surface-alt)] px-4 py-3 dark:bg-gray-800">
           <Package className="h-4 w-4 text-primary" />
           <span className="text-sm text-[var(--text-secondary)]">
             <span className="font-semibold text-primary">

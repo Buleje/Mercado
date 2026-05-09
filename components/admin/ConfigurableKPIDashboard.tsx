@@ -238,7 +238,7 @@ function KpiCard({
             ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
             : trend < 0
             ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]"
-            : "bg-gray-50 text-[var(--text-tertiary)] dark:bg-gray-800"
+            : "bg-[var(--surface-alt)] text-[var(--text-tertiary)] dark:bg-gray-800"
         )}>
           {trend > 0 ? <TrendingUp className="h-3 w-3" /> : trend < 0 ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
           {trendPct !== 0 ? `${Math.abs(trendPct).toFixed(0)}%` : "—"}

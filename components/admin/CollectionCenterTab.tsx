@@ -211,7 +211,7 @@ export default function CollectionCenterTab() {
               "centro-cobros"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -316,7 +316,7 @@ export default function CollectionCenterTab() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
+              <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface">
                 <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">Pedido</th>
                 <th className="px-4 py-3 text-right">Monto</th>
@@ -335,7 +335,7 @@ export default function CollectionCenterTab() {
                   <tr
                     key={d.id}
                     className={cn(
-                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20",
+                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20",
                       d.bucket === "90+" && "bg-[var(--data-error-50)]/50 dark:bg-red-950/10",
                       d.bucket === "61-90" && "bg-[var(--data-warning-50)]/30 dark:bg-orange-950/5"
                     )}
@@ -469,7 +469,7 @@ export default function CollectionCenterTab() {
               )}
               <a
                 href={`tel:${detail.phone}`}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
               >
                 <Phone className="h-3.5 w-3.5" /> Llamar
               </a>

@@ -94,7 +94,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
             {formatQueueName(queue.name)}
           </CardTitle>
         </div>
-        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]">
+        <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]">
           {total.toLocaleString("es-PE")} total
         </span>
       </div>
@@ -131,7 +131,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
         <StatBadge
           label="Retrasados"
           value={queue.delayed}
-          colorClasses="bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700/50 dark:text-[var(--text-tertiary)]"
+          colorClasses="bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-gray-700/50 dark:text-[var(--text-tertiary)]"
           icon={<Pause className="h-4 w-4" />}
         />
       </div>
@@ -224,7 +224,7 @@ export default function ColasTab() {
         </CardTitle>
         <p className="max-w-md text-sm text-[var(--text-tertiary)]">
           No se detectó conexión a Redis. Las colas de trabajo (BullMQ) requieren Redis para funcionar.
-          Configura la variable de entorno <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs dark:bg-gray-700">REDIS_URL</code> para habilitar el procesamiento asíncrono.
+          Configura la variable de entorno <code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-xs dark:bg-gray-700">REDIS_URL</code> para habilitar el procesamiento asíncrono.
         </p>
       </div>
     );
@@ -265,7 +265,7 @@ export default function ColasTab() {
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
               autoRefresh
                 ? "border-teal-300 bg-teal-50 text-[var(--accent-dark)] dark:border-[var(--accent-dark)] dark:bg-teal-900/20 dark:text-teal-400"
-                : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-secondary)] dark:border-gray-600 dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
+                : "border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:border-gray-600 dark:bg-gray-800 dark:text-[var(--text-tertiary)]",
             )}
             title={autoRefresh ? "Desactivar auto-refresco" : "Activar auto-refresco"}
           >

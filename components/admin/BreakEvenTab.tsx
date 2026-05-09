@@ -291,7 +291,7 @@ export default function BreakEvenTab() {
             "px-4 py-2 rounded-xl text-sm font-bold transition-colors",
             selectedProduct === "general"
               ? "bg-[var(--data-error-500)] text-white"
-              : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
+              : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent"
           )}
         >
           Vista General
@@ -308,7 +308,7 @@ export default function BreakEvenTab() {
               "px-3 py-2 rounded-xl text-sm font-bold transition-colors",
               selectedProduct === p.id
                 ? "bg-[var(--data-error-500)] text-white"
-                : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
+                : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent"
             )}
           >
             {p.name.split(" ").slice(0, 2).join(" ")}
@@ -334,7 +334,7 @@ export default function BreakEvenTab() {
         {fixedCosts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {fixedCosts.map((c) => (
-              <div key={c.name} className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+              <div key={c.name} className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">
                 <p className="text-xs text-[var(--text-tertiary)] truncate">{c.name}</p>
                 <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.amount)}</p>
               </div>
@@ -641,7 +641,7 @@ export default function BreakEvenTab() {
               </p>
             ) : (
               <>
-                <div className="relative h-10 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                <div className="relative h-10 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                   <div
                     className={cn(
                       "h-full rounded-full transition-all",

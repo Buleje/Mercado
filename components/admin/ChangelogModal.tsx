@@ -87,7 +87,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+              className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
             >
               <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>

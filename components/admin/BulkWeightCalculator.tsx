@@ -128,7 +128,7 @@ export default function BulkWeightCalculator() {
                 "rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                 product === p.name
                   ? "border-primary bg-primary text-white"
-                  : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] hover:border-primary/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
+                  : "border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] hover:border-primary/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
               )}
             >
               {p.name}
@@ -149,7 +149,7 @@ export default function BulkWeightCalculator() {
               value={product}
               onChange={(e) => setProduct(e.target.value)}
               placeholder="Nombre del producto"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             />
           </div>
           <div>
@@ -165,7 +165,7 @@ export default function BulkWeightCalculator() {
                 placeholder="0.000"
                 step="0.001"
                 min="0"
-                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
             </div>
           </div>
@@ -180,7 +180,7 @@ export default function BulkWeightCalculator() {
               placeholder="0.00"
               step="0.10"
               min="0"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             />
           </div>
         </div>
