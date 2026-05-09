@@ -101,7 +101,9 @@ export async function handleIncomingMessage(
     phone,
     undefined,
     tenantId,
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   // ── Build and return response ────────────────────────────────────────────
   return buildConciergeResponse(result, currentState);

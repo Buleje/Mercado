@@ -31,7 +31,9 @@ export async function sendTextMessage(to: string, text: string) {
     to: to.replace(/\D/g, ""), // clean to digits only
     type: "text",
     text: { body: text },
-  }).catch(() => {});
+  }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 }
 
 /** Send order confirmation with details */

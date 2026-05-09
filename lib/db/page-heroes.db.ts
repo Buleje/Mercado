@@ -72,7 +72,9 @@ export const PageHeroesDB = {
       data: { tenantId, ...data, sortOrder: count },
     });
     invalidateByPrefix(`page-heroes:${tenantId}`);
-    logActivity("page_hero_created", "PageHero", `${data.pageSlug}: ${data.title}`, hero.id, "admin", undefined, tenantId).catch(() => {});
+    logActivity("page_hero_created", "PageHero", `${data.pageSlug}: ${data.title}`, hero.id, "admin", undefined, tenantId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     return hero;
   },
 

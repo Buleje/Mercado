@@ -138,7 +138,9 @@ export async function createTenantFromSignup(
     adminUsername: email,
     plan: "free",
     trialEndsAt,
-  }).catch(() => {});
+  }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
   const loginUrl = `${baseUrl}/${slug}/admin/login`;

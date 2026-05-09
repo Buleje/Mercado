@@ -325,7 +325,9 @@ export async function emitirBoleta(
     await SunatDB.updateInvoice(tenantId, invoiceRecord.id, {
       sunatStatus: "retrying",
       errorMessage: `attempt:1|${msg}`,
-    }).catch(() => {}); // fire-and-forget — no bloquear respuesta
+    }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    }); // fire-and-forget — no bloquear respuesta
 
     logger.error("[SunatFacade] Error al emitir boleta, encolado para retry", {
       tenantId,
@@ -488,7 +490,9 @@ export async function emitirFactura(
     await SunatDB.updateInvoice(tenantId, invoiceRecord.id, {
       sunatStatus: "retrying",
       errorMessage: `attempt:1|${msg}`,
-    }).catch(() => {}); // fire-and-forget
+    }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    }); // fire-and-forget
 
     logger.error("[SunatFacade] Error al emitir factura, encolado para retry", {
       tenantId,
@@ -557,7 +561,9 @@ export async function consultarEstado(
           sunatStatus: "accepted",
           acceptedAt: new Date(),
           pdfUrl: response.enlace_del_pdf ?? null,
-        }).catch(() => {}); // fire-and-forget
+        }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    }); // fire-and-forget
       }
 
       return {

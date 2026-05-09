@@ -169,7 +169,9 @@ class RedisStore implements CacheStore {
             if (remaining > 0) this.mem.set(key, value, remaining);
           } catch { /* malformed entry — ignore */ }
         }
-      }).catch(() => {});
+      }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
     return null;
   }
@@ -178,14 +180,18 @@ class RedisStore implements CacheStore {
     this.mem.set(key, value, ttlSec);
     if (this.client) {
       const payload = JSON.stringify({ value, expiresAt: nowWall() + ttlSec * 1000 });
-      this.client.set(key, payload, "EX", ttlSec).catch(() => {});
+      this.client.set(key, payload, "EX", ttlSec).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
   }
 
   del(key: string): void {
     this.mem.del(key);
     if (this.client) {
-      this.client.del(key).catch(() => {});
+      this.client.del(key).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
   }
 
@@ -194,8 +200,12 @@ class RedisStore implements CacheStore {
     if (this.client) {
       // Redis SCAN + DEL — fire-and-forget; in-mem layer is already clean
       this.client.keys(`${prefix}*`).then((keys: string[]) => {
-        if (keys.length > 0) this.client.del(...keys).catch(() => {});
-      }).catch(() => {});
+        if (keys.length > 0) this.client.del(...keys).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
+      }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
   }
 
@@ -203,8 +213,12 @@ class RedisStore implements CacheStore {
     this.mem.clearAll();
     if (this.client) {
       this.client.keys("*").then((keys: string[]) => {
-        if (keys.length > 0) this.client.del(...keys).catch(() => {});
-      }).catch(() => {});
+        if (keys.length > 0) this.client.del(...keys).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
+      }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
   }
 }

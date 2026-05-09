@@ -3,6 +3,7 @@ import { ProductsDB, OrdersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 /**
  * POST /api/ai-assistant/actions
@@ -102,6 +103,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Se requiere { action: { type, payload } }" }, { status: 400 });
   }
 
-  const result = await executeAction(body.action, auth.tenantId);
+  // Round 16 M004: AI actions ejecutan writes a Order/Product. Audit log
+  // con admin actor (AI nunca actúa por sí mismo, siempre con confirmación).
+  const result = await runWithAuditContext(req, `ai:${auth.username}`, () =>
+    executeAction(body.action, auth.tenantId),
+  );
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }

@@ -120,7 +120,9 @@ export function clearAllTenantCache(): number {
             .map((n) => caches.delete(n)),
         ),
       )
-      .catch(() => {});
+      .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
   }
   return removed;
 }

@@ -236,7 +236,9 @@ export async function createAutoPurchaseOrders(
       `PO auto-generada para ${supplierName}: ${items.length} productos, total S/ ${total.toFixed(2)}`,
       po.id,
       "ai-forecasting",
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     // Fire-and-forget: notificar al admin
     createNotification({
@@ -246,7 +248,9 @@ export async function createAutoPurchaseOrders(
       type: "purchase",
       severity: "MEDIUM",
       entityId: po.id,
-    }).catch(() => {});
+    }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     results.push({
       supplierId,

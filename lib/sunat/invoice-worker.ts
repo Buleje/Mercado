@@ -225,7 +225,9 @@ async function processInvoice(
         total: +igvCalc.total.toFixed(2),
         sunatHash: response.nubefact_id ?? undefined,
         cdrUrl: response.enlace_del_pdf ?? undefined,
-      }).catch(() => {});
+      }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
       sunatEventBus.emitInvoiceUpdated({
         invoiceId,

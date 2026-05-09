@@ -47,7 +47,9 @@ export async function getConversation(
     // Treat expired sessions as non-existent so the engine starts fresh
     if (row.expiresAt < new Date()) {
       // Fire-and-forget cleanup — never await non-critical ops
-      deleteConversation(tenantId, phone).catch(() => {});
+      deleteConversation(tenantId, phone).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
       return null;
     }
 

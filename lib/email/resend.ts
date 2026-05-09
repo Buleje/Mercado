@@ -15,7 +15,9 @@ export async function sendOrderConfirmation(to: string, order: { id: string; tot
       <p><strong>Productos:</strong> ${order.items} items</p>
       <p>Te avisaremos cuando este listo para recoger o en camino.</p>
     `,
-  }).catch(() => {});
+  }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 }
 
 export async function sendFiadoReminder(to: string, fiado: { customerName: string; amount: number; dueDate: string }) {
@@ -33,7 +35,9 @@ export async function sendFiadoReminder(to: string, fiado: { customerName: strin
       <p>Fecha limite: ${safeDate}</p>
       <p>Puedes pagar en la bodega o por Yape.</p>
     `,
-  }).catch(() => {});
+  }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 }
 
 export async function sendWelcomeTenant(to: string, tenant: { name: string; slug: string }) {

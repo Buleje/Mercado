@@ -193,7 +193,9 @@ export const ReferralsDB = {
       "system",
       undefined,
       tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return { success: true, message: "Referido registrado correctamente", couponCode };
   },
@@ -273,7 +275,9 @@ export const ReferralsDB = {
       "system",
       undefined,
       tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return { rewarded: true, couponCode, referrerId: referral.referrerId };
   },

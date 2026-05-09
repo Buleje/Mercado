@@ -63,7 +63,9 @@ async function sendOrderUpdate(
     message,
     status: "sent",
     orderId,
-  }, task.tenantId).catch(() => {});
+  }, task.tenantId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   log.info("Order update notification sent", {
     orderId,
@@ -124,7 +126,9 @@ async function sendStockAlert(
     recipient: "admin",
     message: alertMessage,
     status: "sent",
-  }, task.tenantId).catch(() => {});
+  }, task.tenantId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   agentBus.emit("agent:alert", {
     domain: "notifications",
@@ -201,7 +205,9 @@ async function sendExpiryWarning(
     recipient: "admin",
     message: warningMessage,
     status: "sent",
-  }, task.tenantId).catch(() => {});
+  }, task.tenantId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   agentBus.emit("agent:alert", {
     domain: "notifications",
@@ -275,7 +281,9 @@ async function sendPromotion(
       recipient: r.phone,
       message,
       status: "sent",
-    }, task.tenantId).catch(() => {});
+    }, task.tenantId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
   }
 
   log.info("Promotional notifications queued", {

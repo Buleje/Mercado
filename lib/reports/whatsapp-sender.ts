@@ -45,7 +45,9 @@ export async function sendWeeklyReportTo(
           status: "skipped",
         },
         tenantId
-      ).catch(() => {});
+      ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -63,7 +65,9 @@ export async function sendWeeklyReportTo(
         status: "failed",
       },
       tenantId
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     // Re-throw so the cron handler can count failures
     throw err;

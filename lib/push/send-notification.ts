@@ -83,7 +83,9 @@ export async function sendPushNotification(
         if (statusCode === 410 || statusCode === 404) {
           await prisma.pushSubscription
             .deleteMany({ where: { endpoint: sub.endpoint } })
-            .catch(() => {});
+            .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
           logger.debug("[PUSH] Removed expired subscription", { endpoint: sub.endpoint.slice(0, 60) });
         }
         failed++;
@@ -145,7 +147,9 @@ export async function broadcastPushToTenant(
         if (statusCode === 410 || statusCode === 404) {
           await prisma.pushSubscription
             .deleteMany({ where: { endpoint: sub.endpoint } })
-            .catch(() => {});
+            .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
         }
         failed++;
       }

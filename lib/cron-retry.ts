@@ -16,7 +16,9 @@ export async function withCronRetry<T>(
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const result = await fn();
-      trackCronExecution({ jobName, status: "success", durationMs: Date.now() - startMs }).catch(() => {});
+      trackCronExecution({ jobName, status: "success", durationMs: Date.now() - startMs }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
       return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -34,7 +36,9 @@ export async function withCronRetry<T>(
         } catch (dlErr) {
           logger.error(`[cron/${jobName}] Failed to write dead letter`, { error: String(dlErr) });
         }
-        trackCronExecution({ jobName, status: "failure", durationMs: Date.now() - startMs, error: message }).catch(() => {});
+        trackCronExecution({ jobName, status: "failure", durationMs: Date.now() - startMs, error: message }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
         throw err;
       }
 

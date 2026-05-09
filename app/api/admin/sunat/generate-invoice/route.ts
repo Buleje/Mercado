@@ -7,6 +7,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { emitirBoleta } from "@/lib/integrations/sunat-nubefact";
 import { calculateIGV } from "@/lib/sunat";
+import { runWithAuditContext } from "@/lib/audit/audit-context";
 
 // ── POST /api/admin/sunat/generate-invoice — Emitir boleta/factura ─────────
 
@@ -27,6 +28,20 @@ export async function POST(req: NextRequest) {
     const auth = await requireAdmin(req, ["admin", "cajero"]);
     if (auth instanceof NextResponse) return auth;
 
+    // Round 16 M004: SUNAT invoice creation con admin/cajero actor + IP.
+    return await runWithAuditContext(req, auth.username, () => generateInvoice(req, auth, traceId));
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err, traceId);
+    return NextResponse.json(payload, { status });
+  }
+}
+
+async function generateInvoice(
+  req: NextRequest,
+  auth: { tenantId: string; username: string; name?: string; role?: string },
+  traceId: string,
+): Promise<NextResponse> {
+  try {
     const body = await req.json().catch(() => ({}));
     const parsed = InvoiceSchema.safeParse(body);
     if (!parsed.success) {

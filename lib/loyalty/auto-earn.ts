@@ -170,14 +170,18 @@ export async function autoEarnLoyaltyPoints(
       "system",
       undefined,
       tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     if (tierUpgrade) {
       logger.info("[auto-earn] Tier upgrade", {
         tenantId, customerId, orderId,
         from: previousTier, to: currentTier, newBalance,
       });
-      notifyTierUpgrade(tenantId, customerId, previousTier, currentTier).catch(() => {});
+      notifyTierUpgrade(tenantId, customerId, previousTier, currentTier).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
 
     return {

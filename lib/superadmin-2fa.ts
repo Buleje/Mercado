@@ -184,7 +184,9 @@ export function create2FAChallenge(username: string): { challengeId: string; cod
     const phone = process.env.SUPERADMIN_PHONE;
     if (phone) {
       const msg = `🔐 *Código de verificación — Buleje*\n\nTu código de acceso SuperAdmin es:\n\n*${code}*\n\nExpira en 5 minutos. No compartas este código.`;
-      sendWhatsAppQueued(phone, msg, { tenantId: "__platform__", context: "2fa-code" }).catch(() => {});
+      sendWhatsAppQueued(phone, msg, { tenantId: "__platform__", context: "2fa-code" }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     } else {
       logger.warn("[2FA] SUPERADMIN_PHONE not configured — cannot send WhatsApp code");
     }
@@ -219,7 +221,9 @@ export function create2FAChallenge(username: string): { challengeId: string; cod
   if (process.env.NODE_ENV === "development") {
     codePromise.then((code) => {
       logger.debug(`[2FA] TOTP code for ${username}: ${code} (valid for ${TOTP_PERIOD}s)`);
-    }).catch(() => {});
+    }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
   }
 
   logger.info(`[2FA] TOTP challenge created for ${username}`);

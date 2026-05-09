@@ -36,7 +36,9 @@ export async function sendPushNotification(
     tag: payload.tag,
   });
 
-  return webpush.sendNotification(subscription, data).catch(() => {});
+  return webpush.sendNotification(subscription, data).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 }
 
 export async function sendBulkPush(

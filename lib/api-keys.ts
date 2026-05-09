@@ -68,7 +68,9 @@ export async function validateApiKey(rawKey: string): Promise<{ tenantId: string
   // Fire-and-forget last-used update
   void prisma.apiKey
     .update({ where: { id: key.id }, data: { lastUsedAt: new Date() } })
-    .catch(() => {});
+    .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return { tenantId: key.tenantId };
 }

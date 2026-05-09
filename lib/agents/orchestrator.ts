@@ -122,7 +122,9 @@ class Orchestrator {
     });
 
     // Kick the processing loop (fire-and-forget)
-    this.drain().catch(() => {});
+    this.drain().catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return task;
   }
@@ -335,11 +337,15 @@ class Orchestrator {
       this.runningCount++;
       // Fire-and-forget each task — errors are handled inside processTask
       this.processTask(task)
-        .catch(() => {})
+        .catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    })
         .finally(() => {
           this.runningCount--;
           // Try to drain more after each completion
-          this.drain().catch(() => {});
+          this.drain().catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
         });
     }
   }

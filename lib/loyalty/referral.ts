@@ -124,7 +124,9 @@ export async function processReferral(
       `Tu amigo/a se registró con tu código y ambos ganaron *${REFERRAL_POINTS} puntos* 🏆\n\n` +
       `Tu saldo se actualizó automáticamente. ¡Sigue invitando amigos para ganar más puntos!`,
       { tenantId, context: "referral-referrer-notify" },
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     sendWhatsAppQueued(
       refereePhone,
@@ -132,7 +134,9 @@ export async function processReferral(
       `Usaste el código de ${referrer.name} y ganaste *${REFERRAL_POINTS} puntos* de regalo 🎉\n\n` +
       `Recuerda: 50 puntos = S/1 de descuento en tu próxima compra.`,
       { tenantId, context: "referral-referee-notify" },
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     // 7. Log activity — fire-and-forget
     logActivity(
@@ -143,7 +147,9 @@ export async function processReferral(
       "system",
       undefined,
       tenantId,
-    ).catch(() => {});
+    ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     logger.info("[referral] Procesado", {
       tenantId,

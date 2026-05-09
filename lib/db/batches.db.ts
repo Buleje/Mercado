@@ -308,7 +308,9 @@ export const BatchesDB = {
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(row.productId).catch(() => {});
+    propagateExpiresAt(row.productId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return mapBatch(row);
   },
@@ -340,9 +342,13 @@ export const BatchesDB = {
     });
 
     // Propagar al producto anterior y al nuevo si cambió el productId
-    propagateExpiresAt(existing.productId).catch(() => {});
+    propagateExpiresAt(existing.productId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     if (input.productId && input.productId !== existing.productId) {
-      propagateExpiresAt(input.productId).catch(() => {});
+      propagateExpiresAt(input.productId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
 
     if (!row) return null;
@@ -366,7 +372,9 @@ export const BatchesDB = {
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(existing.productId).catch(() => {});
+    propagateExpiresAt(existing.productId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     if (!row) return null;
     return mapBatch(row);
@@ -382,7 +390,9 @@ export const BatchesDB = {
 
     await prisma.batch.deleteMany({ where: { id, tenantId } });
 
-    propagateExpiresAt(existing.productId).catch(() => {});
+    propagateExpiresAt(existing.productId).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
     return true;
   },

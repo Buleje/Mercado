@@ -74,7 +74,9 @@ export async function notifyQuotaAlert(opts: NotifyQuotaOptions): Promise<void> 
   // 2. WhatsApp fallback
   const staffPhone = process.env.WHATSAPP_STAFF_PHONE;
   if (!emailSent && staffPhone) {
-    sendWhatsAppQueued(staffPhone, buildQuotaAlertText(templateInput), { tenantId, context: "quota-alert-fallback" }).catch(() => {});
+    sendWhatsAppQueued(staffPhone, buildQuotaAlertText(templateInput), { tenantId, context: "quota-alert-fallback" }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
   }
 
   // 3. ActivityLog — siempre
@@ -86,7 +88,9 @@ export async function notifyQuotaAlert(opts: NotifyQuotaOptions): Promise<void> 
     "system",
     undefined,
     tenantId,
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   // Marcar como enviado después de intentar
   markSent(tenantId, event, checkResult.level);

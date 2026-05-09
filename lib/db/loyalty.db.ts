@@ -203,7 +203,9 @@ async function writeTransaction(
     "system",
     undefined,
     tenantId,
-  ).catch(() => {});
+  ).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 
   return rowToDto({
     id: created.id,

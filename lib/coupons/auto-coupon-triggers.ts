@@ -198,7 +198,9 @@ async function issueCoupon(opts: {
       `📅 Válido por ${COUPON_VALIDITY_DAYS} días\n\n` +
       `🛒 Úsalo en:\n${marketplaceUrl}`;
 
-  sendWhatsAppQueued(opts.customerPhone, message, { tenantId: opts.tenantId, context: `auto-coupon-${opts.trigger}` }).catch(() => {});
+  sendWhatsAppQueued(opts.customerPhone, message, { tenantId: opts.tenantId, context: `auto-coupon-${opts.trigger}` }).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

@@ -76,7 +76,9 @@ export async function applyBoostsToProducts<T extends RankableProduct>(
   // Fire-and-forget: registrar impresiones de los sponsored
   for (const sp of sponsored) {
     if (sp.sponsoredBoostId) {
-      SponsoredBoostsDB.recordImpression(tenantId, sp.sponsoredBoostId as string).catch(() => {});
+      SponsoredBoostsDB.recordImpression(tenantId, sp.sponsoredBoostId as string).catch(() => {
+      /* fire-and-forget per CLAUDE.md rule #7 */
+    });
     }
   }
 
