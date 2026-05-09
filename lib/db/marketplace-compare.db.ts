@@ -41,6 +41,23 @@ export type CompareProductData = {
 
 export const MarketplaceCompareDB = {
   /**
+   * Resuelve el tenantId del tenant "main" (scope global del marketplace).
+   * Fallback: "global" si no existe.
+   * Cache: 300s (el tenant main no cambia).
+   *
+   * @cross-tenant intentional — lookup público sin datos sensibles.
+   */
+  async getMainTenantId(): Promise<string> {
+    return getOrSet("marketplace:main-tenant-id:v1", 300, async () => {
+      const tenant = await prisma.tenant.findFirst({
+        where: { slug: "main" },
+        select: { id: true },
+      });
+      return tenant?.id ?? "global";
+    });
+  },
+
+  /**
    * Devuelve un producto por id con su tienda activa.
    * Fallback a null si no existe o está inactivo.
    */

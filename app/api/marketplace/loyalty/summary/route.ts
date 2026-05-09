@@ -84,7 +84,10 @@ export async function GET(req: NextRequest) {
   }
 
   const phone = session.customerId;
-  const tenantId = req.headers.get("x-tenant-id") ?? "main";
+  // Round 7 fix H002: tenantId desde la session JWT firmada, NO del header.
+  // Antes: `req.headers.get("x-tenant-id") ?? "main"` permitía cross-tenant oracle
+  // (atacante con session válida en tenant_A enumeraba tenant_B/C inyectando header).
+  const tenantId = session.tenantId;
 
   try {
     // Fetch paralelo: balance de puntos + conteo de pedidos marketplace

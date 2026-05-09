@@ -150,6 +150,7 @@ export const DashboardDB = {
       }),
 
       // 8. Reviews — todos los campos son scalars, sin relations
+      // Round 7 fix: cap a 1000. Tenants con muchos reviews evitan OOM en dashboard load.
       // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
       prisma.review.findMany({
         where: { tenantId },
@@ -160,6 +161,7 @@ export const DashboardDB = {
           adminReply: true, adminReplyDate: true,
         },
         orderBy: { date: "desc" },
+        take: 1000,
       }),
     ]);
   },

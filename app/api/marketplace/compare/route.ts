@@ -3,18 +3,10 @@
  *
  * Resuelve hasta 4 productos para comparación side-by-side.
  * Endpoint público — no requiere auth (marketplace browsing).
- */
-
-/**
- * @cross-tenant intentional — endpoint público marketplace.
- * Agregados/lecturas cross-tenant son parte del diseño del marketplace
- * (rankings, búsqueda, comparar, analytics globales). Donde aplica filtra
- * por `store.isPublished: true` para no exponer tiendas en draft.
- * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
+ * @cross-tenant intentional — marketplace público cross-store.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { MarketplaceCompareDB } from "@/lib/db/marketplace-compare.db";
 import { logger } from "@/lib/logger";
 
@@ -41,15 +33,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // El marketplace es "global" para consumers — pero seguimos usando el tenant
-    // main como scope por convención. Si un producto es de otro tenant, aún así
-    // se muestra porque la marketplace lista es unificada.
-    const mainTenant = await prisma.tenant.findFirst({
-      where: { slug: "main" },
-      select: { id: true },
-    });
-    const tenantId = mainTenant?.id ?? "global";
-
+    // tenantId del tenant "main" — scope global del marketplace.
+    const tenantId = await MarketplaceCompareDB.getMainTenantId();
     const data = await MarketplaceCompareDB.getProductsForCompare(tenantId, ids);
 
     return NextResponse.json(

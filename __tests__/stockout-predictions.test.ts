@@ -26,6 +26,7 @@ const { mockPrisma } = vi.hoisted(() => ({
     },
     orderItem: {
       aggregate: vi.fn(),
+      groupBy: vi.fn(),
     },
   },
 }));
@@ -60,10 +61,9 @@ describe("StockoutPredictionsDB", () => {
       mockPrisma.storeProduct.findMany.mockResolvedValueOnce([
         { id: "sp-1", productId: 101, product: { id: 101, stock: 5 } },
       ]);
-      mockPrisma.orderItem.aggregate.mockResolvedValueOnce({
-        _sum: { quantity: 30 },
-        _count: { _all: 12 },
-      });
+      mockPrisma.orderItem.groupBy.mockResolvedValueOnce([
+        { productId: 101, _sum: { quantity: 30 }, _count: { _all: 12 } },
+      ]);
 
       const created = await StockoutPredictionsDB.compute("tenant-A", "store-1");
 
@@ -83,10 +83,9 @@ describe("StockoutPredictionsDB", () => {
       mockPrisma.storeProduct.findMany.mockResolvedValueOnce([
         { id: "sp-2", productId: 102, product: { id: 102, stock: 1 } },
       ]);
-      mockPrisma.orderItem.aggregate.mockResolvedValueOnce({
-        _sum: { quantity: 60 },
-        _count: { _all: 20 },
-      });
+      mockPrisma.orderItem.groupBy.mockResolvedValueOnce([
+        { productId: 102, _sum: { quantity: 60 }, _count: { _all: 20 } },
+      ]);
 
       await StockoutPredictionsDB.compute("tenant-A", "store-1");
 
@@ -98,10 +97,8 @@ describe("StockoutPredictionsDB", () => {
       mockPrisma.storeProduct.findMany.mockResolvedValueOnce([
         { id: "sp-3", productId: 103, product: { id: 103, stock: 100 } },
       ]);
-      mockPrisma.orderItem.aggregate.mockResolvedValueOnce({
-        _sum: { quantity: null },
-        _count: { _all: 0 },
-      });
+      // groupBy no devuelve filas para productos sin ventas (el WHERE las filtra).
+      mockPrisma.orderItem.groupBy.mockResolvedValueOnce([]);
 
       const created = await StockoutPredictionsDB.compute("tenant-A", "store-1");
 
@@ -115,18 +112,21 @@ describe("StockoutPredictionsDB", () => {
         { id: "b", productId: 2, product: { id: 2, stock: 10 } },
         { id: "c", productId: 3, product: { id: 3, stock: 10 } },
       ]);
-      mockPrisma.orderItem.aggregate
-        .mockResolvedValueOnce({ _sum: { quantity: 30 }, _count: { _all: 12 } })
-        .mockResolvedValueOnce({ _sum: { quantity: 30 }, _count: { _all: 6 } })
-        .mockResolvedValueOnce({ _sum: { quantity: 30 }, _count: { _all: 2 } });
+      // Una sola groupBy devuelve todos los datapoints en un array.
+      mockPrisma.orderItem.groupBy.mockResolvedValueOnce([
+        { productId: 1, _sum: { quantity: 30 }, _count: { _all: 12 } },
+        { productId: 2, _sum: { quantity: 30 }, _count: { _all: 6 } },
+        { productId: 3, _sum: { quantity: 30 }, _count: { _all: 2 } },
+      ]);
 
       await StockoutPredictionsDB.compute("tenant-A", "store-1");
 
       const data = mockPrisma.stockoutPrediction.createMany.mock.calls[0][0].data;
       expect(data).toHaveLength(3);
-      expect(data[0].confidence).toBe(0.9);
-      expect(data[1].confidence).toBe(0.7);
-      expect(data[2].confidence).toBe(0.5);
+      const byProduct = new Map(data.map((d: { productId: number; confidence: number }) => [d.productId, d.confidence]));
+      expect(byProduct.get(1)).toBe(0.9);
+      expect(byProduct.get(2)).toBe(0.7);
+      expect(byProduct.get(3)).toBe(0.5);
     });
 
     it("borra predicciones anteriores antes de crear las nuevas", async () => {

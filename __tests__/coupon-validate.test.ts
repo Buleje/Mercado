@@ -41,6 +41,7 @@ const { mockRateLimit, mockGetClientIp } = vi.hoisted(() => ({
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: mockRateLimit,
   getClientIp: mockGetClientIp,
+  applyRateLimit: vi.fn().mockResolvedValue(null),
 }));
 
 // ── Import SUT after mocks ────────────────────────────────────────────────────

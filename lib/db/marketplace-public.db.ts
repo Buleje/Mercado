@@ -503,6 +503,355 @@ export const MarketplacePublicDB = {
   },
 
   /**
+   * Verifica qué product IDs existen en el marketplace (cross-store o tenant-scoped).
+   * Caso de uso: validación defensiva del carrito para no eliminar items válidos.
+   * Cap: 100 IDs por llamada.
+   *
+   * Si tenantId se provee → filtra solo productos de ese tenant.
+   * Sin tenantId → cross-store (todos los tenants, active=true).
+   *
+   * @cross-tenant intentional cuando tenantId es null (ADR-082).
+   */
+  async checkProductsExist(
+    productIds: number[],
+    tenantId: string | null,
+  ): Promise<{ existingIds: number[]; missingIds: number[] }> {
+    if (productIds.length === 0) return { existingIds: [], missingIds: [] };
+
+    const found = await prisma.product.findMany({
+      where: {
+        id: { in: productIds },
+        active: true,
+        deletedAt: null,
+        ...(tenantId ? { tenantId } : {}),
+      },
+      select: { id: true },
+    });
+
+    const existingIds = found.map((p) => p.id);
+    const foundSet = new Set(existingIds);
+    const missingIds = productIds.filter((id) => !foundSet.has(id));
+    return { existingIds, missingIds };
+  },
+
+  /**
+   * Resuelve slug de tenant → tenantId para el endpoint check-exists.
+   * No exponemos datos sensibles — solo retorna el id.
+   * Round 7: cache 300s — slugs no cambian, evita martillar DB en hot paths.
+   */
+  async resolveTenantIdBySlug(slugOrId: string): Promise<string | null> {
+    return getOrSet(`marketplace:resolve-tenant:${slugOrId}`, 300, async () => {
+      const tenant = await prisma.tenant.findFirst({
+        where: { OR: [{ id: slugOrId }, { slug: slugOrId }] },
+        select: { id: true },
+      });
+      return tenant?.id ?? null;
+    });
+  },
+
+  /**
+   * Ranking de productos más pedidos en las últimas 24h en el marketplace.
+   * Fallback a últimos 7d si hay menos de 5 resultados.
+   * Incluye trendPct: variación % vs el mismo período anterior.
+   * Cache: 120s (mismo TTL que los headers del route).
+   *
+   * @cross-tenant intentional (ADR-082) — agrega OrderItems de todos los tenants.
+   */
+  async getTopToday(limit: number): Promise<{
+    items: Array<{
+      storeProductId: string;
+      productId: number;
+      name: string;
+      price: number;
+      image: string | null;
+      unit: string;
+      stock: number;
+      soldUnits: number;
+      trendPct: number | null;
+      store: { slug: string; name: string; rating: number };
+    }>;
+    window: "24h" | "7d";
+    updatedAt: string;
+  }> {
+    const now = new Date();
+    // Round 7 fix: cache key estable. El bucket `Math.floor(now/120_000)` mezclado
+    // con TTL 120s generaba una key nueva por bucket sin desalojar la anterior →
+    // memory leak en getOrSet. El TTL solo ya garantiza refresh cada 120s.
+    const cacheKey = `marketplace:top-today:v1:${limit}`;
+
+    return getOrSet(cacheKey, 120, async () => {
+      const start24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const start48h = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+      const start7d  = new Date(now.getTime() - 7  * 24 * 60 * 60 * 1000);
+      const start14d = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+      async function topInWindow(fromDate: Date, toDate?: Date) {
+        return prisma.orderItem.groupBy({
+          by: ["productId"],
+          where: {
+            order: {
+              source: "marketplace",
+              deletedAt: null,
+              createdAt: { gte: fromDate, ...(toDate ? { lt: toDate } : {}) },
+            },
+          },
+          _sum: { quantity: true },
+          orderBy: { _sum: { quantity: "desc" } },
+          take: limit,
+        });
+      }
+
+      let window: "24h" | "7d" = "24h";
+      let ranking = await topInWindow(start24h).catch(() => []);
+      let prevWindow = { from: start48h, to: start24h };
+
+      if (ranking.length < 5) {
+        window = "7d";
+        ranking = await topInWindow(start7d).catch(() => []);
+        prevWindow = { from: start14d, to: start7d };
+      }
+
+      if (ranking.length === 0) {
+        return { items: [], window, updatedAt: now.toISOString() };
+      }
+
+      const currentProductIds = ranking
+        .map((r) => r.productId)
+        .filter((x): x is number => x != null);
+
+      const prevRanking = await prisma.orderItem.groupBy({
+        by: ["productId"],
+        where: {
+          productId: { in: currentProductIds },
+          order: {
+            source: "marketplace",
+            deletedAt: null,
+            createdAt: { gte: prevWindow.from, lt: prevWindow.to },
+          },
+        },
+        _sum: { quantity: true },
+      }).catch(() => []);
+
+      const prevQtyMap = new Map<number, number>(
+        prevRanking
+          .filter((r) => r.productId != null)
+          .map((r) => [r.productId as number, Number(r._sum.quantity ?? 0)]),
+      );
+
+      const productIds = ranking
+        .map((r) => r.productId)
+        .filter((x): x is number => x != null && typeof x === "number");
+
+      const storeProducts = await prisma.storeProduct.findMany({
+        where: {
+          productId: { in: productIds },
+          isActive: true,
+          store: { isPublished: true, vacationMode: { not: true } },
+        },
+        select: {
+          id: true,
+          retailPrice: true,
+          productId: true,
+          product: { select: { id: true, name: true, image: true, unit: true, stock: true } },
+          store: { select: { slug: true, name: true, rating: true } },
+        },
+      });
+
+      const bestByProduct = new Map<number, (typeof storeProducts)[number]>();
+      for (const sp of storeProducts) {
+        const prev = bestByProduct.get(sp.productId);
+        if (!prev || (sp.store.rating ?? 0) > (prev.store.rating ?? 0)) {
+          bestByProduct.set(sp.productId, sp);
+        }
+      }
+
+      const items = ranking
+        .map((r) => {
+          if (r.productId == null) return null;
+          const sp = bestByProduct.get(r.productId);
+          if (!sp) return null;
+          const soldNow  = Number(r._sum.quantity ?? 0);
+          const soldPrev = prevQtyMap.get(r.productId) ?? null;
+          const trendPct: number | null =
+            soldPrev != null && soldPrev > 0
+              ? Math.round(((soldNow - soldPrev) / soldPrev) * 100)
+              : null;
+          return {
+            storeProductId: sp.id,
+            productId: sp.productId,
+            name: sp.product.name,
+            price: Number(sp.retailPrice),
+            image: sp.product.image,
+            unit: sp.product.unit,
+            stock: sp.product.stock ?? 0,
+            soldUnits: soldNow,
+            trendPct,
+            store: {
+              slug: sp.store.slug,
+              name: sp.store.name,
+              rating: Number(sp.store.rating ?? 0),
+            },
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      return { items, window, updatedAt: now.toISOString() };
+    });
+  },
+
+  /**
+   * Productos en oferta cross-store (retailPrice < product.price base).
+   * Sin mocks. Con fallbackToLowest=true devuelve los más baratos como "destacados".
+   * Cache: 120s.
+   *
+   * @cross-tenant intentional (ADR-082) — agrega StoreProducts de todos los stores publicados.
+   */
+  async getDeals(opts: {
+    category?: string;
+    storeSlug?: string;
+    minDiscount: number;
+    limit: number;
+    sort: "discount_desc" | "price_asc" | "ends_soon";
+    fallbackToLowest: boolean;
+  }): Promise<{
+    items: Array<{
+      id: string;
+      productId: number;
+      name: string;
+      image: string | null;
+      category: string;
+      unit: string;
+      badge: string | null;
+      price: number;
+      originalPrice: number | null;
+      discountPct: number;
+      stock: number;
+      minOrderQty: number | null;
+      store: { slug: string; name: string; logo: string | null; zone: string | null; category: string };
+    }>;
+    source: "deals" | "lowest";
+  }> {
+    const { category, storeSlug, minDiscount, limit, sort, fallbackToLowest } = opts;
+    const cacheKey = `marketplace:deals:${JSON.stringify({ category, storeSlug, minDiscount, limit, sort, fallbackToLowest })}`;
+
+    return getOrSet(cacheKey, 120, async () => {
+      const rows = await prisma.storeProduct.findMany({
+        where: {
+          isActive: true,
+          store: {
+            isPublished: true,
+            ...(storeSlug && { slug: storeSlug }),
+          },
+          ...(category
+            ? { product: { category, active: true, deletedAt: null } }
+            : { product: { active: true, deletedAt: null } }),
+        },
+        select: {
+          id: true,
+          retailPrice: true,
+          minOrderQty: true,
+          store: {
+            select: { id: true, slug: true, name: true, logo: true, zone: true, category: true },
+          },
+          product: {
+            select: {
+              id: true, name: true, image: true, category: true,
+              unit: true, price: true, stock: true, badge: true,
+            },
+          },
+        },
+        take: Math.max(limit * 4, 200),
+      });
+
+      type DealItem = {
+        id: string; productId: number; name: string; image: string | null;
+        category: string; unit: string; badge: string | null; price: number;
+        originalPrice: number | null; discountPct: number; stock: number;
+        minOrderQty: number | null;
+        store: { slug: string; name: string; logo: string | null; zone: string | null; category: string };
+      };
+
+      const deals: DealItem[] = rows
+        .map((sp): DealItem | null => {
+          const base = Number(sp.product.price);
+          const sale = Number(sp.retailPrice);
+          if (!Number.isFinite(base) || !Number.isFinite(sale) || base <= 0) return null;
+          if (sale >= base) return null;
+          const discountPct = Math.round(((base - sale) / base) * 100);
+          if (discountPct < minDiscount) return null;
+          return {
+            id: sp.id, productId: sp.product.id, name: sp.product.name,
+            image: sp.product.image || null, category: sp.product.category,
+            unit: sp.product.unit, badge: sp.product.badge ?? null,
+            price: sale, originalPrice: base, discountPct,
+            stock: sp.product.stock ?? 0, minOrderQty: sp.minOrderQty,
+            store: { slug: sp.store.slug, name: sp.store.name, logo: sp.store.logo, zone: sp.store.zone, category: sp.store.category },
+          };
+        })
+        .filter((d): d is DealItem => d !== null);
+
+      const sorted = [...deals].sort((a, b) =>
+        sort === "price_asc" ? a.price - b.price : b.discountPct - a.discountPct,
+      );
+
+      if (sorted.length > 0 || !fallbackToLowest) {
+        return { items: sorted.slice(0, limit), source: "deals" as const };
+      }
+
+      const featured: DealItem[] = rows
+        .map((sp): DealItem | null => {
+          const sale = Number(sp.retailPrice);
+          if (!Number.isFinite(sale) || sale <= 0) return null;
+          return {
+            id: sp.id, productId: sp.product.id, name: sp.product.name,
+            image: sp.product.image || null, category: sp.product.category,
+            unit: sp.product.unit, badge: sp.product.badge ?? null,
+            price: sale, originalPrice: null, discountPct: 0,
+            stock: sp.product.stock ?? 0, minOrderQty: sp.minOrderQty,
+            store: { slug: sp.store.slug, name: sp.store.name, logo: sp.store.logo, zone: sp.store.zone, category: sp.store.category },
+          };
+        })
+        .filter((d): d is DealItem => d !== null)
+        .sort((a, b) => a.price - b.price)
+        .slice(0, limit);
+
+      return { items: featured, source: "lowest" as const };
+    });
+  },
+
+  /**
+   * Métricas en vivo del marketplace para el LiveStats banner.
+   * Cache: 60s — suficiente para sensación de "live" sin martillar la DB.
+   *
+   * @cross-tenant intentional (ADR-082) — agrega órdenes/stores de todos los tenants.
+   */
+  async getLiveStats(): Promise<{
+    ordersToday: number;
+    shoppersToday: number;
+    activeStores: number;
+    avgDeliveryMin: number;
+  }> {
+    return getOrSet("marketplace:live-stats:v1", 60, async () => {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const [ordersTodayRaw, customersTodayRaw, activeStoresRaw] = await Promise.all([
+        prisma.order.count({ where: { createdAt: { gte: since } } }),
+        prisma.order.findMany({
+          where: { createdAt: { gte: since } },
+          select: { customerPhone: true },
+          distinct: ["customerPhone"],
+        }),
+        prisma.store.count({ where: { isPublished: true } }),
+      ]);
+      return {
+        ordersToday: ordersTodayRaw,
+        shoppersToday: customersTodayRaw.filter((c) => c.customerPhone).length,
+        activeStores: activeStoresRaw,
+        avgDeliveryMin: 25,
+      };
+    });
+  },
+
+  /**
    * Catálogo unificado paginado con cursor.
    * @cross-tenant intentional (ADR-082) — agrega storeProducts de todos los stores publicados.
    */

@@ -305,13 +305,14 @@ export const LoyaltyDB = {
 export const ReviewsDB = {
   async getAll(tenantId: string): Promise<DbReview[]> {
     const where: Record<string, unknown> = { tenantId };
-    return (await prisma.review.findMany({ where, orderBy: { date: "desc" } })).map(mapReview);
+    // Round 7 fix: cap a 1000 rows. Sin take, un tenant con 50k reviews trae todo a memoria.
+    return (await prisma.review.findMany({ where, orderBy: { date: "desc" }, take: 1000 })).map(mapReview);
   },
   async getApproved(tenantId: string, productId?: number): Promise<DbReview[]> {
     const where = productId != null
       ? { status: "approved", productId, tenantId }
       : { status: "approved", tenantId };
-    return (await prisma.review.findMany({ where, orderBy: { date: "desc" } })).map(mapReview);
+    return (await prisma.review.findMany({ where, orderBy: { date: "desc" }, take: 1000 })).map(mapReview);
   },
   async add(r: DbReview, tenantId: string): Promise<DbReview> {
     const productIdVal = r.productId ?? null;

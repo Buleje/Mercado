@@ -192,7 +192,9 @@ describe("B3 — tierDiscountFailed tag en Order.notes", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           tenantId: STORE_TENANT,
-          notes:    expect.objectContaining({ contains: "TIER_DISCOUNT_FAILED" }),
+          OR: expect.arrayContaining([
+            expect.objectContaining({ notes: expect.objectContaining({ contains: "TIER_DISCOUNT_FAILED" }) }),
+          ]),
         }),
       }),
     );
@@ -241,5 +243,55 @@ describe("B3 — tierDiscountFailed tag en Order.notes", () => {
 
     const query = mockOrderFindMany.mock.calls[0][0] as { where: { source: string } };
     expect(query.where.source).toBe("marketplace");
+  });
+
+  // ── 7: order anónimo (phone null/vacío) recibe tag ANONYMOUS_NO_TIER ────────
+  // FIX 2026-05-09: verifica que pedidos sin phone quedan taguados para audit.
+
+  it("order con customerPhone vacío recibe tag ANONYMOUS_NO_TIER en notes", async () => {
+    mockStoreFindUnique.mockResolvedValue(makeStore(STORE_TENANT));
+    mockStoreProductFind.mockResolvedValue([storeProduct]);
+    mockOrderCount.mockResolvedValue(0);
+
+    const capturedNotes: Array<string | null> = [];
+    setupTransaction(capturedNotes);
+
+    // phone vacío = falsy → branch `if (params.customerPhone)` no ejecuta
+    const paramsAnon = { ...baseParams(""), customerPhone: "" };
+    await MarketplaceOrdersDB.createFromCart(paramsAnon);
+
+    expect(capturedNotes[0]).toContain("ANONYMOUS_NO_TIER");
+    expect(capturedNotes[0]).not.toContain("TIER_DISCOUNT_FAILED");
+    // order.count NO debe llamarse para pedidos anónimos
+    expect(mockOrderCount).not.toHaveBeenCalled();
+  });
+
+  // ── 8: findOrdersWithFailedTierDiscount incluye ANONYMOUS_NO_TIER via OR ────
+
+  it("findOrdersWithFailedTierDiscount retorna orders con ANONYMOUS_NO_TIER via OR", async () => {
+    const anonymousOrders = [
+      {
+        id:            "MKT-ANON001",
+        customerPhone: null,
+        total:         18.0,
+        createdAt:     new Date("2026-05-09"),
+        notes:         "[ANONYMOUS_NO_TIER: pedido sin teléfono, tier discount no aplica]",
+      },
+    ];
+    mockOrderFindMany.mockResolvedValue(anonymousOrders);
+
+    const result = await MarketplaceOrdersDB.findOrdersWithFailedTierDiscount(STORE_TENANT);
+
+    const query = mockOrderFindMany.mock.calls[0][0] as {
+      where: { OR: Array<{ notes: { contains: string } }> };
+    };
+    expect(query.where.OR).toHaveLength(2);
+    expect(query.where.OR[0].notes.contains).toBe("TIER_DISCOUNT_FAILED");
+    expect(query.where.OR[1].notes.contains).toBe("ANONYMOUS_NO_TIER");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("MKT-ANON001");
+    expect(result[0].tierAuditTag).toBe("ANONYMOUS_NO_TIER");
+    expect(result[0].customerPhone).toBeNull();
   });
 });

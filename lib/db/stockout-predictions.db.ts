@@ -96,8 +96,32 @@ export const StockoutPredictionsDB = {
 
     if (storeProducts.length === 0) return 0;
 
-    // Para cada storeProduct, calcular las ventas en los últimos 30 días.
-    // OrderItem se filtra por productId y por order del tenant.
+    // Round 7 fix: 1 groupBy con IN (...) en lugar de N aggregates en loop.
+    // Antes: 1 query por storeProduct (N+1 garantizado para stores con 100+ productos).
+    const productIds = storeProducts.map((sp) => sp.productId);
+    const salesByProduct = await prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: {
+        productId: { in: productIds },
+        order: {
+          tenantId,
+          deletedAt: null,
+          createdAt: { gte: thirtyDaysAgo },
+        },
+      },
+      _sum: { quantity: true },
+      _count: { _all: true },
+    });
+
+    const salesMap = new Map<number, { totalUnits: number; datapoints: number }>();
+    for (const row of salesByProduct) {
+      if (row.productId == null) continue;
+      salesMap.set(row.productId, {
+        totalUnits: row._sum.quantity ?? 0,
+        datapoints: row._count._all,
+      });
+    }
+
     const predictionsToCreate: Array<{
       tenantId: string;
       storeId: string;
@@ -114,24 +138,11 @@ export const StockoutPredictionsDB = {
 
     for (const sp of storeProducts) {
       const stock = sp.product?.stock ?? 0;
-      const sales = await prisma.orderItem.aggregate({
-        where: {
-          productId: sp.productId,
-          order: {
-            tenantId,
-            deletedAt: null,
-            createdAt: { gte: thirtyDaysAgo },
-          },
-        },
-        _sum: { quantity: true },
-        _count: { _all: true },
-      });
-
-      const totalUnitsSold = sales._sum.quantity ?? 0;
-      const datapoints = sales._count._all;
+      const sales = salesMap.get(sp.productId);
+      const totalUnitsSold = sales?.totalUnits ?? 0;
+      const datapoints = sales?.datapoints ?? 0;
       const avgDailyUnits = datapoints > 0 ? totalUnitsSold / 30 : 0;
 
-      // Solo creamos prediction si hay datos. Si no hay ventas, skip.
       if (datapoints < 1 || avgDailyUnits <= 0) continue;
 
       const predictedDays = stock / avgDailyUnits;

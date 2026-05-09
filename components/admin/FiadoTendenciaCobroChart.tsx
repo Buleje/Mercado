@@ -12,7 +12,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { StatusBadge } from "@buleje/design-system";
+import { BadgeStatus } from "@buleje/design-system";
 
 type ChartRow = {
   mes: string;
@@ -73,7 +73,7 @@ export default function FiadoTendenciaCobroChart() {
     <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-bold text-[var(--text-secondary)]">Tendencia de Cobro</p>
-        <StatusBadge
+        <BadgeStatus
           variant={lastNeto >= 0 ? "success" : "error"}
           label={lastNeto >= 0 ? "Recuperando más de lo que prestas" : "Prestando mas de lo que cobras"}
         />

@@ -156,6 +156,7 @@ const eslintConfig = defineConfig([
       "app/api/marketplace/payment/**",
       "app/api/superadmin/**",
       "app/api/cron/**",
+      "app/api/compliance/**",
       "scripts/**",
       "**/__tests__/**",
       "prisma/**",

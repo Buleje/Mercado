@@ -234,6 +234,12 @@ export const MarketplaceOrdersDB = {
     if (tierDiscountFailed) {
       noteParts.push(`[TIER_DISCOUNT_FAILED: descuento Frecuente|VIP|Embajador no aplicado — pendiente reconciliación]`);
     }
+    // Round 7 (2026-05-09): pedidos anónimos (sin phone) no pueden calcular tier.
+    // Inyectar tag ANONYMOUS_NO_TIER para que la reconciliación los identifique
+    // y el admin decida si conceder descuento manual cross-tenant.
+    if (!params.customerPhone) {
+      noteParts.push(`[ANONYMOUS_NO_TIER: pedido sin phone, tier no calculable]`);
+    }
     const composedNotes = noteParts.length > 0 ? noteParts.join(" ") : null;
 
     const orderId = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
@@ -361,19 +367,23 @@ export const MarketplaceOrdersDB = {
    */
   async findOrdersWithFailedTierDiscount(
     tenantId: string,
-  ): Promise<Array<{ id: string; customerPhone: string | null; total: number; createdAt: Date }>> {
+  ): Promise<Array<{ id: string; customerPhone: string | null; total: number; createdAt: Date; tierAuditTag: "TIER_DISCOUNT_FAILED" | "ANONYMOUS_NO_TIER" }>> {
     const rows = await prisma.order.findMany({
       where: {
         tenantId,
         source:    "marketplace",
         deletedAt: null,
-        notes:     { contains: "TIER_DISCOUNT_FAILED" },
+        OR: [
+          { notes: { contains: "TIER_DISCOUNT_FAILED" } },
+          { notes: { contains: "ANONYMOUS_NO_TIER" } },
+        ],
       },
       select: {
         id:            true,
         customerPhone: true,
         total:         true,
         createdAt:     true,
+        notes:         true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -382,6 +392,9 @@ export const MarketplaceOrdersDB = {
       customerPhone: r.customerPhone,
       total:         typeof r.total === "number" ? r.total : Number(r.total),
       createdAt:     r.createdAt,
+      tierAuditTag:  (r.notes ?? "").includes("ANONYMOUS_NO_TIER")
+        ? "ANONYMOUS_NO_TIER" as const
+        : "TIER_DISCOUNT_FAILED" as const,
     }));
   },
 
