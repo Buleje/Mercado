@@ -4,6 +4,8 @@
  * cross-tenant verificado manualmente. Migrar a clase `lib/db/*.db.ts`
  * dedicada cuando se centralice el patrón.
  */
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";

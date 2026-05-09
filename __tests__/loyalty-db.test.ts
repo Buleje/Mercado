@@ -82,11 +82,14 @@ describe("LoyaltyDB.earn", () => {
       createdAt: new Date("2026-04-09T12:00:00Z"),
     };
 
-    // $transaction returns the array of operation results.
-    mockPrisma.$transaction.mockResolvedValueOnce([
-      createdRow,
-      { phone: PHONE_A, loyaltyPoints: 80 }, // increment result
-    ]);
+    // $transaction usa la API de callback (interactive tx).
+    // El código retorna [ledger] desde la callback.
+    mockPrisma.$transaction.mockImplementationOnce(
+      async (fn: (tx: typeof mockPrisma) => Promise<unknown>) => fn(mockPrisma),
+    );
+    mockPrisma.loyaltyTransaction.create.mockResolvedValueOnce(createdRow);
+    // customer.update para el incremento (rama signedAmount > 0)
+    mockPrisma.customer.update = vi.fn().mockResolvedValueOnce({ phone: PHONE_A, loyaltyPoints: 80 });
 
     const result = await LoyaltyDB.earn(
       TENANT_A,
@@ -96,11 +99,10 @@ describe("LoyaltyDB.earn", () => {
       { orderId: "ord-9" },
     );
 
-    // The transaction was called with exactly two operations.
+    // La transacción fue invocada con una función (callback API, no batch).
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
     const ops = mockPrisma.$transaction.mock.calls[0]?.[0];
-    expect(Array.isArray(ops)).toBe(true);
-    expect(ops).toHaveLength(2);
+    expect(typeof ops).toBe("function");
 
     // Cache invalidation runs after the write — CLAUDE.md rule #5.
     expect(invalidateByPrefix).toHaveBeenCalledWith(`loyalty:${TENANT_A}:${PHONE_A}`);

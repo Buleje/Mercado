@@ -89,7 +89,7 @@ export default function TiendasDestacadas() {
             <Link
               key={store.id}
               href={`/marketplace/${store.slug}`}
-              className="group block rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:shadow-[0_8px_20px_-12px_color-mix(in oklab, var(--accent) 18%, transparent)] transition-all duration-200 overflow-hidden"
+              className="group block rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:shadow-[0_8px_20px_-12px_color-mix(in oklab, var(--accent) 18%, transparent)] hover:-translate-y-0.5 transition-transform duration-200 overflow-hidden"
             >
               {/* Logo / banner */}
               <div className="relative h-28 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]">

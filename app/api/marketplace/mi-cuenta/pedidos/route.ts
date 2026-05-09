@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { CustomerOrdersDB } from "@/lib/db/customer-orders.db";
+import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
-import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 
@@ -52,14 +52,13 @@ export async function GET(req: NextRequest) {
     }
     const orders = await CustomerOrdersDB.listByCustomer(tenantId, phone);
 
-    // MK-28: derivar storeSlug del tenant — usamos UNA sola query batched.
-    const store = await prisma.store
-      .findFirst({ where: { tenantId }, select: { slug: true } })
+    // MK-28: derivar storeSlug del tenant
+    const storeSlugResult = await MarketplaceAdminDB.getStoreSlugByTenantId(tenantId)
       .catch((e: unknown) => {
-        logger.warn("[mi-cuenta/pedidos] store lookup failed", { err: e instanceof Error ? e.message : String(e) });
+        logger.warn("[mi-cuenta/pedidos] store slug lookup failed", { err: e instanceof Error ? e.message : String(e) });
         return null;
       });
-    const storeSlug = store?.slug ?? tenantId;
+    const storeSlug = storeSlugResult ?? tenantId;
 
     const result = orders.map((o) => ({
       id: o.id,

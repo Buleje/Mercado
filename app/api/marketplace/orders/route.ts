@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { MarketplaceOrdersDB } from "@/lib/db/marketplace.db";
+import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
@@ -38,26 +39,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
     if (auth instanceof NextResponse) return auth;
 
-    const orders = await prisma.order.findMany({
-      where: {
-        tenantId: auth.tenantId,
-        source: "marketplace",
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        customerName: true,
-        customerPhone: true,
-        customerLocation: true,
-        customerReference: true,
-        total: true,
-        status: true,
-        createdAt: true,
-        _count: { select: { items: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    const orders = await MarketplaceAdminDB.getOrdersForAdmin(auth.tenantId);
 
     // F7: enmascarar teléfono en listado masivo — solo últimos 4 dígitos
     const result = orders.map((o) => {
@@ -66,15 +48,15 @@ export async function GET(req: NextRequest) {
         ? `***${rawPhone.slice(-4)}`
         : rawPhone;
       return {
-        id: o.id,
-        customerName: o.customerName,
-        customerPhone: maskedPhone,
-        customerLocation: o.customerLocation ?? "",
+        id:                o.id,
+        customerName:      o.customerName,
+        customerPhone:     maskedPhone,
+        customerLocation:  o.customerLocation ?? "",
         customerReference: o.customerReference ?? "",
-        total: Number(o.total),
-        status: o.status,
-        createdAt: o.createdAt.toISOString(),
-        itemsCount: o._count.items,
+        total:             Number(o.total),
+        status:            o.status,
+        createdAt:         o.createdAt.toISOString(),
+        itemsCount:        o._count.items,
       };
     });
 

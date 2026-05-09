@@ -447,6 +447,62 @@ export const MarketplacePublicDB = {
   },
 
   /**
+   * Búsqueda de productos cross-tenant para el endpoint público /marketplace/search.
+   * Incluye filtro de tenant.active (SECURITY audit M5) y select shape propio.
+   *
+   * @cross-tenant intentional (ADR-082).
+   */
+  async searchProducts(opts: {
+    q: string;
+    zone?: string;
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    sort: "price_asc" | "price_desc" | "name" | "rating" | "distance";
+    limit?: number;
+  }) {
+    const orderBy =
+      opts.sort === "price_desc"  ? { retailPrice: "desc" as const }
+      : opts.sort === "name"      ? { product: { name: "asc" as const } }
+      : opts.sort === "rating"    ? { store: { rating: "desc" as const } }
+      : { retailPrice: "asc" as const }; // price_asc | distance | default
+
+    return prisma.storeProduct.findMany({
+      where: {
+        isActive: true,
+        ...((opts.minPrice !== undefined || opts.maxPrice !== undefined) && {
+          retailPrice: {
+            ...(opts.minPrice !== undefined && { gte: opts.minPrice }),
+            ...(opts.maxPrice !== undefined && { lte: opts.maxPrice }),
+          },
+        }),
+        store: {
+          isPublished: true,
+          tenant: { active: true },
+          ...(opts.zone && { zone: opts.zone }),
+        },
+        product: {
+          name: { contains: opts.q, mode: "insensitive" as const },
+          ...(opts.category && opts.category !== "todos" && { category: opts.category }),
+        },
+      },
+      select: {
+        id:          true,
+        retailPrice: true,
+        minOrderQty: true,
+        product: {
+          select: { id: true, name: true, image: true, category: true, unit: true, stock: true },
+        },
+        store: {
+          select: { id: true, name: true, slug: true, logo: true, zone: true, rating: true },
+        },
+      },
+      orderBy,
+      take: opts.limit ?? 80,
+    });
+  },
+
+  /**
    * Catálogo unificado paginado con cursor.
    * @cross-tenant intentional (ADR-082) — agrega storeProducts de todos los stores publicados.
    */
@@ -513,6 +569,255 @@ export const MarketplacePublicDB = {
       orderBy,
       take: opts.limit + 1,
       ...(opts.cursor && { cursor: { id: opts.cursor }, skip: 1 }),
+    });
+  },
+};
+
+// ── MarketplaceAdminDB ────────────────────────────────────────────────────────
+
+/**
+ * Queries administrativas del marketplace (requieren auth en el route).
+ * Los métodos cross-tenant son intencionales: el superadmin ve toda la
+ * plataforma. Todos están marcados @cross-tenant intentional.
+ */
+export const MarketplaceAdminDB = {
+
+  /**
+   * Overview global del marketplace para el superadmin.
+   * @cross-tenant intentional — agrega datos de TODOS los tenants.
+   * Cache: NO — datos financieros deben ser siempre frescos.
+   */
+  async getPlatformOverview() {
+    const now = new Date();
+    const todayStart    = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart    = new Date(now.getFullYear(), now.getMonth(), 1);
+    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const [
+      totalStores, activeStores, pendingStores,
+      todayOrders, monthOrders, prevMonthOrders, pendingOrders,
+      totalCommissions, topStores, recentOrders,
+    ] = await Promise.all([
+      prisma.store.count(),
+      prisma.store.count({ where: { isPublished: true } }),
+      prisma.store.count({ where: { isPublished: false } }),
+      prisma.order.aggregate({
+        where: { source: "marketplace", deletedAt: null, createdAt: { gte: todayStart } },
+        _count: true, _sum: { total: true },
+      }),
+      prisma.order.aggregate({
+        where: { source: "marketplace", deletedAt: null, createdAt: { gte: monthStart } },
+        _count: true, _sum: { total: true },
+      }),
+      prisma.order.aggregate({
+        where: { source: "marketplace", deletedAt: null, createdAt: { gte: prevMonthStart, lt: monthStart } },
+        _count: true, _sum: { total: true },
+      }),
+      prisma.order.count({
+        where: { source: "marketplace", deletedAt: null, status: "pendiente" },
+      }),
+      prisma.commissionLedger.aggregate({
+        where: { createdAt: { gte: monthStart } },
+        _sum: { amount: true },
+      }),
+      prisma.order.groupBy({
+        by: ["tenantId"],
+        where: { source: "marketplace", deletedAt: null, createdAt: { gte: monthStart } },
+        _sum: { total: true }, _count: true,
+        orderBy: { _sum: { total: "desc" } },
+        take: 5,
+      }),
+      prisma.order.findMany({
+        where: { source: "marketplace", deletedAt: null },
+        select: { id: true, customerName: true, total: true, status: true, createdAt: true, tenantId: true },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+    ]);
+
+    // Batch-resolve store names por tenantId
+    const allTenantIds = [
+      ...new Set([
+        ...topStores.map((s) => s.tenantId),
+        ...recentOrders.map((o) => o.tenantId),
+      ]),
+    ];
+    const stores = allTenantIds.length > 0
+      ? await prisma.store.findMany({
+          where: { tenantId: { in: allTenantIds } },
+          select: { tenantId: true, name: true, slug: true },
+        })
+      : [];
+    const storeMap = new Map(stores.map((s) => [s.tenantId, s]));
+
+    return {
+      todayStart, monthStart, prevMonthStart,
+      totalStores, activeStores, pendingStores,
+      todayOrders, monthOrders, prevMonthOrders, pendingOrders,
+      totalCommissions, topStores, recentOrders, storeMap,
+    };
+  },
+
+  /**
+   * Órdenes del marketplace para el admin del tenant.
+   * tenantId requerido — NO cross-tenant.
+   */
+  async getOrdersForAdmin(tenantId: string) {
+    const orders = await prisma.order.findMany({
+      where: { tenantId, source: "marketplace", deletedAt: null },
+      select: {
+        id: true,
+        customerName: true,
+        customerPhone: true,
+        customerLocation: true,
+        customerReference: true,
+        total: true,
+        status: true,
+        createdAt: true,
+        _count: { select: { items: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+    return orders;
+  },
+
+  /**
+   * KPIs del marketplace para el panel del vendedor.
+   * storeId debe pertenecer al tenantId (verificado en el route).
+   */
+  async getVendorKpis(tenantId: string, storeId: string) {
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const [publishedProducts, monthOrders, pendingCommissions] = await Promise.all([
+      prisma.storeProduct.count({ where: { storeId, isActive: true } }),
+      prisma.order.count({
+        where: { tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: monthStart } },
+      }),
+      prisma.commissionLedger.aggregate({
+        where: { storeId, status: "pending" },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    return {
+      publishedProducts,
+      monthOrders,
+      pendingCommissions: toNumOrZero(pendingCommissions._sum.amount),
+    };
+  },
+
+  /**
+   * Detalle público completo de una tienda por slug.
+   * Incluye vacationMode/vacationMessage y _count de productos activos.
+   * Cache: 120s.
+   *
+   * @cross-tenant intentional — el slug ES el discriminador público.
+   */
+  async getStoreDetailBySlug(slug: string) {
+    return getOrSet(`marketplace:store-detail:${slug}:v1`, 120, async () => {
+      return prisma.store.findUnique({
+        where: { slug },
+        select: {
+          id: true, slug: true, name: true, description: true,
+          logo: true, banner: true, category: true, zone: true,
+          rating: true, reviewCount: true, isPublished: true,
+          vacationMode: true, vacationMessage: true, createdAt: true,
+          tenant: { select: { slug: true } },
+          _count: { select: { products: { where: { isActive: true } } } },
+        },
+      });
+    });
+  },
+
+  /**
+   * Slug de la tienda asociada a un tenantId (para derivar URL en pedidos).
+   * Cache: 300s (cambia raramente).
+   */
+  async getStoreSlugByTenantId(tenantId: string): Promise<string | null> {
+    return getOrSet(`marketplace:store-slug-by-tenant:${tenantId}:v1`, 300, async () => {
+      const store = await prisma.store.findFirst({
+        where: { tenantId },
+        select: { slug: true },
+      });
+      return store?.slug ?? null;
+    });
+  },
+
+  /**
+   * Secciones curadas para el home del marketplace.
+   * Cache: 120s.
+   *
+   * @cross-tenant intentional — agrega productos de todos los stores publicados.
+   */
+  async getCatalogSections() {
+    return getOrSet("marketplace:catalog-sections:v2", 120, async () => {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const baseStoreFilter = {
+        isPublished: true,
+        vacationMode: { not: true as const },
+      };
+
+      const baseSelect = {
+        id: true,
+        retailPrice: true,
+        product: {
+          select: { id: true, name: true, image: true, category: true, unit: true, stock: true },
+        },
+        store: {
+          select: { id: true, name: true, slug: true, logo: true, rating: true },
+        },
+      } as const;
+
+      const [featuredRaw, topSellerData, lowStockRaw, flashDealRaw] = await Promise.all([
+        prisma.storeProduct.findMany({
+          where: { isActive: true, store: { ...baseStoreFilter, rating: { gte: 4 } }, product: { stock: { gt: 0 } } },
+          select: baseSelect,
+          orderBy: { store: { rating: "desc" } },
+          take: 8,
+        }),
+        prisma.orderItem.groupBy({
+          by: ["productId"],
+          where: { order: { deletedAt: null, createdAt: { gte: thirtyDaysAgo } } },
+          _sum: { quantity: true },
+          orderBy: { _sum: { quantity: "desc" } },
+          take: 6,
+        }),
+        prisma.storeProduct.findMany({
+          where: { isActive: true, store: baseStoreFilter, product: { stock: { gt: 0, lte: 3 } } },
+          select: baseSelect,
+          orderBy: { product: { stock: "asc" } },
+          take: 8,
+        }),
+        prisma.storeProduct.findMany({
+          where: { isActive: true, store: baseStoreFilter, product: { stock: { gt: 0 }, active: true } },
+          select: baseSelect,
+          orderBy: { product: { id: "desc" } },
+          take: 8,
+        }),
+      ]);
+
+      const topSellerIds = topSellerData
+        .map((t) => t.productId)
+        .filter((id): id is number => id !== null);
+
+      const topSellerProducts = topSellerIds.length > 0
+        ? await prisma.storeProduct.findMany({
+            where: { isActive: true, store: baseStoreFilter, product: { id: { in: topSellerIds }, stock: { gt: 0 } } },
+            select: baseSelect,
+            take: 6,
+          })
+        : [];
+
+      const topSellerMap = new Map(topSellerData.map((t, i) => [t.productId, i]));
+      const sortedTopSellers = [...topSellerProducts].sort(
+        (a, b) => (topSellerMap.get(a.product.id) ?? 99) - (topSellerMap.get(b.product.id) ?? 99),
+      );
+
+      return { featuredRaw, flashDealRaw, sortedTopSellers, lowStockRaw };
     });
   },
 };

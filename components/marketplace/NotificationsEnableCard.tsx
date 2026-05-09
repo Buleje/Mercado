@@ -108,7 +108,7 @@ export default function NotificationsEnableCard() {
             <p className="text-sm font-extrabold text-[var(--text-primary)]">
               ¡Notificaciones activadas!
             </p>
-            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">
               Te avisaremos del estado de tu pedido y ofertas relevantes
             </p>
           </div>
@@ -165,7 +165,7 @@ export default function NotificationsEnableCard() {
         ].map((txt) => (
           <li
             key={txt}
-            className="flex items-start gap-2 text-xs text-[var(--text-secondary)]"
+            className="flex items-start gap-2 text-sm text-[var(--text-secondary)]"
           >
             <Check className="h-3.5 w-3.5 mt-0.5 text-[var(--accent)] shrink-0" strokeWidth={2.5} aria-hidden />
             {txt}

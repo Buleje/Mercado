@@ -1,13 +1,7 @@
-/**
- * @cross-tenant intentional — endpoint público marketplace.
- * Agregados/lecturas cross-tenant son parte del diseño del marketplace
- * (rankings, búsqueda, comparar, analytics globales). Donde aplica filtra
- * por `store.isPublished: true` para no exponer tiendas en draft.
- * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
- */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
+import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 
 /**
@@ -21,11 +15,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req, ["admin", "manager"]);
     if (auth instanceof NextResponse) return auth;
 
-    // Buscar la tienda del tenant actual
-    const store = await prisma.store.findFirst({
-      where: { tenantId: auth.tenantId },
-      select: { id: true },
-    });
+    const store = await MarketplaceStoresDB.getByTenantId(auth.tenantId);
 
     if (!store) {
       return NextResponse.json({
@@ -35,41 +25,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Inicio del mes actual
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const [publishedProducts, monthOrders, pendingCommissions] = await Promise.all([
-      // Productos activos en la tienda
-      prisma.storeProduct.count({
-        where: { storeId: store.id, isActive: true },
-      }),
-
-      // Órdenes del marketplace este mes
-      prisma.order.count({
-        where: {
-          tenantId: auth.tenantId,
-          source: "marketplace",
-          deletedAt: null,
-          createdAt: { gte: monthStart },
-        },
-      }),
-
-      // Comisiones pendientes
-      prisma.commissionLedger.aggregate({
-        where: {
-          storeId: store.id,
-          status: "pending",
-        },
-        _sum: { amount: true },
-      }),
-    ]);
-
-    return NextResponse.json({
-      publishedProducts,
-      monthOrders,
-      pendingCommissions: Number(pendingCommissions._sum.amount ?? 0),
-    });
+    const kpis = await MarketplaceAdminDB.getVendorKpis(auth.tenantId, store.id);
+    return NextResponse.json(kpis);
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });

@@ -66,7 +66,7 @@ function ChipButton({ active, label, count, imageUrl, compact, onClick }: ChipBu
         onClick={handleClick}
         aria-pressed={active}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-colors whitespace-nowrap border",
+          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-bold transition-colors whitespace-nowrap border-2",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           active
             ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm"

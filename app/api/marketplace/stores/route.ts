@@ -1,12 +1,9 @@
-/**
- * @prisma-direct ok — operación con scope explícito por `auth.tenantId` o
- * por `tenantId` resuelto desde slug del URL antes de la query. Aislamiento
- * cross-tenant verificado manualmente. Migrar a clase `lib/db/*.db.ts`
- * dedicada cuando se centralice el patrón.
- */
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { invalidateByPrefix } from "@/lib/cache";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";

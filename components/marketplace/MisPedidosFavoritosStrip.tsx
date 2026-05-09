@@ -96,7 +96,7 @@ export default function MisPedidosFavoritosStrip() {
             <p className="text-sm font-bold text-[var(--text-primary)] truncate">
               {o.storeName}
             </p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+            <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
               {o.itemsCount} {o.itemsCount === 1 ? "item" : "items"} · #{o.orderId.slice(0, 6)}
             </p>
             <div className="mt-3 flex items-center justify-between">
@@ -105,7 +105,7 @@ export default function MisPedidosFavoritosStrip() {
               </span>
               <span className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] group-hover:gap-1.5 transition-all">
                 Repetir
-                <ArrowRight className="h-3 w-3" strokeWidth={2.25} />
+                <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
               </span>
             </div>
           </Link>

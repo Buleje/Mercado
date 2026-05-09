@@ -174,7 +174,7 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
           enabled ? (danger ? "bg-[var(--data-error-500)]" : "bg-primary") : "bg-gray-300 dark:bg-gray-600"
         )}
       >
-        <span className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform", enabled && "translate-x-5")} />
+        <span className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform", enabled && "translate-x-5")} />
       </button>
     </div>
   );
@@ -1373,11 +1373,11 @@ export default function SettingsModule({
               <div className="flex-1 grid grid-cols-3 gap-2">
                 <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm bg-white dark:bg-card outline-none" />
                 <div className="flex items-center gap-1">
-                  <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
+                  <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white dark:bg-[var(--color-card)] outline-none" />
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">S/</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <input type="number" value={zone.estimatedMin} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, estimatedMin: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
+                  <input type="number" value={zone.estimatedMin} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, estimatedMin: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white dark:bg-[var(--color-card)] outline-none" />
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">min</span>
                 </div>
               </div>
@@ -1408,9 +1408,9 @@ export default function SettingsModule({
           {riders.map((rider, idx) => (
             <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
               <div className="flex-1 grid grid-cols-3 gap-2">
-                <input value={rider.name} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, name: e.target.value } : r))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white outline-none" />
-                <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white outline-none" />
-                <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white outline-none" />
+                <input value={rider.name} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, name: e.target.value } : r))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white dark:bg-[var(--color-card)] outline-none" />
+                <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white dark:bg-[var(--color-card)] outline-none" />
+                <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white dark:bg-[var(--color-card)] outline-none" />
               </div>
               <button onClick={() => setRiders(p => p.filter((_, i) => i !== idx))} className="p-1.5 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
             </div>
@@ -1669,10 +1669,10 @@ export default function SettingsModule({
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
             if (typeof window !== "undefined") localStorage.setItem("buleje-last-backup", new Date().toISOString());
             setLastBackupAt(new Date().toISOString());
-          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white hover:bg-teal-50 text-sm font-semibold text-[var(--accent-dark)]">
+          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white dark:bg-[var(--color-card)] hover:bg-teal-50 text-sm font-semibold text-[var(--accent-dark)]">
             <Download className="h-4 w-4" /> Generar respaldo
           </button>
-          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-[var(--data-info-500)] bg-white hover:bg-[var(--data-info-50)] text-sm font-semibold text-[var(--data-info-500)]">
+          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-[var(--data-info-500)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--data-info-50)] text-sm font-semibold text-[var(--data-info-500)]">
             <Upload className="h-4 w-4" /> Restaurar desde respaldo
           </button>
         </div>
@@ -2123,7 +2123,7 @@ function ImageDropCard({
             <button
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/90 text-[var(--text-primary)] text-xs font-bold hover:bg-white transition-colors disabled:opacity-60"
+              className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/90 text-[var(--text-primary)] text-xs font-bold hover:bg-white dark:bg-[var(--color-card)] transition-colors disabled:opacity-60"
             >
               <Upload className="h-3 w-3" />
               Cambiar
@@ -2194,7 +2194,7 @@ function MockStoreCard({ coverUrl, logoUrl, businessName }: { coverUrl: string; 
         )}
         {logoUrl && (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={logoUrl} alt="" className="absolute bottom-1 left-1 h-4 w-4 rounded-md ring-1 ring-white object-cover bg-white" />
+          <img src={logoUrl} alt="" className="absolute bottom-1 left-1 h-4 w-4 rounded-md ring-1 ring-white object-cover bg-white dark:bg-[var(--color-card)]" />
         )}
       </div>
       <div className="px-1.5 py-1">

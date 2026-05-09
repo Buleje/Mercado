@@ -265,7 +265,7 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
       <div className="flex-1 min-w-0">
         <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
         <div className="flex items-center gap-2">
-          <p className="text-xs text-muted">{product.unit}</p>
+          <p className="text-sm text-muted">{product.unit}</p>
           {isLowStock && (
             <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded-full">¡Quedan {product.stock}!</span>
           )}
@@ -638,7 +638,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             <div className="bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-extrabold uppercase tracking-wider text-foreground">Categorías</h3>
-                <span className="text-xs font-mono text-muted bg-gray-100 dark:bg-surface px-2 py-0.5 rounded-md">{categoriesWithCount.length}</span>
+                <span className="text-sm font-mono text-muted bg-gray-100 dark:bg-surface px-2 py-0.5 rounded-md">{categoriesWithCount.length}</span>
               </div>
 
               {/* "Ver todo" siempre primero */}
@@ -661,7 +661,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   Todos los productos
                 </span>
                 <span className={cn(
-                  "text-xs font-mono px-1.5 py-0.5 rounded-md",
+                  "text-sm font-mono px-1.5 py-0.5 rounded-md",
                   !highlighted ? "bg-white/20 text-white" : "bg-gray-100 dark:bg-surface text-muted"
                 )}>
                   {totalProducts}
@@ -692,7 +692,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                         <span className="truncate">{cat.label}</span>
                       </span>
                       <span className={cn(
-                        "text-xs font-mono px-1.5 py-0.5 rounded-md shrink-0",
+                        "text-sm font-mono px-1.5 py-0.5 rounded-md shrink-0",
                         active
                           ? "bg-primary/15 text-primary"
                           : "bg-gray-100 dark:bg-surface text-muted"
@@ -713,7 +713,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                     setFilterOnSale(false);
                     setPriceRange([0, maxPrice]);
                   }}
-                  className="w-full mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border text-xs font-bold text-muted hover:text-foreground"
+                  className="w-full mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border text-sm font-bold text-muted hover:text-foreground"
                 >
                   Limpiar filtros
                 </button>

@@ -2180,7 +2180,7 @@ export default function InventoryTab() {
                       addForm.isVariant ? "bg-[var(--text-primary)]" : "bg-gray-200"
                     )}
                   >
-                    <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transition-transform", addForm.isVariant ? "translate-x-4" : "translate-x-0")} />
+                    <span className={cn("inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform", addForm.isVariant ? "translate-x-4" : "translate-x-0")} />
                   </button>
                 </div>
                 {addForm.isVariant && (

@@ -13,6 +13,8 @@
  * MarketplaceStoresDB.updateBranding(tenantId, slug, payload) sería
  * estéticamente más limpio pero el aislamiento ya está garantizado.
  */
+export const dynamic = "force-dynamic";
+
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { prismaForTenant } from "@/lib/tenant";

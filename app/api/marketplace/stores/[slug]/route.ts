@@ -1,16 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
-
-
 /**
  * @cross-tenant intentional — endpoint público del storefront marketplace.
- * @prisma-direct excepción documentada — este endpoint necesita columnas
- * `vacationMode` y `vacationMessage` que la migration 20260411 todavía no
- * aplicó (ver lib/db/marketplace.db.ts:329-330). Al usar prisma directo aquí
- * tolera el schema drift transitorio. Cuando la migration esté en prod,
- * migrar a MarketplaceStoresDB.getDetailBySlug().
+ * Delegado a MarketplaceAdminDB.getStoreDetailBySlug (ADR-082).
  */
+import { NextRequest, NextResponse } from "next/server";
+import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
+import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 
 export async function GET(
   req: NextRequest,
@@ -20,45 +14,22 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    // eslint-disable-next-line no-restricted-properties -- legacy: lookup publico por slug (sin tenantId — el slug ES el discriminador). Refactor a StoresDB.findBySlug pendiente.
-    const store = await prisma.store.findUnique({
-      where: { slug },
-      select: {
-        id:              true,
-        slug:            true,
-        name:            true,
-        description:     true,
-        logo:            true,
-        banner:          true,
-        category:        true,
-        zone:            true,
-        rating:          true,
-        reviewCount:     true,
-        isPublished:     true,
-        vacationMode:    true,
-        vacationMessage: true,
-        createdAt:       true,
-        tenant: { select: { slug: true } },
-        _count: {
-          select: {
-            // La relación en Store se llama 'products' (StoreProduct[])
-            products: { where: { isActive: true } },
-          },
-        },
-      },
-    });
+    const store = await MarketplaceAdminDB.getStoreDetailBySlug(slug);
 
     if (!store || !store.isPublished) {
       throw new NotFoundError("Tienda");
     }
 
-    // Explicitly pick only public-safe fields (defense-in-depth against accidental
-    // leaks if select or a mock returns extra fields like tenantId or commission)
+    // Explicitly pick only public-safe fields (defense-in-depth)
     const { id, slug: storeSlug, name, description, logo, banner, category, zone,
             rating, reviewCount, vacationMode, vacationMessage, createdAt, tenant, _count } = store;
-    return NextResponse.json({ data: { id, slug: storeSlug, name, description, logo, banner,
-      category, zone, rating, reviewCount, vacationMode, vacationMessage, createdAt,
-      tenantSlug: tenant?.slug ?? null, _count } });
+    return NextResponse.json({
+      data: {
+        id, slug: storeSlug, name, description, logo, banner,
+        category, zone, rating, reviewCount, vacationMode, vacationMessage, createdAt,
+        tenantSlug: tenant?.slug ?? null, _count,
+      },
+    });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });

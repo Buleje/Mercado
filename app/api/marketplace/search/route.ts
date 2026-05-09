@@ -1,64 +1,16 @@
 /**
- * @cross-tenant intentional — endpoint público marketplace.
- * Agregados/lecturas cross-tenant son parte del diseño del marketplace
- * (rankings, búsqueda, comparar, analytics globales). Donde aplica filtra
- * por `store.isPublished: true` para no exponer tiendas en draft.
- * Migrar a `lib/db/marketplace-*.db.ts` cuando se cree clase específica.
+ * @cross-tenant intentional — endpoint público marketplace (ADR-082).
+ * Delegado a MarketplacePublicDB.getCatalogPage + batchCatalogEnrichment.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
-import { prisma } from "@/lib/prisma";
+import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { SearchSuggestionsDB } from "@/lib/db/search-suggestions.db";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 import { toNumOrZero } from "@/lib/decimal-utils";
-
-// ── Batch helpers ─────────────────────────────────────────────────────────────
-
-async function batchProductEnrichment(productIds: number[], tenantId: string) {
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-  const [primaryImages, variantCounts, ratingsAgg, topSellers] = await Promise.all([
-    prisma.productImage.findMany({
-      where: { productId: { in: productIds }, tenantId, isPrimary: true },
-      select: { productId: true, url: true },
-    }),
-    prisma.productVariant.groupBy({
-      by: ["productId"],
-      where: { productId: { in: productIds }, tenantId, isActive: true },
-      _count: { id: true },
-    }),
-    prisma.review.groupBy({
-      by: ["productId"],
-      where: {
-        productId: { in: productIds },
-        tenantId,
-        status: "approved",
-        deletedAt: null,
-      },
-      _avg: { rating: true },
-    }),
-    prisma.orderItem.groupBy({
-      by: ["productId"],
-      where: {
-        productId: { in: productIds },
-        order: { tenantId, deletedAt: null, createdAt: { gte: thirtyDaysAgo } },
-      },
-      _sum: { quantity: true },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: Math.ceil(productIds.length * 0.1) || 1,
-    }),
-  ]);
-
-  const primaryImageMap = new Map(primaryImages.map((i) => [i.productId, i.url]));
-  const variantMap = new Map(variantCounts.map((v) => [v.productId, v._count.id]));
-  const ratingMap = new Map(ratingsAgg.map((r) => [r.productId, r._avg.rating ?? 0]));
-  const bestSellerIds = new Set(topSellers.map((s) => s.productId));
-
-  return { primaryImageMap, variantMap, ratingMap, bestSellerIds };
-}
 
 const QuerySchema = z.object({
   q:        z.string().min(1).max(100).transform((s) => s.replace(/[<>"'&]/g, "").trim()),
@@ -144,69 +96,11 @@ export async function GET(req: NextRequest) {
 
     logger.info("marketplace/search", { requestId, q, zone, category, sort, minPrice, maxPrice });
 
-    // orderBy en Prisma solo para los casos que el ORM puede resolver directamente
-    const prismaOrderBy =
-      sort === "price_desc"
-        ? { retailPrice: "desc" as const }
-        : sort === "name"
-          ? { product: { name: "asc" as const } }
-          : sort === "rating"
-            ? { store: { rating: "desc" as const } }
-            : { retailPrice: "asc" as const }; // price_asc | distance | default
-
     // TD-018: Prisma devuelve retailPrice / rating como Decimal — convertir después del query
-    const rawResults = await prisma.storeProduct.findMany({
-      where: {
-        isActive: true,
-        ...(minPrice !== undefined || maxPrice !== undefined
-          ? {
-              retailPrice: {
-                ...(minPrice !== undefined && { gte: minPrice }),
-                ...(maxPrice !== undefined && { lte: maxPrice }),
-              },
-            }
-          : {}),
-        store: {
-          isPublished: true,
-          // SECURITY 2026-05-07 (audit M5): filtrar tenants activos.
-          // Antes la búsqueda exponía productos de tenants suspendidos.
-          tenant: {
-            active: true,
-          },
-          ...(zone && { zone }),
-        },
-        product: {
-          name: { contains: q, mode: "insensitive" },
-          ...(category && category !== "todos" && { category }),
-        },
-      },
-      select: {
-        id:          true,
-        retailPrice: true,
-        minOrderQty: true,
-        product: {
-          select: {
-            id:       true,
-            name:     true,
-            image:    true,
-            category: true,
-            unit:     true,
-            stock:    true,
-          },
-        },
-        store: {
-          select: {
-            id:     true,
-            name:   true,
-            slug:   true,
-            logo:   true,
-            zone:   true,
-            rating: true,
-          },
-        },
-      },
-      orderBy: prismaOrderBy,
-      take: 80, // margen para ordenar por distancia en post-process
+    const rawResults = await MarketplacePublicDB.searchProducts({
+      q, zone, category, minPrice, maxPrice,
+      sort: sort ?? "price_asc",
+      limit: 80, // margen para ordenar por distancia en post-process
     });
 
     // TD-018: serializar Decimal → number para que encaje con RawResult
@@ -249,10 +143,9 @@ export async function GET(req: NextRequest) {
     const tenantId = req.headers.get("x-tenant-id") ?? "main";
     const productIds = topItems.map((r) => r.product.id);
 
+    // Reutiliza MarketplacePublicDB.batchCatalogEnrichment — elimina duplicado local
     const { primaryImageMap, variantMap, ratingMap, bestSellerIds } =
-      productIds.length > 0
-        ? await batchProductEnrichment(productIds, tenantId)
-        : { primaryImageMap: new Map(), variantMap: new Map(), ratingMap: new Map(), bestSellerIds: new Set<number>() };
+      await MarketplacePublicDB.batchCatalogEnrichment(productIds, tenantId);
 
     // Proxy para badge "new": IDs en el top 10% del rango = producto reciente
     const maxId = productIds.length > 0 ? Math.max(...productIds) : 0;

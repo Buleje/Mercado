@@ -282,15 +282,18 @@ describe("WhatsApp webhook — AI-first routing (ADR-058)", () => {
     expect(mockConcierge).toHaveBeenCalledWith(otherTenant, FROM, "hola");
   });
 
-  // ─── Caso 8: Sin tenant config → usa "main" como tenant fallback ─────────
+  // ─── Caso 8: Sin tenant config → mensaje descartado (security 2026-05-06) ───
+  // SECURITY FIX: antes usaba tenantId "main" como fallback, lo que filtraba
+  // mensajes de tenants sin config al tenant principal. Ahora se descarta.
 
-  it("sin tenant config en DB → usa tenantId 'main' (legacy compat)", async () => {
+  it("sin tenant config en DB → mensaje descartado, ningún engine se llama", async () => {
     mockPrisma.tenantWhatsAppConfig.findFirst.mockResolvedValue(null);
     process.env.WHATSAPP_ACCESS_TOKEN = "global-fallback-token";
 
     await processWebhookPayload(buildPayload("hola"));
 
-    expect(mockConcierge).toHaveBeenCalledWith("main", FROM, "hola");
+    expect(mockConcierge).not.toHaveBeenCalled();
+    expect(mockLegacy).not.toHaveBeenCalled();
 
     delete process.env.WHATSAPP_ACCESS_TOKEN;
   });

@@ -26,6 +26,17 @@ vi.mock("@/lib/api-error", () => ({
   newTraceId: vi.fn(() => "trace-test-123"),
 }));
 
+vi.mock("@/lib/url-allowlist", () => ({
+  isAllowedImageUrl: vi.fn(() => true),
+}));
+
+const { mockProductFindFirst } = vi.hoisted(() => ({ mockProductFindFirst: vi.fn() }));
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    product: { findFirst: mockProductFindFirst },
+  },
+}));
+
 const { mockRequireAdmin } = vi.hoisted(() => ({ mockRequireAdmin: vi.fn() }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 
@@ -124,6 +135,7 @@ describe("POST /api/marketplace/products/[id]/images", () => {
     vi.clearAllMocks();
     mockRequireAdmin.mockResolvedValue(AUTH);
     mockCreate.mockResolvedValue(IMG_1);
+    mockProductFindFirst.mockResolvedValue({ id: 42 });
   });
 
   it("crea imagen con payload válido → 201", async () => {
@@ -163,7 +175,7 @@ describe("POST /api/marketplace/products/[id]/images", () => {
 
   it("llama a invalidateByPrefix con la clave del producto", async () => {
     await POST(makePostReq({ url: "https://example.com/img.jpg" }), makeParams());
-    expect(mockInvalidateByPrefix).toHaveBeenCalledWith("marketplace:product:42");
+    expect(mockInvalidateByPrefix).toHaveBeenCalledWith("marketplace:product:test-tenant:42");
   });
 
   it("usa el tenantId de auth (no de body) al crear", async () => {
@@ -179,6 +191,7 @@ describe("DELETE /api/marketplace/products/[id]/images", () => {
     vi.clearAllMocks();
     mockRequireAdmin.mockResolvedValue(AUTH);
     mockDelete.mockResolvedValue(undefined);
+    mockProductFindFirst.mockResolvedValue({ id: 42 });
   });
 
   it("elimina imagen → 200 { ok: true }", async () => {

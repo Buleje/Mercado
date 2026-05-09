@@ -49,7 +49,7 @@ export default function CheckoutStepper({ current }: { current: CheckoutStep }) 
             isDone && "bg-[var(--accent-soft)] text-[var(--accent)]",
             !isCurrent &&
               !isDone &&
-              "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
+              "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
           );
 
           const labelCls = cn(

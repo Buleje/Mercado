@@ -132,6 +132,24 @@ interface OrderCardProps {
   onManualDelivery?: (reason: string) => void;
 }
 
+/**
+ * Comparador para OrderCard.
+ * Los callbacks son lambdas inline recreadas en cada render de KanbanColumn,
+ * por lo que el comparador los ignora y solo observa los datos del pedido.
+ */
+function areOrderCardPropsEqual(prev: OrderCardProps, next: OrderCardProps): boolean {
+  return (
+    prev.order.id === next.order.id &&
+    prev.order.status === next.order.status &&
+    prev.order.updatedAt === next.order.updatedAt &&
+    prev.order.total === next.order.total &&
+    prev.selected === next.selected &&
+    prev.nowMs === next.nowMs &&
+    prev.storeLat === next.storeLat &&
+    prev.storeLon === next.storeLon
+  );
+}
+
 const OrderCard = memo(function OrderCard({
   order,
   selected,
@@ -381,7 +399,7 @@ const OrderCard = memo(function OrderCard({
       />
     </article>
   );
-});
+}, areOrderCardPropsEqual);
 
 // ── Draggable wrapper ─────────────────────────────────────────────────────────
 function DraggableOrderCard(props: OrderCardProps) {

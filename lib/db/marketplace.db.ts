@@ -422,6 +422,153 @@ export const MarketplaceStoresDB = {
       createdAt:   s.createdAt.toISOString(),
     };
   },
+
+
+  /**
+   * Busca la tienda del tenant por possibleIds (CUID y slug legacy).
+   * Retorna null si no existe — no lanza excepción.
+   */
+  async findByPossibleIds(possibleIds: string[]): Promise<(DbStore & { vacationMode: boolean; vacationMessage: string | null }) | null> {
+    const s = await prisma.store.findFirst({
+      where: { tenantId: { in: possibleIds } },
+      select: {
+        id: true, tenantId: true, slug: true, name: true, description: true,
+        logo: true, banner: true, category: true, zone: true, rating: true,
+        reviewCount: true, isPublished: true, commission: true, createdAt: true,
+        vacationMode: true, vacationMessage: true,
+      },
+    });
+    if (!s) return null;
+    return {
+      id: s.id, tenantId: s.tenantId, slug: s.slug, name: s.name,
+      description: s.description, logo: s.logo, banner: s.banner,
+      category: s.category, zone: s.zone, rating: s.rating,
+      reviewCount: s.reviewCount, isPublished: s.isPublished,
+      commission: s.commission, createdAt: s.createdAt.toISOString(),
+      vacationMode: s.vacationMode, vacationMessage: s.vacationMessage,
+    };
+  },
+
+  /**
+   * Verifica unicidad de slug. Retorna true si ya está tomado por OTRA tienda.
+   */
+  async isSlugTaken(slug: string, excludeId?: string): Promise<boolean> {
+    const row = await prisma.store.findUnique({ where: { slug }, select: { id: true } });
+    if (!row) return false;
+    return row.id !== excludeId;
+  },
+
+  /**
+   * Crea una tienda para el tenant indicado.
+   * Persiste hoursJson via raw query si se proporciona.
+   */
+  async createStore(params: {
+    tenantId: string;
+    slug: string;
+    name: string;
+    description?: string | null;
+    logo?: string | null;
+    category?: string;
+    zone?: string | null;
+    commission?: number;
+    isActive?: boolean;
+    vacationMode?: boolean;
+    vacationMessage?: string | null;
+    hours?: unknown;
+  }): Promise<DbStore & { vacationMode: boolean; vacationMessage: string | null; hours: unknown }> {
+    const store = await prisma.store.create({
+      data: {
+        tenantId:        params.tenantId,
+        slug:            params.slug,
+        name:            params.name,
+        description:     params.description ?? null,
+        logo:            params.logo ?? null,
+        category:        params.category ?? "bodega",
+        zone:            params.zone ?? null,
+        commission:      params.commission ?? 5.0,
+        isPublished:     params.isActive ?? false,
+        vacationMode:    params.vacationMode ?? false,
+        vacationMessage: params.vacationMessage ?? null,
+      },
+    });
+
+    let savedHours: unknown = null;
+    if (params.hours !== undefined) {
+      const hoursStr = JSON.stringify(params.hours);
+      await prisma.$executeRaw`UPDATE "Store" SET "hoursJson" = ${hoursStr}::jsonb WHERE id = ${store.id}`;
+      savedHours = params.hours;
+    }
+
+    invalidateByPrefix("marketplace:stores");
+
+    return {
+      id: store.id, tenantId: store.tenantId, slug: store.slug, name: store.name,
+      description: store.description, logo: store.logo, banner: store.banner,
+      category: store.category, zone: store.zone, rating: store.rating,
+      reviewCount: store.reviewCount, isPublished: store.isPublished,
+      commission: store.commission, createdAt: store.createdAt.toISOString(),
+      vacationMode: store.vacationMode, vacationMessage: store.vacationMessage,
+      hours: savedHours,
+    };
+  },
+
+  /**
+   * Actualiza una tienda existente (por id). Persiste hoursJson si se proporciona.
+   */
+  async updateStore(params: {
+    id: string;
+    slug: string;
+    name: string;
+    description?: string | null;
+    logo?: string | null;
+    category?: string;
+    zone?: string | null;
+    commission?: number;
+    isActive?: boolean;
+    vacationMode?: boolean;
+    vacationMessage?: string | null;
+    hours?: unknown;
+  }): Promise<DbStore & { vacationMode: boolean; vacationMessage: string | null; hours: unknown }> {
+    const store = await prisma.store.update({
+      where: { id: params.id },
+      data: {
+        slug:            params.slug,
+        name:            params.name,
+        description:     params.description ?? null,
+        logo:            params.logo ?? null,
+        category:        params.category,
+        zone:            params.zone,
+        commission:      params.commission,
+        isPublished:     params.isActive,
+        vacationMode:    params.vacationMode,
+        vacationMessage: params.vacationMessage,
+      },
+    });
+
+    let savedHours: unknown = null;
+    if (params.hours !== undefined) {
+      const hoursStr = JSON.stringify(params.hours);
+      await prisma.$executeRaw`UPDATE "Store" SET "hoursJson" = ${hoursStr}::jsonb WHERE id = ${store.id}`;
+      savedHours = params.hours;
+    } else {
+      const rows = await prisma.$queryRaw<Array<{ hoursJson: unknown }>>`
+        SELECT "hoursJson" FROM "Store" WHERE id = ${store.id} LIMIT 1
+      `;
+      savedHours = rows[0]?.hoursJson ?? null;
+    }
+
+    invalidateByPrefix("marketplace:stores");
+
+    return {
+      id: store.id, tenantId: store.tenantId, slug: store.slug, name: store.name,
+      description: store.description, logo: store.logo, banner: store.banner,
+      category: store.category, zone: store.zone, rating: store.rating,
+      reviewCount: store.reviewCount, isPublished: store.isPublished,
+      commission: store.commission, createdAt: store.createdAt.toISOString(),
+      vacationMode: store.vacationMode, vacationMessage: store.vacationMessage,
+      hours: savedHours,
+    };
+  },
 };
 
 // ─── MarketplaceStoreProductsDB ───────────────────────────────────────────────

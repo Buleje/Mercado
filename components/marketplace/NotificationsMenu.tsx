@@ -208,7 +208,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                 <p className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   Inicia sesión para ver tus notificaciones
                 </p>
-                <p className="mt-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
+                <p className="mt-2 text-sm text-[var(--text-tertiary)] leading-relaxed">
                   Te avisamos del estado de tus pedidos, promos de tus bodegas
                   favoritas y mensajes de bodegueros.
                 </p>
@@ -236,7 +236,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                 <p className="text-sm font-bold text-[var(--text-primary)]">
                   Sin notificaciones
                 </p>
-                <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                <p className="mt-1 text-sm text-[var(--text-tertiary)]">
                   Te avisamos cuando haya algo nuevo.
                 </p>
               </div>
@@ -280,7 +280,7 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
                               />
                             )}
                           </div>
-                          <p className="mt-1 text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2">
+                          <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed line-clamp-2">
                             {n.desc}
                           </p>
                           <p className="mt-2 text-[length:var(--ts-xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">

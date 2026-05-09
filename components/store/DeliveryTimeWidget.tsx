@@ -108,10 +108,10 @@ export default function DeliveryTimeWidget() {
           {status.icon === "open" ? <Truck className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-[var(--text-primary)] truncate">{status.text}</p>
+          <p className="text-sm font-bold text-[var(--text-primary)] truncate">{status.text}</p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{status.sub}</p>
         </div>
-        {expanded ? <ChevronDown className="h-3 w-3 text-gray-400 shrink-0" /> : <ChevronUp className="h-3 w-3 text-gray-400 shrink-0" />}
+        {expanded ? <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" /> : <ChevronUp className="h-4 w-4 text-gray-400 shrink-0" />}
       </button>
 
       {/* Expanded: today's schedule */}

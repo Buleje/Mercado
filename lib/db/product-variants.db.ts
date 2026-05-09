@@ -69,13 +69,28 @@ function mapVariant(r: PProductVariant): DbProductVariant {
 // ── DB Class ──────────────────────────────────────────────────────────────────
 
 /**
+ * Cache en-proceso para resolveTenantAliases.
+ * TTL 5 min — mismo patrón que resolve-tenant.ts.
+ * Evita N+1: si list+update+delete se llaman en la misma request para el
+ * mismo tenantId, solo se dispara 1 query tenant.findFirst en total.
+ */
+const _tenantAliasCache = new Map<string, { ids: string[]; expiresAt: number }>();
+const _TENANT_ALIAS_TTL_MS = 5 * 60 * 1000;
+
+/**
  * Resuelve un tenantId crudo (slug o CUID) a la lista canónica de
  * identificadores con que las filas pueden estar guardadas. Histórica-
  * mente algunas filas se persistieron con slug y otras con CUID según
  * la ruta de creación. Devolver ambos permite que el WHERE matchee
  * independiente de cuál se haya usado al INSERT.
+ *
+ * Cachea el resultado en memoria (TTL 5 min) para evitar N+1 cuando
+ * múltiples métodos de ProductVariantsDB se llaman en la misma request.
  */
 async function resolveTenantAliases(tenantIdOrSlug: string): Promise<string[]> {
+  const cached = _tenantAliasCache.get(tenantIdOrSlug);
+  if (cached && cached.expiresAt > Date.now()) return cached.ids;
+
   const ids = new Set<string>([tenantIdOrSlug]);
   try {
     const t = await prisma.tenant.findFirst({
@@ -84,7 +99,10 @@ async function resolveTenantAliases(tenantIdOrSlug: string): Promise<string[]> {
     });
     if (t) { ids.add(t.id); ids.add(t.slug); }
   } catch { /* tenant lookup falló — usamos solo el input */ }
-  return Array.from(ids);
+
+  const result = Array.from(ids);
+  _tenantAliasCache.set(tenantIdOrSlug, { ids: result, expiresAt: Date.now() + _TENANT_ALIAS_TTL_MS });
+  return result;
 }
 
 export const ProductVariantsDB = {

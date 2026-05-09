@@ -76,7 +76,7 @@ export function PastLives({ lives }: PastLivesProps) {
                 {live.title}
               </h3>
               <div className="flex items-center gap-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                <Users className="h-3 w-3" aria-hidden />
+                <Users className="h-4 w-4" aria-hidden />
                 {formatViewers(live.viewers)} vistas
               </div>
               <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] line-clamp-1">

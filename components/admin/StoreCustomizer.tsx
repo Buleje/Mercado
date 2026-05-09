@@ -1005,7 +1005,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
     <div
       className={cn(
         "w-full h-full rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-card-border flex flex-col text-sm shadow-inner",
-        theme.darkModeDefault ? "bg-gray-900 text-white" : "bg-white text-[var(--text-primary)]"
+        theme.darkModeDefault ? "bg-gray-900 text-white" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]"
       )}
       style={{ fontFamily: fontMap[theme.fontFamily] ?? fontMap.sistema }}
     >
@@ -1601,7 +1601,7 @@ export default function StoreCustomizer() {
                               <div className="h-3 w-10 rounded-md ml-auto" style={{ backgroundColor: t.colors.secondaryColor }} />
                             </div>
                             {active && (
-                              <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-white flex items-center justify-center shadow">
+                              <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-white dark:bg-[var(--color-card)] flex items-center justify-center shadow">
                                 <Check className="h-3 w-3 text-primary" />
                               </div>
                             )}
@@ -1828,7 +1828,7 @@ export default function StoreCustomizer() {
                           : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40"
                       )}
                     >
-                      <div className="aspect-[4/3] mb-3 rounded-xl bg-white border border-gray-200 overflow-hidden flex flex-col">
+                      <div className="aspect-[4/3] mb-3 rounded-xl bg-white dark:bg-[var(--color-card)] border border-gray-200 overflow-hidden flex flex-col">
                         <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
                         <div className="flex-1 p-2 space-y-1">
                           <div className="h-1.5 rounded-full bg-gray-300 w-3/4" />
@@ -2435,7 +2435,7 @@ export default function StoreCustomizer() {
                         aria-pressed={theme.welcomePopupEnabled}
                       >
                         <span className={cn(
-                          "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
+                          "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
                           theme.welcomePopupEnabled ? "translate-x-6" : "translate-x-1"
                         )} />
                       </button>
@@ -2488,7 +2488,7 @@ export default function StoreCustomizer() {
                   description="Imprímelo y pégalo en tu local físico. Los clientes lo escanean y entran a tu tienda online."
                 >
                   <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
-                    <div className="bg-white p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border shrink-0">
+                    <div className="bg-white dark:bg-[var(--color-card)] p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border shrink-0">
                       <Image
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "https://tu-tienda.buleje.pe")}`}
                         alt="QR de la tienda"
@@ -2959,7 +2959,7 @@ export default function StoreCustomizer() {
                 ]).map((v) => (
                   <button key={v.label} type="button" onClick={() => setPreviewWidth(v.w)}
                     className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all",
-                      previewWidth === v.w ? "bg-white text-[var(--text-primary)] shadow" : "text-[var(--text-tertiary)] hover:text-white")}>
+                      previewWidth === v.w ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] shadow" : "text-[var(--text-tertiary)] hover:text-white")}>
                     {v.label}
                   </button>
                 ))}
@@ -2981,7 +2981,7 @@ export default function StoreCustomizer() {
           {/* Iframe */}
           <div className="flex-1 flex justify-center items-start p-4 overflow-auto bg-[var(--surface-sunken)]">
             <div
-              className="bg-white rounded-xl overflow-hidden transition-all duration-[var(--dur-base)]"
+              className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden transition-all duration-[var(--dur-base)]"
               style={{ width: previewWidth > 0 ? `${previewWidth}px` : "100%", maxWidth: "100%", height: "calc(100vh - 80px)" }}
             >
               <iframe key={previewKey} src={`/t/${activeTenantSlug}?preview=true`} title="Vista previa" className="w-full h-full border-0" />
