@@ -201,7 +201,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       onClick={() => onChange(!checked)}
       className={cn("relative h-6 w-11 rounded-full transition-colors", checked ? "bg-[var(--accent-soft)]" : "bg-gray-700")}
     >
-      <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform", checked ? "left-5" : "left-0.5")} />
+      <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform", checked ? "left-5" : "left-0.5")} />
     </button>
   );
 }
@@ -225,7 +225,7 @@ function PreviewBrowserFrame({
 }) {
   return (
     <div
-      className="bg-white rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 w-full"
+      className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 w-full"
       style={{ height: "calc(100vh - 130px)" }}
     >
       {/* Browser chrome */}
@@ -235,7 +235,7 @@ function PreviewBrowserFrame({
           <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
           <span className="h-3 w-3 rounded-full bg-[#28c840]" />
         </div>
-        <div className="flex-1 mx-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-mono text-gray-600 truncate">
+        <div className="flex-1 mx-2 px-3 py-1.5 rounded-lg bg-white dark:bg-[var(--color-card)] border border-gray-200 text-xs font-mono text-gray-600 truncate">
           {typeof window !== "undefined" ? window.location.origin : ""}{url}
         </div>
         <div className="flex items-center gap-1 shrink-0 text-gray-400">
@@ -271,7 +271,7 @@ function PreviewCard({ title, price, primaryColor, borderRadius, styleVariant }:
           : "border border-[var(--rule-base)]";
 
   return (
-    <div className={cn("p-3 bg-white", cardClass)} style={{ borderRadius }}>
+    <div className={cn("p-3 bg-white dark:bg-[var(--color-card)]", cardClass)} style={{ borderRadius }}>
       <div className="aspect-square rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center">
         <div className="h-12 w-12 rounded-xl bg-white/80 flex items-center justify-center ring-1 ring-white">
           <Store className="h-6 w-6 text-[var(--text-tertiary)]" />
@@ -1074,7 +1074,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             </div>
           ) : (
           <div
-            className="bg-white rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 transition-all duration-[var(--dur-base)] w-full"
+            className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 transition-all duration-[var(--dur-base)] w-full"
             style={{
               ...(viewport === "mobile"
                 ? { width: "390px" }
@@ -1190,7 +1190,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 </div>
 
                 {draft.welcomePopupEnabled && (
-                  <div className="rounded-xl border p-3 bg-white" style={{ borderColor: draft.secondaryColor }}>
+                  <div className="rounded-xl border p-3 bg-white dark:bg-[var(--color-card)]" style={{ borderColor: draft.secondaryColor }}>
                     <p className="text-xs font-extrabold" style={{ color: draft.primaryColor }}>{draft.welcomePopupTitle || "Bienvenido"}</p>
                     <p className="text-xs text-[var(--text-secondary)] mt-1">{draft.welcomePopupMessage || "Usa este cupon en tu primera compra"}</p>
                     <div className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[length:var(--ts-2xs)] font-bold bg-gray-100 text-[var(--text-primary)]">

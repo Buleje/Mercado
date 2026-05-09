@@ -70,7 +70,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -108,7 +108,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
             <select
               value={form.reason}
               onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white dark:bg-[var(--color-card)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             >
               <option value="compensacion">Compensación por incidencia</option>
               <option value="premio">Premio de campaña</option>

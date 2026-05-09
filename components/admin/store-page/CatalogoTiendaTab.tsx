@@ -106,7 +106,7 @@ function VisibilitySwitch({
     >
       <span
         className={cn(
-          "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform",
+          "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform",
           checked ? "translate-x-6" : "translate-x-1",
         )}
       />

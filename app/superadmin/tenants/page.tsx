@@ -11,8 +11,30 @@ import { AdminTabShell } from "../_components/_shared";
 
 import { TenantCard } from "@/components/superadmin/tenants/TenantCard";
 import { TenantTable } from "@/components/superadmin/tenants/TenantTable";
-import { TenantGrowthTab } from "@/components/superadmin/tenants/TenantGrowthTab";
-import TenantsGrowthRanking from "@/components/superadmin/dashboard/TenantsGrowthRanking";
+import dynamic from "next/dynamic";
+
+const TenantGrowthTab = dynamic(
+  () =>
+    import("@/components/superadmin/tenants/TenantGrowthTab").then(
+      (m) => ({ default: m.TenantGrowthTab }),
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-72 animate-pulse bg-[var(--color-muted)] rounded-xl" />
+    ),
+  },
+);
+
+const TenantsGrowthRanking = dynamic(
+  () => import("@/components/superadmin/dashboard/TenantsGrowthRanking"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-72 animate-pulse bg-[var(--color-muted)] rounded-xl" />
+    ),
+  },
+);
 import { TenantProductsModal } from "@/components/superadmin/tenants/TenantProductsModal";
 import TenantAddProductModal from "@/components/superadmin/tenants/TenantAddProductModal";
 import { InviteModal } from "@/components/superadmin/tenants/InviteModal";

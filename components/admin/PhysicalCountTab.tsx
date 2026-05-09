@@ -411,7 +411,7 @@ export default function PhysicalCountTab() {
             placeholder="Buscar producto o código..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
           />
         </div>
 
@@ -455,7 +455,7 @@ export default function PhysicalCountTab() {
                         value={row.realStock}
                         onChange={(e) => updateRow(row.productId, "realStock", e.target.value)}
                         placeholder="—"
-                        className="w-20 text-right px-2 py-1 rounded border border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
+                        className="w-20 text-right px-2 py-1 rounded border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
                       />
                     </td>
                     <td className={`px-3 py-2 text-right font-bold font-mono ${diffColor(d)}`}>
@@ -554,7 +554,7 @@ export default function PhysicalCountTab() {
                           value={row.reason}
                           onChange={(e) => updateRow(row.productId, "reason", e.target.value)}
                           disabled={session.status === "aplicado"}
-                          className="w-full px-2 py-1.5 rounded border border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
+                          className="w-full px-2 py-1.5 rounded border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
                         >
                           {REASONS.map((r) => (
                             <option key={r.value} value={r.value}>{r.label}</option>

@@ -44,7 +44,7 @@ export default function CotizacionesChart({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* AreaChart: cotizaciones emitidas por mes */}
-      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-4">
           Cotizaciones por mes
         </p>
@@ -88,7 +88,7 @@ export default function CotizacionesChart({
       </div>
 
       {/* Top 5 clientes */}
-      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-4">
           Top 5 clientes por monto
         </p>

@@ -207,7 +207,7 @@ export default function ComisionesTab() {
 
       {/* Calendario de próximos pagos */}
       {entries.filter((e) => e.status === "liquidado").length > 0 && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <Calendar className="h-4 w-4 text-primary" />
             <CardTitle className="text-sm">Próximos pagos</CardTitle>
@@ -299,7 +299,7 @@ export default function ComisionesTab() {
           <p className="text-sm font-semibold">Sin comisiones {filterStatus !== "all" ? `en estado "${filterStatus}"` : "registradas aún"}</p>
         </div>
       ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-[var(--rule-base)]">

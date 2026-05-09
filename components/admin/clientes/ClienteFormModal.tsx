@@ -707,7 +707,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                     )}
                   >
                     <span className={cn(
-                      "inline-block h-4 w-4 rounded-full bg-white transition-transform",
+                      "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform",
                       form.creditoActivo ? "translate-x-6" : "translate-x-1"
                     )} />
                   </button>
@@ -746,7 +746,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         )}
                       >
                         <span className={cn(
-                          "inline-block h-4 w-4 rounded-full bg-white transition-transform",
+                          "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform",
                           form.alertasWhatsapp ? "translate-x-6" : "translate-x-1"
                         )} />
                       </button>

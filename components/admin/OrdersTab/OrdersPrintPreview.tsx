@@ -54,7 +54,7 @@ export function OrdersPrintPreview({
               return (
                 <div
                   key={order.id}
-                  className="bg-white border-2 border-[var(--rule-base)] rounded-lg p-4 print:break-after-page print:border-0 print:rounded-none"
+                  className="bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-lg p-4 print:break-after-page print:border-0 print:rounded-none"
                   style={{ pageBreakAfter: "always" }}
                 >
                   {/* Header */}

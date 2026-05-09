@@ -88,7 +88,8 @@ async function hmacVerify(data: string, sig: Uint8Array): Promise<boolean> {
       sigBuf,
       new TextEncoder().encode(data),
     );
-  } catch {
+  } catch (e) {
+    logger.error("verifyHmac failed", { err: e instanceof Error ? e.message : String(e), op: "verifyHmac" });
     return false;
   }
 }
@@ -412,7 +413,8 @@ export const OrderTrackingDB = {
         return null;
       }
       return { orderId: payload.orderId, tenantId: payload.tenantId };
-    } catch {
+    } catch (e) {
+      logger.error("parseShareToken failed", { err: e instanceof Error ? e.message : String(e), op: "parseShareToken" });
       return null;
     }
   },

@@ -161,7 +161,7 @@ function GuiaPreview({ guia }: { guia: GuiaRemision }) {
   const meta = STATUS_META[guia.status];
   const placa = getPlaca(guia);
   return (
-    <div className="w-75 bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
+    <div className="w-75 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-[var(--text-secondary)]">{guia.número}</span>
         <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>
@@ -228,7 +228,7 @@ function _OrderPickerCard({ order, isSelected, onSelect }: {
         "w-full text-left rounded-xl border-2 p-4 transition-all duration-[var(--dur-base)] relative overflow-hidden",
         isSelected
           ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-          : "bg-white border-[var(--rule-base)] hover:shadow-lg hover:border-primary/40"
+          : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] hover:shadow-lg hover:border-primary/40"
       )}
     >
       <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" : "bg-[var(--accent-soft)]")} />
@@ -261,7 +261,7 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 animate-pulse">
+          <div key={i} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 animate-pulse">
             <div className="h-7 w-7 rounded-lg bg-gray-100 mb-2" />
             <div className="h-3 w-20 rounded bg-gray-100 mb-1.5" />
             <div className="h-7 w-10 rounded bg-gray-100" />
@@ -286,7 +286,7 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
           const Icon = card.icon;
           return (
             <m.div key={card.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-white border border-[var(--rule-base)] rounded-xl  p-3">
+              className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  p-3">
               <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center mb-2", card.bg)}>
                 <Icon className={cn("h-3.5 w-3.5", card.color)} />
               </div>
@@ -297,7 +297,7 @@ function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; load
         })}
       </div>
       {resumen.transportistasFrecuentes.length > 0 && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold mb-3 flex items-center gap-1.5">
             <Truck className="h-3 w-3" /> Transportistas frecuentes
           </p>
@@ -818,7 +818,7 @@ export default function GuiasRemisionModule() {
             aria-label="Buscar guías de remisión"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         {/* Mejora 12: Pills coloreadas con count */}
@@ -856,7 +856,7 @@ export default function GuiasRemisionModule() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -948,7 +948,7 @@ export default function GuiasRemisionModule() {
               className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
             <m.div key="grr-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-[var(--rule-base)] overflow-y-auto">
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -1186,9 +1186,9 @@ export default function GuiasRemisionModule() {
               className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && setShowNew(false)}
             >
-              <div className="w-full max-w-3xl bg-white border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
+              <div className="w-full max-w-3xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div className="sticky top-0 z-10 bg-white dark:bg-[var(--color-card)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
                   <button onClick={() => setShowNew(false)} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
@@ -1201,13 +1201,13 @@ export default function GuiasRemisionModule() {
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Vincular pedido (opcional)</label>
                     <input type="text" value={form.orderIds} onChange={e => setForm(p => ({ ...p, orderIds: e.target.value }))} placeholder="N° de orden"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Motivo */}
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Motivo de traslado</label>
                     <select value={form.motivoTraslado} onChange={e => setForm(p => ({ ...p, motivoTraslado: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                       {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
@@ -1215,34 +1215,34 @@ export default function GuiasRemisionModule() {
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Destinatario</label>
                     <input type="text" value={form.destinatarioNombre} onChange={e => setForm(p => ({ ...p, destinatarioNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC destinatario</label>
                     <input type="text" value={form.destinatarioRuc} onChange={e => setForm(p => ({ ...p, destinatarioRuc: e.target.value }))} placeholder="20XXXXXXXXX"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Dirección destinatario</label>
                     <input type="text" value={form.destinatarioDireccion} onChange={e => setForm(p => ({ ...p, destinatarioDireccion: e.target.value }))} placeholder="Dirección"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Transportista */}
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Transportista</label>
                     <input type="text" value={form.transportistaNombre} onChange={e => setForm(p => ({ ...p, transportistaNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC transp.</label>
                       <input type="text" value={form.transportistaRuc} onChange={e => setForm(p => ({ ...p, transportistaRuc: e.target.value }))} placeholder="RUC"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Placa</label>
                       <input type="text" value={form.vehiculoPlaca} onChange={e => setForm(p => ({ ...p, vehiculoPlaca: e.target.value }))} placeholder="ABC-123"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                   {/* Partida / Llegada */}
@@ -1250,28 +1250,28 @@ export default function GuiasRemisionModule() {
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Conductor</label>
                     <input type="text" value={form.conductorNombre} onChange={e => setForm(p => ({ ...p, conductorNombre: e.target.value }))} placeholder="Nombre del conductor"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">DNI Conductor</label>
                     <input type="text" value={form.conductorDni} onChange={e => setForm(p => ({ ...p, conductorDni: e.target.value.replace(/\D/g, "").slice(0, 8) }))} placeholder="12345678" maxLength={8}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Bultos / Doc Referencia / Peso Bruto */}
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° Bultos</label>
                     <input type="number" min="0" value={form.bultos} onChange={e => setForm(p => ({ ...p, bultos: e.target.value }))} placeholder="0"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Doc. Referencia</label>
                     <input type="text" value={form.documentoRef} onChange={e => setForm(p => ({ ...p, documentoRef: e.target.value }))} placeholder="Factura, boleta u orden"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Peso Bruto (kg)</label>
                     <input type="number" min="0" step="0.001" value={form.pesoBruto} onChange={e => setForm(p => ({ ...p, pesoBruto: e.target.value }))} placeholder="0.000"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                   </div>
                   {/* Ruta */}
                   <div>
@@ -1279,7 +1279,7 @@ export default function GuiasRemisionModule() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                       <input type="text" value={form.puntoPartida} onChange={e => setForm(p => ({ ...p, puntoPartida: e.target.value }))} placeholder="Dirección origen"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                   <div>
@@ -1287,7 +1287,7 @@ export default function GuiasRemisionModule() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                       <input type="text" value={form.puntoLlegada} onChange={e => setForm(p => ({ ...p, puntoLlegada: e.target.value }))} placeholder="Dirección destino"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                   {/* Fecha */}
@@ -1296,7 +1296,7 @@ export default function GuiasRemisionModule() {
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                       <input type="datetime-local" value={form.fechaTraslado} onChange={e => setForm(p => ({ ...p, fechaTraslado: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     </div>
                   </div>
                 </div>
@@ -1308,13 +1308,13 @@ export default function GuiasRemisionModule() {
                     {newItems.map((item, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
                         <input type="text" value={item.descripcion} onChange={e => updateItem(idx, "descripcion", e.target.value)} placeholder="Descripción"
-                          className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="number" min="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)} placeholder="Cant."
-                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="text" value={item.unidad} onChange={e => updateItem(idx, "unidad", e.target.value)} placeholder="Und"
-                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="w-16 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         <input type="number" min="0" step="0.1" value={item.pesoUnitario} onChange={e => updateItem(idx, "pesoUnitario", e.target.value)} placeholder="Peso kg"
-                          className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-center text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                          className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         {newItems.length > 1 && (
                           <button onClick={() => removeItem(idx)} className="p-1 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>
                         )}
@@ -1349,7 +1349,7 @@ export default function GuiasRemisionModule() {
                 {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   <button onClick={() => setShowNew(false)}
                     className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors">
                     Cancelar

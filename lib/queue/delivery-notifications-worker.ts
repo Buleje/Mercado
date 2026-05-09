@@ -73,8 +73,8 @@ export function registerDeliveryNotificationsWorker(
       Worker: typeof WorkerClass;
     };
     WorkerClass = bullmq.Worker;
-  } catch {
-    logger.warn("[worker/delivery-notifications] bullmq not available — worker not registered");
+  } catch (e) {
+    logger.warn("[worker/delivery-notifications] bullmq not available — worker not registered", { err: e instanceof Error ? e.message : String(e) });
     return null;
   }
 
@@ -118,8 +118,8 @@ export function registerDeliveryNotificationsWorker(
               orderId,
             },
           });
-        } catch {
-          // Si Sentry no está disponible, ya loggeamos arriba
+        } catch (sentryErr) {
+          logger.warn("Sentry reportCriticalError unavailable", { err: sentryErr instanceof Error ? sentryErr.message : String(sentryErr), op: "delivery-notifications-worker/sentry" });
         }
         throw err; // BullMQ hará retry con backoff exponencial
       }

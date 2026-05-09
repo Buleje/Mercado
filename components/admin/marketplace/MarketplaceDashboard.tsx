@@ -27,6 +27,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
 import {
   ShoppingCart,
@@ -34,15 +35,22 @@ import {
   TrendingUp,
   Layers,
   Target,
-  Smartphone,
   CreditCard,
   Package,
 } from "@buleje/design-system/icons";
-import {
-  BarChart, Bar,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
-  Line, Area, ComposedChart,
-} from "recharts";
+
+const MarketplaceDashboardCharts = dynamic(
+  () => import("./MarketplaceDashboardCharts"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="h-[300px] animate-pulse bg-[var(--color-muted)] rounded-xl" />
+        <div className="h-[300px] animate-pulse bg-[var(--color-muted)] rounded-xl" />
+      </div>
+    ),
+  },
+);
 import {
   ChartCard,
   ChartTooltip,
@@ -498,72 +506,11 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
       </section>
 
       {/* ── ROW 3: Crecimiento de mi tienda + Pedidos por canal ─────── */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <ChartCard
-          title="Crecimiento de mi tienda"
-          Icon={TrendingUp}
-          height={300}
-          subtitle="Visitas y pedidos por semana · últimas 8 semanas"
-          isEmpty={data.myGrowth.length === 0}
-          emptyText="Sin datos históricos"
-        >
-          <ResponsiveContainer minWidth={0} width="100%" height="100%">
-            <ComposedChart data={data.myGrowth} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="visitsGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"  stopColor={T.brand} stopOpacity={0.32} />
-                  <stop offset="100%" stopColor={T.brand} stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="0" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="semana" tick={{ fontSize: T.axisFontSize, fill: T.tickFill, fontWeight: T.axisFontWeight }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="left"  tick={{ fontSize: T.axisFontSize, fill: T.tickFill, fontWeight: T.axisFontWeight }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: T.axisFontSize, fill: T.tickFill, fontWeight: T.axisFontWeight }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="visitas"
-                name="Visitas"
-                stroke={T.brand}
-                strokeWidth={2.5}
-                fill="url(#visitsGradient)"
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="pedidos"
-                name="Pedidos"
-                stroke={T.primary}
-                strokeWidth={3}
-                dot={{ r: 4, fill: T.primary }}
-                activeDot={{ r: 6 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard
-          title="Pedidos por canal"
-          Icon={Smartphone}
-          height={300}
-          subtitle={`${PRESET_RANGE_LABEL[presetKey]} · de dónde vienen tus compradores`}
-          isEmpty={data.channelData.length === 0}
-          emptyText="Sin pedidos en el período"
-        >
-          <ResponsiveContainer minWidth={0} width="100%" height="100%">
-            <BarChart data={data.channelData} barCategoryGap="22%" margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="0" stroke={T.grid} vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: T.axisFontSize, fill: T.tickFill, fontWeight: T.axisFontWeight }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: T.axisFontSize, fill: T.tickFill, fontWeight: T.axisFontWeight }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--rule-soft)", opacity: 0.5 }} />
-              <Bar dataKey="value" name="Pedidos" radius={[10, 10, 0, 0]} maxBarSize={56}>
-                {data.channelData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
+      <MarketplaceDashboardCharts
+        myGrowth={data.myGrowth}
+        channelData={data.channelData}
+        presetRangeLabel={PRESET_RANGE_LABEL[presetKey]}
+      />
 
       {/* ── ROW 4: Top productos + Categorías + Conversión ─────────── */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">

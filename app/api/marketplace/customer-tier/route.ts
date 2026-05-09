@@ -1,9 +1,11 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+
+export const dynamic = "force-dynamic";
 
 
 /**
@@ -64,14 +66,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const count = await prisma.order.count({
-      where: {
-        customerPhone: phone,
-        source: "marketplace",
-        deletedAt: null,
-        status: "entregado",
-      },
-    });
+    const count = await MarketplacePublicDB.getCustomerOrderCount(phone);
     const tier = tierForCount(count);
     return NextResponse.json(
       { tier, count },

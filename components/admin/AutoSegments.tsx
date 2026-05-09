@@ -245,7 +245,7 @@ export default function AutoSegments() {
                       <span className={cn("font-semibold", seg.color)}>
                         {seg.label}
                       </span>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]  dark:bg-gray-900 dark:text-[var(--text-tertiary)]">
+                      <span className="rounded-full bg-white dark:bg-[var(--color-card)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]  dark:bg-gray-900 dark:text-[var(--text-tertiary)]">
                         {seg.customers.length} clientes
                       </span>
                       <span className="text-xs text-[var(--text-tertiary)]">{pct}%</span>

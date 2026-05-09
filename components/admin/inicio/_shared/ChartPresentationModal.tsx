@@ -197,7 +197,7 @@ export function ChartPresentationModal({
       role="dialog"
       aria-modal="true"
       aria-label={`Presentación: ${activeItem.title}`}
-      className="fixed inset-0 z-[9999] bg-white flex flex-col animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] bg-white dark:bg-[var(--color-card)] flex flex-col animate-in fade-in duration-200"
     >
       {/* Header barra — titulo + indicador + acciones */}
       <header
@@ -300,7 +300,7 @@ export function ChartPresentationModal({
           className={cn(
             "absolute left-4 top-1/2 -translate-y-1/2 z-10",
             "inline-flex items-center justify-center h-12 w-12 rounded-full",
-            "bg-white border border-gray-200 shadow-sm",
+            "bg-white dark:bg-[var(--color-card)] border border-gray-200 shadow-sm",
             "text-gray-700 hover:text-gray-900 hover:bg-gray-50",
             "transition-all",
             !hasPrev && "opacity-30 cursor-not-allowed",
@@ -338,7 +338,7 @@ export function ChartPresentationModal({
           className={cn(
             "absolute right-4 top-1/2 -translate-y-1/2 z-10",
             "inline-flex items-center justify-center h-12 w-12 rounded-full",
-            "bg-white border border-gray-200 shadow-sm",
+            "bg-white dark:bg-[var(--color-card)] border border-gray-200 shadow-sm",
             "text-gray-700 hover:text-gray-900 hover:bg-gray-50",
             "transition-all",
             !hasNext && !autoplay && "opacity-30 cursor-not-allowed",
@@ -365,7 +365,7 @@ export function ChartPresentationModal({
                   "shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors",
                   isActive
                     ? "bg-gray-900 text-white border-gray-900"
-                    : "bg-white text-gray-600 border-gray-300 hover:border-gray-400 hover:text-gray-900",
+                    : "bg-white dark:bg-[var(--color-card)] text-gray-600 border-gray-300 hover:border-gray-400 hover:text-gray-900",
                 )}
               >
                 <span className="tabular-nums font-bold">{idx + 1}</span>
@@ -376,25 +376,25 @@ export function ChartPresentationModal({
         </div>
         <p className="mt-2 text-[length:var(--ts-xs)] text-gray-500 flex items-center gap-3 flex-wrap">
           <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
               ← →
             </kbd>{" "}
             navegar
           </span>
           <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
               Shift+rueda
             </kbd>{" "}
             scroll lateral
           </span>
           <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
               Espacio
             </kbd>{" "}
             modo TV
           </span>
           <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
+            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-gray-600 px-1.5 py-0.5 rounded border border-gray-300">
               Esc
             </kbd>{" "}
             cerrar

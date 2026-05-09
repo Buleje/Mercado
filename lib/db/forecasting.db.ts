@@ -8,6 +8,7 @@
 
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import type { ForecastLog as PForecastLog } from "@/lib/generated/prisma/client";
 
 // ── Tipos públicos ─────────────────────────────────────────────────────────────
@@ -120,7 +121,11 @@ export const ForecastingDB = {
         data: { actualQty },
       });
       return mapForecastLog(row);
-    } catch {
+    } catch (e) {
+      logger.error(
+        "ForecastingDB.updateActualQty failed",
+        { err: e instanceof Error ? e.message : String(e), op: "ForecastingDB.updateActualQty", id },
+      );
       return null;
     }
   },

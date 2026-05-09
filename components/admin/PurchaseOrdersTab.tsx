@@ -469,7 +469,7 @@ export default function PurchaseOrdersTab() {
       {/* KPI summary 4 cards minimalistas */}
       {!loading && orders.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
               <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.total}</p>
@@ -477,7 +477,7 @@ export default function PurchaseOrdersTab() {
             </div>
             <FileText className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
           </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
               <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-warning-500)]">{kpis.counts.pendiente}</p>
@@ -485,7 +485,7 @@ export default function PurchaseOrdersTab() {
             </div>
             <Package className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" />
           </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Recibidas</p>
               <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success-500)]">{kpis.counts.recibido}</p>
@@ -493,7 +493,7 @@ export default function PurchaseOrdersTab() {
             </div>
             <PackageCheck className="h-5 w-5 text-[var(--data-success-500)] shrink-0" />
           </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total mes</p>
               <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">S/{kpis.totalMes.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
@@ -521,7 +521,7 @@ export default function PurchaseOrdersTab() {
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
                 statusFilter === p.id
                   ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                  : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
               )}
             >
               {p.label}

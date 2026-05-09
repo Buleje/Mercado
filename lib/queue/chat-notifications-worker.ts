@@ -60,8 +60,8 @@ export function registerChatNotificationsWorker(
     const runtimeRequire = globalThis.Function("return require")() as (id: string) => unknown;
     const bullmq = runtimeRequire("bullmq") as { Worker: typeof WorkerClass };
     WorkerClass = bullmq.Worker;
-  } catch {
-    logger.warn("[worker/chat-notifications] bullmq not available — worker not registered");
+  } catch (e) {
+    logger.warn("[worker/chat-notifications] bullmq not available — worker not registered", { err: e instanceof Error ? e.message : String(e) });
     return null;
   }
 
@@ -93,8 +93,8 @@ export function registerChatNotificationsWorker(
             tenantId,
             extra: { jobId: job.id, event, threadId },
           });
-        } catch {
-          // Sentry no disponible
+        } catch (sentryErr) {
+          logger.warn("Sentry reportCriticalError unavailable", { err: sentryErr instanceof Error ? sentryErr.message : String(sentryErr), op: "chat-notifications-worker/sentry" });
         }
         throw err;
       }

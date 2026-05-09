@@ -431,7 +431,7 @@ function SemaMesTab() {
       )}
 
       {/* Card mensual */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 space-y-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -461,7 +461,7 @@ function SemaMesTab() {
                   aria-invalid={!!editError}
                   aria-describedby={editError ? "monthly-goal-error" : undefined}
                   className={cn(
-                    "w-28 px-2 py-1 text-xs rounded-lg border bg-white outline-none",
+                    "w-28 px-2 py-1 text-xs rounded-lg border bg-white dark:bg-[var(--color-card)] outline-none",
                     editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
                   )}
                 />
@@ -583,7 +583,7 @@ interface KPISimpleProps {
 
 function KPISimple({ label, value, sub, delta, icon: Icon }: KPISimpleProps) {
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</span>
         <Icon className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
@@ -870,7 +870,7 @@ function LogrosTab() {
       </div>
 
       {/* Resumen + barra global */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 flex items-center gap-4 flex-wrap">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4 flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
           <p className="text-sm text-[var(--text-secondary)]">
@@ -903,13 +903,13 @@ function LogrosTab() {
             <p className="text-xs font-bold uppercase tracking-wider text-primary">Próximo logro</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-white border border-primary/30 flex items-center justify-center shrink-0">
+            <div className="h-12 w-12 rounded-xl bg-white dark:bg-[var(--color-card)] border border-primary/30 flex items-center justify-center shrink-0">
               <NextIcon className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[var(--text-primary)]">{nextAchievement.def.name}</p>
               <p className="text-xs text-[var(--text-tertiary)] mb-2">{nextAchievement.def.desc}</p>
-              <div className="h-2 rounded-full bg-white overflow-hidden">
+              <div className="h-2 rounded-full bg-white dark:bg-[var(--color-card)] overflow-hidden">
                 <div
                   className="h-full rounded-full bg-primary transition-all duration-[var(--dur-slow)]"
                   style={{ width: `${Math.min(100, nextAchievement.pct)}%` }}
@@ -940,7 +940,7 @@ function LogrosTab() {
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
               filter === p.id
                 ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             )}
           >
             {p.label}
@@ -961,7 +961,7 @@ function LogrosTab() {
             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
             activeCategory === "all"
               ? "bg-primary/10 text-primary border-primary/30"
-              : "bg-white text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
+              : "bg-white dark:bg-[var(--color-card)] text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
           )}
         >
           Todas las categorías
@@ -974,7 +974,7 @@ function LogrosTab() {
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
               activeCategory === cat
                 ? "bg-primary/10 text-primary border-primary/30"
-                : "bg-white text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
+                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
             )}
           >
             {CATEGORY_LABELS[cat]}
@@ -986,7 +986,7 @@ function LogrosTab() {
       <div className="relative">
         {showConfetti && <Confetti />}
         {visible.length === 0 ? (
-          <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
+          <div className="bg-white dark:bg-[var(--color-card)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
             <Trophy className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
             <p className="text-[var(--text-secondary)] font-semibold">No hay logros en este filtro</p>
           </div>
@@ -1002,7 +1002,7 @@ function LogrosTab() {
                   className={cn(
                     "relative rounded-xl border p-4 flex flex-col items-center text-center gap-2 transition-all duration-[var(--dur-base)]",
                     isUnlocked
-                      ? "border-[var(--data-warning-500)]/40 bg-white elev-1"
+                      ? "border-[var(--data-warning-500)]/40 bg-white dark:bg-[var(--color-card)] elev-1"
                       : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
                   )}
                 >
@@ -1032,7 +1032,7 @@ function LogrosTab() {
                     </span>
                   ) : progress ? (
                     <div className="w-full mt-1 relative z-[1]">
-                      <div className="h-1.5 rounded-full bg-white overflow-hidden">
+                      <div className="h-1.5 rounded-full bg-white dark:bg-[var(--color-card)] overflow-hidden">
                         <div className="h-full bg-primary transition-all duration-[var(--dur-slow)]" style={{ width: `${pct}%` }} />
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] mt-1 tabular-nums">

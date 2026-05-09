@@ -91,7 +91,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Pasillo A - Abarrotes"
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -104,7 +104,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             step={0.5}
             value={sqm}
             onChange={(e) => setSqm(Number(e.target.value))}
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -116,7 +116,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             min={0}
             value={revenue}
             onChange={(e) => setRevenue(Number(e.target.value))}
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div className="col-span-2">
@@ -208,7 +208,7 @@ export default function RevenuePerSquareMeter() {
   const bottomArea = ranked[ranked.length - 1];
 
   return (
-    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
+    <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
       <div className="p-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
         <div className="flex items-center gap-3">

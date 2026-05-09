@@ -118,8 +118,8 @@ function getQueues(): Map<string, BullQueue> | null {
     }
     logger.info("[queue] Queues initialized", { queues: Object.values(QUEUE_NAMES) });
     return _queues;
-  } catch {
-    logger.warn("[queue] bullmq not available — falling back to fire-and-forget");
+  } catch (e) {
+    logger.warn("[queue] bullmq not available — falling back to fire-and-forget", { err: e instanceof Error ? e.message : String(e) });
     return null;
   }
 }

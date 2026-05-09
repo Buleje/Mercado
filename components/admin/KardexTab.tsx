@@ -288,7 +288,7 @@ export default function KardexTab() {
         </div>
         <button
           onClick={() => exportToCSV(lines.map((line) => ({ fecha: line.date, tipo: TYPE_META[line.type]?.label || line.type, referencia: line.reference, descripcion: line.description, entrada: line.qtyIn || "", salida: line.qtyOut || "", saldo: line.balance, costo_unit: line.costUnit, costo_total: line.totalCost, almacen: line.warehouse })), `kardex-${product.name}`)}
-          className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+          className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
         >
           <Download className="h-4 w-4" /> Descargar movimientos
         </button>
@@ -311,7 +311,7 @@ export default function KardexTab() {
                 setDropdownOpen(true);
                 setTimeout(() => productInputRef.current?.focus(), 0);
               }}
-              className="shrink-0 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
+              className="shrink-0 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
             >
               Cambiar
             </button>
@@ -332,7 +332,7 @@ export default function KardexTab() {
               }}
               onFocus={() => setDropdownOpen(true)}
               placeholder="Buscar producto..."
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2.5 pl-9 pr-10 text-sm text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-card-border dark:bg-surface dark:text-foreground dark:focus:border-primary"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] py-2.5 pl-9 pr-10 text-sm text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-card-border dark:bg-surface dark:text-foreground dark:focus:border-primary"
             />
             <ChevronDown className={cn("absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)] transition-transform", dropdownOpen && "rotate-180")} />
           </div>
@@ -384,23 +384,23 @@ export default function KardexTab() {
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar ref. o descripcion..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar ref. o descripcion..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
         </div>
-        <select value={filterType} onChange={(event) => setFilterType(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground">
+        <select value={filterType} onChange={(event) => setFilterType(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground">
           <option value="todos">Todos los tipos</option>
           {Object.keys(TYPE_META).map((type) => (
             <option key={type} value={type}>{TYPE_META[type].label}</option>
           ))}
         </select>
         {warehouses.length > 0 && (
-          <select value={filterWarehouse} onChange={(event) => setFilterWarehouse(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground">
+          <select value={filterWarehouse} onChange={(event) => setFilterWarehouse(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground">
             <option value="todos">Todos los almacenes</option>
             {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             <option value="sin-almacen">Sin almacén asignado</option>
           </select>
         )}
-        <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
-        <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
+        <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
+        <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] dark:border-card-border dark:bg-surface dark:text-foreground" />
       </div>
 
       <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-card-border dark:bg-card">

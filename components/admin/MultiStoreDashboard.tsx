@@ -374,7 +374,7 @@ export default function MultiStoreDashboard() {
                   "px-3 py-1.5 text-xs font-medium transition-colors first:rounded-l-lg last:rounded-r-lg",
                   period === key
                     ? "bg-primary text-white"
-                    : "bg-white text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
+                    : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] dark:text-[var(--text-tertiary)] dark:hover:bg-gray-800"
                 )}
               >
                 {label}
@@ -385,7 +385,7 @@ export default function MultiStoreDashboard() {
           <button
             type="button"
             onClick={() => fetchStores(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:text-primary dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-[var(--text-tertiary)]"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:text-primary dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-[var(--text-tertiary)]"
             title="Actualizar"
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />

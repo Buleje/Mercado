@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import {
   Target,
   Clock,
@@ -21,13 +22,16 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "@buleje/design-system/icons";
-import {
-  PolarAngleAxis,
-  RadialBar,
-  RadialBarChart,
-  ResponsiveContainer,
-} from "recharts";
 import { cn } from "@/lib/utils";
+
+const BreakEvenGauge = dynamic(() => import("./BreakEvenGauge"), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="h-40 w-40 animate-pulse rounded-full bg-[var(--color-muted)]" />
+    </div>
+  ),
+});
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 const fmt = (n: number) =>
@@ -125,19 +129,6 @@ export default function BreakEvenDashboard() {
     };
   }, [sales, expenses]);
 
-  // Datos para RadialBarChart (gauge)
-  const gaugeData = [
-    {
-      name: "Progreso",
-      value: stats.progress,
-      fill: stats.reached
-        ? "var(--data-success)"
-        : stats.progress > 60
-          ? "var(--data-warning)"
-          : "var(--data-error)",
-    },
-  ];
-
   return (
     <div className="space-y-3 sm:space-y-6">
       <AdminModuleHeader
@@ -176,54 +167,9 @@ export default function BreakEvenDashboard() {
           {/* HERO con gauge + 4 KPIs inline */}
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-7">
             <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 lg:gap-8 items-center">
-              {/* Gauge RadialBarChart */}
+              {/* Gauge RadialBarChart — lazy */}
               <div className="relative" style={{ height: 240 }}>
-                <ResponsiveContainer>
-                  <RadialBarChart
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="70%"
-                    outerRadius="100%"
-                    barSize={20}
-                    data={gaugeData}
-                    startAngle={210}
-                    endAngle={-30}
-                  >
-                    <PolarAngleAxis
-                      type="number"
-                      domain={[0, 100]}
-                      angleAxisId={0}
-                      tick={false}
-                    />
-                    <RadialBar
-                      background={{ fill: "var(--surface-sunken)" }}
-                      dataKey="value"
-                      cornerRadius={10}
-                      isAnimationActive
-                    />
-                  </RadialBarChart>
-                </ResponsiveContainer>
-                {/* Centro del gauge */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                    Progreso
-                  </p>
-                  <p
-                    className={cn(
-                      "text-4xl font-extrabold tabular-nums tracking-tight leading-none mt-1",
-                      stats.reached
-                        ? "text-[var(--data-success-500)]"
-                        : stats.progress > 60
-                          ? "text-[var(--data-warning-500)]"
-                          : "text-[var(--data-error-500)]",
-                    )}
-                  >
-                    {Number(stats.progress).toFixed(0)}%
-                  </p>
-                  <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-1">
-                    {stats.reached ? "Punto alcanzado" : "Hacia la meta"}
-                  </p>
-                </div>
+                <BreakEvenGauge progress={stats.progress} reached={stats.reached} />
               </div>
 
               {/* 4 KPIs */}

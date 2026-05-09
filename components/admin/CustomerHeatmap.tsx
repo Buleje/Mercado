@@ -125,19 +125,19 @@ export default function CustomerHeatmap() {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
           <p className="text-2xl font-bold text-primary">{total}</p>
           <p className="text-xs text-[var(--text-secondary)]">
             Total clientes
           </p>
         </div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
           <p className="text-2xl font-bold text-primary">
             {zones.filter((z) => z.zone !== "Sin ubicacion").length}
           </p>
           <p className="text-xs text-[var(--text-secondary)]">Zonas</p>
         </div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
           <p className="text-2xl font-bold text-primary">
             {zones.find((z) => z.zone === "Sin ubicacion")?.count ?? 0}
           </p>
@@ -156,7 +156,7 @@ export default function CustomerHeatmap() {
         </div>
       ) : (
         /* Horizontal bar chart */
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
           <CardTitle className="mb-4 text-sm font-semibold text-[var(--text-primary)]">
             Clientes por zona
           </CardTitle>
@@ -215,7 +215,7 @@ export default function CustomerHeatmap() {
                         {z.customers.map((name, i) => (
                           <span
                             key={i}
-                            className="rounded-full bg-white px-2.5 py-0.5 text-xs text-[var(--text-primary)] "
+                            className="rounded-full bg-white dark:bg-[var(--color-card)] px-2.5 py-0.5 text-xs text-[var(--text-primary)] "
                           >
                             {name}
                           </span>

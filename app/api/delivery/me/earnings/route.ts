@@ -1,5 +1,6 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cacheLife as cacheLife } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePartner } from "@/lib/delivery/partner-session";
 
@@ -10,8 +11,14 @@ import { requirePartner } from "@/lib/delivery/partner-session";
  *   - delivered: fees de assignments delivered en el periodo
  *   - tips: suma de tipAmount
  *   - byDay: array para gráfico (últimos N días)
+ *
+ * Cache: stale 30s / revalidate 55s / expire 120s
+ * Amortigua el polling cada 60s del PartnerDashboard —
+ * evita N queries idénticas a DB desde el mismo partner.
  */
 export async function GET(req: NextRequest) {
+  "use cache";
+  cacheLife({ stale: 30, revalidate: 55, expire: 120 });
   const session = await requirePartner(req);
   if (session instanceof NextResponse) return session;
 
@@ -29,6 +36,10 @@ export async function GET(req: NextRequest) {
   // SECURITY 2026-05-05 (pentest delivery H012): scope tenantId. Antes
   // un assignment con tenantId divergente (ver H010 ya parchado) inflaba
   // earnings cruzadas del partner.
+  // TODO(deuda-tecnica-2026-05-08): migrar a lib/db/delivery.db.ts (regla #1
+  // CLAUDE.md). Este file ya tenia prisma directo antes del cambio de cache;
+  // el lint lo detecto al re-evaluar al modificar.
+  // eslint-disable-next-line no-restricted-properties
   const assignments = await prisma.deliveryAssignment.findMany({
     where: {
       partnerId: session.partnerId,

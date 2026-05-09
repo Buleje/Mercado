@@ -125,7 +125,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowPago(false)}
             >
-              <div className="w-full max-w-sm bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Registrar Pago</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)]">
                   Saldo pendiente: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(selected.saldo)}</span>
@@ -142,7 +142,7 @@ export default function FiadoModals({
                       value={pagoMonto}
                       onChange={e => setPagoMonto(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
                   <div>
@@ -152,7 +152,7 @@ export default function FiadoModals({
                       value={pagoNotas}
                       onChange={e => setPagoNotas(e.target.value)}
                       placeholder="Ej: Pagó con Yape"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
                 </div>
@@ -185,7 +185,7 @@ export default function FiadoModals({
 
       {/* Mejora 3: Cobro masivo sticky bar */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[var(--rule-base)] px-4 py-3">
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-4 py-3">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="text-sm font-bold text-[var(--text-primary)]">
@@ -234,7 +234,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowCobroMasivo(false)}
             >
-              <div className="w-full max-w-md bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="w-full max-w-md bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cobro Masivo</CardTitle>
                   <button onClick={() => setShowCobroMasivo(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -266,7 +266,7 @@ export default function FiadoModals({
                     value={cobroMonto}
                     onChange={e => setCobroMonto(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
 
@@ -333,7 +333,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowRecibo(false)}
             >
-              <div className="w-full max-w-sm bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4 print:shadow-none print:border-0">
+              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 print:shadow-none print:border-0">
                 {/* Mejora 18 (ronda 3): Recibo imprimible mejorado */}
                 <div className="text-center print:mb-2">
                   <div className="h-12 w-12 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-2 print:hidden">
@@ -440,7 +440,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowCompromiso(false)}
             >
-              <div id="compromiso-printable" className="w-full max-w-md bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
+              <div id="compromiso-printable" className="w-full max-w-md bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
                 <div className="flex items-center justify-between print:hidden">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <PenTool className="h-5 w-5 text-primary" /> Compromiso de Pago
@@ -459,7 +459,7 @@ export default function FiadoModals({
                       step="0.01"
                       value={compromisoMonto}
                       onChange={e => setCompromisoMonto(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
                   <div>
@@ -468,7 +468,7 @@ export default function FiadoModals({
                       type="date"
                       value={compromisoFecha}
                       onChange={e => setCompromisoFecha(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
                   <div>
@@ -477,7 +477,7 @@ export default function FiadoModals({
                       ref={firmaCanvasRef}
                       width={300}
                       height={150}
-                      className="w-full border-2 border-dashed border-[var(--rule-base)] rounded-xl bg-white cursor-crosshair touch-none"
+                      className="w-full border-2 border-dashed border-[var(--rule-base)] rounded-xl bg-white dark:bg-[var(--color-card)] cursor-crosshair touch-none"
                       onMouseDown={e => {
                         setIsDrawing(true);
                         const canvas = firmaCanvasRef.current;
@@ -639,7 +639,7 @@ export default function FiadoModals({
               className="fixed inset-0 z-[70] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowDebtorsMap(false)}
             >
-              <div className="w-full max-w-lg bg-white border border-[var(--rule-base)] rounded-xl max-h-[85vh] flex flex-col">
+              <div className="w-full max-w-lg bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl max-h-[85vh] flex flex-col">
                 <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" /> Mapa de deudores

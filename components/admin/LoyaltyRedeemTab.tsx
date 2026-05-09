@@ -183,7 +183,7 @@ export default function LoyaltyRedeemTab() {
       )}
 
       {/* Buscador de cliente */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
         <CardTitle className="mb-4 flex items-center gap-2 font-semibold text-[var(--text-primary)]">
           <Search className="h-5 w-5 text-primary" />
           Buscar cliente
@@ -270,7 +270,7 @@ export default function LoyaltyRedeemTab() {
                     "flex flex-col gap-3 rounded-xl border p-5 transition",
                     hasEnough
                       ? "border-primary/30 bg-[var(--accent-soft)]"
-                      : "border-[var(--rule-base)] bg-white",
+                      : "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]",
                   )}
                 >
                   <div className="text-3xl">{reward.icon}</div>
@@ -327,7 +327,7 @@ export default function LoyaltyRedeemTab() {
             {history.map((h, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 bg-white px-4 py-3"
+                className="flex items-center gap-3 bg-white dark:bg-[var(--color-card)] px-4 py-3"
               >
                 <span className="text-2xl">{h.rewardIcon}</span>
                 <div className="min-w-0 flex-1">

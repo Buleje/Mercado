@@ -258,7 +258,7 @@ function FiadoTendenciaCobro() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-[200px] bg-gray-100 rounded-xl" />
       </div>
     );
@@ -266,7 +266,7 @@ function FiadoTendenciaCobro() {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
         <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Sin datos de fiados para mostrar grafica</p>
       </div>
     );
@@ -275,7 +275,7 @@ function FiadoTendenciaCobro() {
   const lastNeto = chartData[chartData.length - 1]?.neto ?? 0;
 
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-bold text-[var(--text-secondary)]">Tendencia de Cobro</p>
         <StatusBadge
@@ -968,7 +968,7 @@ export default function FiadosModule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar fiado o cliente..."
-            className="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-[var(--rule-base)] bg-white focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+            className="w-full h-10 pl-10 pr-4 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
           />
         </div>
 
@@ -981,7 +981,7 @@ export default function FiadosModule() {
                 "inline-flex items-center rounded-md px-2.5 py-1.5 text-xs font-semibold border transition-colors",
                 statusFilter === f.key
                   ? "bg-primary text-white border-primary"
-                  : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-white hover:border-primary/40 hover:text-primary"
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-white dark:bg-[var(--color-card)] hover:border-primary/40 hover:text-primary"
               )}
             >
               {f.label}
@@ -1011,7 +1011,7 @@ export default function FiadosModule() {
         </span>
 
         <AdminTooltip content="Recargar la lista de fiados">
-          <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg border border-[var(--rule-base)] bg-white hover:bg-[var(--surface-sunken)] transition-colors">
+          <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-sunken)] transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
           </button>
         </AdminTooltip>
@@ -1054,7 +1054,7 @@ export default function FiadosModule() {
       </div>}
 
       {/* Table — UX Mejora 18: Sticky header + Mejora 19: Sortable columns */}
-      {<div className={cn("bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
+      {<div className={cn("bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -1074,7 +1074,7 @@ export default function FiadosModule() {
           <>
             <div className="max-h-[65vh] overflow-y-auto overflow-x-auto -mx-4 sm:mx-0">
               <table className="w-full min-w-[700px] sm:min-w-0 text-sm">
-                <thead className="sticky top-0 bg-white z-10 shadow-[var(--shadow-sm)]">
+                <thead className="sticky top-0 bg-white dark:bg-[var(--color-card)] z-10 shadow-[var(--shadow-sm)]">
                   <tr className="border-b border-[var(--rule-soft)] text-left">
                     <th className="px-2 py-3 w-8">
                       <span className="sr-only">Seleccionar</span>
@@ -1224,7 +1224,7 @@ export default function FiadosModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className={cn("fixed inset-y-0 right-0 z-50 w-full bg-white border-l border-[var(--rule-base)] overflow-y-auto transition-all duration-[var(--dur-base)]", isPanelWide ? "max-w-[500px]" : "max-w-md")}
+              className={cn("fixed inset-y-0 right-0 z-50 w-full bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto transition-all duration-[var(--dur-base)]", isPanelWide ? "max-w-[500px]" : "max-w-md")}
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Sheet header — UX Mejora 16: Width toggle */}

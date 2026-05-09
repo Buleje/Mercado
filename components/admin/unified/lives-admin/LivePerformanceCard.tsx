@@ -47,7 +47,7 @@ export function LivePerformanceCard({ live, onClick }: Props) {
     <button
       onClick={onClick}
       className={cn(
-        "w-full text-left bg-white border border-gray-200 rounded-2xl p-4 shadow-sm",
+        "w-full text-left bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl p-4 shadow-sm",
         onClick && "hover:border-primary/40 hover:shadow-md transition-all"
       )}
     >

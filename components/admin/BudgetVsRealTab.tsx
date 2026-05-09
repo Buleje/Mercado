@@ -450,7 +450,7 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* ── 1. Configurador de metas mensuales ── */}
-      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4">
         <div className="flex items-center gap-2 mb-3">
           <Target className="h-4 w-4 text-primary" />
           <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
@@ -468,7 +468,7 @@ export default function BudgetVsRealTab() {
               value={formSalesGoal}
               onChange={(e) => setFormSalesGoal(e.target.value)}
               placeholder="Ej: 15000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
           </div>
           <div>
@@ -481,7 +481,7 @@ export default function BudgetVsRealTab() {
               value={formExpensesGoal}
               onChange={(e) => setFormExpensesGoal(e.target.value)}
               placeholder="Ej: 8000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
           </div>
         </div>
@@ -503,7 +503,7 @@ export default function BudgetVsRealTab() {
       {(budgetConfig.salesGoal > 0 || budgetConfig.expensesGoal > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {budgetConfig.salesGoal > 0 && (
-            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+            <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4">
               <ProgressBar
                 label="Ventas del mes"
                 current={currentMonthSales}
@@ -513,7 +513,7 @@ export default function BudgetVsRealTab() {
             </div>
           )}
           {budgetConfig.expensesGoal > 0 && (
-            <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+            <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4">
               <ProgressBar
                 label="Gastos del mes"
                 current={currentMonthExpenses}
@@ -527,7 +527,7 @@ export default function BudgetVsRealTab() {
 
       {/* ── 4. Proyección fin de mes ── */}
       {(currentMonthSales > 0 || currentMonthExpenses > 0) && (
-        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">
             Proyeccion al {totalDays} de {monthName}
           </CardTitle>
@@ -583,20 +583,20 @@ export default function BudgetVsRealTab() {
 
       {/* KPIs de gastos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4">
           <p className="text-xs text-[var(--text-secondary)] font-semibold">Total presupuestado</p>
           <p className="text-xl font-extrabold text-[var(--text-primary)] mt-1">
             {fmt(totals.budgeted)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4">
           <p className="text-xs text-[var(--text-secondary)] font-semibold">Total ejecutado</p>
           <p className="text-xl font-extrabold text-[var(--text-primary)] mt-1">
             {fmt(totals.actual)}
           </p>
         </div>
         <div className={cn(
-          "bg-white rounded-xl border p-4",
+          "bg-white dark:bg-[var(--color-card)] rounded-xl border p-4",
           totals.variance > 0 ? "border-[var(--data-error-500)]" : "border-[var(--data-success-500)]/30"
         )}>
           <p className="text-xs text-[var(--text-secondary)] font-semibold">Desviación gastos</p>
@@ -607,7 +607,7 @@ export default function BudgetVsRealTab() {
             {fmtPct(totals.pct)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4">
           <p className="text-xs text-[var(--text-secondary)] font-semibold">Alertas</p>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-[var(--data-error-500)] font-extrabold text-lg">{overBudgetCount}</span>
@@ -619,7 +619,7 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* ── 3. Gráfico de barras por categoría principal ── */}
-      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-4">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">
           Ventas · Gastos · Ganancia · Por departamento
         </CardTitle>
@@ -639,12 +639,12 @@ export default function BudgetVsRealTab() {
           placeholder="Buscar categoría..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
+          className="px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
         />
         <select
           value={effectiveMonthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
+          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
         >
           <option value="all">Todos los meses</option>
           {MONTHS.filter((m) => m !== "all").map((m) => (
@@ -654,7 +654,7 @@ export default function BudgetVsRealTab() {
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
+          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
         >
           <option value="all">Todos los dptos</option>
           {DEPARTMENTS.map((d) => (
@@ -687,7 +687,7 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* Tabla de detalle por categoría */}
-      <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>

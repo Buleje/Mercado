@@ -99,10 +99,10 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
+        <div className="sticky top-0 bg-white dark:bg-[var(--color-card)] flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center">
               <Radio className="h-4 w-4" />

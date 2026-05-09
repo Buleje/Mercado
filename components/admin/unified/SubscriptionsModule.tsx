@@ -268,7 +268,7 @@ function SubscriptionList({
           <p className="text-xs mt-1">Los clientes que contraten Bodega al Mes aparecerán aquí.</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -367,7 +367,7 @@ function PlansTab({ plans }: { plans: PlanCatalog[] }) {
         {plans.map((p) => (
           <div
             key={p.id}
-            className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm"
+            className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl p-5 shadow-sm"
           >
             <div className="flex items-center justify-between mb-3">
               <CardTitle className="font-extrabold text-[var(--text-primary)] text-lg">{p.label}</CardTitle>

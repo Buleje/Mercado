@@ -7,9 +7,11 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { toNumOrZero } from "@/lib/decimal-utils";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/marketplace/analytics
@@ -21,10 +23,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req, ["admin", "manager", "owner"]);
     if (auth instanceof NextResponse) return auth;
 
-    const store = await prisma.store.findFirst({
-      where: { tenantId: auth.tenantId },
-      select: { id: true, name: true, slug: true, rating: true, reviewCount: true, createdAt: true },
-    });
+    const store = await MarketplacePublicDB.getVendorStore(auth.tenantId);
 
     if (!store) {
       return NextResponse.json({
@@ -48,7 +47,7 @@ export async function GET(req: NextRequest) {
     const weekStart = new Date(todayStart);
     weekStart.setDate(weekStart.getDate() - 7);
 
-    // Run all queries in parallel
+    // Run all queries in parallel via DB class
     const [
       todayOrders,
       monthOrders,
@@ -64,103 +63,12 @@ export async function GET(req: NextRequest) {
       dailySales,
       allChannelToday,
       allChannelMonth,
-    ] = await Promise.all([
-      // Today's orders
-      prisma.order.aggregate({
-        where: { tenantId: auth.tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: todayStart } },
-        _count: true,
-        _sum: { total: true },
-      }),
-      // This month's orders
-      prisma.order.aggregate({
-        where: { tenantId: auth.tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: monthStart } },
-        _count: true,
-        _sum: { total: true },
-      }),
-      // Previous month's orders (for comparison)
-      prisma.order.aggregate({
-        where: { tenantId: auth.tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: prevMonthStart, lt: monthStart } },
-        _count: true,
-        _sum: { total: true },
-      }),
-      // Last 7 days orders
-      prisma.order.aggregate({
-        where: { tenantId: auth.tenantId, source: "marketplace", deletedAt: null, createdAt: { gte: weekStart } },
-        _count: true,
-        _sum: { total: true },
-      }),
-      // Published products
-      prisma.storeProduct.count({ where: { storeId: store.id, isActive: true } }),
-      // Total products
-      prisma.storeProduct.count({ where: { storeId: store.id } }),
-      // Low stock products (stock <= 5)
-      prisma.storeProduct.count({
-        where: {
-          storeId: store.id,
-          isActive: true,
-          product: { stock: { lte: 5 } },
-        },
-      }),
-      // Pending orders (pendiente status)
-      prisma.order.count({
-        where: { tenantId: auth.tenantId, source: "marketplace", deletedAt: null, status: "pendiente" },
-      }),
-      // Pending reviews
-      prisma.review.count({ where: { storeId: store.id, status: "pending" } }),
-      // Top 5 products by orders
-      prisma.orderItem.groupBy({
-        by: ["name"],
-        where: {
-          order: {
-            tenantId: auth.tenantId,
-            source: "marketplace",
-            deletedAt: null,
-            createdAt: { gte: monthStart },
-          },
-        },
-        _sum: { quantity: true, price: true },
-        orderBy: { _sum: { price: "desc" } },
-        take: 5,
-      }),
-      // Recent 5 orders
-      prisma.order.findMany({
-        where: { tenantId: auth.tenantId, source: "marketplace", deletedAt: null },
-        select: {
-          id: true,
-          customerName: true,
-          total: true,
-          status: true,
-          createdAt: true,
-          _count: { select: { items: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      }),
-      // Daily sales last 7 days
-      prisma.order.groupBy({
-        by: ["createdAt"],
-        where: {
-          tenantId: auth.tenantId,
-          source: "marketplace",
-          deletedAt: null,
-          createdAt: { gte: weekStart },
-        },
-        _sum: { total: true },
-        _count: true,
-      }),
-      // All-channel today (marketplace + direct + POS)
-      prisma.order.aggregate({
-        where: { tenantId: auth.tenantId, deletedAt: null, createdAt: { gte: todayStart } },
-        _count: true,
-        _sum: { total: true },
-      }),
-      // All-channel this month
-      prisma.order.aggregate({
-        where: { tenantId: auth.tenantId, deletedAt: null, createdAt: { gte: monthStart } },
-        _count: true,
-        _sum: { total: true },
-      }),
-    ]);
+    ] = await MarketplacePublicDB.getVendorAnalytics(auth.tenantId, store.id, {
+      todayStart,
+      monthStart,
+      prevMonthStart,
+      weekStart,
+    });
 
     // Aggregate daily sales into day buckets
     const salesByDay: Record<string, { revenue: number; orders: number }> = {};

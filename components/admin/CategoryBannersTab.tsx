@@ -290,7 +290,7 @@ export default function CategoryBannersTab({
                         <p className="text-sm text-white/85 mt-1 line-clamp-2">{banner.subtitle || "Hasta 20% OFF en productos seleccionados"}</p>
                         <button
                           type="button"
-                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-white text-primary text-xs font-bold shadow-lg pointer-events-none"
+                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-white dark:bg-[var(--color-card)] text-primary text-xs font-bold shadow-lg pointer-events-none"
                         >
                           {banner.ctaText || `Ver ${cat.label}`}
                           <ArrowRight className="h-3.5 w-3.5" />

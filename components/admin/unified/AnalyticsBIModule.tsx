@@ -76,7 +76,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }) {
   return (
     <div className={cn(
-      "bg-white rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
+      "bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-5">
@@ -170,7 +170,7 @@ function InlineKPIStrip() {
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2.5  text-center"
+          className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2.5  text-center"
         >
           <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
           <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
@@ -227,7 +227,7 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {items.map((item) => (
-        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-white px-3 py-2  text-center">
+        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2  text-center">
           <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
           <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
@@ -247,7 +247,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   return (
     <div className={cn(
-      "bg-white rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
+      "bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-4">
@@ -448,7 +448,7 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
     <div className="rounded-xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-base)]">
       <div className="flex items-start gap-3">
         {star.imageUrl && (
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-[var(--rule-base)]">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-[var(--color-card)] shrink-0 border border-[var(--rule-base)]">
             <Image src={star.imageUrl} alt={star.name} fill className="object-cover" sizes="64px" />
           </div>
         )}

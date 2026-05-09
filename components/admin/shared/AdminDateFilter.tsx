@@ -62,7 +62,7 @@ export default function AdminDateFilter({
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
               value === p.id && !showCustom
-                ? "bg-white text-[var(--text-primary)] "
+                ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] "
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-50",
             )}
           >
@@ -74,7 +74,7 @@ export default function AdminDateFilter({
           className={cn(
             "px-2 py-1.5 rounded-md text-xs font-medium transition-all",
             showCustom
-              ? "bg-white text-[var(--text-primary)] "
+              ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] "
               : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-50",
           )}
           title="Rango personalizado"

@@ -140,7 +140,7 @@ function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) 
         >
           <span
             className={cn(
-              "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform",
+              "absolute top-0.5 left-0.5 w-5 h-5 bg-white dark:bg-[var(--color-card)] rounded-full shadow transition-transform",
               enabled && "translate-x-5"
             )}
           />

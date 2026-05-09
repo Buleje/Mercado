@@ -118,7 +118,7 @@ export function AdminTopHeader({
       ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_100%)] border-[color-mix(in_oklab,var(--accent)_30%,transparent)] text-white/80"
       : theming.theme === "dark"
         ? "bg-zinc-950 border-white/[0.06] text-zinc-300"
-        : "bg-white border-[var(--rule-base)] text-[var(--text-primary)]"
+        : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] text-[var(--text-primary)]"
     : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border";
 
   return (

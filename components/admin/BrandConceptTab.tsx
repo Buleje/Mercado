@@ -793,7 +793,7 @@ function ConceptCard({
         type="button"
         onClick={onApply}
         aria-pressed={isActive}
-        className={cn("relative w-full text-left", c.darkMode ? "bg-gray-950" : "bg-white")}
+        className={cn("relative w-full text-left", c.darkMode ? "bg-gray-950" : "bg-white dark:bg-[var(--color-card)]")}
       >
         {/* Navbar */}
         <div
@@ -899,7 +899,7 @@ function ConceptCard({
               className={cn(
                 "p-1.5 flex flex-col gap-1",
                 c.cardStyle === "minimal" && (c.darkMode ? "bg-gray-900" : "bg-gray-50"),
-                c.cardStyle === "shadow" && (c.darkMode ? "bg-gray-900 shadow-lg" : "bg-white shadow-md"),
+                c.cardStyle === "shadow" && (c.darkMode ? "bg-gray-900 shadow-lg" : "bg-white dark:bg-[var(--color-card)] shadow-md"),
                 c.cardStyle === "border" && "bg-transparent border-2",
                 c.cardStyle === "glass" && (c.darkMode ? "bg-white/5 backdrop-blur" : "bg-white/70 backdrop-blur border border-white/40"),
               )}
@@ -963,7 +963,7 @@ function ConceptCard({
         </div>
 
         {isActive && (
-          <div className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white flex items-center justify-center shadow-lg ring-2 ring-primary">
+          <div className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white dark:bg-[var(--color-card)] flex items-center justify-center shadow-lg ring-2 ring-primary">
             <Check className="h-4 w-4 text-primary" />
           </div>
         )}

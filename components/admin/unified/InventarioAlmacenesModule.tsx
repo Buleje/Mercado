@@ -172,7 +172,7 @@ function CategoryTreemapView() {
       {treemapData.length === 0 ? (
         <p className="text-center text-[var(--text-tertiary)] py-8">No hay datos de inventario para mostrar</p>
       ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <ResponsiveContainer minWidth={0} width="100%" height={320}>
             <Treemap
               data={treemapData}
@@ -186,7 +186,7 @@ function CategoryTreemapView() {
                   const d = payload[0]?.payload as { name: string; size: number; count: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
+                    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
                       <p className="font-bold text-[var(--text-primary)] capitalize">{d.name}</p>
                       <p className="text-[var(--text-secondary)]">Valor: {formatCurrency(d.size, { decimals: 0 })}</p>
                       <p className="text-[var(--text-secondary)]">{d.count} productos</p>
@@ -359,7 +359,7 @@ function InventoryAnalyticsDashboard() {
       {/* ── 2. Distribucion por Categoria ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pie Chart */}
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-bold text-[var(--text-primary)]">Valor por Categoria</h4>
             <div className="flex items-center gap-2">
@@ -398,7 +398,7 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; value: number; count: number; units: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
+                    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
                       <p className="font-bold text-[var(--text-primary)] capitalize">{d.name}</p>
                       <p className="text-[var(--text-secondary)]">Valor: {formatCurrency(d.value, { decimals: 0 })}</p>
                       <p className="text-[var(--text-secondary)]">{d.count} productos | {d.units} unidades</p>
@@ -414,7 +414,7 @@ function InventoryAnalyticsDashboard() {
         </div>
 
         {/* Bar Chart */}
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-bold text-[var(--text-primary)]">Unidades por Categoria</h4>
             <FavStar id="unidades" favs={invFavs} />
@@ -436,7 +436,7 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; units: number; count: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
+                    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
                       <p className="font-bold capitalize">{d.name}</p>
                       <p className="text-[var(--text-secondary)]">{d.units} unidades en {d.count} productos</p>
                     </div>
@@ -454,7 +454,7 @@ function InventoryAnalyticsDashboard() {
       </div>
 
       {/* ── 3. Top 10 Productos por Valor ── */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-bold text-[var(--text-primary)]">Top 10 Productos por Valor en Stock</h4>
           <FavStar id="top10" favs={invFavs} />
@@ -470,7 +470,7 @@ function InventoryAnalyticsDashboard() {
                 const d = payload[0]?.payload as { fullName: string; value: number; units: number; unitCost: number } | undefined;
                 if (!d) return null;
                 return (
-                  <div className="bg-white border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
+                  <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
                     <p className="font-bold text-[var(--text-primary)]">{d.fullName}</p>
                     <p className="text-primary font-bold">{formatCurrency(d.value, { decimals: 0 })}</p>
                     <p className="text-[var(--text-secondary)]">{d.units} unid x S/ {Number(d.unitCost).toFixed(2)}</p>
@@ -493,7 +493,7 @@ function InventoryAnalyticsDashboard() {
       </div>
 
       {/* ── 4. Análisis de Rotacion ── */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center justify-between mb-1">
           <h4 className="text-sm font-bold text-[var(--text-primary)]">Análisis de Rotacion</h4>
           <FavStar id="rotacion" favs={invFavs} />
@@ -522,7 +522,7 @@ function InventoryAnalyticsDashboard() {
           .slice(0, 10);
 
         return rentables.length > 0 ? (
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
             <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Productos mas rentables</h4>
             <ResponsiveContainer minWidth={0} width="100%" height={300}>
               <BarChart data={rentables} layout="vertical" margin={{ left: 10, right: 30 }}>
@@ -541,7 +541,7 @@ function InventoryAnalyticsDashboard() {
                     const d = payload[0]?.payload as { fullName: string; margen: number; ganancia: number } | undefined;
                     if (!d) return null;
                     return (
-                      <div className="bg-white border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
+                      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
                         <p className="font-bold text-[var(--text-primary)]">{d.fullName}</p>
                         <p className="text-primary font-bold">Margen: {d.margen}%</p>
                       </div>
@@ -556,7 +556,7 @@ function InventoryAnalyticsDashboard() {
       })()}
 
       {/* ── 6. Prediccion de Agotamiento ── */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-bold text-[var(--text-primary)]">Prediccion de Agotamiento</h4>
           <FavStar id="agotamiento" favs={invFavs} />
@@ -604,7 +604,7 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; value: number; count: number; units: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
+                    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
                       <p className="font-bold capitalize">{d.name}</p>
                       <p className="text-[var(--text-secondary)]">Valor: {formatCurrency(d.value, { decimals: 0 })}</p>
                       <p className="text-[var(--text-secondary)]">{d.count} productos | {d.units} unidades</p>
@@ -725,7 +725,7 @@ export default function InventarioAlmacenesModule() {
         {/* Mejora 7: Price labels button */}
         <button
           onClick={() => { setShowPriceLabels(true); void loadLabelProducts(); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-semibold text-[var(--text-primary)] hover:bg-gray-50 transition-colors"
         >
           Imprimir etiquetas
         </button>
@@ -816,7 +816,7 @@ export default function InventarioAlmacenesModule() {
       {/* ── Demand Forecast Modal ── */}
       {forecastProductId !== null && (
         <div className="modal-backdrop p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <DemandForecast
               productId={forecastProductId}
               onClose={() => setForecastProductId(null)}
@@ -839,7 +839,7 @@ export default function InventarioAlmacenesModule() {
       {/* ── Mejora 7: Price Labels Modal ── */}
       {showPriceLabels && (
         <div className="modal-backdrop p-4" onClick={() => setShowPriceLabels(false)}>
-          <div className="bg-white rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <CardTitle className="font-bold text-[var(--text-primary)] text-sm">Imprimir Etiquetas de Precio</CardTitle>
               <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">

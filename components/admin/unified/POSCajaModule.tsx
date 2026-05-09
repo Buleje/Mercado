@@ -131,7 +131,7 @@ function ShiftCloseModal({
 
   return (
     <div className="modal-backdrop flex items-center justify-center p-4">
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl w-full max-w-md overflow-hidden">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="bg-primary px-6 py-4">
           <CardTitle className="text-lg font-extrabold text-white">Cerrar Turno</CardTitle>

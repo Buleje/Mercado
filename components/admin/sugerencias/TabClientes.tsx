@@ -110,7 +110,7 @@ export default function TabClientes() {
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Nombre o teléfono del cliente..."
-          className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-[var(--rule-base)] bg-white text-base font-medium text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)] focus:border-[var(--text-primary)]"
+          className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-base font-medium text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)] focus:border-[var(--text-primary)]"
         />
         {loadingSearch && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -121,7 +121,7 @@ export default function TabClientes() {
 
       {/* Resultados de búsqueda */}
       {results.length > 0 && (
-        <ul className="rounded-xl border border-[var(--rule-base)] bg-white overflow-hidden divide-y divide-[var(--rule-soft)]">
+        <ul className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] overflow-hidden divide-y divide-[var(--rule-soft)]">
           {results.map((c) => (
             <li key={String(c.id)}>
               <button
@@ -150,7 +150,7 @@ export default function TabClientes() {
       {selected && (
         <div className="space-y-4">
           {/* Cliente seleccionado */}
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--rule-base)] bg-white p-4">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
             <div className="flex items-center gap-3 min-w-0">
               <ProductImage name={selected.name} size="md" rounded="lg" />
               <div className="min-w-0">
@@ -194,7 +194,7 @@ export default function TabClientes() {
                 {recs.map((r) => (
                   <div
                     key={String(r.productId)}
-                    className="rounded-xl border border-[var(--rule-base)] bg-white p-4 flex items-center gap-3"
+                    className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4 flex items-center gap-3"
                   >
                     <ProductImage name={r.name} imageUrl={r.imageUrl ?? r.image} size="md" rounded="lg" />
                     <div className="flex-1 min-w-0">

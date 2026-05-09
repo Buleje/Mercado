@@ -18,6 +18,7 @@
 
 import { Prisma } from "@/lib/generated/prisma/client";
 import { calculateHash, buildHashData } from "./hash-chain";
+import { logger } from "@/lib/logger";
 
 /**
  * Tables that contain personal data subject to Ley 29733.
@@ -178,8 +179,11 @@ async function getPreviousHash(
         return parsed.hash;
       }
     }
-  } catch {
-    // If query fails, start a new chain segment
+  } catch (e) {
+    logger.error(
+      "getLatestHash failed — starting new chain segment",
+      { err: e instanceof Error ? e.message : String(e), op: "audit/getLatestHash", tenantId },
+    );
   }
 
   return "GENESIS";
@@ -263,8 +267,12 @@ export const complianceAuditExtension = Prisma.defineExtension({
               previousHash,
               hash,
             });
-          } catch {
+          } catch (e) {
             // Never let audit logging crash the application
+            logger.error(
+              "writeAuditEntry failed — audit entry lost",
+              { err: e instanceof Error ? e.message : String(e), op: "audit/writeAuditEntry" },
+            );
           }
 
           return result;

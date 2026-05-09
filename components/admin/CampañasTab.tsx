@@ -233,7 +233,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
           {/* Schedule */}
           <div className="flex flex-wrap items-center gap-3">
             <button onClick={() => setSchedule(!schedule)} className={cn("w-10 h-5 rounded-full transition-colors", schedule ? "bg-primary" : "bg-gray-300 dark:bg-gray-600")}>
-              <span className={cn("block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5", schedule ? "translate-x-5" : "translate-x-0")} />
+              <span className={cn("block w-4 h-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform mx-0.5", schedule ? "translate-x-5" : "translate-x-0")} />
             </button>
             <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Programar envío</span>
           </div>

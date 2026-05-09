@@ -101,11 +101,11 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-md h-full shadow-2xl overflow-y-auto"
+        className="bg-white dark:bg-[var(--color-card)] w-full max-w-md h-full shadow-2xl overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="sticky top-0 bg-white dark:bg-[var(--color-card)] z-10 flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--data-success-500)] text-white flex items-center justify-center font-bold">
               {member.name.charAt(0).toUpperCase()}
@@ -135,7 +135,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
           {/* Contacto */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Contacto</p>
-            <div className="bg-white border border-gray-200 rounded-xl p-3 space-y-1.5">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3 space-y-1.5">
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <span className="font-semibold text-[var(--text-primary)]">{member.phone}</span>
@@ -148,28 +148,28 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Wallet className="h-4 w-4 text-primary" />
                 <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Cashback</p>
               </div>
               <p className="text-xl font-extrabold text-primary">{fmt(member.totalCashback)}</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
                 <ShoppingBag className="h-4 w-4 text-[var(--data-info-500)]" />
                 <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Gastado</p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text-primary)]">{fmt(member.totalSpent)}</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Award className="h-4 w-4 text-[var(--data-warning-500)]" />
                 <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Ofertas usadas</p>
               </div>
               <p className="text-xl font-extrabold text-[var(--text-primary)]">{member.offersUsed}</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
                 <ShoppingBag className="h-4 w-4 text-[var(--data-info-500)]" />
                 <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Pedidos</p>
@@ -181,7 +181,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
           {/* Suscripción */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Suscripción</p>
-            <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl divide-y divide-gray-100">
               <div className="flex items-center justify-between px-3 py-2.5">
                 <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />

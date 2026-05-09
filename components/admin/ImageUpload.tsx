@@ -200,7 +200,7 @@ export default function ImageUpload({
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="bg-white/90 text-[var(--text-primary)] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-white transition-colors"
+              className="bg-white/90 text-[var(--text-primary)] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-white dark:bg-[var(--color-card)] transition-colors"
             >
               Cambiar
             </button>

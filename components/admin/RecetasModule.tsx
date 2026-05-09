@@ -111,7 +111,7 @@ function RecetasDashboard() {
           { label: "Costo promedio", value: `S/${costoPromedio.toFixed(2)}`, border: "border-b-4 border-[var(--rule-base)]0" },
           { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-[var(--data-success-500)]/30" },
         ].map(k => (
-          <div key={k.label} className={cn("bg-white rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
+          <div key={k.label} className={cn("bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
             <p className="text-xs text-[var(--text-secondary)] font-medium">{k.label}</p>
             <p className="text-2xl font-mono font-bold mt-1 text-[var(--text-primary)]">{k.value}</p>
           </div>
@@ -121,7 +121,7 @@ function RecetasDashboard() {
 
       {/* Lotes producidos por semana */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Lotes producidos por semana</CardTitle>
         {weeklyData.some(d => d.lotes > 0) ? (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -142,7 +142,7 @@ function RecetasDashboard() {
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* PieChart: recetas por categoria */}
-        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Recetas por tipo</CardTitle>
           {categoryData.length > 0 ? (
             <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -159,7 +159,7 @@ function RecetasDashboard() {
         </div>
 
         {/* Top 5 recetas más producidas */}
-        <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 5 recetas más producidas</CardTitle>
           {top5Recetas.length > 0 ? (
             <div className="space-y-3">
@@ -574,7 +574,7 @@ export default function RecetasModule() {
                       placeholder="Buscar receta..."
                       value={recetaSearch}
                       onChange={e => setRecetaSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                   <div className="flex gap-1">
@@ -590,7 +590,7 @@ export default function RecetasModule() {
                   <select
                     value={recetaSort}
                     onChange={e => setRecetaSort(e.target.value as typeof recetaSort)}
-                    className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                    className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                   >
                     <option value="nombre">Nombre A-Z</option>
                     <option value="costo-asc">Costo menor</option>
@@ -617,7 +617,7 @@ export default function RecetasModule() {
                         <div
                           key={r.id}
                           className={cn(
-                            "relative text-left bg-white border border-[var(--rule-base)] rounded-xl p-4  hover:shadow-lg hover:scale-[1.01] transition-all group",
+                            "relative text-left bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4  hover:shadow-lg hover:scale-[1.01] transition-all group",
                             !r.activa && "opacity-60"
                           )}
                         >
@@ -733,7 +733,7 @@ export default function RecetasModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white border-l border-[var(--rule-base)] overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
@@ -784,7 +784,7 @@ export default function RecetasModule() {
                         <p className="text-xs uppercase text-[var(--text-secondary)]">Indirectos</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoIndirectos)}</p>
                       </div>
-                      <div className="bg-white rounded-lg p-2 border border-[var(--data-success-500)]/30">
+                      <div className="bg-white dark:bg-[var(--color-card)] rounded-lg p-2 border border-[var(--data-success-500)]/30">
                         <p className="text-xs uppercase text-[var(--data-success-500)]">Total unitario</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoTotalUnitario)}</p>
                       </div>
@@ -951,9 +951,9 @@ export default function RecetasModule() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && resetNew()}
             >
-              <div className="w-full max-w-xl bg-white border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
+              <div className="w-full max-w-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div className="sticky top-0 z-10 bg-white dark:bg-[var(--color-card)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">
                     Nueva Receta — Paso {step}/3
                   </CardTitle>
@@ -980,7 +980,7 @@ export default function RecetasModule() {
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Ej: Pan de yuca"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
@@ -990,7 +990,7 @@ export default function RecetasModule() {
                         onChange={e => setNewDesc(e.target.value)}
                         placeholder="Proceso de preparación..."
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
                       />
                     </div>
                     <div>
@@ -1000,7 +1000,7 @@ export default function RecetasModule() {
                         value={newProductoId}
                         onChange={e => setNewProductoId(e.target.value)}
                         placeholder="ID del producto resultante"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   </div>
@@ -1030,7 +1030,7 @@ export default function RecetasModule() {
                             value={ing.productoId}
                             onChange={e => updateIngrediente(i, "productoId", e.target.value)}
                             placeholder="ID"
-                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
+                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
                         </div>
                         <div className="w-20">
@@ -1041,7 +1041,7 @@ export default function RecetasModule() {
                             value={ing.cantidad}
                             onChange={e => updateIngrediente(i, "cantidad", e.target.value)}
                             placeholder="0"
-                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
+                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
                         </div>
                         <div className="w-20">
@@ -1051,7 +1051,7 @@ export default function RecetasModule() {
                             value={ing.unidad}
                             onChange={e => updateIngrediente(i, "unidad", e.target.value)}
                             placeholder="kg"
-                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
+                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
                         </div>
                         <button
@@ -1081,7 +1081,7 @@ export default function RecetasModule() {
                 )}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   {step > 1 ? (
                     <button
                       onClick={() => setStep(s => s - 1)}
@@ -1141,7 +1141,7 @@ export default function RecetasModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowProducir(false)}
             >
-              <div className="w-full max-w-sm bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)]">
                   Receta: <span className="font-bold text-[var(--text-primary)]">{selected.nombre}</span>
@@ -1156,7 +1156,7 @@ export default function RecetasModule() {
                       value={producirCantidad}
                       onChange={e => setProducirCantidad(e.target.value)}
                       placeholder="Ej: 10"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
@@ -1249,7 +1249,7 @@ export default function RecetasModule() {
                       value={producirNotas}
                       onChange={e => setProducirNotas(e.target.value)}
                       placeholder="Observaciones..."
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                 </div>
@@ -1363,15 +1363,15 @@ function ProducciónTab() {
       {lotes.length > 0 && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Lotes este mes</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)]">{lotesEsteMes.length}</p>
             </div>
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Costo promedio</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(costoPromedio)}</p>
             </div>
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Unidades producidas</p>
               <p className="text-lg font-extrabold text-[#2563EB]">{unidadesProducidas}</p>
             </div>
@@ -1379,7 +1379,7 @@ function ProducciónTab() {
 
           {/* Grafica semanal */}
           {chartData.some(d => d.lotes > 0) && (
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 ">
               <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
                 <BarChart3 className="h-3.5 w-3.5" /> Producción semanal (ultimas 4 semanas)
               </h4>
@@ -1401,7 +1401,7 @@ function ProducciónTab() {
         </>
       )}
 
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
         {lotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <Layers className="h-8 w-8 text-[var(--text-tertiary)]" />

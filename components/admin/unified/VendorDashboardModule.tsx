@@ -97,7 +97,7 @@ function KPISkeleton() {
 
 function CardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6  space-y-3">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6  space-y-3">
       <div className="h-4 bg-gray-100 rounded w-1/3 animate-pulse" />
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />

@@ -60,7 +60,7 @@ function BarChart({
         return (
           <div key={i} className="group relative flex flex-1 flex-col items-center">
             {/* Tooltip */}
-            <div className="absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-center group-hover:block">
+            <div className="absolute -top-16 left-1/2 z-10 hidden -translate-x-1/2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-center group-hover:block">
               <p className="text-xs font-semibold text-[var(--text-primary)]">
                 {fmt(p.price)}
               </p>
@@ -174,7 +174,7 @@ export default function ProfitabilityCalculator() {
     <div className="flex flex-col gap-6">
       <div className="grid gap-6 md:grid-cols-2">
         {/* Inputs */}
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
           <div className="mb-4 flex items-center gap-2">
             <Calculator className="h-5 w-5 text-primary" />
             <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
@@ -285,7 +285,7 @@ export default function ProfitabilityCalculator() {
         </div>
 
         {/* Chart + optimal */}
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
           <div className="mb-4 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-secondary" />
             <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
@@ -354,7 +354,7 @@ export default function ProfitabilityCalculator() {
 
       {/* Simulation table */}
       {simPoints.length > 0 && currentPoint && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]">
           <div className="border-b border-[var(--rule-soft)] px-5 py-3">
             <p className="text-sm font-semibold text-[var(--text-primary)]">
               Tabla de simulación

@@ -66,7 +66,7 @@ export function AdminMarketplaceOverview() {
           { label: "Comisiones del mes", value: fmtS(data.commissions.month), sub: `${data.month.orders} órdenes`, color: "text-[var(--data-warning-500)]" },
           { label: "Pedidos pendientes", value: String(data.pendingOrders), sub: data.pendingOrders > 0 ? "¡Requieren atención!" : "Todo al día", color: data.pendingOrders > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]" },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3">
+          <div key={label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">{label}</p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{sub}</p>
@@ -76,7 +76,7 @@ export function AdminMarketplaceOverview() {
 
       {/* Top tiendas + Últimos pedidos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <h4 className="text-xs font-bold text-[var(--text-primary)] mb-3">Top tiendas este mes</h4>
           {data.topStores.length === 0 ? (
             <p className="text-xs text-[var(--text-tertiary)] text-center py-3">Sin datos</p>
@@ -98,7 +98,7 @@ export function AdminMarketplaceOverview() {
           )}
         </div>
 
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <h4 className="text-xs font-bold text-[var(--text-primary)] mb-3">Últimos pedidos marketplace</h4>
           {data.recentOrders.length === 0 ? (
             <p className="text-xs text-[var(--text-tertiary)] text-center py-3">Sin pedidos</p>
@@ -618,7 +618,7 @@ export default function DashboardTab() {
           { label: "Ticket promedio", value: fmtS(data.month.avgTicket), sub: data.month.revenueGrowth !== 0 ? `${data.month.revenueGrowth > 0 ? "+" : ""}${data.month.revenueGrowth}% vs mes anterior` : "Sin comparación", color: "text-[var(--text-secondary)]" },
           { label: "Reseñas", value: `★ ${data.store.rating.toFixed(1)}`, sub: `${data.store.reviewCount} opiniones`, color: "text-[var(--data-warning-500)]" },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4">
+          <div key={label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-4">
             <p className={cn("text-xl sm:text-2xl font-extrabold", color)}>{value}</p>
             <p className="text-xs sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{sub}</p>
@@ -662,7 +662,7 @@ export default function DashboardTab() {
       )}
 
       {/* Acciones rápidas */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Zap className="h-4 w-4 text-primary" />
           <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Qué hacer ahora</CardTitle>
@@ -692,7 +692,7 @@ export default function DashboardTab() {
       </div>
 
       {/* Gráfico de ventas 7 días */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Ventas últimos 7 días</CardTitle>
         <div className="flex items-end gap-1.5 h-32">
           {data.dailySales.map((day) => {
@@ -716,7 +716,7 @@ export default function DashboardTab() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Top productos */}
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Top 5 productos del mes</CardTitle>
           {data.topProducts.length === 0 ? (
             <p className="text-xs text-[var(--text-tertiary)] py-4 text-center">Sin ventas este mes</p>
@@ -737,7 +737,7 @@ export default function DashboardTab() {
         </div>
 
         {/* Últimos pedidos */}
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Últimos pedidos</CardTitle>
           {data.recentOrders.length === 0 ? (
             <p className="text-xs text-[var(--text-tertiary)] py-4 text-center">Sin pedidos aún</p>
@@ -776,15 +776,15 @@ export default function DashboardTab() {
 
       {/* Inventario rápido */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-xl font-extrabold text-primary">{data.products.published}</p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Publicados</p>
         </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-xl font-extrabold text-[var(--text-secondary)]">{data.products.total}</p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Total productos</p>
         </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className={cn("text-xl font-extrabold", data.products.lowStock > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>
             {data.products.lowStock}
           </p>

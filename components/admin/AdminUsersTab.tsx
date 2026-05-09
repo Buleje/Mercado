@@ -386,7 +386,7 @@ export default function AdminUsersTab() {
                   form.active ? "bg-[var(--accent-soft)]" : "bg-gray-300 dark:bg-surface"
                 )}
               >
-                <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform", form.active && "translate-x-6")} />
+                <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 bg-white dark:bg-[var(--color-card)] rounded-full shadow transition-transform", form.active && "translate-x-6")} />
               </button>
               <span className="text-sm text-[var(--text-secondary)] dark:text-muted ml-2">{form.active ? "Activo" : "Inactivo"}</span>
             </Field>

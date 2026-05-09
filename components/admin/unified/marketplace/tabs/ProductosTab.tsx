@@ -114,7 +114,7 @@ function InlineNumberCell({
         onBlur={commit}
         onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setDraft(String(value)); setEditing(false); } }}
         disabled={busy} aria-label={ariaLabel}
-        className="w-20 px-2 py-1 rounded-md border border-primary/40 bg-white text-sm text-right outline-none focus:ring-2 focus:ring-primary/30"
+        className="w-20 px-2 py-1 rounded-md border border-primary/40 bg-white dark:bg-[var(--color-card)] text-sm text-right outline-none focus:ring-2 focus:ring-primary/30"
       />
       {busy && <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
     </span>
@@ -301,7 +301,7 @@ export default function ProductosTab() {
                     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]"
                 )}>
                 {f.label}
-                <span className={cn("inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold", isActive ? "bg-white/20" : "bg-white")}>
+                <span className={cn("inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[length:var(--ts-2xs)] font-bold", isActive ? "bg-white/20" : "bg-white dark:bg-[var(--color-card)]")}>
                   {count}
                 </span>
               </button>
@@ -311,7 +311,7 @@ export default function ProductosTab() {
         <div className="sm:ml-auto relative">
           <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre, SKU o categoría…"
-            className="w-full sm:w-72 pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+            className="w-full sm:w-72 pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary" />
           <Eye className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
         </div>
       </div>
@@ -332,7 +332,7 @@ export default function ProductosTab() {
               <EyeOff className="h-3.5 w-3.5" /> Despublicar
             </button>
             <button onClick={() => setSelected(new Set())}
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[var(--text-secondary)] text-xs hover:bg-white">
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[var(--text-secondary)] text-xs hover:bg-white dark:bg-[var(--color-card)]">
               <X className="h-3.5 w-3.5" /> Limpiar
             </button>
           </div>

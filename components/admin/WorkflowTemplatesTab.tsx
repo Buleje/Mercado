@@ -205,7 +205,7 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
                 <p className="font-extrabold text-base">¡Flujo completado!</p>
                 <p className="text-[var(--data-success-500)] text-sm mt-0.5">Todos los pasos de &ldquo;{running.template.name}&rdquo; están listos.</p>
-                <button onClick={() => setRunning(null)} className="mt-3 px-5 py-2 rounded-lg bg-white text-[var(--data-success-500)] font-bold text-sm hover:bg-[var(--accent-soft)] transition-colors">
+                <button onClick={() => setRunning(null)} className="mt-3 px-5 py-2 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--data-success-500)] font-bold text-sm hover:bg-[var(--accent-soft)] transition-colors">
                   Cerrar
                 </button>
               </div>

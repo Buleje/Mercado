@@ -307,7 +307,7 @@ export default function TabHoy({ onTabChange }: Props) {
               onClick={() => onTabChange(c.tab)}
               disabled={loading}
               className={cn(
-                "group rounded-2xl border border-[var(--rule-base)] bg-white p-5 text-left transition-shadow hover:shadow-md disabled:opacity-50",
+                "group rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5 text-left transition-shadow hover:shadow-md disabled:opacity-50",
                 "flex flex-col gap-4",
               )}
               style={{ ["--card-accent" as string]: c.accent }}

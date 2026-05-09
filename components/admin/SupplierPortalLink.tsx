@@ -127,7 +127,7 @@ export default function SupplierPortalLink() {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
+    <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
       <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center gap-3">
@@ -198,7 +198,7 @@ export default function SupplierPortalLink() {
               {lowStock.map((item, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-[var(--rule-base)]"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)]"
                 >
                   <div>
                     <p className="text-sm font-semibold text-[var(--text-primary)]">
@@ -217,7 +217,7 @@ export default function SupplierPortalLink() {
                 </div>
               ))}
             </div>
-            <div className="mt-3 p-2 rounded-xl bg-white border border-[var(--rule-base)]">
+            <div className="mt-3 p-2 rounded-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)]">
               <p className="text-xs text-[var(--text-secondary)] mb-1">Formulario de cotizacion</p>
               <div className="h-8 rounded-lg bg-gray-100 animate-pulse" />
             </div>

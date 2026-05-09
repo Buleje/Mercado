@@ -37,6 +37,13 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Secrets scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # non-blocking inicial — convertir a blocking tras 1 semana de baseline limpio
+        continue-on-error: true
+
       - name: Lint
         run: npm run lint
 

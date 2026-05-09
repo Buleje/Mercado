@@ -237,7 +237,7 @@ export default function SmartPurchaseAdvisor() {
   }, [advised]);
 
   return (
-    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
+    <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
       <div className="p-5 border-b border-[var(--rule-soft)]">
         <div className="flex items-center justify-between">
@@ -396,7 +396,7 @@ export default function SmartPurchaseAdvisor() {
                 {isExpanded && (
                   <div className="px-5 pb-4 bg-gray-50 border-t border-[var(--rule-soft)]">
                     <div className="grid grid-cols-2 gap-3 pt-3">
-                      <div className="p-3 rounded-xl bg-white border border-[var(--rule-soft)]">
+                      <div className="p-3 rounded-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-soft)]">
                         <p className="text-xs text-[var(--text-tertiary)] mb-1">Analisis de stock</p>
                         <p className="text-sm font-medium text-[var(--text-primary)]">
                           Stock mínimo: {item.product.stockMin} {item.product.unit ?? "u"}
@@ -413,7 +413,7 @@ export default function SmartPurchaseAdvisor() {
                           </div>
                         )}
                       </div>
-                      <div className="p-3 rounded-xl bg-white border border-[var(--rule-soft)]">
+                      <div className="p-3 rounded-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-soft)]">
                         <p className="text-xs text-[var(--text-tertiary)] mb-1">Orden sugerida</p>
                         <p className="text-sm font-bold text-primary">
                           {item.suggestedQty} {item.product.unit ?? "u"}

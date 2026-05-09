@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import {
   CATEGORIAS,
   findCategorySlugByProductCategory,
@@ -335,7 +336,8 @@ export const SearchSuggestionsDB = {
         image: r.image,
         similarity: 1, // exact substring match
       }));
-    } catch {
+    } catch (e) {
+      logger.error("getProductMatches failed", { err: e instanceof Error ? e.message : String(e), op: "SearchSuggestionsDB.getProductMatches" });
       return [];
     }
   },
@@ -365,7 +367,8 @@ export const SearchSuggestionsDB = {
         orderBy: { reviewCount: "desc" },
       });
       return rows;
-    } catch {
+    } catch (e) {
+      logger.error("getStoreMatches failed", { err: e instanceof Error ? e.message : String(e), op: "SearchSuggestionsDB.getStoreMatches" });
       return [];
     }
   },

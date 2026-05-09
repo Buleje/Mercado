@@ -432,7 +432,7 @@ export default function ChatIAClean({
                 className="absolute right-3 bottom-3 h-10 w-10 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 text-white flex items-center justify-center transition-colors"
                 aria-label="Detener"
               >
-                <span className="block h-3 w-3 bg-white rounded-sm" />
+                <span className="block h-3 w-3 bg-white dark:bg-[var(--color-card)] rounded-sm" />
               </button>
             ) : (
               <button

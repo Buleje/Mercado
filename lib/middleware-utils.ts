@@ -190,6 +190,9 @@ export function __resetEdgeLimiterForTests(): void {
 export function buildCSP(pathname: string, nonce?: string): string {
   const isAdminRoute =
     pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
+  // White-label storefronts (/t/[slug]/*) nunca deben embeberse en iframes —
+  // ni siquiera same-origin — para prevenir clickjacking. 'none' > 'self' aquí.
+  const isStorefrontRoute = /^\/t\/[^/]+/.test(pathname);
   const isDev = process.env.NODE_ENV !== "production";
 
   /* En dev (Next.js/Turbopack HMR): forzamos 'unsafe-inline' aunque haya nonce.
@@ -216,7 +219,7 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "object-src":                "'none'",
     "base-uri":                  "'self'",
     "form-action":               "'self'",
-    "frame-ancestors":           isAdminRoute ? "'none'" : "'self'",
+    "frame-ancestors":           isAdminRoute || isStorefrontRoute ? "'none'" : "'self'",
     "upgrade-insecure-requests": "",
   };
 

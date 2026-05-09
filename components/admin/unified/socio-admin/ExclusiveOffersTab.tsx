@@ -119,7 +119,7 @@ function OfferModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -194,7 +194,7 @@ function OfferModal({
               )}
             >
               <span className={cn(
-                "inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform",
+                "inline-block h-4 w-4 transform rounded-full bg-white dark:bg-[var(--color-card)] shadow-sm transition-transform",
                 form.active ? "translate-x-6" : "translate-x-1"
               )} />
             </button>
@@ -280,7 +280,7 @@ export function ExclusiveOffersTab() {
           <p className="text-xs mt-1">Crea tu primera oferta para miembros Socio.</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">

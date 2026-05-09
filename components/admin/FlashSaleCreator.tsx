@@ -375,7 +375,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   duration.hours === d.hours
                     ? "border-primary bg-primary text-white dark:bg-primary"
-                    : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-primary/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
+                    : "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:border-primary/50 dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
                 )}
               >
                 <Clock className="h-3 w-3" aria-hidden="true" />

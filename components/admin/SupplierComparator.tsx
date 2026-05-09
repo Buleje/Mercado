@@ -285,7 +285,7 @@ export default function SupplierComparator() {
       {/* KPI summary 4 cards */}
       {suppliers.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Top proveedor</p>
               <p className="text-lg font-extrabold leading-none mt-1.5 text-[var(--text-primary)] truncate">{kpis.topName}</p>
@@ -293,7 +293,7 @@ export default function SupplierComparator() {
             </div>
             <Star className="h-5 w-5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
           </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Score promedio</p>
               <p className={cn(
@@ -304,7 +304,7 @@ export default function SupplierComparator() {
             </div>
             <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
           </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
               <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{suppliers.length}</p>
@@ -312,7 +312,7 @@ export default function SupplierComparator() {
             </div>
             <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
           </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mejor precio</p>
               <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `S/${Number(kpis.lowestPrice).toFixed(2)}` : "—"}</p>

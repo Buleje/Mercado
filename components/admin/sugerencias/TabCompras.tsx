@@ -207,7 +207,7 @@ export default function TabCompras() {
   return (
     <div className="space-y-5">
       {/* Header con KPIs */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-white p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <p className="text-base font-extrabold text-[var(--text-primary)]">
@@ -221,7 +221,7 @@ export default function TabCompras() {
           <div className="flex items-center gap-2">
             <button
               onClick={exportCSV}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               <Download className="h-3.5 w-3.5" />
               CSV
@@ -229,7 +229,7 @@ export default function TabCompras() {
             <button
               onClick={fetchAll}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               Refrescar
@@ -297,7 +297,7 @@ export default function TabCompras() {
               <div
                 key={String(item.product.id)}
                 className={cn(
-                  "rounded-2xl border bg-white p-4 sm:p-5 flex items-stretch gap-4",
+                  "rounded-2xl border bg-white dark:bg-[var(--color-card)] p-4 sm:p-5 flex items-stretch gap-4",
                   u.border,
                 )}
               >

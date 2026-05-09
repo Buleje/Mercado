@@ -78,7 +78,7 @@ function SectionEditor({
                       value ? "bg-primary" : "bg-gray-300 dark:bg-surface"
                     )}
                   >
-                    <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform", value ? "translate-x-6" : "translate-x-1")} />
+                    <span className={cn("inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transform transition-transform", value ? "translate-x-6" : "translate-x-1")} />
                   </button>
                 </div>
               );

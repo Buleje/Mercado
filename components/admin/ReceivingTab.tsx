@@ -259,7 +259,7 @@ export default function ReceivingTab() {
           { label: "Aceptadas",        value: stats.accepted,     icon: CheckCircle2,  color: "text-[var(--data-success-500)]"  },
           { label: "No conformidades", value: stats.totalNonConf, icon: AlertTriangle, color: stats.totalNonConf > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]" },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div key={label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
               <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", color)}>{value}</p>
@@ -284,7 +284,7 @@ export default function ReceivingTab() {
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
               filterStatus === p.id
                 ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             )}
           >
             {p.label}
@@ -301,7 +301,7 @@ export default function ReceivingTab() {
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Buscar proveedor, ref, OC..."
-            className="w-full pl-9 pr-3 py-1.5 text-sm border border-[var(--rule-base)] rounded-lg bg-white text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full pl-9 pr-3 py-1.5 text-sm border border-[var(--rule-base)] rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
       </div>
@@ -479,7 +479,7 @@ export default function ReceivingTab() {
                 <select
                   value={selectedOcId}
                   onChange={(e) => applyOC(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm"
                 >
                   <option value="">— Elegir orden de compra —</option>
                   {pendingOCs.map((oc) => (

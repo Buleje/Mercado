@@ -69,7 +69,7 @@ function LabelCard({
 
   return (
     <div
-      className="flex flex-col items-center justify-between border border-gray-800 bg-white p-1 font-mono text-[var(--text-primary)]"
+      className="flex flex-col items-center justify-between border border-gray-800 bg-white dark:bg-[var(--color-card)] p-1 font-mono text-[var(--text-primary)]"
       style={{ width: cfg.widthPx, height: cfg.heightPx }}
     >
       <p

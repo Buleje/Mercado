@@ -238,7 +238,7 @@ function ZoneRow({ zone, onChange, onDelete }: ZoneRowProps) {
         >
           <span
             className={cn(
-              "inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
+              "inline-block h-3.5 w-3.5 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
               zone.active ? "translate-x-4" : "translate-x-1"
             )}
           />

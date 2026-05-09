@@ -150,7 +150,7 @@ export default function WarehouseTransferTab() {
           <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Gestiona movimientos de stock entre ubicaciones con persistencia real</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button onClick={() => exportToCSV(transfers.map((transfer) => ({ Codigo: transfer.code, Desde: transfer.from, Hacia: transfer.to, Estado: transfer.status, Items: transfer.items.map((item) => `${item.product}x${item.qty}`).join("; "), Fecha: transfer.requestDate })), "transferencias")} className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-[var(--rule-base)] bg-white px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-card dark:hover:bg-accent">
+          <button onClick={() => exportToCSV(transfers.map((transfer) => ({ Codigo: transfer.code, Desde: transfer.from, Hacia: transfer.to, Estado: transfer.status, Items: transfer.items.map((item) => `${item.product}x${item.qty}`).join("; "), Fecha: transfer.requestDate })), "transferencias")} className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-card dark:hover:bg-accent">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm((prev) => !prev)} className="flex flex-wrap items-center gap-2 rounded-lg bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90">

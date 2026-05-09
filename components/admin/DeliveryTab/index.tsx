@@ -306,7 +306,7 @@ export default function DeliveryTab() {
               <span>Repartidor en vivo</span>
             </div>
             <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white border-2 border-[var(--data-warning-500)]">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-[var(--color-card)] border-2 border-[var(--data-warning-500)]">
                 <Home className="h-3 w-3 text-[var(--data-warning-500)]" />
               </span>
               <span>Domicilio cliente</span>

@@ -221,7 +221,7 @@ export default function POSReturnModal({
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         onClick={e => e.target === e.currentTarget && resetAndClose()}
       >
-        <div className="w-full max-w-xl bg-white border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="w-full max-w-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)]">
             <CardTitle className="text-base font-extrabold text-[var(--text-primary)] flex items-center gap-2">
@@ -246,7 +246,7 @@ export default function POSReturnModal({
                     onChange={e => setSearchQuery(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSearch()}
                     placeholder="Buscar por ID de boleta..."
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     autoFocus
                   />
                 </div>
@@ -346,7 +346,7 @@ export default function POSReturnModal({
                             max={item.maxQty}
                             value={item.returnQty}
                             onChange={e => updateReturnQty(idx, parseInt(e.target.value) || 0)}
-                            className="w-14 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-center text-[var(--text-primary)] bg-white outline-none focus:border-primary"
+                            className="w-14 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-center text-[var(--text-primary)] bg-white dark:bg-[var(--color-card)] outline-none focus:border-primary"
                           />
                         </div>
                       )}
@@ -361,7 +361,7 @@ export default function POSReturnModal({
                 <select
                   value={motivo}
                   onChange={e => setMotivo(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   {MOTIVOS.map(m => (
                     <option key={m} value={m}>{m}</option>

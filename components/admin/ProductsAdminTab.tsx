@@ -791,7 +791,7 @@ function ProductFormModal({
                 role="switch"
               >
                 <span className={cn(
-                  "absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
+                  "absolute top-1 h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
                   form.active ? "translate-x-6" : "translate-x-1"
                 )} />
               </button>
@@ -1343,7 +1343,7 @@ export default function ProductsAdminTab() {
                   <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/40 to-transparent pt-12 pb-3 px-3 flex items-end justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setModal({ product: p })}
-                      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white text-primary font-bold text-xs hover:bg-white/90 transition-colors shadow-md"
+                      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white dark:bg-[var(--color-card)] text-primary font-bold text-xs hover:bg-white/90 transition-colors shadow-md"
                       title="Editar"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -1351,21 +1351,21 @@ export default function ProductsAdminTab() {
                     </button>
                     <button
                       onClick={() => handleDuplicateProduct(p)}
-                      className="h-9 w-9 rounded-lg bg-white text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      className="h-9 w-9 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
                       title="Duplicar"
                     >
                       <Copy className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleToggleActive(p)}
-                      className="h-9 w-9 rounded-lg bg-white text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      className="h-9 w-9 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
                       title={p.active === false ? "Mostrar" : "Ocultar"}
                     >
                       {p.active === false ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                     </button>
                     <button
                       onClick={() => setDeleteTarget(p)}
-                      className="h-9 w-9 rounded-lg bg-white text-[var(--data-error-500)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
+                      className="h-9 w-9 rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--data-error-500)] flex items-center justify-center hover:bg-white/90 transition-colors shadow-md"
                       title="Eliminar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

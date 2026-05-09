@@ -190,7 +190,7 @@ export default function FidelidadTab() {
     setSaving(false);
   };
 
-  const inputCls = "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary";
+  const inputCls = "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary";
 
   return (
     <div className="space-y-6">
@@ -205,7 +205,7 @@ export default function FidelidadTab() {
       </div>
 
       {/* Reglas de puntos */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-2xl p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
@@ -238,7 +238,7 @@ export default function FidelidadTab() {
       </div>
 
       {/* Top clientes */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-3">
           <Star className="h-4 w-4 text-[var(--data-warning-500)]" />
           <CardTitle className="text-sm">Top 10 clientes frecuentes</CardTitle>
@@ -279,7 +279,7 @@ export default function FidelidadTab() {
       </div>
 
       {/* Recompensas */}
-      <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-3">
           <Gift className="h-4 w-4 text-[var(--data-warning-500)]" />
           <CardTitle className="text-sm">Recompensas canjeables</CardTitle>
@@ -291,7 +291,7 @@ export default function FidelidadTab() {
           ) : (
             rewards.map((r) => (
               <div key={r.id} className={cn("flex items-center gap-3 px-3 py-2 rounded-xl border",
-                r.active ? "border-[var(--rule-base)] bg-white" : "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-60")}>
+                r.active ? "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]" : "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-60")}>
                 <span className="h-9 w-9 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning-500)] flex items-center justify-center shrink-0">
                   <Gift className="h-4 w-4" />
                 </span>
@@ -348,7 +348,7 @@ export default function FidelidadTab() {
       </div>
 
       {data && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-sm">{data.name}</p>

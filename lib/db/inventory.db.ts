@@ -309,7 +309,8 @@ export const WarehousesDB = {
     try {
       await prisma.warehouse.deleteMany({ where: { id, tenantId } });
       return true;
-    } catch {
+    } catch (e) {
+      logger.error("WarehouseDB.delete failed", { err: e instanceof Error ? e.message : String(e), op: "WarehouseDB.delete", id, tenantId });
       return false;
     }
   },

@@ -593,7 +593,7 @@ function FlyoutPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
       transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed z-300 bg-white border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-md)] overflow-hidden"
+      className="fixed z-300 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-md)] overflow-hidden"
       style={{ left: sidebarWidth + 8, top, width: 240 }}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
@@ -998,7 +998,7 @@ export default function AdminSidebar({
     return (
       <div
         className={cn(
-          "flex flex-col h-full bg-white border-r border-[var(--rule-base)]",
+          "flex flex-col h-full bg-white dark:bg-[var(--color-card)] border-r border-[var(--rule-base)]",
           "transition-all duration-[var(--dur-base)]",
           isMobile ? "w-72" : isCollapsed ? "w-16" : "w-70"
         )}
@@ -1308,7 +1308,7 @@ export default function AdminSidebar({
         onClick={() => setMobileOpen(true)}
         className={cn(
           "md:hidden fixed top-4 left-4 z-40 p-2.5 rounded-xl",
-          "bg-white border border-[var(--rule-base)]",
+          "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)]",
           "text-[var(--text-primary)] active:scale-95 transition-transform"
         )}
         aria-label="Abrir menu"

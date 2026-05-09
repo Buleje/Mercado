@@ -509,7 +509,7 @@ function ToggleRow({
       >
         <span
           className={cn(
-            "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all shadow-sm",
+            "absolute top-0.5 h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] transition-all shadow-sm",
             checked ? "left-4" : "left-0.5",
           )}
         />

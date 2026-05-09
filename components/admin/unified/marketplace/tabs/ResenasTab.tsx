@@ -154,22 +154,22 @@ export default function ResenasTab() {
     <div className="space-y-5">
       {/* Summary strip — KPI 4-up */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-primary">{reviews.length}</p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Total reseñas</p>
         </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-[var(--data-warning-500)] flex items-center justify-center gap-1">
             <Star className="h-5 w-5 fill-[var(--data-warning-500)]" />
             {avgRating > 0 ? avgRating.toFixed(1) : "—"}
           </p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Rating promedio</p>
         </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-[var(--data-error-500)]">{unrepliedCount}</p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Sin responder</p>
         </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-2xl font-extrabold text-[var(--data-warning-500)]">{pendingCount}</p>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Por moderar</p>
         </div>
@@ -177,7 +177,7 @@ export default function ResenasTab() {
 
       {/* Distribución por rating */}
       {reviews.length > 0 && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <p className="text-xs font-bold text-[var(--text-secondary)] mb-2">Distribución por rating</p>
           <div className="space-y-1">
             {[5, 4, 3, 2, 1].map((star) => {
@@ -278,7 +278,7 @@ export default function ResenasTab() {
         {filtered.map((review) => {
           const cfg = REVIEW_STATUS_CONFIG[review.status] ?? REVIEW_STATUS_CONFIG.pending;
           return (
-            <div key={review.id} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
+            <div key={review.id} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
               {/* Header: name, stars, status badge */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">

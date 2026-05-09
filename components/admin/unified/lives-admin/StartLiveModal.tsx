@@ -91,10 +91,10 @@ export function StartLiveModal({ onClose, onStart }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
+        <div className="sticky top-0 bg-white dark:bg-[var(--color-card)] flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-[var(--data-error-500)] text-white flex items-center justify-center animate-pulse">
               <Radio className="h-4 w-4" />
@@ -138,7 +138,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
                     "w-full flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-colors",
                     c.status === "ok"
                       ? "border-[var(--data-success-500)] bg-[var(--data-success-50)]"
-                      : "border-gray-200 bg-white hover:border-gray-300"
+                      : "border-gray-200 bg-white dark:bg-[var(--color-card)] hover:border-gray-300"
                   )}
                 >
                   <div className={cn(

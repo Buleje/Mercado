@@ -311,7 +311,7 @@ export default function ProductQRGenerator() {
         <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           {selected ? (
             <>
-              <div className={cn("rounded-xl border-2 border-primary bg-white p-4", rendering && "opacity-50")}>
+              <div className={cn("rounded-xl border-2 border-primary bg-white dark:bg-[var(--color-card)] p-4", rendering && "opacity-50")}>
                 {/* SVG del servidor (preferido) */}
                 {svgSrc ? (
                   <Image

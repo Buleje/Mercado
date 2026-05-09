@@ -327,7 +327,7 @@ export default function SuppliersTab() {
         const conRuc = suppliers.filter(s => (s.ruc ?? "").length === 11).length;
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
                 <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{suppliers.length}</p>
@@ -335,7 +335,7 @@ export default function SuppliersTab() {
               </div>
               <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
             </div>
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Con RUC</p>
                 <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{conRuc}</p>
@@ -343,7 +343,7 @@ export default function SuppliersTab() {
               </div>
               <Building2 className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
             </div>
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Con deuda</p>
                 <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{supplierIdsWithDebt.size}</p>
@@ -351,7 +351,7 @@ export default function SuppliersTab() {
               </div>
               <CreditCard className={cn("h-5 w-5 shrink-0", supplierIdsWithDebt.size > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")} />
             </div>
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Deuda total</p>
                 <p className={cn("text-xl font-extrabold tabular-nums leading-none mt-1.5", totalDebt > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>S/{totalDebt.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
@@ -387,7 +387,7 @@ export default function SuppliersTab() {
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
                   filter === p.id
                     ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                    : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                    : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
                 )}
               >
                 {p.label}
@@ -404,7 +404,7 @@ export default function SuppliersTab() {
               placeholder="Buscar por nombre, RUC o teléfono..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="ml-auto px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white text-[var(--text-primary)] outline-none focus:border-primary w-64"
+              className="ml-auto px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary w-64"
             />
           </div>
         );

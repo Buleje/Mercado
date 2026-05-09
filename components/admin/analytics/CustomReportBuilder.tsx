@@ -373,7 +373,7 @@ export default function CustomReportBuilder({
                   "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
                   selectedMetrics.includes(key)
                     ? "bg-primary/10 border-primary/40 text-primary"
-                    : "bg-white border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40"
+                    : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40"
                 )}
               >
                 <input
@@ -407,7 +407,7 @@ export default function CustomReportBuilder({
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)]"
+                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]"
               />
             </div>
             <div>
@@ -416,7 +416,7 @@ export default function CustomReportBuilder({
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)]"
+                className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]"
               />
             </div>
           </div>
@@ -464,7 +464,7 @@ export default function CustomReportBuilder({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)]"
+              className="w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]"
             >
               {categories.map((c) => (
                 <option key={c} value={c}>{c === "todas" ? "Todas las categorias" : c}</option>
@@ -590,7 +590,7 @@ export default function CustomReportBuilder({
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
                 placeholder="Nombre de la plantilla..."
-                className="flex-1 px-2 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] bg-white text-[var(--text-primary)] placeholder-gray-400"
+                className="flex-1 px-2 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] placeholder-gray-400"
               />
               <button
                 onClick={saveTemplate}
@@ -612,7 +612,7 @@ export default function CustomReportBuilder({
             {templates.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-[var(--text-primary)] truncate">{t.name}</p>

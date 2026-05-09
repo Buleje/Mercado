@@ -151,7 +151,7 @@ export default function TabCombos() {
         </div>
         <button
           onClick={load}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Actualizar
@@ -172,7 +172,7 @@ export default function TabCombos() {
           return (
             <div
               key={idx}
-              className="group rounded-2xl border border-[var(--rule-base)] bg-white p-5 transition-shadow hover:shadow-md"
+              className="group rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5 transition-shadow hover:shadow-md"
               style={{ ["--combo-accent" as string]: accent }}
             >
               {/* Header con badge confianza */}

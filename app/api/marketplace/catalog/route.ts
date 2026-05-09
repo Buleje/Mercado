@@ -7,56 +7,13 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
-import { prisma } from "@/lib/prisma";
+import { MarketplacePublicDB } from "@/lib/db/marketplace-public.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-// ── Batch helpers ─────────────────────────────────────────────────────────────
-
-async function batchProductEnrichment(productIds: number[], tenantId: string) {
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-  const [primaryImages, variantCounts, ratingsAgg, topSellers] = await Promise.all([
-    prisma.productImage.findMany({
-      where: { productId: { in: productIds }, tenantId, isPrimary: true },
-      select: { productId: true, url: true },
-    }),
-    prisma.productVariant.groupBy({
-      by: ["productId"],
-      where: { productId: { in: productIds }, tenantId, isActive: true },
-      _count: { id: true },
-    }),
-    prisma.review.groupBy({
-      by: ["productId"],
-      where: {
-        productId: { in: productIds },
-        tenantId,
-        status: "approved",
-        deletedAt: null,
-      },
-      _avg: { rating: true },
-    }),
-    prisma.orderItem.groupBy({
-      by: ["productId"],
-      where: {
-        productId: { in: productIds },
-        order: { tenantId, deletedAt: null, createdAt: { gte: thirtyDaysAgo } },
-      },
-      _sum: { quantity: true },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: Math.ceil(productIds.length * 0.1) || 1, // top 10%
-    }),
-  ]);
-
-  const primaryImageMap = new Map(primaryImages.map((i) => [i.productId, i.url]));
-  const variantMap = new Map(variantCounts.map((v) => [v.productId, v._count.id]));
-  const ratingMap = new Map(ratingsAgg.map((r) => [r.productId, r._avg.rating ?? 0]));
-  const bestSellerIds = new Set(topSellers.map((s) => s.productId));
-
-  return { primaryImageMap, variantMap, ratingMap, bestSellerIds };
-}
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/marketplace/catalog
@@ -114,95 +71,28 @@ export async function GET(req: NextRequest) {
       limit,
     });
 
-    const orderBy =
-      sort === "price_desc"
-        ? { retailPrice: "desc" as const }
-        : sort === "price_asc"
-          ? { retailPrice: "asc" as const }
-          : sort === "newest"
-            ? { id: "desc" as const }
-            : sort === "rating"
-              ? { store: { rating: "desc" as const } }
-              : { store: { rating: "desc" as const } }; // popular = best rated stores first
+    // cross-tenant OK — enriquecimiento usa tenantId solo para imágenes/variantes del tenant que sirve el catálogo
+    const tenantId = req.headers.get("x-tenant-id") ?? "main";
 
-    const where = {
-      isActive: true,
-      store: {
-        isPublished: true,
-        vacationMode: { not: true },
-        // SECURITY 2026-05-07 (audit M5): filtrar tenants activos con plan vigente.
-        // Antes tenants suspendidos seguían apareciendo en el marketplace público.
-        tenant: {
-          active: true,
-        },
-        ...(zone && { zone }),
-        // F4: filtrar por slug de tienda cuando se provee
-        ...(storeSlug && { slug: storeSlug }),
-      },
-      ...(q && {
-        product: {
-          name: { contains: q, mode: "insensitive" as const },
-        },
-      }),
-      ...(category &&
-        category !== "todos" && {
-          product: {
-            ...((q && { name: { contains: q, mode: "insensitive" as const } }) || {}),
-            category,
-          },
-        }),
-      ...((minPrice !== undefined || maxPrice !== undefined) && {
-        retailPrice: {
-          ...(minPrice !== undefined && { gte: minPrice }),
-          ...(maxPrice !== undefined && { lte: maxPrice }),
-        },
-      }),
-    };
-
-    const results = await prisma.storeProduct.findMany({
-      where,
-      select: {
-        id: true,
-        retailPrice: true,
-        minOrderQty: true,
-        product: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            category: true,
-            unit: true,
-            stock: true,
-          },
-        },
-        store: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            logo: true,
-            zone: true,
-            rating: true,
-            category: true,
-          },
-        },
-      },
-      orderBy,
-      take: limit + 1,
-      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+    const results = await MarketplacePublicDB.getCatalogPage({
+      q,
+      category,
+      storeSlug,
+      zone,
+      minPrice,
+      maxPrice,
+      sort,
+      cursor,
+      limit,
     });
 
     const hasMore = results.length > limit;
     const items = results.slice(0, limit);
     const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
-    // SECURITY F1: rechazar si no hay tenant real (no aceptar "main" libre del cliente).
-    const tenantId = req.headers.get("x-tenant-id") ?? "main"; // cross-tenant OK — enriquecimiento usa tenantId solo para imágenes/variantes del mismo tenant
     const productIds = items.map((r) => r.product.id);
     const { primaryImageMap, variantMap, ratingMap, bestSellerIds } =
-      productIds.length > 0
-        ? await batchProductEnrichment(productIds, tenantId)
-        : { primaryImageMap: new Map(), variantMap: new Map(), ratingMap: new Map(), bestSellerIds: new Set<number>() };
+      await MarketplacePublicDB.batchCatalogEnrichment(productIds, tenantId);
 
     // ID threshold para badge "new": los IDs más altos son los más recientes
     const maxId = productIds.length > 0 ? Math.max(...productIds) : 0;

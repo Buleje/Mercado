@@ -295,7 +295,7 @@ export default function WarehouseLayoutEditor() {
               setRows(r);
               setCells((prev) => buildGrid(r, cols, prev));
             }}
-            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -310,7 +310,7 @@ export default function WarehouseLayoutEditor() {
               setCols(c);
               setCells((prev) => buildGrid(rows, c, prev));
             }}
-            className="w-16 rounded border border-[var(--rule-base)] bg-white px-2 py-1 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-900 dark:text-white"
           />
         </div>
       </div>

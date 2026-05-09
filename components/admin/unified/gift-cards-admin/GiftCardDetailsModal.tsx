@@ -87,11 +87,11 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white dark:bg-[var(--color-card)] z-10">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center">
               <Gift className="h-5 w-5" />
@@ -130,11 +130,11 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
 
           {/* Monto y estado */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
               <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Monto inicial</p>
               <p className="text-xl font-extrabold text-[var(--text-primary)] mt-1">{fmt(card.amount)}</p>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
               <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Saldo disponible</p>
               <p className="text-xl font-extrabold text-primary mt-1">{fmt(card.balance)}</p>
             </div>
@@ -151,7 +151,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
           {/* Destinatario */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Destinatario</p>
-            <div className="bg-white border border-gray-200 rounded-xl p-3">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
                   <User className="h-4 w-4 text-primary" />
@@ -182,7 +182,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
           {/* Fechas */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Cronología</p>
-            <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl divide-y divide-gray-100">
               <div className="flex items-center justify-between px-3 py-2.5">
                 <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />

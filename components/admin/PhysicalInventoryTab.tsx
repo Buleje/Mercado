@@ -240,10 +240,10 @@ export default function PhysicalInventoryTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-card-border dark:bg-card" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o SKU..." className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary dark:border-card-border dark:bg-card" />
         </div>
         {(["todas", "pendiente", "contando", "finalizado", "diferencias"] as const).map((status) => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-[var(--text-primary)] text-white" : "border border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:bg-gray-50 dark:border-card-border dark:bg-card dark:text-muted dark:hover:bg-accent")}>
+          <button key={status} onClick={() => setStatusFilter(status)} className={cn("rounded-lg px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors", statusFilter === status ? "bg-[var(--text-primary)] text-white" : "border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-gray-50 dark:border-card-border dark:bg-card dark:text-muted dark:hover:bg-accent")}>
             {status === "todas" ? "Todos" : status === "diferencias" ? "Diferencias" : status.charAt(0).toUpperCase() + status.slice(1)}
           </button>
         ))}
@@ -289,7 +289,7 @@ export default function PhysicalInventoryTab() {
                     {item.status === "finalizado" ? (
                       <span className="font-bold">{item.countedQty}</span>
                     ) : (
-                      <input type="number" min={0} value={countInput[item.id] ?? ""} onChange={(event) => setCountInput((prev) => ({ ...prev, [item.id]: event.target.value }))} placeholder="-" className="w-20 rounded-lg border-2 border-[var(--rule-base)] bg-white px-2 py-1 text-right text-sm font-bold outline-none focus:border-[var(--text-primary)] dark:border-card-border dark:bg-card" />
+                      <input type="number" min={0} value={countInput[item.id] ?? ""} onChange={(event) => setCountInput((prev) => ({ ...prev, [item.id]: event.target.value }))} placeholder="-" className="w-20 rounded-lg border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-right text-sm font-bold outline-none focus:border-[var(--text-primary)] dark:border-card-border dark:bg-card" />
                     )}
                   </td>
                   <td className="px-5 py-3 text-right">

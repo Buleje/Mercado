@@ -343,7 +343,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Compras por Mes (AreaChart) === */}
-      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
         <div className="flex items-center gap-2 mb-4"><FavStar id="compras-mes" favs={compFavs} /><CardTitle className="text-sm font-bold text-[var(--text-primary)]">Compras por mes (últimos 6 meses)</CardTitle></div>
         <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
@@ -362,7 +362,7 @@ function ComprasDashboard() {
               const val = typeof rawVal === "number" ? rawVal : 0;
               const count = (payload[0]?.payload as { count?: number } | undefined)?.count || 0;
               return (
-                <div className="bg-white rounded-xl border border-[var(--rule-soft)] px-4 py-3">
+                <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] px-4 py-3">
                   <p className="text-xs font-semibold text-[var(--text-primary)]">{String(label ?? "")}</p>
                   <p className="text-xs text-[var(--text-secondary)] mt-1">
                     S/ {val.toLocaleString()} ({count} OCs)
@@ -377,7 +377,7 @@ function ComprasDashboard() {
 
       {/* === Distribucion por Proveedor (PieChart + tabla) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
           <div className="flex items-center justify-between mb-4">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Gasto por proveedor</CardTitle>
             <div className="flex items-center gap-2">
@@ -406,7 +406,7 @@ function ComprasDashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Ranking de proveedores</CardTitle>
           <div className="max-h-70 space-y-3 overflow-y-auto">
             {supplierSpend.length === 0 ? (
@@ -439,7 +439,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Estado de OC (BarChart stacked) === */}
-      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Estado de ordenes por mes</CardTitle>
         <ResponsiveContainer minWidth={0} width="100%" height={250}>
           <BarChart data={statusByMonth}>
@@ -458,7 +458,7 @@ function ComprasDashboard() {
 
       {/* === Deuda por Proveedor (horizontal) + Proximos Pagos === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Deuda por proveedor</CardTitle>
           {debtBySupplier.length === 0 ? (
             <EmptyState title="Sin deudas registradas" description="No hay deudas pendientes con proveedores" />
@@ -479,7 +479,7 @@ function ComprasDashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Proximos pagos</CardTitle>
           {nextPayments.length === 0 ? (
             <EmptyState title="Sin pagos pendientes" description="No hay pagos próximos registrados" />
@@ -522,7 +522,7 @@ function ComprasDashboard() {
       </div>
 
       {/* === Tendencia de Gastos vs Promedio Móvil (ComposedChart) === */}
-      <div className="bg-white rounded-xl border border-[var(--rule-soft)] p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-soft)] p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Tendencia de gastos</CardTitle>
         <p className="text-xs text-[var(--text-tertiary)] mb-4">Gasto real vs promedio móvil 3 meses</p>
         <ResponsiveContainer minWidth={0} width="100%" height={260}>

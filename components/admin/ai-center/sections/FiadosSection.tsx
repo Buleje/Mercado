@@ -356,7 +356,7 @@ export default function FiadosSection() {
               "px-3 py-1 text-xs rounded border transition-colors",
               filter === f.key
                 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] dark:border-[var(--data-success-500)]/30"
-                : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-gray-300 dark:bg-gray-900 dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:hover:border-gray-600"
+                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-gray-300 dark:bg-gray-900 dark:text-[var(--text-tertiary)] dark:border-[var(--rule-base)] dark:hover:border-gray-600"
             )}
           >
             {f.label}

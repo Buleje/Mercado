@@ -46,7 +46,7 @@ type FilterKey = "todos" | "CRITICO" | "URGENTE" | "PLANIFICAR" | "sin-proveedor
 
 function SkeletonCard() {
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
       <div className="flex gap-3">
         <div className="h-5 w-5 rounded bg-gray-200" />
         <div className="flex-1 space-y-2">
@@ -75,7 +75,7 @@ function KPICard({ label, value, sub, icon: Icon, accent = "neutral" }: KPIProps
     neutral: "text-[var(--text-primary)]",
   }[accent];
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
       <div className="min-w-0">
         <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
         <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5 truncate", accentText)}>{value}</p>
@@ -351,7 +351,7 @@ export default function SugerenciasCompraTab() {
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
               filter === p.id
                 ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                : "bg-white text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             )}
           >
             {p.label}
@@ -369,7 +369,7 @@ export default function SugerenciasCompraTab() {
             placeholder="Buscar producto o categoría..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-xs bg-white text-[var(--text-primary)] outline-none focus:border-primary w-56"
+            className="px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-xs bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary w-56"
           />
           {visible.length > 0 && (
             <button
@@ -405,7 +405,7 @@ export default function SugerenciasCompraTab() {
         const allSelectedInUrgency = items.every((i) => selected.has(i.productId));
 
         return (
-          <div key={urgency} className="rounded-xl border border-[var(--rule-base)] bg-white overflow-hidden">
+          <div key={urgency} className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] overflow-hidden">
             {/* Section header */}
             <div className={cn("flex items-center justify-between px-4 py-3 border-l-4", config.border, config.bg)}>
               <button
@@ -417,7 +417,7 @@ export default function SugerenciasCompraTab() {
                 <span className={cn("text-sm font-bold", config.text)}>{config.short}</span>
                 <span className="text-xs text-[var(--text-tertiary)]">·</span>
                 <span className="text-xs text-[var(--text-secondary)]">{config.label.split("—")[1]?.trim()}</span>
-                <span className={cn("text-xs font-bold ml-auto sm:ml-2 px-2 py-0.5 rounded-full bg-white", config.text)}>
+                <span className={cn("text-xs font-bold ml-auto sm:ml-2 px-2 py-0.5 rounded-full bg-white dark:bg-[var(--color-card)]", config.text)}>
                   {items.length}
                 </span>
               </button>
@@ -446,7 +446,7 @@ export default function SugerenciasCompraTab() {
                       type="button"
                       onClick={() => toggleSelect(s.productId)}
                       className={cn(
-                        "text-left bg-white border rounded-lg p-3 transition-all flex items-start gap-3",
+                        "text-left bg-white dark:bg-[var(--color-card)] border rounded-lg p-3 transition-all flex items-start gap-3",
                         isSelected
                           ? "border-primary ring-1 ring-primary/30 bg-primary/5"
                           : "border-[var(--rule-base)] hover:border-[var(--text-tertiary)]"
@@ -522,7 +522,7 @@ export default function SugerenciasCompraTab() {
       {/* Sticky bottom bar — solo aparece con seleccionados */}
       {selected.size > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-2rem)]">
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl shadow-lg flex items-center gap-3 px-4 py-3">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl shadow-lg flex items-center gap-3 px-4 py-3">
             <Sparkles className="h-4 w-4 text-primary shrink-0" />
             <div className="text-xs">
               <p className="font-bold text-[var(--text-primary)]">

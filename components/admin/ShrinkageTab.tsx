@@ -146,7 +146,7 @@ export default function ShrinkageTab() {
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Registra lo que se perdió y cuánto costó</p>
         </div>
-        <button onClick={() => exportToCSV(records.map((record) => ({ Fecha: record.date, Producto: record.product, Categoria: record.category, Cantidad: record.quantity, CostoUnitario: record.unitCost, Perdida: record.totalLoss, Motivo: record.cause, Estado: record.status })), "mermas")} className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-white px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-card dark:hover:bg-accent">
+        <button onClick={() => exportToCSV(records.map((record) => ({ Fecha: record.date, Producto: record.product, Categoria: record.category, Cantidad: record.quantity, CostoUnitario: record.unitCost, Perdida: record.totalLoss, Motivo: record.cause, Estado: record.status })), "mermas")} className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-card dark:hover:bg-accent">
           <Download className="h-4 w-4" /> Descargar
         </button>
       </div>

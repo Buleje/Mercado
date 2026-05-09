@@ -271,7 +271,7 @@ export default function QuickStockCounter() {
                     if (e.key === "Enter") addToCount();
                   }}
                   className={cn(
-                    "w-20 rounded-lg border border-[var(--rule-base)] bg-white px-2 py-1 text-center text-sm",
+                    "w-20 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-center text-sm",
                     "text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
                     "dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   )}

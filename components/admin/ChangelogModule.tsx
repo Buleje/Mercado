@@ -178,7 +178,7 @@ export default function ChangelogModule() {
                     </span>
                     {release.status === "current" && (
                       <span className="flex items-center gap-1 rounded-full px-2 py-0.5 bg-[var(--data-info-500)] text-white text-[length:var(--ts-2xs)] font-bold">
-                        <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
+                        <span className="h-1 w-1 rounded-full bg-white dark:bg-[var(--color-card)] animate-pulse" />
                         Actual
                       </span>
                     )}

@@ -122,7 +122,7 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
                 onClick={() => toggle(opt.key)}
               >
                 <div
-                  className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-[var(--dur-base)] ${
+                  className={`absolute top-1 w-4 h-4 bg-white dark:bg-[var(--color-card)] rounded-full shadow transition-transform duration-[var(--dur-base)] ${
                     config[opt.key] ? "translate-x-5" : "translate-x-1"
                   }`}
                 />

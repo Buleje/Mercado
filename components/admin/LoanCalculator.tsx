@@ -111,7 +111,7 @@ export default function LoanCalculator() {
       </div>
 
       {/* Inputs */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
@@ -243,7 +243,7 @@ export default function LoanCalculator() {
           )}
 
           {/* Capital vs interest chart */}
-          <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
             <CardTitle className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
               Proporcion capital vs interes
             </CardTitle>
@@ -321,13 +321,13 @@ export default function LoanCalculator() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <tbody className="divide-y divide-gray-100 bg-white dark:bg-[var(--color-card)]">
                   {rows.map((row, i) => (
                     <tr
                       key={row.month}
                       className={cn(
                         i % 2 === 0
-                          ? "bg-white"
+                          ? "bg-white dark:bg-[var(--color-card)]"
                           : "bg-gray-50"
                       )}
                     >

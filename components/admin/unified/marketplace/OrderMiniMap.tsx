@@ -164,7 +164,7 @@ export default function OrderMiniMap({ lat, lng, address }: Props) {
           href={`https://www.google.com/maps?q=${coords.lat},${coords.lng}`}
           target="_blank"
           rel="noreferrer"
-          className="absolute top-2 right-2 z-[400] inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-white border-2 border-[var(--rule-base)] text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors shadow-sm"
+          className="absolute top-2 right-2 z-[400] inline-flex items-center gap-1 h-8 px-3 rounded-lg bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors shadow-sm"
         >
           Google Maps
         </a>

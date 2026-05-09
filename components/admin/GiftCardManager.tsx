@@ -82,13 +82,13 @@ function QRVisual({ code }: { code: string }) {
   });
 
   return (
-    <div className="inline-block p-2 bg-white rounded-xl border border-[var(--rule-base)]">
+    <div className="inline-block p-2 bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)]">
       <div className="grid" style={{ gridTemplateColumns: "repeat(10, 1fr)", gap: "1px" }}>
         {grid.map((row, r) =>
           row.map((cell, c) => (
             <div
               key={`${r}-${c}`}
-              className={cn("w-4 h-4 rounded-sm", cell ? "bg-gray-900" : "bg-white")}
+              className={cn("w-4 h-4 rounded-sm", cell ? "bg-gray-900" : "bg-white dark:bg-[var(--color-card)]")}
             />
           ))
         )}

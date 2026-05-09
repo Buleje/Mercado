@@ -26,8 +26,33 @@ import { ARPUMiniChart } from "@/components/superadmin/dashboard/ARPUMiniChart";
 import { LatestActiveTenantsTable } from "@/components/superadmin/dashboard/LatestActiveTenantsTable";
 import { TenantGrowthChart } from "@/components/superadmin/dashboard/TenantGrowthChart";
 import { MonthlyOverviewChart } from "@/components/superadmin/dashboard/MonthlyOverviewChart";
-import { PlanDistributionDonut } from "@/components/superadmin/dashboard/PlanDistributionDonut";
-import { BusinessHealthRadial } from "@/components/superadmin/dashboard/BusinessHealthRadial";
+import dynamic from "next/dynamic";
+
+const PlanDistributionDonut = dynamic(
+  () =>
+    import("@/components/superadmin/dashboard/PlanDistributionDonut").then(
+      (m) => ({ default: m.PlanDistributionDonut }),
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 animate-pulse bg-[var(--color-muted)] rounded-xl" />
+    ),
+  },
+);
+
+const BusinessHealthRadial = dynamic(
+  () =>
+    import("@/components/superadmin/dashboard/BusinessHealthRadial").then(
+      (m) => ({ default: m.BusinessHealthRadial }),
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 animate-pulse bg-[var(--color-muted)] rounded-xl" />
+    ),
+  },
+);
 import { KPIHeroCard } from "@/components/superadmin/dashboard/KPIHeroCard";
 import ChartManager, { type ChartDefinition } from "@/components/admin/shared/ChartManager";
 import {

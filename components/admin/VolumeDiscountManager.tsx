@@ -125,7 +125,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             value={form.productName}
             onChange={(e) => set("productName", e.target.value)}
             placeholder="Ej: Arroz Costeño 5kg"
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -138,7 +138,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             step={0.5}
             value={form.basePrice}
             onChange={(e) => set("basePrice", Number(e.target.value))}
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -149,7 +149,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             value={form.unit}
             onChange={(e) => set("unit", e.target.value)}
             placeholder="bolsa, caja, unidad..."
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -161,7 +161,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             min={2}
             value={form.discountQty}
             onChange={(e) => set("discountQty", Number(e.target.value))}
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <div>
@@ -174,7 +174,7 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
             step={0.5}
             value={form.discountPrice}
             onChange={(e) => set("discountPrice", Number(e.target.value))}
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
       </div>
@@ -244,7 +244,7 @@ export default function VolumeDiscountManager() {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden ">
+    <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] overflow-hidden ">
       {/* Header */}
       <div className="p-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
         <div className="flex items-center gap-3">

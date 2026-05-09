@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import type {
   Cotizacion as PCotizacion,
   CotizacionItem as PCotizacionItem,
@@ -102,8 +103,11 @@ async function getDocPrefix(tenantId: string): Promise<string> {
         .toUpperCase();
       if (prefix.length >= 2) return prefix;
     }
-  } catch {
-    // Settings table may not exist; fallback silently
+  } catch (e) {
+    logger.error(
+      "getDocPrefix failed — using default prefix",
+      { err: e instanceof Error ? e.message : String(e), op: "CotizacionesDB.getDocPrefix", tenantId },
+    );
   }
   return "Buleje";
 }

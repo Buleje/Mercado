@@ -231,7 +231,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
             {/* Boton principal */}
             <Link
               href="/pricing"
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white text-primary font-bold text-base hover:shadow-xl hover:bg-white/95 active:scale-[0.98] transition-all mb-3"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white dark:bg-[var(--color-card)] text-primary font-bold text-base hover:shadow-xl hover:bg-white/95 active:scale-[0.98] transition-all mb-3"
             >
               Ver planes
               <ArrowRight className="h-4 w-4" />

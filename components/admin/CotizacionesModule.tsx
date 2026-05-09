@@ -74,7 +74,7 @@ const PER_PAGE = 10;
 function CotizacionPreview({ cotizacion }: { cotizacion: Cotizacion }) {
   const meta = STATUS_META[cotizacion.status];
   return (
-    <div className="w-[300px] bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
+    <div className="w-[300px] bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 space-y-2">
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-[var(--text-secondary)]">COT-{String(cotizacion.número).padStart(4, "0")}</span>
         <span className={cn("inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
@@ -230,7 +230,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
       {/* Funnel */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6 ">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Funnel de conversión</CardTitle>
         {cotizaciones.length > 0 ? (
           <div className="space-y-2.5">
@@ -579,7 +579,7 @@ export default function CotizacionesModule() {
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5",
               activeTab === id
-                ? "bg-white text-primary "
+                ? "bg-white dark:bg-[var(--color-card)] text-primary "
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
           >
@@ -661,7 +661,7 @@ export default function CotizacionesModule() {
             ];
             const maxCount = Math.max(...stages.map(s => s.count), 1);
             return (
-              <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 ">
+              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 ">
                 <p className="text-xs uppercase font-bold text-[var(--text-tertiary)] mb-3">Funnel de conversión</p>
                 <div className="space-y-2">
                   {stages.map((stage, i) => {
@@ -698,13 +698,13 @@ export default function CotizacionesModule() {
                   aria-label="Buscar cotizaciones"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setShowQuickClient(true)}
-                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white hover:bg-primary hover:text-white hover:border-primary text-[var(--text-secondary)] transition-colors"
+                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-primary hover:text-white hover:border-primary text-[var(--text-secondary)] transition-colors"
                 title="Crear cliente rápido"
               >
                 <Plus className="h-4 w-4" />
@@ -788,7 +788,7 @@ export default function CotizacionesModule() {
           </AnimatePresence>
 
           {/* Table */}
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
             {loading ? (
               <LoadingState />
             ) : error ? (
@@ -826,7 +826,7 @@ export default function CotizacionesModule() {
                       const headerColor = c.status === "BORRADOR" ? "bg-gray-100" : c.status === "ENVIADA" ? "bg-[var(--accent-soft)]" : c.status === "ACEPTADA" || c.status === "CONVERTIDA" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]";
                       const diasValidez = Math.max(0, Math.ceil((new Date(c.validoHasta).getTime() - Date.now()) / 86400000));
                       return (
-                        <div key={c.id} onClick={() => openDetail(c)} className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-lg cursor-pointer transition-all group">
+                        <div key={c.id} onClick={() => openDetail(c)} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-lg cursor-pointer transition-all group">
                           <div className={cn("px-4 py-2 flex items-center justify-between", headerColor)}>
                             <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">COT-{String(c.número).padStart(4, "0")}</span>
                             <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
@@ -921,7 +921,7 @@ export default function CotizacionesModule() {
 
       {/* ── TAB: NUEVA COTIZACIÓN (multi-step) ──────────────────────────── */}
       {activeTab === "nueva" && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-5 space-y-5">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  p-5 space-y-5">
           {/* Step indicators */}
           <div className="flex items-center gap-2">
             {[1, 2, 3].map(s => (
@@ -952,7 +952,7 @@ export default function CotizacionesModule() {
                     value={clienteNombre}
                     onChange={e => setClienteNombre(e.target.value)}
                     placeholder="Nombre o razón social"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
@@ -966,7 +966,7 @@ export default function CotizacionesModule() {
                     onChange={e => setClienteRuc(e.target.value)}
                     placeholder="20XXXXXXXXX"
                     maxLength={20}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
@@ -1028,10 +1028,10 @@ export default function CotizacionesModule() {
                               onChange={e => { updateItem(idx, "descripcion", e.target.value); setProductSearch(e.target.value); setActiveItemIdx(idx); }}
                               onFocus={() => setActiveItemIdx(idx)}
                               placeholder="Buscar producto o escribir..."
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
+                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
                             />
                             {activeItemIdx === idx && productResults.length > 0 && (
-                              <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white border border-[var(--rule-base)] rounded-xl max-h-40 overflow-y-auto">
+                              <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl max-h-40 overflow-y-auto">
                                 {productResults.map(p => (
                                   <button
                                     key={p.id}
@@ -1047,16 +1047,16 @@ export default function CotizacionesModule() {
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="1" step="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
+                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" step="0.01" value={item.precioUnit} onChange={e => updateItem(idx, "precioUnit", e.target.value)}
                               placeholder="0.00"
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-right" />
+                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-right" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" max="100" step="1" value={item.descuento} onChange={e => updateItem(idx, "descuento", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
+                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 text-right font-medium text-[var(--text-primary)]">{formatCurrency(sub)}</td>
                           <td className="py-2 pl-1">
@@ -1116,7 +1116,7 @@ export default function CotizacionesModule() {
                     type="date"
                     value={validoHasta}
                     onChange={e => setValidoHasta(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
               </div>
@@ -1127,7 +1127,7 @@ export default function CotizacionesModule() {
                   onChange={e => setNotas(e.target.value)}
                   placeholder="Condiciones, observaciones..."
                   rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
               </div>
 
@@ -1169,7 +1169,7 @@ export default function CotizacionesModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white border-l border-[var(--rule-base)] overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
@@ -1401,7 +1401,7 @@ export default function CotizacionesModule() {
                       onChange={e => setTemplateName(e.target.value)}
                       placeholder="Nombre de la plantilla..."
                       maxLength={60}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                       onKeyDown={e => e.key === "Enter" && handleSaveTemplate()}
                     />
                     <div className="flex gap-2">
@@ -1447,7 +1447,7 @@ export default function CotizacionesModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowTemplateModal(false)}
             >
-              <div className="w-full max-w-md bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="w-full max-w-md bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Seleccionar plantilla</CardTitle>
                   <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -1505,7 +1505,7 @@ export default function CotizacionesModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowTemplateList(false)}
             >
-              <div className="w-full max-w-md bg-white border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="w-full max-w-md bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Plantillas guardadas</CardTitle>
                   <button onClick={() => setShowTemplateList(false)} className="p-1.5 rounded-lg hover:bg-gray-100">

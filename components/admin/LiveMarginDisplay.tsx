@@ -137,7 +137,7 @@ export default function LiveMarginDisplay({ items }: Props) {
       {/* Summary bar */}
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between gap-4 px-5 py-4 bg-white hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between gap-4 px-5 py-4 bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3">
           <div
@@ -202,7 +202,7 @@ export default function LiveMarginDisplay({ items }: Props) {
 
       {/* Breakdown */}
       {expanded && items.length > 0 && (
-        <div className="bg-white px-5 py-3 border-t border-[var(--rule-soft)]">
+        <div className="bg-white dark:bg-[var(--color-card)] px-5 py-3 border-t border-[var(--rule-soft)]">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-4 h-4 text-[var(--text-tertiary)]" />
             <p className="text-xs font-semibold text-[var(--text-secondary)]">
@@ -216,7 +216,7 @@ export default function LiveMarginDisplay({ items }: Props) {
       )}
 
       {expanded && items.length === 0 && (
-        <div className="bg-white px-5 py-6 text-center">
+        <div className="bg-white dark:bg-[var(--color-card)] px-5 py-6 text-center">
           <p className="text-sm text-[var(--text-tertiary)]">
             No hay items en esta venta
           </p>

@@ -1171,7 +1171,7 @@ function SortableRow({
         >
           <span
             className={cn(
-              "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
+              "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
               section.enabled ? "translate-x-6" : "translate-x-1"
             )}
           />
@@ -1547,7 +1547,7 @@ export default function StorefrontEditor() {
                 >
                   <span
                     className={cn(
-                      "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-[var(--dur-base)]",
+                      "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
                       item.visible ? "translate-x-6" : "translate-x-1"
                     )}
                   />

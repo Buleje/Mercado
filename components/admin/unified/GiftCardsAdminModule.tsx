@@ -411,7 +411,7 @@ export default function GiftCardsAdminModule() {
           onClick={() => setIssuedCode(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5"
+            className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-md p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
@@ -482,13 +482,13 @@ export default function GiftCardsAdminModule() {
 
       {/* Tabla */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)] bg-white border border-gray-100 rounded-2xl">
+        <div className="text-center py-16 text-[var(--text-tertiary)] bg-white dark:bg-[var(--color-card)] border border-gray-100 rounded-2xl">
           <Gift className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin gift cards para mostrar</p>
           <p className="text-xs mt-1">Ajusta los filtros o emite una gift card manual.</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">

@@ -238,7 +238,7 @@ export default function BackupRestoreTab() {
             </div>
             <button onClick={() => setAutoEnabled(!autoEnabled)}
               className={cn("w-12 h-6 rounded-full relative transition-colors", autoEnabled ? "bg-primary" : "bg-gray-300 dark:bg-gray-600")}>
-              <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform", autoEnabled ? "translate-x-6" : "translate-x-0.5")} />
+              <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform", autoEnabled ? "translate-x-6" : "translate-x-0.5")} />
             </button>
           </div>
 

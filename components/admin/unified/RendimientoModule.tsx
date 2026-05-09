@@ -66,7 +66,7 @@ function BrowserInfoTab() {
       <ConnectionQualityCard />
 
       {/* Browser details */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white overflow-hidden">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] overflow-hidden">
         <div className="px-4 py-3 border-b border-[var(--rule-soft)]">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
             <Monitor className="h-4 w-4 text-primary" />
@@ -120,7 +120,7 @@ function ConnectionQualityCard() {
 
   if (!quality) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 text-center">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4 text-center">
         <Wifi className="h-6 w-6 text-[var(--text-tertiary)] mx-auto mb-2" />
         <p className="text-xs text-[var(--text-secondary)]">
           Tu navegador no permite medir la calidad de conexión
@@ -140,7 +140,7 @@ function ConnectionQualityCard() {
     <div className={cn("rounded-xl border border-[var(--rule-base)] p-4", style.bg)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center ">
+          <div className="h-10 w-10 rounded-xl bg-white dark:bg-[var(--color-card)] flex items-center justify-center ">
             <Wifi className={cn("h-5 w-5", style.color)} />
           </div>
           <div>
@@ -268,7 +268,7 @@ function PerformanceHistoryTab() {
   return (
     <div className="space-y-6">
       {/* Record button */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
@@ -469,7 +469,7 @@ function StorageTab() {
   return (
     <div className="space-y-6">
       {/* Storage overview */}
-      <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2 mb-3">
           <HardDrive className="h-4 w-4 text-primary" />
           Espacio utilizado
@@ -540,7 +540,7 @@ function StorageCard({
   color: string;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-3">
       <div className="flex items-center gap-2 mb-1.5">
         <Icon className={cn("h-4 w-4", color)} />
         <span className="text-xs font-semibold text-[var(--text-primary)]">{label}</span>
@@ -572,7 +572,7 @@ export default function RendimientoModule() {
       >
         {sub === "web-vitals" && (
           <div className="space-y-6">
-            <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">
                 ¿Qué tan rápido carga tu tienda?
               </CardTitle>

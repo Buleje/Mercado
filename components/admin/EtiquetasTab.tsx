@@ -235,7 +235,7 @@ export default function EtiquetasTab() {
                 ] as { key: keyof LabelConfig; label: string }[]).map(opt => (
                   <label key={opt.key} className="flex flex-wrap items-center gap-2.5 cursor-pointer">
                     <button onClick={() => setConfig(c => ({ ...c, [opt.key]: !c[opt.key] }))} className={cn("w-9 h-5 rounded-full transition-colors flex items-center", config[opt.key] ? "bg-primary" : "bg-gray-300 dark:bg-gray-600")}>
-                      <span className={cn("block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5", config[opt.key] ? "translate-x-4" : "translate-x-0")} />
+                      <span className={cn("block w-4 h-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform mx-0.5", config[opt.key] ? "translate-x-4" : "translate-x-0")} />
                     </button>
                     <span className="text-xs text-[var(--text-primary)] dark:text-foreground">{opt.label}</span>
                   </label>

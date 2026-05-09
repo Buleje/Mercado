@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { NotFoundError } from "@/lib/api-error";
 import { toNum, toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -853,9 +854,10 @@ export const MarketplaceOrdersDB = {
           tierDiscountPct = 5;
           tierLabel = "Cliente Frecuente";
         }
-      } catch {
+      } catch (e) {
         // Si la query falla (DB error), seguimos sin descuento — nunca
         // bloquear un pedido por la feature de tier.
+        logger.error("tier discount query failed — continuing without discount", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.createOrder/tierQuery" });
       }
     }
     const tierDiscount = parseFloat(((subtotal * tierDiscountPct) / 100).toFixed(2));
@@ -1342,7 +1344,8 @@ export const MarketplaceAbandonedCartsDB = {
         },
       });
       return created as AbandonedCartRecord;
-    } catch {
+    } catch (e) {
+      logger.error("trackAbandonedCart failed", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.trackAbandonedCart" });
       return null;
     }
   },
@@ -1363,8 +1366,8 @@ export const MarketplaceAbandonedCartsDB = {
           convertedAt: new Date(),
         },
       });
-    } catch {
-      // silently fail — non-critical
+    } catch (e) {
+      logger.error("markConverted failed", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.markConverted" });
     }
   },
 
@@ -1387,7 +1390,8 @@ export const MarketplaceAbandonedCartsDB = {
         take: 50,
       });
       return carts as AbandonedCartRecord[];
-    } catch {
+    } catch (e) {
+      logger.error("getAbandoned failed", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.getAbandoned" });
       return [];
     }
   },
@@ -1401,8 +1405,8 @@ export const MarketplaceAbandonedCartsDB = {
         where: { id },
         data: { reminderSentAt: new Date() },
       });
-    } catch {
-      // silently fail
+    } catch (e) {
+      logger.error("markReminderSent failed", { err: e instanceof Error ? e.message : String(e), op: "MarketplaceDB.markReminderSent" });
     }
   },
 };

@@ -15,19 +15,20 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
+import dynamic from "next/dynamic";
+
+const ExecutiveAnalyticsCharts = dynamic(
+  () => import("./ExecutiveAnalyticsCharts"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="h-56 animate-pulse bg-[var(--color-muted)] rounded-xl" />
+        <div className="h-56 animate-pulse bg-[var(--color-muted)] rounded-xl" />
+      </div>
+    ),
+  },
+);
 import {
   CreditCard,
   Package,
@@ -73,12 +74,6 @@ interface ExecutiveData {
 const fmtSoles = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN", maximumFractionDigits: 0 }).format(n);
 
-const PLAN_COLORS: Record<string, string> = {
-  free: "#94A3B8",
-  pro: "#F59E0B",
-  business: "#0EA5E9",
-  enterprise: "#10B981",
-};
 
 const CHANNEL_LABELS: Record<string, { label: string; color: string }> = {
   direct: { label: "Tienda directa", color: "#00B4A6" },
@@ -396,10 +391,10 @@ export default function ExecutiveAnalytics() {
       </div>
 
       {/* ─── ROW 3: MRR + AOV ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <SuperadminChartCard
-          kicker="REVENUE"
-          title="MRR por plan"
+          kicker="REVENUE · AOV"
+          title="MRR por plan y Average Order Value"
           description={`${fmtSoles(totalMRR)} de ingreso recurrente mensual`}
           actions={
             <InsightBadge
@@ -408,85 +403,11 @@ export default function ExecutiveAnalytics() {
             />
           }
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-            <div className="h-56">
-              <ResponsiveContainer minWidth={0} width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data.mrrByPlan.filter((p) => p.mrr > 0)}
-                    dataKey="mrr"
-                    nameKey="plan"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    innerRadius={50}
-                    paddingAngle={2}
-                  >
-                    {data.mrrByPlan.filter((p) => p.mrr > 0).map((p) => (
-                      <Cell key={p.plan} fill={PLAN_COLORS[p.plan] ?? "#94A3B8"} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value, name) => [fmtSoles(Number(value)), String(name)]}
-                    contentStyle={{ backgroundColor: "var(--surface-raised)", border: "1px solid var(--rule-base)", borderRadius: "8px", fontSize: 14 }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <ul className="space-y-2">
-              {data.mrrByPlan.map((p) => (
-                <li key={p.plan} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-[var(--surface-sunken)]">
-                  <span className="flex items-center gap-2.5 min-w-0">
-                    <span
-                      className="h-3 w-3 rounded-full shrink-0"
-                      style={{ backgroundColor: PLAN_COLORS[p.plan] ?? "#94A3B8" }}
-                      aria-hidden
-                    />
-                    <span className="text-sm font-bold capitalize text-[var(--text-primary)]">
-                      {p.plan}
-                    </span>
-                    <span className="text-sm text-[var(--text-tertiary)] truncate">
-                      ({p.count})
-                    </span>
-                  </span>
-                  <span className="text-base font-extrabold tabular-nums text-[var(--text-primary)] shrink-0">
-                    {fmtSoles(p.mrr)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </SuperadminChartCard>
-
-        <SuperadminChartCard
-          kicker="VALOR"
-          title="Average Order Value (AOV)"
-          description="Ticket promedio mensual + cantidad de órdenes"
-          actions={
-            data.aov.length >= 2 ? (
-              <InsightBadge
-                tone={aovDeltaPct >= 5 ? "positive" : aovDeltaPct <= -5 ? "negative" : "neutral"}
-                text={`${aovDeltaPct >= 0 ? "+" : ""}${aovDeltaPct.toFixed(0)}% vs mes anterior`}
-              />
-            ) : undefined
-          }
-        >
-          <div className="h-56">
-            <ResponsiveContainer minWidth={0} width="100%" height="100%">
-              <ComposedChart data={data.aov} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 13, fill: "var(--text-secondary)" }} tickMargin={6} />
-                <YAxis yAxisId="aov" tick={{ fontSize: 12, fill: "var(--text-tertiary)" }} width={48} tickFormatter={(v: number) => `S/${v}`} />
-                <YAxis yAxisId="orders" orientation="right" tick={{ fontSize: 12, fill: "var(--text-tertiary)" }} width={32} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "var(--surface-raised)", border: "1px solid var(--rule-base)", borderRadius: "8px", fontSize: 14 }}
-                  formatter={(v, name) => String(name) === "aov" ? [fmtSoles(Number(v)), "AOV"] : [String(v), "Pedidos"]}
-                />
-                <Bar yAxisId="aov" dataKey="aov" fill="var(--accent)" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                <Line yAxisId="orders" type="monotone" dataKey="orders" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 3, fill: "#F59E0B", strokeWidth: 0 }} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
+          <ExecutiveAnalyticsCharts
+            mrrByPlan={data.mrrByPlan}
+            aov={data.aov}
+            aovDeltaPct={aovDeltaPct}
+          />
         </SuperadminChartCard>
       </div>
 

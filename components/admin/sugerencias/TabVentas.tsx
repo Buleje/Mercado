@@ -115,7 +115,7 @@ export default function TabVentas() {
         </div>
         <button
           onClick={load}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Refrescar
@@ -124,7 +124,7 @@ export default function TabVentas() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top movers — promocionar */}
-        <section className="rounded-2xl border border-[var(--rule-base)] bg-white p-5">
+        <section className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
           <header className="flex items-center gap-2 mb-4">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
               <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
@@ -182,7 +182,7 @@ export default function TabVentas() {
         </section>
 
         {/* Slow movers — descontar */}
-        <section className="rounded-2xl border border-[var(--rule-base)] bg-white p-5">
+        <section className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
           <header className="flex items-center gap-2 mb-4">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--data-warning-50,#fffbeb)]">
               <TrendingDown className="h-5 w-5 text-[var(--data-warning-500)]" />

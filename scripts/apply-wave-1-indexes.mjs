@@ -31,7 +31,7 @@ if (isPooler && url.port === "6543") {
 }
 const DIRECT_URL = url.toString();
 
-const SQL_FILE = "prisma/migrations/proposed-db-indexes-wave-1.sql";
+const SQL_FILE = process.env.SQL_FILE || "prisma/migrations/proposed-db-indexes-wave-1.sql";
 const raw = readFileSync(SQL_FILE, "utf8");
 
 // Split por ';' fuera de comentarios — simple porque el archivo es predecible.

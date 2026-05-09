@@ -239,7 +239,7 @@ export default function FiadoFormModal({
         <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
           <button
             onClick={() => setShowNew(false)}
-            className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white hover:bg-gray-50 transition-colors"
+            className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors"
           >
             Cancelar
           </button>

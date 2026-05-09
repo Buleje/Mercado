@@ -282,7 +282,7 @@ function ThemePreview({
       activeBg: "bg-white/10",
     },
     light: {
-      bg: "bg-white",
+      bg: "bg-white dark:bg-[var(--color-card)]",
       text: "text-zinc-500",
       border: "border-zinc-200",
       activeBg: "bg-zinc-100",
@@ -357,7 +357,7 @@ function Switch({ checked, onChange, label, description, id }: { checked: boolea
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform",
+            "absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform",
             checked && "translate-x-4",
           )}
         />

@@ -159,7 +159,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
       {/* KPIs */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-[#2563EB]">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-[#2563EB]">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5">
                 <Wallet className="h-4 w-4 text-[#2563EB]" />
@@ -175,7 +175,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">{cuentasActivas} cuenta{cuentasActivas !== 1 ? "s" : ""} activa{cuentasActivas !== 1 ? "s" : ""}</p>
           </div>
 
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-emerald-500">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-emerald-500">
             <div className="flex items-center gap-1.5 mb-2">
               <ArrowDownToLine className="h-4 w-4 text-[var(--data-success-500)]" />
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ingresos mes</p>
@@ -185,7 +185,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
             </p>
           </div>
 
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-red-500">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  p-4 border-b-4 border-b-red-500">
             <div className="flex items-center gap-1.5 mb-2">
               <ArrowUpFromLine className="h-4 w-4 text-[var(--data-error-500)]" />
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Egresos mes</p>
@@ -196,7 +196,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
           </div>
 
           <div className={cn(
-            "bg-white border border-[var(--rule-base)] rounded-xl  p-4 border-b-4",
+            "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  p-4 border-b-4",
             flujoNeto >= 0 ? "border-b-[#2563EB]" : "border-b-red-600"
           )}>
             <div className="flex items-center gap-1.5 mb-2">
@@ -219,7 +219,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
               const meta = TIPO_META[cuenta.tipo];
               const Icon = meta.icon;
               return (
-                <div key={cuenta.id} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 hover:shadow-sm transition-shadow">
+                <div key={cuenta.id} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 hover:shadow-sm transition-shadow">
                   <div className="flex items-center gap-3 mb-3">
                     <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", meta.bg)}>
                       <Icon className={cn("h-5 w-5", meta.color)} />
@@ -247,7 +247,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Flow chart */}
-          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Flujo de caja (6 meses)</CardTitle>
             {flowData.some(d => d.ingresos > 0 || d.egresos > 0) ? (
               <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -279,7 +279,7 @@ function TresoDashboard({ cuentas, resumen }: { cuentas: Cuenta[]; resumen: Resu
           </div>
 
           {/* Pie by tipo */}
-          <div className="bg-white rounded-xl border border-[var(--rule-base)] p-6 ">
+          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Saldo por tipo de cuenta</CardTitle>
             {tipoPieData.length > 0 ? (
               <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -884,7 +884,7 @@ export default function TesoreriaModule() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className={cn(
-                      "bg-white border rounded-xl p-5 hover:shadow-lg transition-all cursor-pointer group",
+                      "bg-white dark:bg-[var(--color-card)] border rounded-xl p-5 hover:shadow-lg transition-all cursor-pointer group",
                       cuenta.activa ? "border-[var(--rule-base)]" : "border-dashed border-[var(--rule-base)] opacity-60"
                     )}
                     onClick={() => openEditCuenta(cuenta)}
@@ -947,7 +947,7 @@ export default function TesoreriaModule() {
             <select
               value={movCuentaFilter}
               onChange={e => setMovCuentaFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
             >
               <option value="">Todas las cuentas</option>
               {activeCuentas.map(c => (
@@ -957,7 +957,7 @@ export default function TesoreriaModule() {
             <select
               value={movTipoFilter}
               onChange={e => setMovTipoFilter(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
             >
               <option value="">Todos los tipos</option>
               <option value="INGRESO">Ingresos</option>
@@ -972,7 +972,7 @@ export default function TesoreriaModule() {
                 value={movSearch}
                 onChange={e => setMovSearch(e.target.value)}
                 placeholder="Buscar..."
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
               />
             </div>
             <button
@@ -1008,7 +1008,7 @@ export default function TesoreriaModule() {
                         type="date"
                         value={movFechaDesde}
                         onChange={e => setMovFechaDesde(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
@@ -1017,7 +1017,7 @@ export default function TesoreriaModule() {
                         type="date"
                         value={movFechaHasta}
                         onChange={e => setMovFechaHasta(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
@@ -1025,7 +1025,7 @@ export default function TesoreriaModule() {
                       <select
                         value={movCategoriaFilter}
                         onChange={e => setMovCategoriaFilter(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       >
                         <option value="">Todas</option>
                         {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -1040,7 +1040,7 @@ export default function TesoreriaModule() {
                           value={movMontoMin}
                           onChange={e => setMovMontoMin(e.target.value)}
                           placeholder="0"
-                          className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                       <div className="flex-1">
@@ -1051,7 +1051,7 @@ export default function TesoreriaModule() {
                           value={movMontoMax}
                           onChange={e => setMovMontoMax(e.target.value)}
                           placeholder="∞"
-                          className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                          className="w-full px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                         />
                       </div>
                     </div>
@@ -1092,7 +1092,7 @@ export default function TesoreriaModule() {
           )}
 
           {/* Movements table */}
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
             {filteredMov.length === 0 ? (
               <div className="text-center py-16 px-4">
                 <Wallet className="h-14 w-14 mb-4 text-[var(--text-tertiary)] mx-auto" />
@@ -1192,7 +1192,7 @@ export default function TesoreriaModule() {
       {activeTab === "transferencias" && (
         <div className="space-y-6">
           {transferencias.length === 0 ? (
-            <div className="text-center py-16 px-4 bg-white border border-[var(--rule-base)] rounded-xl">
+            <div className="text-center py-16 px-4 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl">
               <div className="text-6xl mb-4">↔️</div>
               <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin transferencias</CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mb-6">Mueve dinero entre tus cuentas</p>
@@ -1215,7 +1215,7 @@ export default function TesoreriaModule() {
                   key={t.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white border border-[var(--rule-base)] rounded-xl p-4"
+                  className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4"
                 >
                   <div className="flex items-center gap-3">
                     {/* Origen */}
@@ -1273,7 +1273,7 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -1292,7 +1292,7 @@ export default function TesoreriaModule() {
                       value={formNombre}
                       onChange={e => setFormNombre(e.target.value)}
                       placeholder="Ej: BCP Ahorro, Caja Principal, Yape..."
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
@@ -1332,7 +1332,7 @@ export default function TesoreriaModule() {
                         value={formBanco}
                         onChange={e => setFormBanco(e.target.value)}
                         placeholder="BCP, BBVA, Yape..."
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                     <div>
@@ -1341,7 +1341,7 @@ export default function TesoreriaModule() {
                         value={formNumeroCuenta}
                         onChange={e => setFormNumeroCuenta(e.target.value)}
                         placeholder="123-456-789"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   </div>
@@ -1356,7 +1356,7 @@ export default function TesoreriaModule() {
                         value={formSaldoInicial}
                         onChange={e => setFormSaldoInicial(e.target.value)}
                         placeholder="0.00"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   )}
@@ -1368,7 +1368,7 @@ export default function TesoreriaModule() {
                       value={formNotas}
                       onChange={e => setFormNotas(e.target.value)}
                       placeholder="Notas opcionales..."
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
                     />
                   </div>
                 </div>
@@ -1417,7 +1417,7 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -1433,7 +1433,7 @@ export default function TesoreriaModule() {
                     <select
                       value={movFormCuenta}
                       onChange={e => setMovFormCuenta(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     >
                       <option value="">Seleccionar cuenta...</option>
                       {activeCuentas.map(c => (
@@ -1481,7 +1481,7 @@ export default function TesoreriaModule() {
                       value={movFormMonto}
                       onChange={e => setMovFormMonto(e.target.value)}
                       placeholder="100.00"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
@@ -1491,7 +1491,7 @@ export default function TesoreriaModule() {
                       <select
                         value={movFormCategoria}
                         onChange={e => setMovFormCategoria(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       >
                         <option value="">Sin categoría</option>
                         {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -1503,7 +1503,7 @@ export default function TesoreriaModule() {
                         value={movFormRef}
                         onChange={e => setMovFormRef(e.target.value)}
                         placeholder="N° boleta, fact..."
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
                     </div>
                   </div>
@@ -1514,7 +1514,7 @@ export default function TesoreriaModule() {
                       value={movFormDesc}
                       onChange={e => setMovFormDesc(e.target.value)}
                       placeholder="Detalle del movimiento..."
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                 </div>
@@ -1583,7 +1583,7 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden"
+              className="fixed inset-x-4 top-[10%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -1599,7 +1599,7 @@ export default function TesoreriaModule() {
                     <select
                       value={transOrigen}
                       onChange={e => setTransOrigen(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     >
                       <option value="">Seleccionar origen...</option>
                       {activeCuentas.map(c => (
@@ -1619,7 +1619,7 @@ export default function TesoreriaModule() {
                     <select
                       value={transDestino}
                       onChange={e => setTransDestino(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     >
                       <option value="">Seleccionar destino...</option>
                       {activeCuentas.filter(c => c.id !== transOrigen).map(c => (
@@ -1637,7 +1637,7 @@ export default function TesoreriaModule() {
                       value={transMonto}
                       onChange={e => setTransMonto(e.target.value)}
                       placeholder="500.00"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
 
@@ -1647,7 +1647,7 @@ export default function TesoreriaModule() {
                       value={transDesc}
                       onChange={e => setTransDesc(e.target.value)}
                       placeholder="Motivo de la transferencia..."
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
                   </div>
                 </div>
@@ -1713,7 +1713,7 @@ export default function TesoreriaModule() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-x-4 top-[20%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-md bg-white rounded-xl border border-[var(--rule-base)] overflow-hidden"
+              className="fixed inset-x-4 top-[20%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-50 w-auto sm:w-full sm:max-w-md bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] overflow-hidden"
             >
               <div className="p-5 sm:p-6 space-y-4">
                 <div className="flex items-center gap-3">

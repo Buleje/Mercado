@@ -126,7 +126,7 @@ function HealthSemaphore() {
 
   if (loading || !score) {
     return (
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-20 w-20 rounded-full bg-gray-200 mx-auto" />
       </div>
     );
@@ -143,7 +143,7 @@ function HealthSemaphore() {
   ];
 
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {/* Circulo grande */}
         <div className={`w-20 h-20 rounded-full flex items-center justify-center ring-4 ${bgRing} shrink-0`} style={{ backgroundColor: `${color}20` }}>
@@ -221,7 +221,7 @@ function ComparativoMensual() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-75 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -232,7 +232,7 @@ function ComparativoMensual() {
   }
 
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Comparativo Mensual</p>
       <ResponsiveContainer minWidth={0} width="100%" height={300}>
         <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -296,7 +296,7 @@ function PuntoEquilibrio() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-16 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -309,7 +309,7 @@ function PuntoEquilibrio() {
   const pct = Math.min((data.ventasHoy / data.gastoDiario) * 100, 150);
 
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Punto de Equilibrio Diario</p>
       <div className="flex items-center gap-4">
         <div className="flex-1">
@@ -421,7 +421,7 @@ function GastosDonut() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-55 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -439,7 +439,7 @@ function GastosDonut() {
   const getColor = (category: string) => EXPENSE_COLORS[category] ?? EXPENSE_COLORS[category.toLowerCase()] ?? "#6b7280";
 
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Gastos del Mes por Categoria</p>
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative w-45 h-45">
@@ -531,7 +531,7 @@ function ProyeccionCierreMes() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-32 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -545,7 +545,7 @@ function ProyeccionCierreMes() {
   const mesNombre = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="h-4 w-4 text-[var(--text-secondary)]" />
         <p className="text-xs font-bold text-[var(--text-secondary)]">
@@ -611,7 +611,7 @@ function ResumenFiscal() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-32 bg-gray-100 rounded-xl" />
       </div>
     );
@@ -623,7 +623,7 @@ function ResumenFiscal() {
   const mesActual = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
       <div className="flex items-center gap-2 mb-3">
         <Calculator className="h-4 w-4 text-[var(--data-warning-500)]" />
         <p className="text-xs font-bold text-[var(--text-secondary)]">
@@ -759,7 +759,7 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
     { name: "empty", value: empty },
   ];
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4  flex flex-col items-center">
+    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4  flex flex-col items-center">
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-1">{label}</p>
       <div className="relative w-35 h-20">
         <ResponsiveContainer minWidth={0} width="100%" height={80}>
@@ -1007,7 +1007,7 @@ function FinanzasDashboard() {
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white border border-[var(--rule-base)] rounded-xl p-4">
+            <div key={i} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-10 w-10 rounded-full bg-gray-200" />
                 <div className="flex-1 space-y-2">
@@ -1018,19 +1018,19 @@ function FinanzasDashboard() {
             </div>
           ))}
         </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6">
           <div className="h-4 bg-gray-200 rounded w-48 mb-4" />
           <div className="h-80 bg-gray-100 rounded-xl" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6">
             <div className="h-50 bg-gray-100 rounded-xl" />
           </div>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6">
             <div className="h-50 bg-gray-100 rounded-xl" />
           </div>
         </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-6">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6">
           <div className="h-70 bg-gray-100 rounded-xl" />
         </div>
       </div>
@@ -1138,7 +1138,7 @@ function FinanzasDashboard() {
           const sparkData = kpiIdx < 3 ? [{ v: val * 0.7 }, { v: val * 0.85 }, { v: val * 0.75 }, { v: val * 0.9 }, { v: val * 0.82 }, { v: val * 0.95 }, { v: val }] : null;
 
           return (
-            <div key={def.key} className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  hover:shadow-sm transition-shadow">
+            <div key={def.key} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  hover:shadow-sm transition-shadow">
               <div className="flex items-center gap-3">
                 <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${def.bg}`}>
                   <Icon className="h-5 w-5" style={{ color: def.color }} />
@@ -1174,7 +1174,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 2: Ingresos vs Gastos vs Utilidad (ComposedChart) ════════ */}
       <StaggerItem index={1}>
       {monthlyData.length > 0 && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FavStar id="ingresos-vs-gastos" favs={finFavs} />
@@ -1222,7 +1222,7 @@ function FinanzasDashboard() {
       <StaggerItem index={2}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Donut izquierda: Gastos por categoria */}
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <FavStar id="gastos-categoria" favs={finFavs} />
             <div className="h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
@@ -1274,7 +1274,7 @@ function FinanzasDashboard() {
         </div>
 
         {/* Donut derecha: Metodos de pago */}
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-2 w-2 rounded-full bg-primary" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos por Metodo de Pago</p>
@@ -1320,7 +1320,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 4: Flujo de Caja Diario (AreaChart) ════════ */}
       <StaggerItem index={3}>
       {cashFlow.length > 0 && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FavStar id="flujo-caja" favs={finFavs} />
@@ -1420,7 +1420,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 6: Resumen Fiscal Mejorado ════════ */}
       <StaggerItem index={5}>
       {fiscal && (
-        <div className="bg-white border-2 border-secondary/40 rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] border-2 border-secondary/40 rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <Calculator className="h-5 w-5 text-secondary" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Resumen Fiscal — {mesCapitalized}</p>
@@ -1516,7 +1516,7 @@ function FinanzasDashboard() {
       <StaggerItem index={7}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Debo a proveedores */}
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <Truck className="h-4 w-4 text-secondary" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Debo a proveedores</p>
@@ -1553,7 +1553,7 @@ function FinanzasDashboard() {
         </div>
 
         {/* Me deben (fiados) */}
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center gap-2 mb-4">
             <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Me deben (fiados)</p>
@@ -1594,7 +1594,7 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 9: Mejora 19 — Salud del Negocio (gauge 0-100) ════════ */}
       {healthScore && (
         <StaggerItem index={8}>
-          <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
               <p className="text-sm font-bold text-[var(--text-primary)]">Salud del Negocio</p>
@@ -1652,15 +1652,15 @@ function FinanzasDashboard() {
 
       {/* ════════ SECCION 10: Mejora 20 — Comparativo entre meses ════════ */}
       <StaggerItem index={9}>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <p className="text-sm font-bold text-[var(--text-primary)]">Comparar Meses</p>
             <div className="flex items-center gap-2">
-              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-[var(--text-primary)]">
+              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
               <span className="text-xs text-[var(--text-tertiary)]">vs</span>
-              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white text-[var(--text-primary)]">
+              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
             </div>
@@ -1785,7 +1785,7 @@ function IntelligenceKPIStrip() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {cards.map(c => (
-        <div key={c.label} className="bg-white border border-[var(--rule-base)] rounded-xl p-3  text-center">
+        <div key={c.label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3  text-center">
           <p className="text-xs text-[var(--text-secondary)] font-semibold">{c.label}</p>
           <p className={cn("text-lg font-extrabold mt-0.5", c.color)}>{c.value}</p>
         </div>
@@ -1906,15 +1906,15 @@ export default function FinanzasModule() {
           <div className="space-y-6">
             <ComparativeReportsTab />
             <IntelligenceKPIStrip />
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5 ">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 ">
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Análisis de Negocio</CardTitle>
               <BusinessIntelligenceTab />
             </div>
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5 ">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 ">
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">KPIs Personalizados</CardTitle>
               <CustomKPITab />
             </div>
-            <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5 ">
+            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 ">
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Precios del Mercado</CardTitle>
               <CompetitorPriceTracker />
             </div>

@@ -144,7 +144,7 @@ function relativeTime(iso: string): string {
 
 function NewOrderToast({ count, onView, onDismiss }: { count: number; onView: () => void; onDismiss: () => void }) {
   return (
-    <div className="fixed bottom-4 right-4 z-50 bg-white border border-primary/40 rounded-xl shadow-2xl p-4 flex items-center gap-3 max-w-sm anim-fadeup">
+    <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-[var(--color-card)] border border-primary/40 rounded-xl shadow-2xl p-4 flex items-center gap-3 max-w-sm anim-fadeup">
       <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
         <ShoppingCart className="h-5 w-5" />
       </div>
@@ -334,7 +334,7 @@ function WhatsAppPicker({ order, onClose }: { order: MarketplaceOrder; onClose: 
 
   return (
     <div role="presentation" className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-labelledby="whatsapp-modal-title" className="bg-white rounded-2xl border border-[var(--rule-base)] w-full max-w-md p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-labelledby="whatsapp-modal-title" className="bg-white dark:bg-[var(--color-card)] rounded-2xl border border-[var(--rule-base)] w-full max-w-md p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle id="whatsapp-modal-title" className="text-sm">WhatsApp a {order.customerName}</CardTitle>
