@@ -130,8 +130,8 @@ function PriceRangePopover({
 
   return (
     <div className="w-56 space-y-3">
-      <p className="text-xs font-bold text-gray-700 dark:text-gray-200">Rango de precio</p>
-      <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400">
+      <p className="text-xs font-bold text-[var(--text-primary)] dark:text-gray-200">Rango de precio</p>
+      <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] dark:text-gray-400">
         <span>S/ {min.toFixed(0)}</span>
         <span>S/ {max >= MAX_PRICE_LIMIT ? `${MAX_PRICE_LIMIT}+` : max.toFixed(0)}</span>
       </div>
@@ -228,11 +228,11 @@ function FiltersDrawer({
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-bold text-gray-800 dark:text-white">Filtros</span>
+            <span className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Filtros</span>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
               aria-label="Cerrar filtros"
             >
               <X className="h-4 w-4" />
@@ -244,14 +244,14 @@ function FiltersDrawer({
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           {/* Sort */}
           <div>
-            <label htmlFor="mobile-sort" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <label htmlFor="mobile-sort" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">
               Ordenar por
             </label>
             <select
               id="mobile-sort"
               value={filters.sortBy}
               onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}
-              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-3 pr-9 text-sm font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-3 pr-9 text-sm font-semibold text-[var(--text-primary)] dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             >
               {SORT_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -261,7 +261,7 @@ function FiltersDrawer({
 
           {/* Categories */}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Categoría</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">Categoría</p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoría">
               {PRODUCT_CATEGORIES.map((cat) => (
                 <button
@@ -273,7 +273,7 @@ function FiltersDrawer({
                     "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
                     filters.productCategory === cat.id
                       ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                      : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 hover:border-gray-400"
+                      : "border border-gray-200 bg-white text-[var(--text-secondary)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 hover:border-gray-400"
                   )}
                 >
                   {(() => {
@@ -288,7 +288,7 @@ function FiltersDrawer({
 
           {/* Price Range */}
           <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Precio</p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">Precio</p>
             <PriceRangePopover
               min={filters.minPrice}
               max={filters.maxPrice}
@@ -308,7 +308,7 @@ function FiltersDrawer({
               "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-60",
               filters.nearbyEnabled
                 ? "bg-primary text-white shadow-md"
-                : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                : "border border-gray-200 bg-white text-[var(--text-secondary)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
             )}
           >
             {geoLoading
@@ -325,7 +325,7 @@ function FiltersDrawer({
               type="button"
               onClick={onReset}
               aria-label="Limpiar todos los filtros"
-              className="min-h-12 flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-bold text-gray-600 dark:text-gray-300 hover:border-red-300 hover:text-[var(--data-error-500)] transition-colors"
+              className="min-h-12 flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-bold text-[var(--text-secondary)] dark:text-gray-300 hover:border-red-300 hover:text-[var(--data-error-500)] transition-colors"
             >
               Limpiar
             </button>
@@ -384,7 +384,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             "inline-flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold border transition-colors",
             activeCount > 0
               ? "bg-primary/10 border-primary/30 text-primary"
-              : "border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+              : "border-gray-200 bg-white text-[var(--text-secondary)] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
           )}
         >
           <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
@@ -425,7 +425,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
                     "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all shrink-0",
                     filters.productCategory === cat.id
                       ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
-                      : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400"
+                      : "bg-white dark:bg-gray-900 text-[var(--text-secondary)] dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400"
                   )}
                 >
                   {(() => {
@@ -473,7 +473,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
                     "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
                     filters.sortBy === opt.value
                       ? "bg-primary/10 text-primary"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      : "text-[var(--text-secondary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                   )}
                 >
                   {filters.sortBy === opt.value && <Check className="h-3 w-3" aria-hidden="true" />}

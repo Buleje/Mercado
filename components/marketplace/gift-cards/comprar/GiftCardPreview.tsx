@@ -37,14 +37,14 @@ export default function GiftCardPreview({
           <GiftCardArtwork design={design} className="absolute inset-0 h-full w-full" />
           <div className="absolute inset-0 flex flex-col justify-between p-5">
             <header className="flex items-start justify-between">
-              <span className="rounded-full bg-white/80 px-2.5 py-1 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-gray-700 backdrop-blur-sm">
+              <span className="rounded-full bg-white/80 px-2.5 py-1 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-primary)] backdrop-blur-sm">
                 Buleje
               </span>
-              <span className="text-right text-2xl font-bold text-gray-900">
+              <span className="text-right text-2xl font-bold text-[var(--text-primary)]">
                 {formattedAmount}
               </span>
             </header>
-            <footer className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wider)] text-gray-700">
+            <footer className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
               Tarjeta de regalo
             </footer>
           </div>
@@ -52,26 +52,26 @@ export default function GiftCardPreview({
 
         <div className="space-y-4 border-t border-gray-100 p-5 dark:border-gray-800">
           <div>
-            <div className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            <div className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-[var(--text-tertiary)] dark:text-gray-500">
               Para
             </div>
-            <div className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="mt-0.5 text-sm font-semibold text-[var(--text-primary)] dark:text-white">
               {recipientName || "El destinatario"}
             </div>
           </div>
 
           <div>
-            <div className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            <div className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide text-[var(--text-tertiary)] dark:text-gray-500">
               Mensaje
             </div>
-            <div className="mt-0.5 min-h-[3rem] whitespace-pre-line text-sm italic text-gray-700 dark:text-gray-300">
+            <div className="mt-0.5 min-h-[3rem] whitespace-pre-line text-sm italic text-[var(--text-primary)] dark:text-gray-300">
               {message.trim() || "Tu mensaje aparecera aqui..."}
             </div>
           </div>
 
           <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-xs dark:border-gray-800">
-            <span className="text-gray-500 dark:text-gray-400">De</span>
-            <span className="font-semibold text-gray-900 dark:text-white">
+            <span className="text-[var(--text-secondary)] dark:text-gray-400">De</span>
+            <span className="font-semibold text-[var(--text-primary)] dark:text-white">
               {senderName || "Tu nombre"}
             </span>
           </div>

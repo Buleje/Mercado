@@ -77,7 +77,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
       >
         <div className="flex items-center gap-2">
           <ArrowDownUp className="h-4 w-4 text-primary" />
-          <span className="text-sm font-bold text-gray-800 dark:text-foreground">
+          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
             Comparar precios
           </span>
           {prices.length > 0 && (
@@ -100,22 +100,22 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span className="ml-2 text-sm text-gray-500">Buscando precios...</span>
+              <span className="ml-2 text-sm text-[var(--text-secondary)]">Buscando precios...</span>
             </div>
           ) : prices.length === 0 ? (
-            <div className="py-6 text-center text-sm text-gray-400">
+            <div className="py-6 text-center text-sm text-[var(--text-tertiary)]">
               No encontramos este producto en otras tiendas
             </div>
           ) : (
             <>
               {/* Sort toggle */}
               <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-surface">
-                <span className="text-xs text-gray-400">Ordenar por:</span>
+                <span className="text-xs text-[var(--text-tertiary)]">Ordenar por:</span>
                 <button
                   onClick={() => setSortBy("price")}
                   className={cn(
                     "text-xs font-semibold px-2 py-1 rounded-lg transition-colors",
-                    sortBy === "price" ? "bg-primary/10 text-primary" : "text-gray-500 hover:text-gray-700"
+                    sortBy === "price" ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   )}
                 >
                   Precio
@@ -124,7 +124,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                   onClick={() => setSortBy("rating")}
                   className={cn(
                     "text-xs font-semibold px-2 py-1 rounded-lg transition-colors",
-                    sortBy === "rating" ? "bg-primary/10 text-primary" : "text-gray-500 hover:text-gray-700"
+                    sortBy === "rating" ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   )}
                 >
                   Rating
@@ -153,13 +153,13 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                         {sp.storeLogo ? (
                           <Image src={sp.storeLogo} alt={sp.storeName} width={40} height={40} className="object-cover" />
                         ) : (
-                          <Store className="h-5 w-5 text-gray-400" />
+                          <Store className="h-5 w-5 text-[var(--text-tertiary)]" />
                         )}
                       </div>
 
                       {/* Store info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">
+                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
                           {sp.storeName}
                           {isCheapest && (
                             <span className="ml-1.5 text-[length:var(--ts-2xs)] bg-[var(--data-success-500)] text-white px-1.5 py-0.5 rounded-full font-bold">
@@ -187,12 +187,12 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                       <div className="text-right shrink-0">
                         <p className={cn(
                           "text-base font-extrabold",
-                          isCheapest ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-gray-800 dark:text-foreground"
+                          isCheapest ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-[var(--text-primary)] dark:text-foreground"
                         )}>
                           S/ {Number(sp.price).toFixed(2)}
                         </p>
                         {discount > 0 && (
-                          <p className="text-xs text-gray-400 line-through">
+                          <p className="text-xs text-[var(--text-tertiary)] line-through">
                             S/ {sp.originalPrice?.toFixed(2)}
                           </p>
                         )}

@@ -32,10 +32,10 @@ export default function StepDestinatario({
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+        <h2 className="text-xl font-bold text-[var(--text-primary)] dark:text-white">
           Para quien es la tarjeta?
         </h2>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-gray-400">
           Le enviamos el codigo y la dedicatoria por el medio que elijas.
         </p>
       </header>
@@ -51,12 +51,12 @@ export default function StepDestinatario({
               onChange({ recipientName: e.target.value, recipientContact, contactMethod })
             }
             placeholder="Ej: Ana Torres"
-            className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-600 dark:focus:border-white dark:focus:ring-white"
+            className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-gray-900 focus:ring-1 focus:ring-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-[var(--text-secondary)] dark:focus:border-white dark:focus:ring-white"
           />
         </Field>
 
         <fieldset>
-          <legend className="block text-sm font-semibold text-gray-900 dark:text-white">
+          <legend className="block text-sm font-semibold text-[var(--text-primary)] dark:text-white">
             Como la enviamos?
           </legend>
           <div className="mt-2 grid grid-cols-2 gap-2">
@@ -85,14 +85,14 @@ export default function StepDestinatario({
                   ].join(" ")}
                 >
                   <opt.icon
-                    className="mt-0.5 h-4 w-4 text-gray-500 dark:text-gray-400"
+                    className="mt-0.5 h-4 w-4 text-[var(--text-secondary)] dark:text-gray-400"
                     aria-hidden="true"
                   />
                   <div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                    <div className="text-sm font-semibold text-[var(--text-primary)] dark:text-white">
                       {opt.label}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{opt.hint}</div>
+                    <div className="text-xs text-[var(--text-secondary)] dark:text-gray-400">{opt.hint}</div>
                   </div>
                 </button>
               );
@@ -114,7 +114,7 @@ export default function StepDestinatario({
             }
             placeholder={contactPlaceholder}
             inputMode={contactMethod === "whatsapp" ? "tel" : "email"}
-            className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-600 dark:focus:border-white dark:focus:ring-white"
+            className="block w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-gray-900 focus:ring-1 focus:ring-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-[var(--text-secondary)] dark:focus:border-white dark:focus:ring-white"
           />
         </Field>
       </div>
@@ -123,7 +123,7 @@ export default function StepDestinatario({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-gray-400 dark:hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Volver
@@ -156,12 +156,12 @@ function Field({
     <div>
       <label
         htmlFor={htmlFor}
-        className="block text-sm font-semibold text-gray-900 dark:text-white"
+        className="block text-sm font-semibold text-[var(--text-primary)] dark:text-white"
       >
         {label}
       </label>
       {hint && (
-        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{hint}</p>
+        <p className="mt-0.5 text-xs text-[var(--text-secondary)] dark:text-gray-400">{hint}</p>
       )}
       <div className="mt-2">{children}</div>
     </div>

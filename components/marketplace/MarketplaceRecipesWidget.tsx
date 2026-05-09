@@ -179,15 +179,15 @@ export default function MarketplaceRecipesWidget() {
             >
               {/* Hero: illustration line-art sobre off-white con número editorial */}
               <div className="relative aspect-[4/3] bg-gray-50 dark:bg-gray-950 overflow-hidden">
-                <span className="absolute top-3 left-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
+                <span className="absolute top-3 left-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   {String(idx + 1).padStart(2, "0")}
                 </span>
-                <span className="absolute top-3 right-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-gray-400">
+                <span className="absolute top-3 right-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                   {r.category}
                 </span>
                 {Illustration && (
                   <Illustration
-                    className="absolute inset-0 m-auto w-[70%] h-[70%] text-gray-800 dark:text-gray-200 transition-transform duration-500 group-hover:scale-105"
+                    className="absolute inset-0 m-auto w-[70%] h-[70%] text-[var(--text-primary)] dark:text-gray-200 transition-transform duration-500 group-hover:scale-105"
                     ariaLabel={r.title}
                   />
                 )}
@@ -196,14 +196,14 @@ export default function MarketplaceRecipesWidget() {
               </div>
 
               <div className="flex-1 flex flex-col p-5">
-                <h3 className="text-base font-extrabold tracking-tight text-gray-900 dark:text-white">
+                <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)] dark:text-white">
                   {r.title}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed min-h-[2rem]">
+                <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed min-h-[2rem]">
                   {r.description}
                 </p>
 
-                <div className="mt-4 flex items-center gap-4 text-[length:var(--ts-2xs)] text-gray-500 border-t border-gray-100 dark:border-gray-800 pt-3">
+                <div className="mt-4 flex items-center gap-4 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] border-t border-gray-100 dark:border-gray-800 pt-3">
                   <span className="inline-flex items-center gap-1 tabular-nums">
                     <Clock className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
                     {r.time}
@@ -212,7 +212,7 @@ export default function MarketplaceRecipesWidget() {
                     <Users className="h-3 w-3" strokeWidth={1.75} aria-hidden="true" />
                     {r.servings}
                   </span>
-                  <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-gray-400 tabular-nums">
+                  <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
                     {r.ingredients.length} ingr.
                   </span>
                 </div>
@@ -223,7 +223,7 @@ export default function MarketplaceRecipesWidget() {
                     e.stopPropagation();
                     setActiveRecipe(r);
                   }}
-                  className="mt-4 inline-flex items-center justify-between w-full pt-2 border-t border-gray-100 dark:border-gray-800 text-xs font-bold text-gray-900 dark:text-white transition-colors hover:text-primary"
+                  className="mt-4 inline-flex items-center justify-between w-full pt-2 border-t border-gray-100 dark:border-gray-800 text-xs font-bold text-[var(--text-primary)] dark:text-white transition-colors hover:text-primary"
                 >
                   Ver receta
                   <ArrowUpRight

@@ -192,7 +192,7 @@ export default function SponsoredCreateModal({
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-gray-800">
-              <h2 id={`${formId}-title`} className="text-base font-bold text-gray-900 dark:text-white">
+              <h2 id={`${formId}-title`} className="text-base font-bold text-[var(--text-primary)] dark:text-white">
                 Nuevo boost patrocinado
               </h2>
               <button
@@ -201,7 +201,7 @@ export default function SponsoredCreateModal({
                 aria-label="Cerrar modal"
                 className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                <X className="h-4 w-4 text-gray-500" />
+                <X className="h-4 w-4 text-[var(--text-secondary)]" />
               </button>
             </div>
 
@@ -209,7 +209,7 @@ export default function SponsoredCreateModal({
             <form id={formId} onSubmit={handleSubmit} noValidate className="px-5 py-5 space-y-4">
               {/* Producto */}
               <div>
-                <label htmlFor={`${formId}-product`} className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                <label htmlFor={`${formId}-product`} className="block text-xs font-bold text-[var(--text-primary)] dark:text-gray-300 mb-1.5">
                   Producto
                 </label>
                 <select
@@ -219,7 +219,7 @@ export default function SponsoredCreateModal({
                   disabled={loadingProducts}
                   className={cn(
                     "w-full rounded-xl border px-3 py-2.5 text-sm",
-                    "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+                    "bg-white dark:bg-gray-800 text-[var(--text-primary)] dark:text-white",
                     "outline-none transition-colors",
                     errors.productId
                       ? "border-red-400 dark:border-[var(--data-error-600)] focus:ring-2 focus:ring-red-300"
@@ -239,7 +239,7 @@ export default function SponsoredCreateModal({
               {/* Bid + Budget */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor={`${formId}-bid`} className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  <label htmlFor={`${formId}-bid`} className="block text-xs font-bold text-[var(--text-primary)] dark:text-gray-300 mb-1.5">
                     Puja (S/ / 1000 imp.)
                   </label>
                   <input
@@ -253,7 +253,7 @@ export default function SponsoredCreateModal({
                     placeholder="Ej: 5"
                     className={cn(
                       "w-full rounded-xl border px-3 py-2.5 text-sm",
-                      "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+                      "bg-white dark:bg-gray-800 text-[var(--text-primary)] dark:text-white",
                       "outline-none transition-colors",
                       errors.bidAmount
                         ? "border-red-400 dark:border-[var(--data-error-600)]"
@@ -265,7 +265,7 @@ export default function SponsoredCreateModal({
                   )}
                 </div>
                 <div>
-                  <label htmlFor={`${formId}-budget`} className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  <label htmlFor={`${formId}-budget`} className="block text-xs font-bold text-[var(--text-primary)] dark:text-gray-300 mb-1.5">
                     Presupuesto max. (S/)
                   </label>
                   <input
@@ -278,7 +278,7 @@ export default function SponsoredCreateModal({
                     placeholder="Ej: 100"
                     className={cn(
                       "w-full rounded-xl border px-3 py-2.5 text-sm",
-                      "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+                      "bg-white dark:bg-gray-800 text-[var(--text-primary)] dark:text-white",
                       "outline-none transition-colors",
                       errors.maxBudgetPen
                         ? "border-red-400 dark:border-[var(--data-error-600)]"
@@ -294,7 +294,7 @@ export default function SponsoredCreateModal({
               {/* Fechas */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor={`${formId}-start`} className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  <label htmlFor={`${formId}-start`} className="block text-xs font-bold text-[var(--text-primary)] dark:text-gray-300 mb-1.5">
                     Inicio
                   </label>
                   <input
@@ -305,7 +305,7 @@ export default function SponsoredCreateModal({
                     onChange={(e) => setStartDate(e.target.value)}
                     className={cn(
                       "w-full rounded-xl border px-3 py-2.5 text-sm",
-                      "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+                      "bg-white dark:bg-gray-800 text-[var(--text-primary)] dark:text-white",
                       "outline-none transition-colors",
                       errors.startDate
                         ? "border-red-400 dark:border-[var(--data-error-600)]"
@@ -317,7 +317,7 @@ export default function SponsoredCreateModal({
                   )}
                 </div>
                 <div>
-                  <label htmlFor={`${formId}-end`} className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                  <label htmlFor={`${formId}-end`} className="block text-xs font-bold text-[var(--text-primary)] dark:text-gray-300 mb-1.5">
                     Fin
                   </label>
                   <input
@@ -328,7 +328,7 @@ export default function SponsoredCreateModal({
                     onChange={(e) => setEndDate(e.target.value)}
                     className={cn(
                       "w-full rounded-xl border px-3 py-2.5 text-sm",
-                      "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+                      "bg-white dark:bg-gray-800 text-[var(--text-primary)] dark:text-white",
                       "outline-none transition-colors",
                       errors.endDate
                         ? "border-red-400 dark:border-[var(--data-error-600)]"
@@ -354,7 +354,7 @@ export default function SponsoredCreateModal({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-bold text-[var(--text-secondary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   Cancelar
                 </button>

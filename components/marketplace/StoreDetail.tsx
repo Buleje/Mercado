@@ -70,14 +70,14 @@ function StarRating({ rating, count }: { rating: number | null; count: number })
         <svg
           key={s}
           aria-hidden="true"
-          className={`h-4 w-4 ${s <= Math.round(r) ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+          className={`h-4 w-4 ${s <= Math.round(r) ? "text-yellow-400" : "text-[var(--text-tertiary)] dark:text-gray-600"}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
         </svg>
       ))}
-      <span className="ml-1 text-sm font-medium text-gray-600 dark:text-gray-400">
+      <span className="ml-1 text-sm font-medium text-[var(--text-secondary)] dark:text-gray-400">
         {r > 0 ? r.toFixed(1) : "Sin rating"} · {count} reseñas
       </span>
     </div>
@@ -192,7 +192,7 @@ function RelatedProducts({
     <section className="mt-10 mb-4" aria-label="Productos relacionados">
       <div className="flex items-center gap-3 mb-4">
         <Lightbulb className="h-5 w-5 text-yellow-500 shrink-0" aria-hidden />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">
+        <h2 className="text-base font-bold text-[var(--text-primary)] dark:text-white">
           También te puede gustar
         </h2>
       </div>
@@ -240,7 +240,7 @@ function ReviewPhotoGallery({ storeSlug }: { storeSlug: string }) {
 
   return (
     <section className="mt-8">
-      <h3 className="mb-3 text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+      <h3 className="mb-3 text-base font-bold text-[var(--text-primary)] dark:text-white flex items-center gap-2">
         <svg aria-hidden="true" className="h-5 w-5 text-[var(--data-success-600)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
@@ -364,7 +364,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
   return (
     <section className="mt-10 mb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+        <h2 className="text-lg font-bold text-[var(--text-primary)] dark:text-white">
           Reseñas de {storeName}
         </h2>
         {!showForm && (
@@ -408,7 +408,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
 
           {/* Star rating picker */}
           <div className="flex items-center gap-1">
-            <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Calificación:</span>
+            <span className="text-sm text-[var(--text-secondary)] dark:text-gray-400 mr-2">Calificación:</span>
             {[1, 2, 3, 4, 5].map((s) => (
               <button
                 key={s}
@@ -418,7 +418,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
                 aria-label={`${s} estrella${s > 1 ? "s" : ""}`}
               >
                 <svg
-                  className={`h-6 w-6 transition-colors ${s <= formRating ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+                  className={`h-6 w-6 transition-colors ${s <= formRating ? "text-yellow-400" : "text-[var(--text-tertiary)] dark:text-gray-600"}`}
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -441,7 +441,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
           {/* Photo upload */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400">Fotos (opcional, máx 3):</label>
+              <label className="text-sm text-[var(--text-secondary)] dark:text-gray-400">Fotos (opcional, máx 3):</label>
               {uploadingPhoto && (
                 <span className="text-xs text-[var(--data-success-600)] animate-pulse">Subiendo...</span>
               )}
@@ -490,7 +490,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="min-h-9 rounded-xl px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+              className="min-h-9 rounded-xl px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
             >
               Cancelar
             </button>
@@ -522,7 +522,7 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
         </div>
       ) : reviews.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 py-10 text-center dark:border-gray-700">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-[var(--text-secondary)] dark:text-gray-400">
             Aún no hay reseñas. ¡Sé el primero en opinar!
           </p>
         </div>
@@ -535,12 +535,12 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{r.name}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-white">{r.name}</p>
                   <div className="flex items-center gap-0.5 mt-0.5">
                     {[1, 2, 3, 4, 5].map((s) => (
                       <svg
                         key={s}
-                        className={`h-3.5 w-3.5 ${s <= r.rating ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+                        className={`h-3.5 w-3.5 ${s <= r.rating ? "text-yellow-400" : "text-[var(--text-tertiary)] dark:text-gray-600"}`}
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -549,11 +549,11 @@ function StoreReviews({ storeSlug, storeName }: { storeSlug: string; storeName: 
                     ))}
                   </div>
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--text-tertiary)]">
                   {new Date(r.date).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
                 </span>
               </div>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{r.text}</p>
+              <p className="mt-2 text-sm text-[var(--text-secondary)] dark:text-gray-300">{r.text}</p>
               {r.imageUrls && (() => {
                 try {
                   const urls: string[] = typeof r.imageUrls === "string" ? JSON.parse(r.imageUrls) : r.imageUrls;
@@ -608,7 +608,7 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
       className="mt-12 mb-8 rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900 overflow-hidden"
     >
       <div className="bg-primary/5 dark:bg-primary/10 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-sm font-bold text-[var(--text-primary)] dark:text-white flex items-center gap-2">
           <svg aria-hidden="true" className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -623,14 +623,14 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 mb-1">
               Horario de atención
             </p>
             <div className="space-y-0.5">
-              <p className="text-sm text-gray-900 dark:text-white">
+              <p className="text-sm text-[var(--text-primary)] dark:text-white">
                 <span className="font-medium">Lun – Sáb:</span> 7:00 am – 9:00 pm
               </p>
-              <p className="text-sm text-gray-900 dark:text-white">
+              <p className="text-sm text-[var(--text-primary)] dark:text-white">
                 <span className="font-medium">Dom:</span> 8:00 am – 2:00 pm
               </p>
             </div>
@@ -657,10 +657,10 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 mb-1">
               Dirección
             </p>
-            <p className="text-sm text-gray-900 dark:text-white capitalize">{zone}, Perú</p>
+            <p className="text-sm text-[var(--text-primary)] dark:text-white capitalize">{zone}, Perú</p>
             <a
               href={mapsUrl}
               target="_blank"
@@ -682,7 +682,7 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
           </svg>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 mb-2">
               Contacto
             </p>
             <div className="flex flex-wrap gap-2">
@@ -701,7 +701,7 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
               </a>
               <a
                 href="tel:+51000000000"
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                 aria-label={`Llamar a ${store.name}`}
               >
                 <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -728,14 +728,14 @@ function StoreInfoSection({ store }: { store: StoreInfo }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 mb-2">
               Métodos de pago
             </p>
             <div className="flex flex-wrap gap-2">
               {paymentMethods.map((m) => (
                 <span
                   key={m.label}
-                  className="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300"
+                  className="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] dark:text-gray-300"
                 >
                   {m.label}
                 </span>
@@ -1099,7 +1099,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
           {/* descripción + vacation mode (debajo del banner) */}
           <div className="mt-4 px-1">
             {store.description && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+              <p className="text-sm text-[var(--text-secondary)] dark:text-gray-400 line-clamp-2">
                 {store.description}
               </p>
             )}
@@ -1134,7 +1134,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
         </div>
       ) : (
         <div className="mb-8 rounded-2xl border border-dashed border-gray-300 py-16 text-center dark:border-gray-700">
-          <p className="text-gray-500 dark:text-gray-400">Tienda no encontrada</p>
+          <p className="text-[var(--text-secondary)] dark:text-gray-400">Tienda no encontrada</p>
           <Link
             href="/marketplace"
             className="mt-3 inline-block text-sm text-[var(--data-success-600)] underline hover:no-underline"
@@ -1150,7 +1150,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
         <div className="relative">
           <svg
             aria-hidden="true"
-            className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+            className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -1163,7 +1163,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar producto…"
             aria-label="Buscar producto en la tienda"
-            className="w-full rounded-2xl border border-gray-300 bg-white py-3 pl-12 pr-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500"
+            className="w-full rounded-2xl border border-gray-300 bg-white py-3 pl-12 pr-4 text-sm text-[var(--text-primary)] placeholder-gray-400 shadow-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500"
           />
         </div>
 
@@ -1189,7 +1189,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
                 className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
                   catFilter === ""
                     ? "bg-primary text-white shadow-md shadow-primary/25"
-                    : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    : "border border-gray-200 bg-white text-[var(--text-secondary)] hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                 }`}
               >
                 Todos
@@ -1202,7 +1202,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
                   className={`min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold capitalize transition-colors focus-visible:outline-2 focus-visible:outline-primary ${
                     catFilter === c
                       ? "bg-primary text-white shadow-md shadow-primary/25"
-                      : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                      : "border border-gray-200 bg-white text-[var(--text-secondary)] hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                   }`}
                 >
                   {c}
@@ -1214,7 +1214,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
 
         {/* Ordenar — separado, alineado a la derecha */}
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-[var(--text-secondary)] dark:text-gray-400">
             {loadingProducts ? (
               <span className="inline-block h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
             ) : (
@@ -1229,7 +1229,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
             aria-label="Ordenar productos"
-            className="min-h-9 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-primary dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            className="min-h-9 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors focus-visible:outline-2 focus-visible:outline-primary dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
           >
             <option value="">Ordenar</option>
             <option value="price_asc">Precio: menor a mayor</option>
@@ -1253,7 +1253,7 @@ export default function StoreDetail({ slug }: { slug: string }) {
         </div>
       ) : products.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 py-16 dark:border-gray-700">
-          <p className="text-gray-500 dark:text-gray-400">No se encontraron productos</p>
+          <p className="text-[var(--text-secondary)] dark:text-gray-400">No se encontraron productos</p>
           {(search || catFilter || sortBy) && (
             <button
               onClick={() => { setSearch(""); setCatFilter(""); setSortBy(""); }}

@@ -37,7 +37,7 @@ const ROWS: RowConfig[] = [
             className="object-cover"
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-gray-300">
+          <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)]">
             <Package className="h-10 w-10" />
           </div>
         )}
@@ -50,7 +50,7 @@ const ROWS: RowConfig[] = [
     render: (p) => (
       <Link
         href={`/marketplace/${p.store.slug}/producto/${p.id}`}
-        className="block text-sm font-semibold text-gray-900 dark:text-white hover:text-primary transition-colors line-clamp-2"
+        className="block text-sm font-semibold text-[var(--text-primary)] dark:text-white hover:text-primary transition-colors line-clamp-2"
       >
         {p.name}
       </Link>
@@ -60,7 +60,7 @@ const ROWS: RowConfig[] = [
     key: "category",
     label: "Categoría",
     render: (p) => (
-      <span className="text-sm text-gray-600 dark:text-gray-400">{p.category ?? "—"}</span>
+      <span className="text-sm text-[var(--text-secondary)] dark:text-gray-400">{p.category ?? "—"}</span>
     ),
   },
   {
@@ -73,12 +73,12 @@ const ROWS: RowConfig[] = [
             "text-base font-extrabold",
             p.price === minPrice
               ? "text-success"
-              : "text-gray-900 dark:text-white",
+              : "text-[var(--text-primary)] dark:text-white",
           )}
         >
           {fmt(p.price)}
           {p.unit && (
-            <span className="ml-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+            <span className="ml-1 text-xs font-normal text-[var(--text-secondary)] dark:text-gray-400">
               / {p.unit}
             </span>
           )}
@@ -102,7 +102,7 @@ const ROWS: RowConfig[] = [
     label: "Disponibilidad",
     render: (p) => {
       if (p.stock === null) {
-        return <span className="text-sm text-gray-600 dark:text-gray-400">Consultar</span>;
+        return <span className="text-sm text-[var(--text-secondary)] dark:text-gray-400">Consultar</span>;
       }
       if (p.stock === 0) {
         return (
@@ -160,14 +160,14 @@ const ROWS: RowConfig[] = [
           {p.badge}
         </span>
       ) : (
-        <span className="text-sm text-gray-400 dark:text-gray-600">—</span>
+        <span className="text-sm text-[var(--text-tertiary)] dark:text-gray-600">—</span>
       ),
   },
   {
     key: "minOrder",
     label: "Pedido mínimo",
     render: (p) => (
-      <span className="text-sm text-gray-700 dark:text-gray-300">
+      <span className="text-sm text-[var(--text-primary)] dark:text-gray-300">
         {p.minOrderQty} {p.unit ?? "unid."}
       </span>
     ),
@@ -176,7 +176,7 @@ const ROWS: RowConfig[] = [
     key: "description",
     label: "Descripción",
     render: (p) => (
-      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-4 leading-snug">
+      <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 line-clamp-4 leading-snug">
         {p.description ?? "Sin descripción disponible."}
       </p>
     ),
@@ -200,7 +200,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
             {/* Header sticky: actions */}
             <thead className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-950">
               <tr>
-                <th className="sticky left-0 z-30 bg-gray-50 dark:bg-gray-950 min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-800">
+                <th className="sticky left-0 z-30 bg-gray-50 dark:bg-gray-950 min-w-[160px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 border-r border-gray-200 dark:border-gray-800">
                   Comparando
                 </th>
                 {products.map((p) => (
@@ -210,7 +210,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                   >
                     <button
                       onClick={() => onRemove(p.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-danger transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-[var(--text-secondary)] dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-danger transition-colors"
                       aria-label={`Quitar ${p.name} de la comparación`}
                     >
                       <X className="h-3.5 w-3.5" />
@@ -229,7 +229,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                 >
                   <th
                     scope="row"
-                    className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-950 px-4 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 align-top"
+                    className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-950 px-4 py-4 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 align-top"
                   >
                     {row.label}
                   </th>
@@ -248,7 +248,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
               <tr className="border-t border-gray-200 dark:border-gray-800">
                 <th
                   scope="row"
-                  className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-950 px-4 py-5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 align-top"
+                  className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-950 px-4 py-5 text-left text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400 border-r border-gray-200 dark:border-gray-800 align-top"
                 >
                   Acciones
                 </th>
@@ -263,7 +263,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                       className={cn(
                         "w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors",
                         p.stock !== null && p.stock <= 0
-                          ? "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+                          ? "bg-gray-100 dark:bg-gray-800 text-[var(--text-tertiary)] cursor-not-allowed"
                           : "bg-primary text-white hover:bg-primary-dark",
                       )}
                     >
@@ -290,7 +290,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                 {p.image ? (
                   <Image src={p.image} alt={p.name} fill sizes="96px" className="object-cover" />
                 ) : (
-                  <div className="h-full w-full flex items-center justify-center text-gray-300">
+                  <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)]">
                     <Package className="h-6 w-6" />
                   </div>
                 )}
@@ -298,11 +298,11 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
               <div className="min-w-0 flex-1">
                 <Link
                   href={`/marketplace/${p.store.slug}/producto/${p.id}`}
-                  className="block text-sm font-bold text-gray-900 dark:text-white line-clamp-2"
+                  className="block text-sm font-bold text-[var(--text-primary)] dark:text-white line-clamp-2"
                 >
                   {p.name}
                 </Link>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 mt-0.5">
                   {p.category ?? "—"}
                 </p>
                 <div className="mt-1 flex items-baseline gap-1.5">
@@ -311,13 +311,13 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                       "text-base font-extrabold",
                       p.price === minPrice
                         ? "text-success"
-                        : "text-gray-900 dark:text-white",
+                        : "text-[var(--text-primary)] dark:text-white",
                     )}
                   >
                     {fmt(p.price)}
                   </span>
                   {p.unit && (
-                    <span className="text-xs text-gray-500 dark:text-gray-400">/ {p.unit}</span>
+                    <span className="text-xs text-[var(--text-secondary)] dark:text-gray-400">/ {p.unit}</span>
                   )}
                 </div>
                 {p.price === minPrice && p.price > 0 && (
@@ -329,7 +329,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
               </div>
               <button
                 onClick={() => onRemove(p.id)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-danger hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-danger hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label={`Quitar ${p.name}`}
               >
                 <X className="h-4 w-4" />
@@ -338,10 +338,10 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
 
             <dl className="grid grid-cols-2 gap-2 px-4 pb-4 text-xs">
               <div>
-                <dt className="text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">
+                <dt className="text-[var(--text-secondary)] dark:text-gray-400 uppercase tracking-wide font-semibold">
                   Stock
                 </dt>
-                <dd className="mt-0.5 text-gray-900 dark:text-gray-100">
+                <dd className="mt-0.5 text-[var(--text-primary)] dark:text-gray-100">
                   {p.stock === null
                     ? "Consultar"
                     : p.stock === 0
@@ -352,7 +352,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">
+                <dt className="text-[var(--text-secondary)] dark:text-gray-400 uppercase tracking-wide font-semibold">
                   Tienda
                 </dt>
                 <dd className="mt-0.5 truncate">
@@ -365,18 +365,18 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">
+                <dt className="text-[var(--text-secondary)] dark:text-gray-400 uppercase tracking-wide font-semibold">
                   Mínimo
                 </dt>
-                <dd className="mt-0.5 text-gray-900 dark:text-gray-100">
+                <dd className="mt-0.5 text-[var(--text-primary)] dark:text-gray-100">
                   {p.minOrderQty} {p.unit ?? "unid."}
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">
+                <dt className="text-[var(--text-secondary)] dark:text-gray-400 uppercase tracking-wide font-semibold">
                   Etiqueta
                 </dt>
-                <dd className="mt-0.5 text-gray-900 dark:text-gray-100">
+                <dd className="mt-0.5 text-[var(--text-primary)] dark:text-gray-100">
                   {p.badge ?? "—"}
                 </dd>
               </div>
@@ -389,7 +389,7 @@ export default function CompareTable({ products, onRemove, onAddToCart }: Compar
                 className={cn(
                   "w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors",
                   p.stock !== null && p.stock <= 0
-                    ? "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+                    ? "bg-gray-100 dark:bg-gray-800 text-[var(--text-tertiary)] cursor-not-allowed"
                     : "bg-primary text-white hover:bg-primary-dark",
                 )}
               >

@@ -30,7 +30,7 @@ function StarRating({ rating }: { rating: number }) {
           aria-hidden="true"
         />
       ))}
-      <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">{rating.toFixed(1)}</span>
+      <span className="ml-1 text-xs text-[var(--text-secondary)] dark:text-gray-400">{rating.toFixed(1)}</span>
     </div>
   );
 }
@@ -52,25 +52,25 @@ function ProductColumn({ item, onRemove }: { item: CompareItem; onRemove: () => 
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <Package className="h-8 w-8 text-gray-300 dark:text-gray-600" aria-hidden="true" />
+            <Package className="h-8 w-8 text-[var(--text-tertiary)] dark:text-gray-600" aria-hidden="true" />
           </div>
         )}
       </div>
 
       {/* Nombre */}
-      <p className="line-clamp-2 text-xs font-semibold leading-snug text-gray-900 dark:text-gray-100">
+      <p className="line-clamp-2 text-xs font-semibold leading-snug text-[var(--text-primary)] dark:text-gray-100">
         {item.name}
       </p>
 
       {/* Precio */}
-      <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
+      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-gray-100">
         {fmt(item.price)}
       </p>
 
       {/* Tienda */}
       <Link
         href={`/marketplace/${item.storeSlug}`}
-        className="truncate text-xs text-gray-500 underline-offset-2 hover:underline dark:text-gray-400"
+        className="truncate text-xs text-[var(--text-secondary)] underline-offset-2 hover:underline dark:text-gray-400"
         aria-label={`Ver tienda ${item.storeSlug}`}
       >
         {item.storeSlug}
@@ -81,7 +81,7 @@ function ProductColumn({ item, onRemove }: { item: CompareItem; onRemove: () => 
         {item.rating !== undefined && item.rating > 0 ? (
           <StarRating rating={item.rating} />
         ) : (
-          <span className="text-xs text-gray-400 dark:text-gray-600">Sin valoraciones</span>
+          <span className="text-xs text-[var(--text-tertiary)] dark:text-gray-600">Sin valoraciones</span>
         )}
       </div>
 
@@ -105,7 +105,7 @@ function ProductColumn({ item, onRemove }: { item: CompareItem; onRemove: () => 
                 : `${item.stock} en stock`}
           </span>
         ) : (
-          <span className="text-xs text-gray-400 dark:text-gray-600">—</span>
+          <span className="text-xs text-[var(--text-tertiary)] dark:text-gray-600">—</span>
         )}
       </div>
 
@@ -126,11 +126,11 @@ function ProductColumn({ item, onRemove }: { item: CompareItem; onRemove: () => 
 function EmptyState() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 py-16 text-center">
-      <GitCompareArrows className="h-10 w-10 text-gray-300 dark:text-gray-600" aria-hidden="true" />
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+      <GitCompareArrows className="h-10 w-10 text-[var(--text-tertiary)] dark:text-gray-600" aria-hidden="true" />
+      <p className="text-sm font-medium text-[var(--text-secondary)] dark:text-gray-400">
         Agrega productos desde las tarjetas para compararlos
       </p>
-      <p className="text-xs text-gray-400 dark:text-gray-500">
+      <p className="text-xs text-[var(--text-tertiary)] dark:text-gray-500">
         Puedes comparar hasta 3 productos a la vez
       </p>
     </div>
@@ -191,10 +191,10 @@ export default function ProductCompareDrawer() {
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                <GitCompareArrows className="h-4 w-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <GitCompareArrows className="h-4 w-4 text-[var(--text-secondary)] dark:text-gray-400" aria-hidden="true" />
+                <h2 className="text-sm font-semibold text-[var(--text-primary)] dark:text-gray-100">
                   Comparar productos
-                  <span className="ml-1.5 text-gray-400 dark:text-gray-500">
+                  <span className="ml-1.5 text-[var(--text-tertiary)] dark:text-gray-500">
                     ({items.length}/3)
                   </span>
                 </h2>
@@ -203,7 +203,7 @@ export default function ProductCompareDrawer() {
                 ref={closeButtonRef}
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar comparador"
-                className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                className="rounded-lg p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-gray-100 hover:text-[var(--text-primary)] dark:hover:bg-gray-800 dark:hover:text-gray-200"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -216,7 +216,7 @@ export default function ProductCompareDrawer() {
               ) : (
                 <>
                   {/* Filas de etiqueta */}
-                  <div className="mb-3 grid grid-cols-[80px_1fr] gap-3 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600">
+                  <div className="mb-3 grid grid-cols-[80px_1fr] gap-3 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] dark:text-gray-600">
                     <span />
                     <div
                       className="grid gap-3"
@@ -231,7 +231,7 @@ export default function ProductCompareDrawer() {
                   {/* Columnas de productos */}
                   <div className="flex gap-3">
                     {/* Etiquetas de fila */}
-                    <div className="flex w-20 shrink-0 flex-col gap-3 pt-[136px] text-[length:var(--ts-2xs)] font-medium text-gray-400 dark:text-gray-600">
+                    <div className="flex w-20 shrink-0 flex-col gap-3 pt-[136px] text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] dark:text-gray-600">
                       <div className="h-[52px] leading-[1.4] flex items-start">Nombre</div>
                       <div className="h-5 flex items-center">Precio</div>
                       <div className="h-5 flex items-center">Tienda</div>
@@ -263,7 +263,7 @@ export default function ProductCompareDrawer() {
                 onClick={clear}
                 disabled={items.length === 0}
                 aria-label="Vaciar lista de comparacion"
-                className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-900"
+                className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-900"
               >
                 Vaciar lista
               </button>

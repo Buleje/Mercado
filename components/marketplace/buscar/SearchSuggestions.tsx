@@ -131,10 +131,10 @@ const TIENDAS_DESTACADAS = [
 function SectionHeader({ label, title }: { label: string; title: string }) {
   return (
     <header className="mb-5 sm:mb-6">
-      <span className="inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 dark:text-gray-500 mb-1.5">
+      <span className="inline-block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-gray-500 mb-1.5">
         {label}
       </span>
-      <h2 className="text-xl sm:text-2xl font-extrabold tracking-[var(--ls-tight)] text-gray-900 dark:text-white">
+      <h2 className="text-xl sm:text-2xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] dark:text-white">
         {title}
       </h2>
     </header>
@@ -224,7 +224,7 @@ function SearchHistory() {
         <button
           type="button"
           onClick={clearAll}
-          className="text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+          className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-gray-400 dark:hover:text-white transition-colors"
         >
           Limpiar todo
         </button>
@@ -233,20 +233,20 @@ function SearchHistory() {
         {history.map((term) => (
           <span
             key={term}
-            className="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-3 pr-1.5 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:border-primary/40 transition-all"
+            className="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-3 pr-1.5 py-1.5 text-sm font-medium text-[var(--text-primary)] dark:text-gray-200 hover:border-primary/40 transition-all"
           >
             <Link
               href={`/marketplace/buscar?q=${encodeURIComponent(term)}`}
               className="inline-flex items-center gap-1.5 hover:text-primary"
             >
-              <Clock className="h-3.5 w-3.5 text-gray-400" strokeWidth={1.75} aria-hidden />
+              <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
               {term}
             </Link>
             <button
               type="button"
               onClick={() => removeItem(term)}
               aria-label={`Borrar "${term}" del historial`}
-              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200"
+              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[var(--text-primary)] dark:hover:text-gray-200"
             >
               <X className="h-3 w-3" strokeWidth={2.5} aria-hidden />
             </button>
@@ -270,14 +270,14 @@ function CategoryGrid() {
               href={s.href}
               className="group flex flex-col items-center gap-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-5 text-center hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all duration-200"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-200 group-hover:text-primary transition-colors">
+              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 text-[var(--text-primary)] dark:text-gray-200 group-hover:text-primary transition-colors">
                 <SIcon
                   className="h-[18px] w-[18px]"
                   strokeWidth={1.5}
                   aria-hidden="true"
                 />
               </span>
-              <span className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white leading-tight">
+              <span className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] dark:text-white leading-tight">
                 {s.label}
               </span>
             </Link>
@@ -301,17 +301,17 @@ function TiendasDestacadas() {
               href="/marketplace/negocios"
               className="group flex items-center gap-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-5 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all duration-200"
             >
-              <div className="flex-shrink-0 text-gray-400 dark:text-gray-600 group-hover:text-gray-600 dark:group-hover:text-gray-400 transition-colors">
+              <div className="flex-shrink-0 text-[var(--text-tertiary)] dark:text-gray-600 group-hover:text-[var(--text-secondary)] dark:group-hover:text-[var(--text-tertiary)] transition-colors">
                 <Illu size={64} strokeWidth={1.5} />
               </div>
               <div className="min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 dark:text-gray-500 mb-0.5">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-gray-500 mb-0.5">
                   {t.zone}
                 </p>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-snug">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] dark:text-white leading-snug">
                   {t.name}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-snug line-clamp-2">
+                <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 mt-0.5 leading-snug line-clamp-2">
                   {t.description}
                 </p>
               </div>
@@ -331,20 +331,20 @@ function InspirationStrip() {
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-5">
-          <div className="text-gray-400 dark:text-gray-600 flex-shrink-0">
+          <div className="text-[var(--text-tertiary)] dark:text-gray-600 flex-shrink-0">
             <PaicheEnOlla size={72} strokeWidth={1.5} />
           </div>
           <div>
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400 dark:text-gray-500 block mb-1">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] dark:text-gray-500 block mb-1">
               Inspiracion
             </span>
             <h2
               id="inspiracion-heading"
-              className="text-lg sm:text-xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+              className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] dark:text-white"
             >
               Recetas de la selva
             </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+            <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-gray-400 max-w-xs">
               Encuentra todos los ingredientes para tus recetas favoritas
               en una sola compra.
             </p>

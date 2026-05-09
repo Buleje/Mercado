@@ -44,7 +44,7 @@ function CartItemRow({
           <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900">
             <svg
               aria-hidden="true"
-              className="h-6 w-6 text-gray-300 dark:text-gray-600"
+              className="h-6 w-6 text-[var(--text-tertiary)] dark:text-gray-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -62,14 +62,14 @@ function CartItemRow({
 
       {/* info */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+        <p className="truncate text-sm font-semibold text-[var(--text-primary)] dark:text-white">
           {item.name}
         </p>
         <p className="text-xs font-bold text-primary dark:text-primary/80 mt-0.5">
           {fmt(item.price)}
           {item.unit ? ` / ${item.unit}` : ""}
         </p>
-        <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 mt-0.5">
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-gray-500 mt-0.5">
           Subtotal: {fmt(item.price * item.quantity)}
         </p>
       </div>
@@ -79,19 +79,19 @@ function CartItemRow({
         <button
           onClick={onDecrease}
           aria-label={`Reducir cantidad de ${item.name}`}
-          className="flex h-8 w-8 items-center justify-center text-gray-700 transition-colors hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="flex h-8 w-8 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
           </svg>
         </button>
-        <span className="w-7 text-center text-sm font-bold text-gray-900 dark:text-white">
+        <span className="w-7 text-center text-sm font-bold text-[var(--text-primary)] dark:text-white">
           {item.quantity}
         </span>
         <button
           onClick={onIncrease}
           aria-label={`Aumentar cantidad de ${item.name}`}
-          className="flex h-8 w-8 items-center justify-center text-gray-700 transition-colors hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="flex h-8 w-8 items-center justify-center text-[var(--text-primary)] transition-colors hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -103,7 +103,7 @@ function CartItemRow({
       <button
         onClick={onRemove}
         aria-label={`Eliminar ${item.name} del carrito`}
-        className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-300 opacity-0 group-hover/row:opacity-100 transition-all hover:bg-red-50 hover:text-[var(--data-error-500)] dark:hover:bg-red-900/20 dark:hover:text-red-400"
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] opacity-0 group-hover/row:opacity-100 transition-all hover:bg-red-50 hover:text-[var(--data-error-500)] dark:hover:bg-red-900/20 dark:hover:text-red-400"
       >
         <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -554,7 +554,7 @@ export default function MarketplaceCart({
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-gray-900 dark:text-white leading-none">
+                  <h2 className="text-sm font-bold text-[var(--text-primary)] dark:text-white leading-none">
                     {step === "cart" ? "Mi carrito" : step === "datos" ? "Datos de entrega" : step === "pago" ? "Método de pago" : "Confirmar pedido"}
                   </h2>
                   {itemCount > 0 && (
@@ -569,7 +569,7 @@ export default function MarketplaceCart({
                 {!isEmpty && step === "cart" && (
                   <button
                     onClick={clearAll}
-                    className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 underline-offset-2 hover:text-[var(--data-error-500)] hover:underline dark:text-gray-500 dark:hover:text-red-400 transition-colors"
+                    className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] underline-offset-2 hover:text-[var(--data-error-500)] hover:underline dark:text-gray-500 dark:hover:text-red-400 transition-colors"
                   >
                     Vaciar
                   </button>
@@ -577,7 +577,7 @@ export default function MarketplaceCart({
                 <button
                   onClick={onClose}
                   aria-label="Cerrar carrito"
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-gray-500 transition-all hover:bg-gray-100 hover:rotate-90 dark:text-gray-400 dark:hover:bg-gray-800"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-all hover:bg-gray-100 hover:rotate-90 dark:text-gray-400 dark:hover:bg-gray-800"
                 >
                   <svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -604,9 +604,9 @@ export default function MarketplaceCart({
                         {idx > 0 && (
                           <div className={`flex-1 h-0.5 rounded-full ${isDone ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"}`} />
                         )}
-                        <div className={`flex items-center gap-1.5 ${isActive ? "text-primary" : isDone ? "text-primary/70" : "text-gray-400 dark:text-gray-500"}`}>
+                        <div className={`flex items-center gap-1.5 ${isActive ? "text-primary" : isDone ? "text-primary/70" : "text-[var(--text-tertiary)] dark:text-gray-500"}`}>
                           <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black ${
-                            isActive ? "bg-primary text-white" : isDone ? "bg-primary/20 text-primary" : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
+                            isActive ? "bg-primary text-white" : isDone ? "bg-primary/20 text-primary" : "bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] dark:text-gray-500"
                           }`}>
                             {isDone ? "✓" : num}
                           </div>
@@ -632,10 +632,10 @@ export default function MarketplaceCart({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                  <p className="text-lg font-bold text-[var(--text-primary)] dark:text-white">
                     {orderResults.every((r) => r.success) ? "¡Pedidos enviados!" : "Pedidos procesados"}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-[250px]">
+                  <p className="text-sm text-[var(--text-secondary)] dark:text-gray-400 max-w-[250px]">
                     {orderResults.every((r) => r.success)
                       ? "Cada tienda recibirá tu pedido y te contactará por WhatsApp."
                       : "Algunos pedidos se enviaron correctamente."}
@@ -666,15 +666,15 @@ export default function MarketplaceCart({
               ) : isEmpty ? (
                 <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
                   <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-100/80 dark:bg-gray-800/80 shadow-inner">
-                    <svg aria-hidden="true" className="h-9 w-9 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" className="h-9 w-9 text-[var(--text-tertiary)] dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-gray-300">
                       Tu carrito está vacío
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-gray-500 mt-1">
                       Explora las tiendas y agrega productos
                     </p>
                   </div>
@@ -700,7 +700,7 @@ export default function MarketplaceCart({
 
                   <div className="space-y-3">
                     <div>
-                      <label htmlFor="mp-name" className="mb-1 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      <label htmlFor="mp-name" className="mb-1 block text-xs font-semibold text-[var(--text-primary)] dark:text-gray-300">
                         Nombre completo *
                       </label>
                       <input
@@ -709,13 +709,13 @@ export default function MarketplaceCart({
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
                         placeholder="Ej: Juan Pérez"
-                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-[var(--text-secondary)]"
                         maxLength={100}
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="mp-phone" className="mb-1 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      <label htmlFor="mp-phone" className="mb-1 block text-xs font-semibold text-[var(--text-primary)] dark:text-gray-300">
                         Teléfono / WhatsApp *
                       </label>
                       <input
@@ -724,13 +724,13 @@ export default function MarketplaceCart({
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
                         placeholder="Ej: 916409675"
-                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-[var(--text-secondary)]"
                         maxLength={20}
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="mp-address" className="mb-1 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      <label htmlFor="mp-address" className="mb-1 block text-xs font-semibold text-[var(--text-primary)] dark:text-gray-300">
                         Dirección de entrega *
                       </label>
                       <input
@@ -739,13 +739,13 @@ export default function MarketplaceCart({
                         value={customerAddress}
                         onChange={(e) => setCustomerAddress(e.target.value)}
                         placeholder="Ej: Jr. Los Olivos 123, Pucallpa"
-                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-[var(--text-secondary)]"
                         maxLength={300}
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="mp-notes" className="mb-1 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      <label htmlFor="mp-notes" className="mb-1 block text-xs font-semibold text-[var(--text-primary)] dark:text-gray-300">
                         Notas (opcional)
                       </label>
                       <textarea
@@ -754,7 +754,7 @@ export default function MarketplaceCart({
                         onChange={(e) => setCustomerNotes(e.target.value)}
                         placeholder="Ej: Tocar el timbre, cerca de la esquina..."
                         rows={2}
-                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 resize-none"
+                        className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-[var(--text-secondary)] resize-none"
                         maxLength={500}
                       />
                     </div>
@@ -762,20 +762,20 @@ export default function MarketplaceCart({
 
                   {/* Cupones por tienda */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Cupones de descuento</p>
+                    <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-gray-400 mb-2">Cupones de descuento</p>
                     {Object.keys(byStore).map((sid) => {
                       const g = byStore[sid];
                       const couponR = couponResults[g.storeSlug];
                       return (
                         <div key={sid} className="mb-2">
-                          <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">{g.storeName}</span>
+                          <span className="text-xs text-[var(--text-secondary)] dark:text-gray-300 font-medium">{g.storeName}</span>
                           <div className="flex gap-1.5 mt-1">
                             <input
                               type="text"
                               value={couponCodes[g.storeSlug] ?? ""}
                               onChange={(e) => setCouponCodes((p) => ({ ...p, [g.storeSlug]: e.target.value.toUpperCase() }))}
                               placeholder="Código de cupón"
-                              className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500"
+                              className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-[var(--text-secondary)]"
                               maxLength={30}
                             />
                             <button
@@ -799,8 +799,8 @@ export default function MarketplaceCart({
                     {loyaltyPoints > 0 && (
                       <div className="mt-2 border-t border-gray-200 pt-2 dark:border-gray-700">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-600 dark:text-gray-400">Tus puntos: <strong className="tabular-nums">{loyaltyPoints}</strong></span>
-                          <span className="text-gray-400 dark:text-gray-500">(100 pts = S/1)</span>
+                          <span className="text-[var(--text-secondary)] dark:text-gray-400">Tus puntos: <strong className="tabular-nums">{loyaltyPoints}</strong></span>
+                          <span className="text-[var(--text-tertiary)] dark:text-gray-500">(100 pts = S/1)</span>
                         </div>
                         <div className="flex gap-1.5 mt-1">
                           <input
@@ -811,16 +811,16 @@ export default function MarketplaceCart({
                             value={redeemPoints}
                             onChange={(e) => setRedeemPoints(Math.min(Number(e.target.value) || 0, loyaltyPoints))}
                             placeholder="0"
-                            className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                            className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-[var(--text-primary)] focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                           />
-                          <span className="self-center text-xs text-gray-500 dark:text-gray-400">
+                          <span className="self-center text-xs text-[var(--text-secondary)] dark:text-gray-400">
                             puntos = -{fmt(redeemPoints / 100)}
                           </span>
                         </div>
                       </div>
                     )}
                     {loyaltyLoading && (
-                      <p className="text-xs text-gray-400 mt-1">Consultando puntos...</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">Consultando puntos...</p>
                     )}
                   </div>
                 </div>
@@ -837,7 +837,7 @@ export default function MarketplaceCart({
                     Volver a datos
                   </button>
 
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  <h3 className="text-base font-bold text-[var(--text-primary)] dark:text-white">
                     ¿Cómo vas a pagar?
                   </h3>
 
@@ -852,15 +852,15 @@ export default function MarketplaceCart({
                       }`}
                     >
                       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-                        paymentMethod === "efectivo" ? "bg-primary/10 text-primary" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                        paymentMethod === "efectivo" ? "bg-primary/10 text-primary" : "bg-gray-100 dark:bg-gray-800 text-[var(--text-tertiary)]"
                       }`}>
                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">Efectivo</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Pagas cuando recibas tu pedido</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Efectivo</p>
+                        <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400">Pagas cuando recibas tu pedido</p>
                       </div>
                       <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
                         paymentMethod === "efectivo" ? "border-primary" : "border-gray-300 dark:border-gray-600"
@@ -879,13 +879,13 @@ export default function MarketplaceCart({
                       }`}
                     >
                       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-                        paymentMethod === "yape" ? "bg-[#6E2B8B]/10 text-[#6E2B8B]" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                        paymentMethod === "yape" ? "bg-[#6E2B8B]/10 text-[#6E2B8B]" : "bg-gray-100 dark:bg-gray-800 text-[var(--text-tertiary)]"
                       }`}>
                         <span className="text-lg font-black">Y</span>
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">Yape</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Transfiere al número del vendedor</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Yape</p>
+                        <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400">Transfiere al número del vendedor</p>
                       </div>
                       <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
                         paymentMethod === "yape" ? "border-[#6E2B8B]" : "border-gray-300 dark:border-gray-600"
@@ -898,18 +898,18 @@ export default function MarketplaceCart({
                   {/* Cash change calculator */}
                   {paymentMethod === "efectivo" && (
                     <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-2">
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                      <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-gray-400">
                         Calculadora de vuelto
                       </p>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">S/</span>
+                        <span className="text-sm text-[var(--text-secondary)] dark:text-gray-400">S/</span>
                         <input
                           type="number"
                           value={cashAmount}
                           onChange={(e) => setCashAmount(e.target.value)}
                           placeholder={finalTotal.toFixed(2)}
                           min={0}
-                          className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                          className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                         />
                       </div>
                       {cashAmount && Number(cashAmount) >= finalTotal && (
@@ -926,7 +926,7 @@ export default function MarketplaceCart({
                           <button
                             key={v}
                             onClick={() => setCashAmount(String(v))}
-                            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                           >
                             S/{v}
                           </button>
@@ -942,9 +942,9 @@ export default function MarketplaceCart({
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6E2B8B]/10">
                           <span className="text-sm font-black text-[#6E2B8B]">Y</span>
                         </div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">Instrucciones de Yape</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Instrucciones de Yape</p>
                       </div>
-                      <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                      <ol className="space-y-2 text-xs text-[var(--text-secondary)] dark:text-gray-400">
                         <li className="flex items-start gap-2">
                           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6E2B8B]/10 text-[length:var(--ts-2xs)] font-bold text-[#6E2B8B]">1</span>
                           <span>Confirma tu pedido aquí y recibirás el número de Yape del vendedor</span>
@@ -974,43 +974,43 @@ export default function MarketplaceCart({
                     Volver a pago
                   </button>
 
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  <h3 className="text-base font-bold text-[var(--text-primary)] dark:text-white">
                     Resumen del pedido
                   </h3>
 
                   {/* Datos del cliente */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50 space-y-1.5">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-500 dark:text-gray-400 mb-2">Datos de entrega</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-gray-400 mb-2">Datos de entrega</p>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Nombre</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{customerName}</span>
+                      <span className="text-[var(--text-secondary)]">Nombre</span>
+                      <span className="font-medium text-[var(--text-primary)] dark:text-white">{customerName}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Teléfono</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{customerPhone}</span>
+                      <span className="text-[var(--text-secondary)]">Teléfono</span>
+                      <span className="font-medium text-[var(--text-primary)] dark:text-white">{customerPhone}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Dirección</span>
-                      <span className="font-medium text-gray-900 dark:text-white text-right max-w-[180px]">{customerAddress}</span>
+                      <span className="text-[var(--text-secondary)]">Dirección</span>
+                      <span className="font-medium text-[var(--text-primary)] dark:text-white text-right max-w-[180px]">{customerAddress}</span>
                     </div>
                     {customerNotes && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Notas</span>
-                        <span className="text-gray-700 dark:text-gray-300 text-right max-w-[180px]">{customerNotes}</span>
+                        <span className="text-[var(--text-secondary)]">Notas</span>
+                        <span className="text-[var(--text-primary)] dark:text-gray-300 text-right max-w-[180px]">{customerNotes}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Método de pago */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-500 dark:text-gray-400 mb-2">Método de pago</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-gray-400 mb-2">Método de pago</p>
                     <div className="flex items-center gap-2">
                       {paymentMethod === "yape" ? (
                         <>
                           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#6E2B8B]/10">
                             <span className="text-xs font-black text-[#6E2B8B]">Y</span>
                           </div>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">Yape</span>
+                          <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-white">Yape</span>
                         </>
                       ) : (
                         <>
@@ -1019,7 +1019,7 @@ export default function MarketplaceCart({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                           </div>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">Efectivo</span>
+                          <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-white">Efectivo</span>
                         </>
                       )}
                     </div>
@@ -1027,22 +1027,22 @@ export default function MarketplaceCart({
 
                   {/* Productos por tienda */}
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-500 dark:text-gray-400 mb-2">Productos</p>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-gray-400 mb-2">Productos</p>
                     {Object.keys(byStore).map((sid) => {
                       const g = byStore[sid];
                       const couponR = couponResults[g.storeSlug];
                       return (
                         <div key={sid} className="mb-2 last:mb-0">
                           <div className="flex justify-between text-sm mb-1">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">{g.storeName}</span>
-                            <span className="font-bold text-gray-900 dark:text-white">{fmt(totalByStore[sid]?.total ?? 0)}</span>
+                            <span className="font-medium text-[var(--text-primary)] dark:text-gray-300">{g.storeName}</span>
+                            <span className="font-bold text-[var(--text-primary)] dark:text-white">{fmt(totalByStore[sid]?.total ?? 0)}</span>
                           </div>
                           {g.items.map((item) => {
                             const h = item.modifierHash ?? modifierHashOf(item.modifiers);
                             return (
                               <div
                                 key={`${item.storeId}-${item.productId}-${h}`}
-                                className="flex justify-between text-xs text-gray-500 dark:text-gray-400 pl-2"
+                                className="flex justify-between text-xs text-[var(--text-secondary)] dark:text-gray-400 pl-2"
                               >
                                 <span>
                                   {item.quantity}x {item.name}
@@ -1063,7 +1063,7 @@ export default function MarketplaceCart({
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1">
                     {(totalCouponDiscount > 0 || loyaltyDiscount > 0) && (
                       <>
-                        <div className="flex justify-between text-sm text-gray-500">
+                        <div className="flex justify-between text-sm text-[var(--text-secondary)]">
                           <span>Subtotal</span>
                           <span>{fmt(grandTotal)}</span>
                         </div>
@@ -1083,7 +1083,7 @@ export default function MarketplaceCart({
                       </>
                     )}
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-gray-900 dark:text-white">Total a pagar</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Total a pagar</span>
                       <span className="font-mono text-xl font-black text-primary">{fmt(finalTotal)}</span>
                     </div>
                   </div>
@@ -1105,10 +1105,10 @@ export default function MarketplaceCart({
                             >
                               {group.storeName.slice(0, 1).toUpperCase()}
                             </div>
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                            <h3 className="text-sm font-bold text-[var(--text-primary)] dark:text-white">
                               {group.storeName}
                             </h3>
-                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                            <span className="text-xs text-[var(--text-tertiary)] dark:text-gray-500">
                               ({group.items.length} {group.items.length === 1 ? "item" : "items"})
                             </span>
                           </div>
@@ -1136,10 +1136,10 @@ export default function MarketplaceCart({
 
                         {/* subtotal tienda */}
                         <div className="mt-2 flex items-center justify-between px-1">
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-[var(--text-secondary)] dark:text-gray-400">
                             Subtotal {group.storeName}
                           </span>
-                          <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
+                          <span className="font-mono text-sm font-bold text-[var(--text-primary)] dark:text-white">
                             {fmt(storeSub)}
                           </span>
                         </div>
@@ -1214,7 +1214,7 @@ export default function MarketplaceCart({
                 {step === "cart" ? (
                   <>
                     <div className="mb-4 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300">
                         Total
                       </span>
                       <span className="font-mono text-xl font-black text-primary dark:text-primary/90">
@@ -1230,7 +1230,7 @@ export default function MarketplaceCart({
                     <div className="mt-2">
                       <ShareCartButton />
                     </div>
-                    <p className="mt-2 text-center text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
+                    <p className="mt-2 text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-gray-500">
                       Se crea un pedido separado por cada tienda
                     </p>
                   </>

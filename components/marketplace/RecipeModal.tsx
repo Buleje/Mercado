@@ -134,24 +134,24 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                 {Illustration && (
                   <div className="h-20 w-20 shrink-0 flex items-center justify-center rounded-xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800">
                     <Illustration
-                      className="h-14 w-14 text-gray-800 dark:text-gray-200"
+                      className="h-14 w-14 text-[var(--text-primary)] dark:text-gray-200"
                       ariaLabel={recipe.title}
                     />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   {recipe.category && (
-                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                       {recipe.category}
                     </span>
                   )}
-                  <Dialog.Title className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+                  <Dialog.Title className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] dark:text-white leading-tight">
                     {recipe.title}
                   </Dialog.Title>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
                     {recipe.description}
                   </p>
-                  <div className="mt-3 flex items-center gap-4 text-[length:var(--ts-2xs)] text-gray-600 dark:text-gray-300">
+                  <div className="mt-3 flex items-center gap-4 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-gray-300">
                     <span className="inline-flex items-center gap-1 tabular-nums font-semibold">
                       <Clock className="h-3 w-3" strokeWidth={1.75} />
                       {recipe.time}
@@ -163,7 +163,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                   </div>
                 </div>
                 <Dialog.Close className="absolute top-4 right-4 h-8 w-8 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center">
-                  <X className="h-3.5 w-3.5 text-gray-600 dark:text-gray-300" strokeWidth={1.75} />
+                  <X className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-gray-300" strokeWidth={1.75} />
                   <span className="sr-only">Cerrar</span>
                 </Dialog.Close>
               </div>
@@ -175,7 +175,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
             {/* Ingredientes con checklist */}
             <section>
               <div className="flex items-center justify-between gap-3 mb-3">
-                <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 inline-flex items-center gap-1.5">
+                <h3 className="text-sm font-extrabold uppercase tracking-wide text-[var(--text-secondary)] inline-flex items-center gap-1.5">
                   <ShoppingBag className="h-3.5 w-3.5" />
                   Ingredientes
                 </h3>
@@ -218,8 +218,8 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                           className={cn(
                             "text-sm font-semibold",
                             checked
-                              ? "text-gray-400 line-through"
-                              : "text-gray-800 dark:text-gray-200",
+                              ? "text-[var(--text-tertiary)] line-through"
+                              : "text-[var(--text-primary)] dark:text-gray-200",
                           )}
                         >
                           {ing}
@@ -243,7 +243,7 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
 
             {/* Pasos */}
             <section>
-              <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 inline-flex items-center gap-1.5 mb-3">
+              <h3 className="text-sm font-extrabold uppercase tracking-wide text-[var(--text-secondary)] inline-flex items-center gap-1.5 mb-3">
                 <ChefHat className="h-3.5 w-3.5" />
                 Preparación
               </h3>
@@ -267,13 +267,13 @@ export default function RecipeModal({ open, onOpenChange, recipe, onAddIngredien
                           "h-8 w-8 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0",
                           isActive
                             ? "bg-primary text-white"
-                            : "bg-gray-100 dark:bg-gray-800 text-gray-500",
+                            : "bg-gray-100 dark:bg-gray-800 text-[var(--text-secondary)]",
                         )}
                       >
                         {i + 1}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
+                        <p className="text-sm text-[var(--text-primary)] dark:text-gray-200 leading-relaxed">
                           {step.text}
                         </p>
                         {step.timerMin && (

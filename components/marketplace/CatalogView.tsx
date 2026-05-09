@@ -251,8 +251,8 @@ export default function CatalogView({
       {/* Result count */}
       {!loading && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-500 dark:text-muted">
-            <strong className="text-gray-900 dark:text-foreground">{products.length}</strong>{" "}
+          <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
+            <strong className="text-[var(--text-primary)] dark:text-foreground">{products.length}</strong>{" "}
             productos disponibles
           </p>
         </div>
@@ -319,12 +319,12 @@ export default function CatalogView({
       {!loading && products.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 mb-4">
-            <Package className="h-9 w-9 text-gray-300 dark:text-gray-600" />
+            <Package className="h-9 w-9 text-[var(--text-tertiary)] dark:text-gray-600" />
           </div>
-          <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
+          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-gray-300">
             No encontramos productos
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs">
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-gray-500 mt-1 max-w-xs">
             Intenta cambiar los filtros o buscar algo diferente
           </p>
         </div>
@@ -335,7 +335,7 @@ export default function CatalogView({
         {loadingMore && (
           <div className="flex items-center justify-center gap-2 py-4">
             <Loader2 className="h-5 w-5 text-primary animate-spin" />
-            <span className="text-sm text-gray-500 dark:text-muted font-medium">
+            <span className="text-sm text-[var(--text-secondary)] dark:text-muted font-medium">
               Cargando más productos…
             </span>
           </div>

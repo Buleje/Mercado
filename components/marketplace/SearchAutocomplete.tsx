@@ -269,7 +269,7 @@ export default function SearchAutocomplete({
       className={cn("relative w-full", className)}
     >
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" aria-hidden="true" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" aria-hidden="true" />
         <input
           ref={inputRef}
           type="search"
@@ -290,14 +290,14 @@ export default function SearchAutocomplete({
           className={cn(
             "w-full pl-12 py-3.5 pr-12 rounded-2xl border text-base font-medium",
             "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
-            "text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500",
+            "text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)]",
             "outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
             "transition-all shadow-sm",
           )}
         />
 
         {loading ? (
-          <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin pointer-events-none" />
+          <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] animate-spin pointer-events-none" />
         ) : value ? (
           <button
             type="button"
@@ -311,7 +311,7 @@ export default function SearchAutocomplete({
             aria-label="Limpiar búsqueda"
             className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <X className="h-4 w-4 text-gray-400" />
+            <X className="h-4 w-4 text-[var(--text-tertiary)]" />
           </button>
         ) : speechSupported ? (
           <button
@@ -323,7 +323,7 @@ export default function SearchAutocomplete({
               "absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors",
               isListening
                 ? "text-[var(--data-error-500)] animate-pulse hover:bg-red-50 dark:hover:bg-red-900/20"
-                : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+                : "text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-gray-800",
             )}
           >
             {isListening ? (
@@ -351,7 +351,7 @@ export default function SearchAutocomplete({
             {loading && (
               <div role="status" aria-live="polite" className="flex items-center gap-3 px-5 py-4">
                 <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" aria-hidden="true" />
-                <span className="text-sm text-gray-500 dark:text-gray-400">Buscando sugerencias…</span>
+                <span className="text-sm text-[var(--text-secondary)] dark:text-gray-400">Buscando sugerencias…</span>
               </div>
             )}
 
@@ -364,7 +364,7 @@ export default function SearchAutocomplete({
 
                   return (
                     <div key={type} className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-                      <div aria-hidden="true" className="px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5 bg-gray-50/70 dark:bg-gray-900/70">
+                      <div aria-hidden="true" className="px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] dark:text-gray-500 flex items-center gap-1.5 bg-gray-50/70 dark:bg-gray-900/70">
                         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                         {TYPE_META[type].title}
                       </div>
@@ -396,20 +396,20 @@ export default function SearchAutocomplete({
                                   className="h-full w-full object-cover"
                                 />
                               ) : (
-                                <ItemIcon className="h-4 w-4 text-gray-400" />
+                                <ItemIcon className="h-4 w-4 text-[var(--text-tertiary)]" />
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                              <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-white truncate">
                                 {item.label}
                               </p>
                               {item.subtitle && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 truncate">
                                   {item.subtitle}
                                 </p>
                               )}
                             </div>
-                            <ArrowRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 shrink-0" aria-hidden="true" />
+                            <ArrowRight className="h-3.5 w-3.5 text-[var(--text-tertiary)] dark:text-gray-600 shrink-0" aria-hidden="true" />
                           </button>
                         );
                       })}
@@ -426,10 +426,10 @@ export default function SearchAutocomplete({
                   aria-label={`Buscar "${value.trim()}" en el marketplace`}
                   className="w-full flex items-center justify-between rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    Buscar &ldquo;<strong className="text-gray-900 dark:text-white">{value.trim()}</strong>&rdquo;
+                  <span className="text-sm text-[var(--text-secondary)] dark:text-gray-300">
+                    Buscar &ldquo;<strong className="text-[var(--text-primary)] dark:text-white">{value.trim()}</strong>&rdquo;
                   </span>
-                  <ArrowRight className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                  <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />
                 </button>
               </div>
             )}

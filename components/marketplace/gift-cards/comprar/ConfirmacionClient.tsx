@@ -40,16 +40,16 @@ export default function ConfirmacionClient() {
         <span className="inline-flex h-16 w-16 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-[var(--data-success-600)] dark:border-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-400">
           <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
         </span>
-        <h1 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
+        <h1 className="mt-6 text-3xl font-bold text-[var(--text-primary)] dark:text-white sm:text-4xl">
           Tarjeta enviada
         </h1>
-        <p className="mt-3 text-base text-gray-600 dark:text-gray-300">
+        <p className="mt-3 text-base text-[var(--text-secondary)] dark:text-gray-300">
           Tu tarjeta de{" "}
-          <span className="font-semibold text-gray-900 dark:text-white">
+          <span className="font-semibold text-[var(--text-primary)] dark:text-white">
             S/ {amount.toFixed(2)}
           </span>{" "}
           ya esta camino a{" "}
-          <span className="font-semibold text-gray-900 dark:text-white">
+          <span className="font-semibold text-[var(--text-primary)] dark:text-white">
             {recipient}
           </span>
           . Recibiras un email con el comprobante en unos segundos.
@@ -72,7 +72,7 @@ export default function ConfirmacionClient() {
                   tarjeta y emitir una nueva desde el admin.
                 </p>
                 <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 dark:bg-gray-900">
-                  <code className="font-mono text-sm font-bold tracking-wider text-gray-900 dark:text-white">
+                  <code className="font-mono text-sm font-bold tracking-wider text-[var(--text-primary)] dark:text-white">
                     {plainCode}
                   </code>
                   <button
@@ -108,14 +108,14 @@ export default function ConfirmacionClient() {
           </Link>
           <Link
             href="/marketplace/gift-cards"
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             Enviar otra tarjeta
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
 
-        <p className="mt-10 text-xs text-gray-500 dark:text-gray-400">
+        <p className="mt-10 text-xs text-[var(--text-secondary)] dark:text-gray-400">
           Si {recipient} no recibe la tarjeta, revisa el spam del email o el
           historial de WhatsApp. Podes reenviarla desde{" "}
           <Link

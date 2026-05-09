@@ -59,7 +59,7 @@ function FilterGroup({
 }) {
   return (
     <div>
-      <h3 className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
+      <h3 className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         {title}
       </h3>
       <div className="space-y-2">{children}</div>
@@ -101,14 +101,14 @@ function RadioRow({
       <span
         className={`flex-1 ${
           checked
-            ? "font-semibold text-gray-900 dark:text-white"
-            : "text-gray-600 dark:text-gray-400"
+            ? "font-semibold text-[var(--text-primary)] dark:text-white"
+            : "text-[var(--text-secondary)] dark:text-gray-400"
         }`}
       >
         {children ?? label}
       </span>
       {count != null && (
-        <span className="text-xs text-gray-400">{count}</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{count}</span>
       )}
     </label>
   );
@@ -163,14 +163,14 @@ function CheckboxRow({
       <span
         className={`flex-1 truncate ${
           checked
-            ? "font-semibold text-gray-900 dark:text-white"
-            : "text-gray-600 dark:text-gray-400"
+            ? "font-semibold text-[var(--text-primary)] dark:text-white"
+            : "text-[var(--text-secondary)] dark:text-gray-400"
         }`}
       >
         {label}
       </span>
       {count != null && (
-        <span className="text-xs text-gray-400">{count}</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{count}</span>
       )}
     </label>
   );
@@ -250,10 +250,10 @@ export default function CategoryFilters({
                 priceMin: e.target.value ? Number(e.target.value) : null,
               })
             }
-            className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 text-sm placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
             min={0}
           />
-          <span className="text-gray-400 text-xs">—</span>
+          <span className="text-[var(--text-tertiary)] text-xs">—</span>
           <input
             type="number"
             placeholder="Hasta"
@@ -264,7 +264,7 @@ export default function CategoryFilters({
                 priceMax: e.target.value ? Number(e.target.value) : null,
               })
             }
-            className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 px-2.5 py-1.5 text-sm placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
             min={0}
           />
         </div>
@@ -309,13 +309,13 @@ export default function CategoryFilters({
                   key={s}
                   className={`h-3 w-3 ${
                     s <= n
-                      ? "text-gray-900 dark:text-white fill-current"
-                      : "text-gray-300 dark:text-gray-700"
+                      ? "text-[var(--text-primary)] dark:text-white fill-current"
+                      : "text-[var(--text-tertiary)] dark:text-gray-700"
                   }`}
                   strokeWidth={1.5}
                 />
               ))}
-              <span className="ml-1 text-xs text-gray-500">y mas</span>
+              <span className="ml-1 text-xs text-[var(--text-secondary)]">y mas</span>
             </span>
           </RadioRow>
         ))}
@@ -360,7 +360,7 @@ export default function CategoryFilters({
       {hasActive && (
         <button
           onClick={onReset}
-          className="w-full rounded-full border border-gray-300 dark:border-gray-700 px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          className="w-full rounded-full border border-gray-300 dark:border-gray-700 px-4 py-2 text-xs font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
           Limpiar filtros
         </button>

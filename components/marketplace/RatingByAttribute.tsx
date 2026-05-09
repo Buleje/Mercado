@@ -121,7 +121,7 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
       {/* Header: rating global */}
       <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
         <div className="flex flex-col items-center gap-1">
-          <span className="text-5xl font-black text-gray-900 dark:text-white">
+          <span className="text-5xl font-black text-[var(--text-primary)] dark:text-white">
             {Number(summary.avgRating).toFixed(1)}
           </span>
           <StarDisplay rating={summary.avgRating} size="lg" />
@@ -199,7 +199,7 @@ export default function RatingByAttribute({ summary, reviews }: RatingByAttribut
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-sm text-gray-900 dark:text-white">
+                    <span className="font-semibold text-sm text-[var(--text-primary)] dark:text-white">
                       {review.name}
                     </span>
                     {review.verified && (

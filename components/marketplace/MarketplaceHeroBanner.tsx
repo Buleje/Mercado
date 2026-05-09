@@ -257,7 +257,7 @@ export default function MarketplaceHeroBanner() {
                   aria-label={`Slide ${i + 1}`}
                   className="group flex items-center gap-2"
                 >
-                  <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-gray-400">
+                  <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span
@@ -276,17 +276,17 @@ export default function MarketplaceHeroBanner() {
           {/* Right column — editorial meta card */}
           <aside className="hidden lg:block">
             <div className="relative rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 noise-bg">
-              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-gray-400">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Edición actual
               </div>
-              <div className="mt-3 text-[120px] leading-none font-extrabold text-gray-900 dark:text-white tabular-nums tracking-tighter">
+              <div className="mt-3 text-[120px] leading-none font-extrabold text-[var(--text-primary)] dark:text-white tabular-nums tracking-tighter">
                 {String(idx + 1).padStart(2, "0")}
               </div>
               <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-baseline justify-between">
-                <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                <span className="text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
                   {slide.eyebrow.split("·")[0].trim()}
                 </span>
-                <span className="text-[length:var(--ts-2xs)] text-gray-400 tabular-nums">
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
                   {String(idx + 1)}/{SLIDES.length}
                 </span>
               </div>

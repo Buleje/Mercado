@@ -23,10 +23,10 @@ export default function DenominationGrid({ selectedDesign = "general" }: Props) 
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="mb-8 max-w-2xl">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] dark:text-white sm:text-3xl">
             Elegi el monto
           </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm text-[var(--text-secondary)] dark:text-gray-400">
             Desde S/ 10 hasta S/ 1000. Todas las tarjetas se pueden usar en
             cualquier tienda del marketplace.
           </p>
@@ -40,11 +40,11 @@ export default function DenominationGrid({ selectedDesign = "general" }: Props) 
                   key="custom"
                   className="group relative flex flex-col items-stretch rounded-2xl border border-dashed border-gray-300 bg-white p-5 dark:border-gray-700 dark:bg-gray-900"
                 >
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">
                     Personalizado
                   </span>
                   <div className="mt-2 flex items-baseline">
-                    <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">S/</span>
+                    <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-gray-400">S/</span>
                     <input
                       type="number"
                       min={10}
@@ -53,10 +53,10 @@ export default function DenominationGrid({ selectedDesign = "general" }: Props) 
                       value={customAmount}
                       onChange={(e) => setCustomAmount(e.target.value)}
                       inputMode="numeric"
-                      className="ml-1 w-full bg-transparent text-2xl font-bold text-gray-900 outline-none placeholder:text-gray-300 dark:text-white dark:placeholder:text-gray-600"
+                      className="ml-1 w-full bg-transparent text-2xl font-bold text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] dark:text-white dark:placeholder:text-[var(--text-secondary)]"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{d.hint}</p>
+                  <p className="mt-1 text-xs text-[var(--text-secondary)] dark:text-gray-400">{d.hint}</p>
                   <Link
                     href={
                       isCustomValid
@@ -68,7 +68,7 @@ export default function DenominationGrid({ selectedDesign = "general" }: Props) 
                       "mt-4 inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
                       isCustomValid
                         ? "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-                        : "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600",
+                        : "cursor-not-allowed bg-gray-100 text-[var(--text-tertiary)] dark:bg-gray-800 dark:text-gray-600",
                     ].join(" ")}
                   >
                     <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -85,16 +85,16 @@ export default function DenominationGrid({ selectedDesign = "general" }: Props) 
                 href={href}
                 className="group relative flex flex-col items-stretch rounded-2xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-900 hover:shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:hover:border-white"
               >
-                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">
                   {d.hint}
                 </span>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">S/</span>
-                  <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-gray-400">S/</span>
+                  <span className="text-3xl font-bold text-[var(--text-primary)] dark:text-white">
                     {d.amount}
                   </span>
                 </div>
-                <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-gray-900 opacity-0 transition-opacity group-hover:opacity-100 dark:text-white">
+                <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-primary)] opacity-0 transition-opacity group-hover:opacity-100 dark:text-white">
                   <Check className="h-3.5 w-3.5" aria-hidden="true" /> Elegir
                 </span>
               </Link>

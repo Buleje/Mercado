@@ -110,7 +110,7 @@ export default function PersonalizedRecommendations() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Para ti</h2>
+          <h2 className="text-base font-bold text-[var(--text-primary)] dark:text-white">Para ti</h2>
         </div>
         {/* Flechas desktop */}
         <div className="hidden sm:flex items-center gap-1">
@@ -118,7 +118,7 @@ export default function PersonalizedRecommendations() {
             onClick={() => scroll("left")}
             disabled={!canScrollLeft}
             aria-label="Anterior"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:border-primary/40 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-[var(--text-secondary)] dark:text-gray-400 hover:border-primary/40 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -126,7 +126,7 @@ export default function PersonalizedRecommendations() {
             onClick={() => scroll("right")}
             disabled={!canScrollRight}
             aria-label="Siguiente"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:border-primary/40 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-[var(--text-secondary)] dark:text-gray-400 hover:border-primary/40 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

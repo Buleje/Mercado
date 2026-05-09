@@ -53,8 +53,8 @@ interface Props {
 const STATUS_CONFIG: Record<BoostStatus, { label: string; className: string }> = {
   active: { label: "Activo", className: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400" },
   paused: { label: "Pausado", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400" },
-  cancelled: { label: "Cancelado", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400" },
-  expired: { label: "Expirado", className: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400" },
+  cancelled: { label: "Cancelado", className: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-gray-400" },
+  expired: { label: "Expirado", className: "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-gray-400" },
   scheduled: { label: "Programado", className: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-950/40 dark:text-emerald-400" },
 };
 
@@ -150,10 +150,10 @@ function BoostCard({
     >
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-gray-900 dark:text-white line-clamp-2 leading-tight">
+          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-white line-clamp-2 leading-tight">
             {boost.productName}
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+          <p className="text-xs text-[var(--text-tertiary)] dark:text-gray-500 mt-0.5">
             {formatDate(boost.startDate)} – {formatDate(boost.endDate)}
           </p>
         </div>
@@ -170,9 +170,9 @@ function BoostCard({
           { icon: ShoppingCart, label: "Ventas", value: boost.conversions.toLocaleString("es-PE") },
         ].map(({ icon: Icon, label, value }) => (
           <div key={label} className="text-center rounded-xl bg-gray-50 dark:bg-gray-800 py-2">
-            <Icon className="h-3.5 w-3.5 text-gray-400 mx-auto mb-0.5" />
-            <p className="text-xs font-bold text-gray-900 dark:text-white">{value}</p>
-            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">{label}</p>
+            <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)] mx-auto mb-0.5" />
+            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-white">{value}</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-gray-500">{label}</p>
           </div>
         ))}
       </div>
@@ -180,11 +180,11 @@ function BoostCard({
       {/* Budget + actions */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Gasto: <strong className="text-gray-900 dark:text-white">{fmt(boost.spentPen)}</strong>
+          <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400">
+            Gasto: <strong className="text-[var(--text-primary)] dark:text-white">{fmt(boost.spentPen)}</strong>
             {" "}/ {fmt(boost.maxBudgetPen)}
           </p>
-          <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-gray-500">
             Puja: {fmt(boost.bidAmount)}/1000 · CTR: {ctr(boost.clicks, boost.impressions)}
           </p>
         </div>
@@ -261,9 +261,9 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary shrink-0" />
-            <h2 className="text-sm font-bold text-gray-900 dark:text-white">Productos patrocinados</h2>
+            <h2 className="text-sm font-bold text-[var(--text-primary)] dark:text-white">Productos patrocinados</h2>
             {boosts.length > 0 && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="text-xs text-[var(--text-tertiary)] dark:text-gray-500">
                 · {boosts.length} boost{boosts.length !== 1 ? "s" : ""}
               </span>
             )}
@@ -301,10 +301,10 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
           {!loading && !error && boosts.length === 0 && (
             <div className="py-8 text-center">
               <TrendingUp className="h-8 w-8 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+              <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-gray-400">
                 Aun no tienes productos patrocinados
               </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] dark:text-gray-500 mt-1">
                 Crea un boost para destacar tus productos en el marketplace.
               </p>
               <button
@@ -335,7 +335,7 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
                       {["Producto", "Estado", "Fechas", "Impresiones", "Clicks", "Ventas", "Gasto / Max", "Acciones"].map((h) => (
-                        <th key={h} className="pb-2 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 pr-4 last:pr-0">
+                        <th key={h} className="pb-2 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] dark:text-gray-500 pr-4 last:pr-0">
                           {h}
                         </th>
                       ))}
@@ -347,10 +347,10 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
                       return (
                         <tr key={b.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
                           <td className="py-3 pr-4">
-                            <p className="font-semibold text-gray-900 dark:text-white line-clamp-1 max-w-36">
+                            <p className="font-semibold text-[var(--text-primary)] dark:text-white line-clamp-1 max-w-36">
                               {b.productName}
                             </p>
-                            <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500">
+                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-gray-500">
                               Puja: {fmt(b.bidAmount)} · CTR: {ctr(b.clicks, b.impressions)}
                             </p>
                           </td>
@@ -359,20 +359,20 @@ export default function SponsoredAdminPanel({ storeSlug }: Props) {
                               {status.label}
                             </span>
                           </td>
-                          <td className="py-3 pr-4 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          <td className="py-3 pr-4 text-xs text-[var(--text-secondary)] dark:text-gray-400 whitespace-nowrap">
                             {formatDate(b.startDate)}<br />
                             {formatDate(b.endDate)}
                           </td>
-                          <td className="py-3 pr-4 text-xs font-semibold text-gray-900 dark:text-white">
+                          <td className="py-3 pr-4 text-xs font-semibold text-[var(--text-primary)] dark:text-white">
                             {b.impressions.toLocaleString("es-PE")}
                           </td>
-                          <td className="py-3 pr-4 text-xs font-semibold text-gray-900 dark:text-white">
+                          <td className="py-3 pr-4 text-xs font-semibold text-[var(--text-primary)] dark:text-white">
                             {b.clicks.toLocaleString("es-PE")}
                           </td>
-                          <td className="py-3 pr-4 text-xs font-semibold text-gray-900 dark:text-white">
+                          <td className="py-3 pr-4 text-xs font-semibold text-[var(--text-primary)] dark:text-white">
                             {b.conversions.toLocaleString("es-PE")}
                           </td>
-                          <td className="py-3 pr-4 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          <td className="py-3 pr-4 text-xs text-[var(--text-secondary)] dark:text-gray-400 whitespace-nowrap">
                             {fmt(b.spentPen)} / {fmt(b.maxBudgetPen)}
                           </td>
                           <td className="py-3">

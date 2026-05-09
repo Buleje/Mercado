@@ -131,13 +131,13 @@ export default function ProductPickerModal({
         <header className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800">
           <h2
             id="picker-title"
-            className="text-lg font-bold text-gray-900 dark:text-white"
+            className="text-lg font-bold text-[var(--text-primary)] dark:text-white"
           >
             Agregar producto a comparar
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" />
@@ -153,7 +153,7 @@ export default function ProductPickerModal({
         {/* Search input */}
         <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
             <input
               ref={inputRef}
               type="search"
@@ -161,13 +161,13 @@ export default function ProductPickerModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               disabled={disabled}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition disabled:opacity-50"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-sm text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition disabled:opacity-50"
             />
             {loading && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] animate-spin" />
             )}
           </div>
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-2 text-xs text-[var(--text-secondary)] dark:text-gray-400">
             Escribe al menos 1 letra para ver resultados del marketplace.
           </p>
         </div>
@@ -175,11 +175,11 @@ export default function ProductPickerModal({
         {/* Results */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           {query.trim().length === 0 ? (
-            <div className="p-10 text-center text-sm text-gray-500 dark:text-gray-400">
+            <div className="p-10 text-center text-sm text-[var(--text-secondary)] dark:text-gray-400">
               Escribe para buscar productos disponibles en el marketplace.
             </div>
           ) : items.length === 0 && !loading ? (
-            <div className="p-10 text-center text-sm text-gray-500 dark:text-gray-400">
+            <div className="p-10 text-center text-sm text-[var(--text-secondary)] dark:text-gray-400">
               No encontramos productos para &ldquo;{query}&rdquo;.
             </div>
           ) : (
@@ -209,29 +209,29 @@ export default function ProductPickerModal({
                             className="object-cover"
                           />
                         ) : (
-                          <div className="h-full w-full flex items-center justify-center text-gray-400">
+                          <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)]">
                             <Package className="h-5 w-5" />
                           </div>
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
+                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-white line-clamp-1">
                           {it.product.name}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                        <p className="text-xs text-[var(--text-secondary)] dark:text-gray-400 line-clamp-1">
                           {it.store.name} · {it.product.category}
                         </p>
                         <p className="mt-0.5 text-sm font-bold text-primary">
                           S/ {Number(it.retailPrice).toFixed(2)}
                           {it.product.unit && (
-                            <span className="ml-1 text-xs font-normal text-gray-500 dark:text-gray-400">
+                            <span className="ml-1 text-xs font-normal text-[var(--text-secondary)] dark:text-gray-400">
                               / {it.product.unit}
                             </span>
                           )}
                         </p>
                       </div>
                       {already ? (
-                        <span className="text-xs font-medium text-gray-400 shrink-0">
+                        <span className="text-xs font-medium text-[var(--text-tertiary)] shrink-0">
                           Ya agregado
                         </span>
                       ) : (
