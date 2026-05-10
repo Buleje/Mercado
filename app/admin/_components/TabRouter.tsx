@@ -34,6 +34,7 @@ const AICommandModule         = dynamic(() => import("@/components/admin/unified
 const SugerenciasIAModule     = dynamic(() => import("@/components/admin/unified/SugerenciasIAModule"),     { loading: TabSpinner });
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
 const MarketplaceModule       = dynamic(() => import("@/components/admin/unified/MarketplaceModule"),       { loading: TabSpinner });
+const DocumentosModule        = dynamic(() => import("@/components/admin/documentos/DocumentosModule"),    { loading: TabSpinner, ssr: false });
 const DeliveryPartnersModule  = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"),  { loading: TabSpinner });
 const DeliveryLiveTab         = dynamic(() => import("@/components/admin/DeliveryTab"),                     { loading: TabSpinner, ssr: false });
 const MarketplaceChatTab      = dynamic(() => import("@/components/admin/ChatTab"),                         { loading: TabSpinner });
@@ -270,6 +271,9 @@ export function TabRouter({
 
   // ── Página individual de la tienda ──
   if (tab === "pagina-inicio") return <StorePageAdminPage />;
+
+  // ── Documentación (drive interno con drag&drop, preview, organización) ──
+  if (tab === "documentos") return <DocumentosModule />;
 
   return null;
 }

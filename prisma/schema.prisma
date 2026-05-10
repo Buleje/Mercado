@@ -4230,3 +4230,133 @@ enum Industry {
   panaderia   // produccion lote, recetas
   otro        // genérico / custom
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCUMENTOS v2 — Drive interno enterprise (sprint 2026-05-10)
+// Expand-only: 5 tablas + 1 plantilla. Sin ALTER sobre modelos existentes.
+// Multi-tenant via tenantId. customer/order/supplier son soft-FK (string).
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Document {
+  id           String    @id @default(cuid())
+  tenantId     String
+  folderId     String?
+  name         String
+  originalName String
+  mimeType     String
+  size         Int
+  storagePath  String
+  category     String    @default("otros")
+  tags         String[]  @default([])
+  favorite     Boolean   @default(false)
+  expiresAt    DateTime?
+
+  customerId String?
+  orderId    String?
+  supplierId String?
+
+  ocrText     String?  @db.Text
+  ocrMetadata Json?
+  aiCategory  String?
+  aiTags      String[] @default([])
+
+  uploadedById String
+  uploadedAt   DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  folder    DocumentFolder?    @relation(fields: [folderId], references: [id])
+  versions  DocumentVersion[]
+  shares    DocumentShare[]
+  auditLogs DocumentAuditLog[]
+
+  @@index([tenantId, folderId, deletedAt])
+  @@index([tenantId, category])
+  @@index([tenantId, favorite])
+  @@index([tenantId, uploadedAt])
+}
+
+model DocumentFolder {
+  id        String   @id @default(cuid())
+  tenantId  String
+  parentId  String?
+  name      String
+  color     String?
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent    DocumentFolder?  @relation("DocumentFolderTree", fields: [parentId], references: [id])
+  children  DocumentFolder[] @relation("DocumentFolderTree")
+  documents Document[]
+
+  @@index([tenantId, parentId])
+}
+
+model DocumentVersion {
+  id            String   @id @default(cuid())
+  documentId    String
+  versionNumber Int
+  storagePath   String
+  size          Int
+  mimeType      String
+  uploadedById  String
+  uploadedAt    DateTime @default(now())
+  changeNote    String?
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, versionNumber])
+  @@index([documentId])
+}
+
+model DocumentShare {
+  id           String    @id @default(cuid())
+  documentId   String
+  tenantId     String
+  token        String    @unique
+  expiresAt    DateTime
+  password     String?
+  createdById  String
+  createdAt    DateTime  @default(now())
+  accessCount  Int       @default(0)
+  lastAccessAt DateTime?
+  revokedAt    DateTime?
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([tenantId, createdAt])
+}
+
+model DocumentAuditLog {
+  id         String   @id @default(cuid())
+  documentId String
+  tenantId   String
+  actorId    String
+  action     String
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([documentId, createdAt])
+}
+
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  tenantId    String?
+  key         String
+  name        String
+  description String?
+  body        String   @db.Text
+  fields      Json
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+}
