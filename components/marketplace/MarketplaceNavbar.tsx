@@ -659,7 +659,7 @@ export default function MarketplaceNavbar() {
             role="dialog"
             aria-modal="true"
             aria-label="Menú del marketplace"
-            className="fixed inset-y-0 right-0 z-[70] flex w-[90vw] max-w-sm flex-col bg-[var(--surface-canvas)] shadow-2xl animate-in slide-in-from-right duration-200 overscroll-contain"
+            className="fixed inset-y-0 right-0 z-[70] flex w-full sm:max-w-md flex-col bg-[var(--surface-canvas)] shadow-2xl animate-in slide-in-from-right duration-200 overscroll-contain"
           >
             {/* Header drawer */}
             <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3">
@@ -749,13 +749,18 @@ export default function MarketplaceNavbar() {
                 })}
               </div>
 
-              {/* Separator + Descubrí mega-menu */}
-              <div className="mt-3 border-t border-[var(--rule-soft)] pt-3">
-                <DiscoverMegaMenu
-                  variant="mobile"
-                  onNavigate={() => setMobileMenuOpen(false)}
-                />
-              </div>
+              {/* Separator + Descubrí mega-menu — solo si NO estamos en
+                  modo "Solo Tiendas". En tiendas-only el mega-menu trae
+                  enlaces a Recetas, En Vivo, Buleje en Vivo, Novedades,
+                  que no aplican al alcance del catálogo de tiendas. */}
+              {!isTiendasOnly && (
+                <div className="mt-3 border-t border-[var(--rule-soft)] pt-3">
+                  <DiscoverMegaMenu
+                    variant="mobile"
+                    onNavigate={() => setMobileMenuOpen(false)}
+                  />
+                </div>
+              )}
 
               {/* Currency + Locale switchers removidos — default: Soles + Español */}
             </div>
