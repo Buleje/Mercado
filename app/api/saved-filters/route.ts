@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const ConditionSchema = z.object({
   field: z.string(),
@@ -61,6 +62,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/saved-filters
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "MODERATE", "saved-filters");
@@ -89,6 +91,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/saved-filters?id=xxx
 export async function PATCH(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -118,6 +121,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/saved-filters?id=xxx
 export async function DELETE(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "MODERATE", "saved-filters");

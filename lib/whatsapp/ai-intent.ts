@@ -76,8 +76,11 @@ export async function classifyWhatsappIntent(
   if (trimmed.length === 0 || trimmed.length > 500) return FALLBACK;
 
   // F2 AI-COST: clasificador ~$0.001 → guard por tenant
+  // SECURITY 2026-05-12 (audit P0 data-finops): canSpend es async. Sin await
+  // Promise siempre truthy → guard NUNCA bloquea. Atacante con bot spam
+  // podía quemar $50+/mes ilimitado. Fix: await + chequeo correcto.
   const INTENT_COST_USD = 0.001;
-  if (tenantId && !aiCostGuard.canSpend(tenantId, INTENT_COST_USD, "free")) {
+  if (tenantId && !(await aiCostGuard.canSpend(tenantId, INTENT_COST_USD, "free"))) {
     logger.warn("[whatsapp-ai-intent] presupuesto agotado, usando fallback", {
       tenantId: tenantId.slice(-6),
     });

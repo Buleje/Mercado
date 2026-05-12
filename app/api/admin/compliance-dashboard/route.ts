@@ -20,6 +20,11 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
+// SECURITY 2026-05-12 (audit code-reviewer P0-2): force-dynamic obligatorio.
+// Sin esto, Next 16 puede cachear el response RSC entre tenants distintos
+// (un admin del tenant A vería data del tenant B en cache).
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "compliance-dashboard");
   if (_rl) return _rl;

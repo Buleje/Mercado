@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateText } from "ai";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/buleje-assistant — Asistente Buleje 24/7.
@@ -73,7 +74,11 @@ export async function POST(req: NextRequest) {
       { status: 429 },
     );
   }
-  aiCostGuard.recordSpend(bucketKey, ESTIMATED_COST_USD);
+  // SECURITY 2026-05-12 (audit code-reviewer P1): await + catch para que
+  // si la función falla, no se quede el gasto sin registrar.
+  aiCostGuard.recordSpend(bucketKey, ESTIMATED_COST_USD).catch((err) =>
+    logger.warn("[buleje-assistant] recordSpend failed", { err: String(err) }),
+  );
 
   let body: unknown;
   try {

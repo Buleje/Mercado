@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { generateObject } from "ai";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/chef-ia — "¿Qué cocino hoy?" con IA.
@@ -153,7 +154,12 @@ export async function POST(req: NextRequest) {
       { status: 429 },
     );
   }
-  aiCostGuard.recordSpend(bucketKey, ESTIMATED_COST_USD);
+  // SECURITY 2026-05-12 (audit code-reviewer P1-4): await + catch para que
+  // si la función falla, no se quede el gasto sin registrar (atacante podría
+  // exceder budget). Fire-and-forget con .catch para no bloquear response.
+  aiCostGuard.recordSpend(bucketKey, ESTIMATED_COST_USD).catch((err) =>
+    logger.warn("[chef-ia] recordSpend failed", { err: String(err) }),
+  );
 
   let body: unknown;
   try {

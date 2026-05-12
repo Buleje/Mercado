@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { enqueueActivityLog } from "@/lib/queue";
 import { toErrorPayload } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
 // ─── POST /api/commission-rules ───────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "commission-rules"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
 // ─── PATCH /api/commission-rules?id=xxx ──────────────────────────────────────
 
 export async function PATCH(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "commission-rules"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
@@ -108,6 +111,7 @@ export async function PATCH(req: NextRequest) {
 // ─── DELETE /api/commission-rules?id=xxx ─────────────────────────────────────
 
 export async function DELETE(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "commission-rules"); if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

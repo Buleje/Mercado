@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const CreatePrestamoSchema = z.object({
   customerId: z.string().max(20).optional(),
@@ -59,6 +60,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/prestamos — create prestamo with auto-generated cuotas
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "prestamos"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;

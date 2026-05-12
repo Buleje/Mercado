@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const CreateSchema = z.object({
   title: z.string().min(1).max(200),
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/notes – create a note
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "MODERATE", "notes");
@@ -53,6 +55,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/notes?id=xxx – update a note
 export async function PATCH(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -75,6 +78,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/notes?id=xxx – delete a note
 export async function DELETE(req: NextRequest) {
+  const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const rl = applyRateLimit(req, "MODERATE", "notes");
   if (rl) return rl;
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
