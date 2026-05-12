@@ -33,7 +33,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const tenantId = req.headers.get("x-tenant-id") ?? "main";
+  const tenantId = req.headers.get("x-tenant-id");
+  if (!tenantId) {
+    // P1-1 multi-tenant: header obligatorio en writes públicos para no caer
+    // a "main" silenciosamente cuando el proxy no lo inyecta.
+    return NextResponse.json({ error: "tenant requerido" }, { status: 400 });
+  }
   const userAgent = req.headers.get("user-agent") ?? undefined;
 
   const record = await prisma.visitorWelcome.create({
@@ -55,7 +60,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const tenantId = req.headers.get("x-tenant-id") ?? "main";
+  const tenantId = req.headers.get("x-tenant-id");
+  if (!tenantId) {
+    return NextResponse.json({ error: "tenant requerido" }, { status: 400 });
+  }
   const url = new URL(req.url);
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1"));
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? "50")));
