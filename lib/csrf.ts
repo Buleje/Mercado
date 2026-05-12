@@ -133,6 +133,10 @@ export function validateCsrfToken(request: NextRequest): boolean {
     // no permite headers custom — no puede enviar X-CSRF-Token. El endpoint
     // valida slug + ipHash y nunca devuelve datos sensibles.
     "/api/store-page/visits",
+    // CSP violation reports — browser envía POST automaticamente cuando viola
+    // CSP, sin cookies de sesión ni X-CSRF-Token. El endpoint rate-limit
+    // STRICT + dedupe in-memory + solo loggea (no persiste a DB).
+    "/api/csp-report",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;
