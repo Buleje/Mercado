@@ -1,3 +1,4 @@
+import { Layers } from "lucide-react";
 import VariantCatalogClient from "./VariantCatalogClient";
 
 /**
@@ -14,21 +15,33 @@ import VariantCatalogClient from "./VariantCatalogClient";
  */
 export default function SuperadminVariantCatalogPage() {
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6">
-        <p className="text-xs uppercase tracking-widest text-[var(--text-tertiary)] font-bold">
-          Marketplace · Personalización
-        </p>
-        <h1 className="mt-1 text-2xl font-bold text-[var(--text-primary)]">
-          Catálogo de variaciones
-        </h1>
-        <p className="mt-1.5 max-w-2xl text-sm text-[var(--text-secondary)]">
-          Plantillas globales de variaciones que los tenants pueden importar
-          a sus productos. Ejemplo: una pollería importa &quot;Cremas&quot; con sus
-          imágenes en lugar de tener que crearlas una por una.
-        </p>
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
+      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex items-start gap-3.5">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
+              <Layers className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+            </span>
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+                Marketplace · Personalización
+              </p>
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                Catálogo de variaciones
+              </h1>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
+                Plantillas globales de variaciones que los tenants pueden importar a sus productos.
+                Ejemplo: una pollería importa &quot;Cremas&quot; con sus imágenes en lugar de tener que
+                crearlas una por una.
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <VariantCatalogClient />
       </div>
-      <VariantCatalogClient />
     </div>
   );
 }

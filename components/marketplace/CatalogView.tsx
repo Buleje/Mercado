@@ -252,7 +252,7 @@ export default function CatalogView({
       {!loading && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
-            <strong className="text-[var(--text-primary)] dark:text-foreground">{products.length}</strong>{" "}
+            <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{products.length}</strong>{" "}
             productos disponibles
           </p>
         </div>

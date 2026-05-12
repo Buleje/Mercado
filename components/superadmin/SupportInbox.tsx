@@ -256,14 +256,14 @@ export default function SupportInbox() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-0 h-[600px] bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+    <div className="flex flex-col lg:flex-row gap-0 h-[600px] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
       {/* Ticket list (Gmail style) */}
       <div className={cn(
-        "flex flex-col border-r border-[var(--rule-base)] dark:border-card-border",
+        "flex flex-col border-r border-[var(--rule-base)] dark:border-[var(--rule-base)]",
         selected ? "hidden lg:flex lg:w-96" : "w-full",
       )}>
         {/* Header + filters */}
-        <div className="p-3 border-b border-[var(--rule-base)] dark:border-card-border space-y-2">
+        <div className="p-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-2">
           <div className="flex items-center gap-2">
             <Inbox className="w-5 h-5 text-primary" />
             <h2 className="font-bold text-sm">Soporte</h2>
@@ -351,7 +351,7 @@ export default function SupportInbox() {
       {selected ? (
         <div className="flex-1 flex flex-col">
           {/* Detail header */}
-          <div className="p-4 border-b border-[var(--rule-base)] dark:border-card-border">
+          <div className="p-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h3 className="font-bold text-sm text-[var(--text-primary)]">
@@ -408,7 +408,7 @@ export default function SupportInbox() {
                     : "bg-primary/10 dark:bg-primary/15 ml-auto",
                 )}
               >
-                <p className="text-xs text-gray-800 dark:text-foreground whitespace-pre-wrap">
+                <p className="text-xs text-gray-800 dark:text-[var(--text-primary)] whitespace-pre-wrap">
                   {msg.body}
                 </p>
                 <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1.5">
@@ -419,7 +419,7 @@ export default function SupportInbox() {
           </div>
 
           {/* Reply box */}
-          <div className="p-3 border-t border-[var(--rule-base)] dark:border-card-border">
+          <div className="p-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <div className="flex gap-2">
               <input
                 type="text"

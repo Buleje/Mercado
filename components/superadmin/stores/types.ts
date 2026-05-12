@@ -28,10 +28,13 @@ export interface MarketplaceOrder {
   id: string;
   storeName: string;
   storeSlug: string;
+  tenantPlan?: string;
   customerName: string;
   customerPhone: string;
+  customerLocation?: string;
   total: number;
   status: string;
+  paymentMethod?: string;
   itemCount: number;
   createdAt: string;
 }

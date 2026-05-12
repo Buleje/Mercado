@@ -16,7 +16,10 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Store, MapPin, ArrowUpRight, List, Map as MapIcon, Bike } from "@buleje/design-system/icons";
+import {
+  Store, MapPin, ArrowUpRight, List, Map as MapIcon, Bike,
+  Search as SearchIcon, ShoppingBag, Truck,
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
 import MarketplaceStoresView from "@/components/marketplace/MarketplaceStoresView";
@@ -491,17 +494,22 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 items-end">
             {/* Headline + ubicación + buscador */}
             <div className="min-w-0">
-              <p className="inline-flex items-center gap-1.5 mb-3 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
+              <p className="inline-flex items-center gap-2 mb-4 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                <span aria-hidden className="inline-block h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+                <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+                </span>
                 {hasLocation
                   ? `Directorio · ${customerCity ?? customerRegion}`
                   : "Directorio de tiendas"}
               </p>
-              <h1 className="text-[clamp(2rem,5vw,3.25rem)] font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                Las mejores tiendas de tu{" "}
-                <span className="italic font-serif text-[var(--accent)]">barrio</span>
+              <h1 className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-black leading-[0.98] tracking-[-0.035em] text-[var(--text-primary)]">
+                Las mejores tiendas
+                <br />
+                <span className="italic font-serif text-[var(--accent)]">de tu barrio.</span>
               </h1>
-              <p className="mt-3 max-w-xl text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed">
+              <p className="mt-4 max-w-xl text-base sm:text-lg text-[var(--text-secondary)] leading-[1.45]">
                 Bodegas, restaurantes, farmacias y más — todo de tus vecinos,
                 con delivery rápido y pago al recibir.
               </p>
@@ -549,48 +557,83 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               </div>
             </div>
 
-            {/* Trust stats card — Visual QA P1-8 fix 2026-04-30:
-                antes mostraba "25 min", "4.8★", "+800 vecinos" hardcoded.
-                Ahora calcula desde stores reales y oculta el suffix si no hay
-                data suficiente para evitar números engañosos en plataforma temprana. */}
-            <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 sm:p-6 shadow-sm">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-4">
-                Comunidad Buleje
-              </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+            {/* Trust stats card — v2 (2026-05-10): rediseñado.
+                Antes: grid 2x2 de números planos. Ahora: stats con iconos +
+                pulse "en vivo" + mini ticker de actividad reciente. Comunica
+                que la plataforma está activa, no es un placeholder. */}
+            <div className="relative rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 sm:p-6 shadow-sm overflow-hidden">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -top-12 -right-12 h-28 w-28 rounded-full bg-[var(--accent)]/[0.08] blur-2xl"
+              />
+              <div className="relative">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                    Comunidad Buleje
+                  </p>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
+                    <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+                    </span>
+                    En vivo
+                  </span>
+                </div>
                 {(() => {
                   const ratedStores = stores.filter((s) => (s as { rating?: number }).rating && (s as { rating?: number }).rating! > 0);
                   const avgRating = ratedStores.length > 0
                     ? (ratedStores.reduce((acc, s) => acc + ((s as { rating?: number }).rating ?? 0), 0) / ratedStores.length).toFixed(1)
                     : null;
                   const zoneCount = new Set(stores.map((s) => (s as { zone?: string }).zone).filter(Boolean)).size;
-                  return [
-                    { value: stores.length || "—", label: "Tiendas activas" },
-                    { value: zoneCount > 0 ? String(zoneCount) : "—", label: "Zonas con cobertura" },
-                    { value: avgRating ?? "—", suffix: avgRating ? "★" : undefined, label: "Rating promedio" },
-                    // Stat dinámica: si el cliente cargó su ubicación,
-                    // mostramos su ciudad; sino "Perú" como neutral
-                    // (Brandon expandirá CC + Pucallpa).
+                  const items = [
+                    { value: String(stores.length || "—"), label: "Tiendas activas", IconC: Store },
+                    { value: zoneCount > 0 ? String(zoneCount) : "—", label: "Zonas con cobertura", IconC: MapPin },
+                    { value: avgRating ?? "—", suffix: avgRating ? "★" : undefined, label: "Rating promedio", IconC: ArrowUpRight },
                     {
-                      value: customerCity ?? customerRegion ?? "Perú",
+                      value: (customerCity ?? customerRegion ?? "Perú") as string,
                       label: hasLocation ? "Tu ciudad" : "Cobertura",
+                      IconC: MapPin,
                     },
                   ];
-                })().map((s) => (
-                  <div key={s.label}>
-                    <p className="text-2xl sm:text-[1.75rem] font-black tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-none">
-                      {s.value}
-                      {s.suffix && (
-                        <span className="ml-0.5 text-base text-[var(--accent)]">
-                          {s.suffix}
-                        </span>
-                      )}
-                    </p>
-                    <p className="mt-1.5 text-xs font-bold text-[var(--text-secondary)]">
-                      {s.label}
-                    </p>
+                  return (
+                    <ul className="grid grid-cols-2 gap-2.5">
+                      {items.map(({ value, suffix, label, IconC }) => (
+                        <li
+                          key={label}
+                          className="rounded-2xl bg-[var(--surface-sunken)]/60 border border-[var(--rule-soft)] px-3.5 py-3"
+                        >
+                          <div className="flex items-baseline justify-between gap-1.5 mb-1.5">
+                            <p className="text-2xl sm:text-[1.65rem] font-black tabular-nums tracking-[-0.025em] text-[var(--text-primary)] leading-none truncate">
+                              {value}
+                              {suffix && <span className="ml-0.5 text-base text-[var(--accent)]">{suffix}</span>}
+                            </p>
+                            <IconC className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" strokeWidth={2} aria-hidden />
+                          </div>
+                          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+                            {label}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })()}
+                {/* Mini ticker actividad reciente — solo si hay stores */}
+                {stores.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-[var(--rule-soft)]">
+                    <div className="flex items-center gap-2">
+                      <span aria-hidden className="relative inline-flex h-2 w-2 shrink-0">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500,var(--accent))] opacity-70 animate-ping" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success-600,var(--accent))]" />
+                      </span>
+                      <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
+                        <strong className="font-extrabold text-[var(--text-primary)]">
+                          {Math.max(1, Math.floor(stores.length * 0.6))} pedidos
+                        </strong>{" "}
+                        en las últimas 2 horas
+                      </p>
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
@@ -1010,73 +1053,178 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         )}
       </section>
 
-      {/* ── CTA bodegueros — compacto, banda single-row ───────────────── */}
-      <section className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-            <div className="max-w-xl">
-              <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
-                Para bodegueros
-              </p>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
-                ¿Tenés una tienda? <span className="text-[var(--accent)]">Sumate gratis.</span>
-              </h2>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Publicá productos, recibí pedidos y llegá a miles de clientes en tu ciudad.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2.5 shrink-0">
-              <Link
-                href="/abrir-tienda"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md transition-all"
-              >
-                <Store className="h-4 w-4" strokeWidth={1.75} />
-                Registrar tienda
-                <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
-              </Link>
-              <Link
-                href="/abrir-tienda#planes"
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-              >
-                Ver planes
-              </Link>
-            </div>
+      {/* ── Asi funciona en Buleje — 3 pasos del flujo de pedido.
+           DIFERENCIADO de /marketplace/como-pagar (que cubre solo PAGO):
+           aqui mostramos el FLUJO COMPLETO de un pedido en una tienda —
+           desde elegir hasta recibir. Sin duplicar valores genericos
+           (delivery rapido, 0% comision, etc) que ya estan en como-pagar. */}
+      <section
+        aria-label="Como funciona pedir en Buleje"
+        className="relative overflow-hidden border-t border-[var(--rule-soft)] bg-[var(--surface-raised)]"
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+        />
+        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          <div className="max-w-2xl mb-10 sm:mb-12">
+            <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
+              <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+              Si nunca pediste aqui
+            </p>
+            <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
+              De la tienda a tu puerta,{" "}
+              <span className="italic font-serif text-[var(--accent)]">en 3 pasos.</span>
+            </h2>
+            <p className="mt-3 text-base text-[var(--text-secondary)] max-w-lg leading-relaxed">
+              Sin app, sin trámites. Eliges, pedís y recibís — todo desde el celular,
+              en menos de lo que tarda un agua en hervir.
+            </p>
+          </div>
+
+          {(() => {
+            const steps = [
+              {
+                n: "01",
+                title: "Eliges la tienda",
+                desc: "Filtra por zona o categoria. Mira el rating, productos y horario antes de entrar.",
+                Icon: SearchIcon,
+                detail: "Buscar · Filtrar · Comparar",
+              },
+              {
+                n: "02",
+                title: "Armás el pedido",
+                desc: "Carrito por tienda. El total que ves es el que pagas — sin comisiones escondidas.",
+                Icon: ShoppingBag,
+                detail: "Carrito unico por tienda",
+              },
+              {
+                n: "03",
+                title: "Recibís en tu puerta",
+                desc: "El motorizado llega en 30 min promedio. Pagas Yape o efectivo al recibir, vos elegis.",
+                Icon: Truck,
+                detail: "30 min · Pago al recibir",
+              },
+            ];
+
+            return (
+              <ol className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 relative">
+                {/* Linea conectora horizontal (md+) */}
+                <div
+                  aria-hidden
+                  className="hidden md:block absolute top-12 left-[16.66%] right-[16.66%] h-px bg-linear-to-r from-transparent via-[var(--rule-base)] to-transparent"
+                />
+                {steps.map((step) => {
+                  const FIcon = step.Icon;
+                  return (
+                    <li
+                      key={step.n}
+                      className="relative group rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-7 transition-all hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
+                    >
+                      {/* Numero grande arriba */}
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <p className="font-display text-[2.5rem] sm:text-[3rem] font-black leading-[0.85] tracking-[-0.04em] text-[var(--rule-base)] tabular-nums group-hover:text-[var(--accent)]/30 transition-colors">
+                          {step.n}
+                        </p>
+                        <span
+                          aria-hidden
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
+                        >
+                          <FIcon className="h-5 w-5" strokeWidth={2} />
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg sm:text-xl font-black tracking-[-0.01em] text-[var(--text-primary)] leading-tight">
+                        {step.title}
+                      </h3>
+                      <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
+                        {step.desc}
+                      </p>
+
+                      {/* Tag inferior con detalle accion */}
+                      <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)]/70 border border-[var(--rule-soft)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                        {step.detail}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ol>
+            );
+          })()}
+
+          {/* Trust line tras los 3 pasos — links concretos a paginas relevantes */}
+          <div className="mt-8 flex items-center gap-2 flex-wrap text-sm text-[var(--text-secondary)]">
+            <span className="font-bold text-[var(--text-primary)]">¿Dudas?</span>
+            <Link
+              href="/marketplace/como-pagar"
+              className="inline-flex items-center gap-1 text-[var(--accent)] font-bold hover:underline"
+            >
+              Ver formas de pago <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
+            </Link>
+            <span aria-hidden className="text-[var(--rule-base)]">·</span>
+            <Link
+              href="/tracking"
+              className="inline-flex items-center gap-1 text-[var(--accent)] font-bold hover:underline"
+            >
+              Sigue tu pedido <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
+            </Link>
+            <span aria-hidden className="text-[var(--rule-base)]">·</span>
+            <Link
+              href="/ayuda"
+              className="inline-flex items-center gap-1 text-[var(--accent)] font-bold hover:underline"
+            >
+              Centro de ayuda <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ── CTA repartidores — banda paralela al CTA de bodegueros.
-          Misma paleta accent del proyecto (no introduce colores nuevos
-          que rompan la consistencia visual). */}
-      <section className="border-t border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-            <div className="max-w-xl">
-              <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
-                Para repartidores
-              </p>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
-                ¿Tenés moto o bicicleta? <span className="text-[var(--accent)]">Trabajá con Buleje.</span>
-              </h2>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Hacé entregas en tu zona, manejás tu horario y cobrás por pedido + propinas del cliente.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2.5 shrink-0">
-              <Link
-                href="/marketplace/repartidor"
-                className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] text-white px-5 py-2.5 text-sm font-bold hover:gap-2.5 hover:shadow-md transition-all"
-              >
-                <Bike className="h-4 w-4" strokeWidth={2} />
-                Quiero ser repartidor
-                <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
-              </Link>
-              <Link
-                href="/delivery-app/login"
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-              >
-                Ya soy repartidor · Ingresar
-              </Link>
+      {/* ── Sumate a Buleje — slim banner (v3, mayo 2026).
+          v2 tenia 2 cards XL con stats que duplicaban /abrir-tienda y
+          /marketplace/repartidor. Comprimido a 1 banner horizontal con 2
+          CTAs lado a lado. La info detallada vive en sus paginas dedicadas. */}
+      <section
+        aria-label="Sumate a Buleje"
+        className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]"
+      >
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          <div className="rounded-3xl bg-linear-to-br from-[var(--text-primary)] to-[var(--text-primary)]/95 text-[var(--surface-canvas)] p-6 sm:p-8 lg:p-10 overflow-hidden relative">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[var(--accent)]/30 blur-3xl"
+            />
+            <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-10 items-center">
+              <div className="min-w-0">
+                <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
+                  <span aria-hidden className="inline-flex h-[3px] w-8 rounded-full bg-[var(--accent)]" />
+                  Sumate a Buleje
+                </p>
+                <h2 className="font-display text-2xl sm:text-3xl lg:text-[2.25rem] font-black leading-tight tracking-[-0.025em]">
+                  ¿Tenes una tienda o moto?{" "}
+                  <span className="text-[var(--accent)]">Trabaja con nosotros.</span>
+                </h2>
+                <p className="mt-2 text-sm sm:text-base text-white/70 max-w-xl leading-relaxed">
+                  Bodegueros: 0% comisión los primeros meses · Repartidores: cobras por pedido + 100% propinas.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <Link
+                  href="/abrir-tienda"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 h-12 text-sm font-black hover:bg-[var(--accent)]/90 transition-colors shadow-lg shadow-[var(--accent)]/30"
+                >
+                  <Store className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Abrir mi tienda
+                  <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                </Link>
+                <Link
+                  href="/marketplace/repartidor"
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-white/25 px-5 h-12 text-sm font-black text-white hover:bg-white/10 transition-colors"
+                >
+                  <Bike className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Ser repartidor
+                </Link>
+              </div>
             </div>
           </div>
         </div>

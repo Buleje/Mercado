@@ -1,144 +1,185 @@
 "use client";
 
 /**
- * ExplorarClient — Orchestrator de la pagina /marketplace/explorar.
+ * ExplorarClient — Hub de navegación B2C del marketplace.
  *
- * Stack canonico (top → bottom) — Sprint 1-5 completos:
- *   1.  PromoBannerCarousel (banner top rotativo)
- *   2.  ExplorarHeroSearch (search XL + chips + trust)
- *   3.  DealsOfTheDayStrip (countdown global + carrusel)
- *   4.  RecentlyViewedStrip (lee localStorage — solo si hay items)
- *   5.  ExplorarAmazonBoxes (6 cajas tematicas)
- *   6.  BuyAgainStrip (lee phone cookie — solo customer logueado)
- *   7.  EditorialFeature (receta destacada + ingredientes)
- *   8.  TopRatedBento (bento 1+3 productos top calificados)
- *   9.  NeighborsBoughtStrip (recommendations o top-today fallback)
- *  10.  BodegasTrendingRow (3 cards bodegas trending)
- *  11.  ExplorarRelacionados (2 carruseles relacionados/considerar)
- *  12.  ExplorarCategoriasGrid (grid completo todas las categorias)
- *  13.  NewArrivalsRow (carrusel productos nuevos)
- *  14.  FinalCTA (segmentado vendor)
+ * NO es para comprar directamente — es el menú visual del sitio.
+ * Diseño comercial: gradientes, illustrations, copy cálido, CTAs grandes.
  *
- * Cada seccion va envuelta en ExplorarErrorBoundary para que un fallo
- * de fetch o render no rompa el resto. RevealOnScroll agrega fade-in
- * al entrar en viewport (excepto secciones above-the-fold).
- *
- * BackToTop FAB aparece despues de 800px scroll.
+ * Estructura B2C v3:
+ *   1. Hero search
+ *   2. SectionPortals (bento de 8 destinos)
+ *   3. TrustStrip (4 stats con personalidad)
+ *   4. Preview "Bodegas en tendencia" con CTA grande
+ *   5. HowItWorks (3 pasos con conectores)
+ *   6. Preview "Ofertas del día" con CTA grande
+ *   7. Testimonials (3 reseñas wall of love)
+ *   8. Preview "Categorías"
+ *   9. FinalCTA bodegueros (mejorado con stats inline)
  */
 
 import Link from "next/link";
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
-import { ArrowUpRight, Store } from "@buleje/design-system/icons";
+import {
+  ArrowUpRight,
+  Store,
+  Sparkles,
+  Zap,
+  ShieldCheck,
+} from "@buleje/design-system/icons";
 
-// Above-fold (estáticos): hero search, tracker, error boundary, reveal wrapper.
 import RevealOnScroll from "@/components/marketplace/home/RevealOnScroll";
 import ExplorarHeroSearch from "./ExplorarHeroSearch";
 import ExplorarErrorBoundary from "./ExplorarErrorBoundary";
 import ExplorarTracker from "./ExplorarTracker";
+import ExplorarSectionPortals from "./ExplorarSectionPortals";
+import ExplorarTrustStrip from "./ExplorarTrustStrip";
+import ExplorarHowItWorks from "./ExplorarHowItWorks";
+import ExplorarTestimonials from "./ExplorarTestimonials";
 
-// Audit P12 sprint perf: 12 secciones below-fold a dynamic({ ssr: false }).
-// Reduce el initial chunk de /marketplace/explorar de ~152 a ~80 estimado.
-const WelcomeStrip = dynamic(() => import("@/components/marketplace/home/WelcomeStrip"), { ssr: false });
-const ExplorarTileGrid = dynamic(() => import("./ExplorarTileGrid"), { ssr: false });
+// Below-fold lazy
+const WelcomeStrip = dynamic(() => import("@/components/marketplace/home/WelcomeStrip"), {
+  ssr: false,
+});
 const ExplorarBackToTop = dynamic(() => import("./ExplorarBackToTop"), { ssr: false });
-const ExplorarAmazonBoxes = dynamic(() => import("./ExplorarAmazonBoxes"), { ssr: false });
 const ExplorarCategoriasGrid = dynamic(() => import("./ExplorarCategoriasGrid"), { ssr: false });
-const RecentlyViewedStrip = dynamic(() => import("./RecentlyViewedStrip"), { ssr: false });
-const RecentlyViewedSectionBox = dynamic(
-  () => import("./RecentlyViewedStrip").then((m) => ({ default: m.RecentlyViewedSectionBox })),
-  { ssr: false },
-);
-const BuyAgainStrip = dynamic(() => import("./BuyAgainStrip"), { ssr: false });
-const DealsOfTheDayStrip = dynamic(() => import("./DealsOfTheDayStrip"), { ssr: false });
-const TopRatedBento = dynamic(() => import("./TopRatedBento"), { ssr: false });
 const BodegasTrendingRow = dynamic(() => import("./BodegasTrendingRow"), { ssr: false });
-// Consolidacion 2026-04-23: removidos EditorialFeature, NeighborsBoughtStrip,
-// ExplorarRelacionados (2 carruseles), NewArrivalsRow, FillBanner extra.
-// Pasamos de 15 a 9 secciones (-40% altura, menos decision paralysis).
+const DealsOfTheDayStrip = dynamic(() => import("./DealsOfTheDayStrip"), { ssr: false });
 
 /**
- * SectionBox — wrapper que envuelve cada strip de explorar en una caja
- * con borde + bg + rounded, estilo Mercado Libre. El strip mantiene su
- * propio header interno (titulo + link "ver todos").
- *
- * Los strips internos usan `max-w-[1600px] mx-auto px-*` propio; se anula
- * con `[&_section]:!px-0 [&_section]:!max-w-none [&_section]:!mx-0`
- * para que el padding venga de la caja (no doble).
+ * PreviewSectionBox — preview comercial con header gradient + CTA pill grande.
  */
-function SectionBox({ children }: { children: React.ReactNode }) {
+function PreviewSectionBox({
+  eyebrow,
+  title,
+  subtitle,
+  ctaHref,
+  ctaLabel,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  ctaHref: string;
+  ctaLabel: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div
-      className={[
-        "overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
-        "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
-        "sm:[&_section]:!px-5 [&_section]:!py-4 sm:[&_section]:!py-5",
-      ].join(" ")}
-    >
-      {children}
-    </div>
+    <section className="rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden shadow-sm">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-soft)] bg-gradient-to-r from-[var(--accent)]/5 via-[var(--surface-canvas)] to-[var(--surface-canvas)] px-5 sm:px-6 py-4 sm:py-5">
+        <div className="min-w-0">
+          <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+            <span className="h-[3px] w-8 rounded-full bg-[var(--accent)]" aria-hidden />
+            {eyebrow}
+          </p>
+          <h3 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] mt-2 leading-tight">
+            {title}
+          </h3>
+          <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5 font-semibold">{subtitle}</p>
+        </div>
+        <Link
+          href={ctaHref}
+          className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm sm:text-base font-black uppercase tracking-wider text-white shadow-lg shadow-[var(--accent)]/30 transition-all hover:brightness-110 hover:gap-3 hover:shadow-xl shrink-0"
+        >
+          {ctaLabel}
+          <ArrowUpRight
+            className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            strokeWidth={2.75}
+            aria-hidden
+          />
+        </Link>
+      </header>
+      <div
+        className={[
+          "[&_section]:!max-w-none [&_section]:!mx-0 [&_section]:!px-4",
+          "sm:[&_section]:!px-5 [&_section]:!py-4 sm:[&_section]:!py-5",
+        ].join(" ")}
+      >
+        {children}
+      </div>
+    </section>
   );
 }
 
+/**
+ * FinalCTA — Card oscura con accent emphasis. Sin gradient saturado.
+ */
 function FinalCTA() {
   return (
-    <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)]">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
-      />
-      <div className="relative max-w-4xl mx-auto px-4 text-center">
-        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
-          <span
+    <section className="bg-[var(--surface-canvas)] py-12 sm:py-20 mt-4">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl border border-[var(--rule-base)] bg-[var(--text-primary)] p-8 sm:p-12 lg:p-16">
+          {/* Single subtle accent glow */}
+          <div
             aria-hidden
-            className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]"
+            className="pointer-events-none absolute -top-20 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/15 blur-3xl"
           />
-          Para bodegueros
-        </p>
-        <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-          Abre tu tienda,
-          <br />
-          <span className="italic font-serif text-[var(--accent)]">
-            vende a todo Pucallpa.
-          </span>
-        </h2>
-        <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-          Miles de vecinos ya están buscando lo que vendes. Pon tu bodega
-          online en{" "}
-          <span className="text-[var(--text-primary)] font-bold">5 minutos</span>
-          , sin código y sin permanencia.
-        </p>
-        <div className="mt-12 flex flex-wrap justify-center gap-3">
-          <Link
-            href="/abrir-tienda"
-            className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
-          >
-            <Store className="h-4 w-4" strokeWidth={1.75} />
-            Abrir mi tienda gratis
-            <ArrowUpRight
-              className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-              strokeWidth={2.25}
-              aria-hidden="true"
-            />
-          </Link>
-          <Link
-            href="/abrir-tienda#planes"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] px-8 py-4 text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-          >
-            Ver planes
-          </Link>
+
+          <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 lg:gap-12 items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-3.5 py-1.5 text-xs font-black uppercase tracking-[var(--ls-wider)] text-white mb-6">
+                <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.75} aria-hidden />
+                Para bodegueros · Gratis siempre
+              </span>
+              <h2 className="font-display text-[clamp(2.25rem,6vw,4.5rem)] font-black tracking-[-0.035em] text-white leading-[0.95]">
+                Tu bodega online
+                <br />
+                <span className="text-[var(--accent)]">en 5 minutos.</span>
+              </h2>
+              <p className="mt-5 text-lg sm:text-xl text-white/80 max-w-xl leading-snug font-semibold">
+                Miles de vecinos están buscando lo que vendés. Subí tus productos y empezá a
+                recibir pedidos hoy mismo.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-2">
+                {[
+                  { icon: Zap, text: "Setup 5 min" },
+                  { icon: ShieldCheck, text: "Sin tarjeta" },
+                  { icon: Store, text: "100% gratis" },
+                ].map((b) => (
+                  <span
+                    key={b.text}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-black uppercase tracking-wider text-white border border-white/15"
+                  >
+                    <b.icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                    {b.text}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2.5 shrink-0">
+              <Link
+                href="/abrir-tienda"
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base sm:text-lg font-black uppercase tracking-wider shadow-xl shadow-[var(--accent)]/40 hover:brightness-110 hover:gap-3 transition-all"
+              >
+                <Store className="h-5 w-5" strokeWidth={2.25} />
+                Abrir mi tienda
+                <ArrowUpRight
+                  className="h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  strokeWidth={2.75}
+                  aria-hidden
+                />
+              </Link>
+              <Link
+                href="/abrir-tienda#planes"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-8 py-4 text-sm sm:text-base font-black uppercase tracking-wider text-white hover:bg-white/10 transition-colors"
+              >
+                Ver planes
+              </Link>
+              <p className="mt-2 text-xs font-black uppercase tracking-wider text-white/70 text-center">
+                ✓ 200+ bodegueros ya venden
+              </p>
+            </div>
+          </div>
         </div>
-        <p className="mt-6 text-sm text-[var(--text-tertiary)]">
-          Sin tarjeta · Sin contrato · Cancelás cuando quieras
-        </p>
       </div>
     </section>
   );
 }
 
 export default function ExplorarClient() {
-  // Body data-attribute para aplicar tipografía mejorada solo en /explorar.
-  // Se limpia al desmontar (navegando a otra página).
   useEffect(() => {
     document.body.setAttribute("data-marketplace-explorar", "true");
     return () => {
@@ -150,80 +191,114 @@ export default function ExplorarClient() {
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="marketplace_explorar" />
 
-      {/* ══════════════════════════════════════════════════════════════════
-          TOP EN CAJAS ESTILO MERCADO LIBRE / AMAZON — grid 12 cols con
-          banner + bento + categorías + ofertas + banner side empaquetados
-          como piezas de un mismo mosaico (ver ExplorarTileGrid).
-          ══════════════════════════════════════════════════════════════════ */}
-
-      {/* Bienvenida personalizada (solo clientes logueados, silencioso si no) */}
+      {/* Bienvenida personalizada */}
       <WelcomeStrip />
 
-      {/* Hero search protagonista — XL search + chips populares + trust strip */}
+      {/* ══════════════════════════════════════════════════════════════════
+          1) HERO ÚNICO — identidad + search + chips + stats + atajos.
+          ══════════════════════════════════════════════════════════════════ */}
       <ExplorarErrorBoundary section="hero-search">
         <ExplorarHeroSearch />
       </ExplorarErrorBoundary>
 
-      {/* Grid tile — banner · 4 bento · categorías · ofertas · banner side */}
-      <ExplorarTileGrid />
+      {/* ══════════════════════════════════════════════════════════════════
+          2) HUB DE NAVEGACIÓN: 8 portales a cada sección.
+          ══════════════════════════════════════════════════════════════════ */}
+      <ExplorarErrorBoundary section="section-portals">
+        <ExplorarSectionPortals />
+      </ExplorarErrorBoundary>
 
       {/* ══════════════════════════════════════════════════════════════════
-          SECCIONES ENCAPSULADAS EN CAJAS CON BORDE — estilo Mercado Libre.
-          Cada strip va dentro de un wrapper con border + bg + padding
-          compartido para que se vean como tarjetas apiladas, pegadas.
+          2) TRUST STRIP: 4 stats con personalidad.
           ══════════════════════════════════════════════════════════════════ */}
+      <ExplorarErrorBoundary section="trust-strip">
+        <RevealOnScroll>
+          <ExplorarTrustStrip />
+        </RevealOnScroll>
+      </ExplorarErrorBoundary>
 
-      <div className="bg-[var(--surface-sunken)] py-3 sm:py-4">
-        <div className="mx-auto max-w-[1600px] space-y-3 sm:space-y-4 px-3 sm:px-4 lg:px-6">
-
-          <ExplorarErrorBoundary section="deals-of-the-day">
-            <SectionBox><DealsOfTheDayStrip /></SectionBox>
-          </ExplorarErrorBoundary>
-
-          <ExplorarErrorBoundary section="recently-viewed">
-            {/* Visual QA P1 fix: SectionBox auto-oculta cuando no hay items. */}
-            <RecentlyViewedSectionBox />
-          </ExplorarErrorBoundary>
-
-          <ExplorarErrorBoundary section="amazon-boxes">
+      {/* ══════════════════════════════════════════════════════════════════
+          3) PREVIEW 1: Bodegas trending.
+          ══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-[var(--surface-sunken)] py-6 sm:py-10">
+        <div className="mx-auto max-w-[1600px] px-3 sm:px-4 lg:px-6">
+          <ExplorarErrorBoundary section="bodegas-preview">
             <RevealOnScroll>
-              <SectionBox><ExplorarAmazonBoxes /></SectionBox>
-            </RevealOnScroll>
-          </ExplorarErrorBoundary>
-
-          <ExplorarErrorBoundary section="buy-again">
-            <RevealOnScroll>
-              <SectionBox><BuyAgainStrip /></SectionBox>
-            </RevealOnScroll>
-          </ExplorarErrorBoundary>
-
-          <ExplorarErrorBoundary section="top-rated-bento">
-            <RevealOnScroll>
-              <SectionBox><TopRatedBento /></SectionBox>
-            </RevealOnScroll>
-          </ExplorarErrorBoundary>
-
-          <ExplorarErrorBoundary section="bodegas-trending">
-            <RevealOnScroll>
-              <SectionBox><BodegasTrendingRow /></SectionBox>
-            </RevealOnScroll>
-          </ExplorarErrorBoundary>
-
-          <ExplorarErrorBoundary section="categorias-grid">
-            <RevealOnScroll>
-              <SectionBox><ExplorarCategoriasGrid /></SectionBox>
+              <PreviewSectionBox
+                eyebrow="Lo que viene volando"
+                title="Las bodegas más buscadas"
+                subtitle="Vecinos como vos las están eligiendo esta semana"
+                ctaHref="/marketplace"
+                ctaLabel="Ver todas las bodegas"
+              >
+                <BodegasTrendingRow />
+              </PreviewSectionBox>
             </RevealOnScroll>
           </ExplorarErrorBoundary>
         </div>
       </div>
 
+      {/* ══════════════════════════════════════════════════════════════════
+          4) CÓMO FUNCIONA: 3 pasos con conector.
+          ══════════════════════════════════════════════════════════════════ */}
+      <ExplorarErrorBoundary section="how-it-works">
+        <RevealOnScroll>
+          <ExplorarHowItWorks />
+        </RevealOnScroll>
+      </ExplorarErrorBoundary>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          5) PREVIEW 2: Ofertas + Categorías.
+          ══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-[var(--surface-sunken)] py-6 sm:py-10">
+        <div className="mx-auto max-w-[1600px] space-y-4 sm:space-y-5 px-3 sm:px-4 lg:px-6">
+          <ExplorarErrorBoundary section="ofertas-preview">
+            <RevealOnScroll>
+              <PreviewSectionBox
+                eyebrow="Solo por hoy"
+                title="Ofertas que duran horas"
+                subtitle="Si lo viste y te gustó, apuralo — los precios vuelan"
+                ctaHref="/marketplace/ofertas"
+                ctaLabel="Ver todas las ofertas"
+              >
+                <DealsOfTheDayStrip />
+              </PreviewSectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+
+          <ExplorarErrorBoundary section="categorias-preview">
+            <RevealOnScroll>
+              <PreviewSectionBox
+                eyebrow="Tu mercado completo"
+                title="Filtrá por lo que buscás"
+                subtitle="Desde una gaseosa hasta el almuerzo del domingo"
+                ctaHref="/tiendas"
+                ctaLabel="Explorar catálogo"
+              >
+                <ExplorarCategoriasGrid />
+              </PreviewSectionBox>
+            </RevealOnScroll>
+          </ExplorarErrorBoundary>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          6) TESTIMONIOS: 3 reseñas wall of love.
+          ══════════════════════════════════════════════════════════════════ */}
+      <ExplorarErrorBoundary section="testimonials">
+        <RevealOnScroll>
+          <ExplorarTestimonials />
+        </RevealOnScroll>
+      </ExplorarErrorBoundary>
+
+      {/* ══════════════════════════════════════════════════════════════════
+          7) CTA FINAL: bodegueros — gradient accent full bleed.
+          ══════════════════════════════════════════════════════════════════ */}
       <ExplorarErrorBoundary section="final-cta">
         <RevealOnScroll>
           <FinalCTA />
         </RevealOnScroll>
       </ExplorarErrorBoundary>
-
-      {/* Footer vive en app/marketplace/layout.tsx (persistente). */}
 
       <ExplorarBackToTop />
     </div>

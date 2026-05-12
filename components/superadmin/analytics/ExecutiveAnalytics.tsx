@@ -102,7 +102,17 @@ function InsightBadge({ tone, text }: { tone: "positive" | "negative" | "neutral
   );
 }
 
-export default function ExecutiveAnalytics() {
+export interface ExecutiveAnalyticsProps {
+  from?: string;
+  to?: string;
+  periodLabel?: string;
+}
+
+export default function ExecutiveAnalytics({
+  from,
+  to,
+  periodLabel,
+}: ExecutiveAnalyticsProps = {}) {
   const [data, setData] = useState<ExecutiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +120,8 @@ export default function ExecutiveAnalytics() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch("/api/superadmin/analytics/executive", { credentials: "include" })
+    const qs = from && to ? `?from=${from}&to=${to}` : "";
+    fetch(`/api/superadmin/analytics/executive${qs}`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((d: ExecutiveData) => {
         if (!cancelled) setData(d);
@@ -124,7 +135,9 @@ export default function ExecutiveAnalytics() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [from, to]);
+
+  const periodSuffix = periodLabel ? ` — ${periodLabel}` : " — periodo seleccionado";
 
   // Heatmap: máxima celda para escala de color
   const heatmapMax = useMemo(() => {
@@ -181,7 +194,7 @@ export default function ExecutiveAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SuperadminChartCard
           kicker="OPERACIÓN"
-          title="Embudo de pedidos — últimos 30 días"
+          title={`Embudo de pedidos${periodSuffix}`}
           description="Estado actual de cada pedido. La tasa de cancelación es el indicador clave."
           actions={
             <InsightBadge
@@ -242,7 +255,7 @@ export default function ExecutiveAnalytics() {
         <SuperadminChartCard
           kicker="HORARIO"
           title="¿Cuándo compran tus clientes?"
-          description="Pedidos por día de semana y hora del día — últimos 30 días"
+          description={`Pedidos por día de semana y hora del día${periodSuffix}`}
           actions={data.peakCount > 0 ? <InsightBadge tone="positive" text={peakLabel} /> : undefined}
         >
           <div className="grid grid-cols-[auto_1fr] gap-x-2 text-xs font-mono">
@@ -293,7 +306,7 @@ export default function ExecutiveAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SuperadminChartCard
           kicker="CANALES"
-          title="Mix de canales — últimos 30 días"
+          title={`Mix de canales${periodSuffix}`}
           description={`${fmtSoles(totalChannelRev)} en revenue cross-canal`}
         >
           {data.channels.length === 0 ? (

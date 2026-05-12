@@ -4,15 +4,16 @@
  * Security Center — Superadmin
  *
  * Dashboard profesional de seguridad estilo GitHub Security / Vercel Security.
- * 6 tabs horizontales:
+ * Sigue el patrón canónico del superadmin (banners/marca) — hero con
+ * border-b + surface-raised + icon accent sólido, tabs horizontales debajo.
+ *
+ * 6 tabs:
  *   1. Overview       — KPIs hero + timeline + postura
  *   2. Auth & Sesiones — sesiones activas + 2FA + policy + failures chart
  *   3. Permisos       — matriz RBAC 26 recursos × 6 roles (vista documental)
  *   4. Vulnerabilidades — CVE list + scan history (stub)
  *   5. Compliance     — Ley 29733 + OWASP Top 10
  *   6. Audit log      — registro completo con filtros
- *
- * Acciones concretas son stubs mock — ver cada tab.
  */
 
 import { useState, useEffect } from "react";
@@ -25,7 +26,6 @@ import {
   ClipboardCheck,
   ScrollText,
 } from "@buleje/design-system/icons";
-import { AdminPage } from "@buleje/design-system";
 import { SecurityHero } from "@/components/superadmin/security/SecurityHero";
 import { OverviewTab } from "@/components/superadmin/security/OverviewTab";
 import { AuthSessionsTab } from "@/components/superadmin/security/AuthSessionsTab";
@@ -90,7 +90,7 @@ export default function SecurityCenterPage() {
   };
 
   return (
-    <AdminPage>
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
       <SecurityHero
         lastScanLabel={fmtRelativeFromMs(lastRefreshMs)}
         status="healthy"
@@ -98,43 +98,46 @@ export default function SecurityCenterPage() {
         refreshing={refreshing}
       />
 
-      {/* Tabs horizontales */}
+      {/* Tabs horizontales — alineadas al patrón superadmin */}
       <nav
         role="tablist"
         aria-label="Secciones del Security Center"
-        className="overflow-x-auto border-b border-[var(--rule-base)]"
+        className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8"
       >
-        <ul className="inline-flex min-w-full gap-1">
-          {TABS.map((tab) => {
-            const isActive = active === tab.key;
-            const Icon = tab.icon;
-            return (
-              <li key={tab.key}>
-                <button
-                  role="tab"
-                  aria-selected={isActive}
-                  aria-controls={`panel-${tab.key}`}
-                  id={`tab-${tab.key}`}
-                  onClick={() => setActive(tab.key)}
-                  className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[length:var(--ts-sm)] font-medium transition-colors ${
-                    isActive
-                      ? "border-b-2 border-[var(--text-primary)] text-[var(--text-primary)]"
-                      : "border-b-2 border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" aria-hidden />
-                  {tab.label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="max-w-[1400px] mx-auto overflow-x-auto">
+          <ul className="inline-flex min-w-full gap-1">
+            {TABS.map((tab) => {
+              const isActive = active === tab.key;
+              const Icon = tab.icon;
+              return (
+                <li key={tab.key}>
+                  <button
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`panel-${tab.key}`}
+                    id={`tab-${tab.key}`}
+                    onClick={() => setActive(tab.key)}
+                    className={`inline-flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[length:var(--ts-sm)] font-bold transition-colors ${
+                      isActive
+                        ? "border-b-2 border-[var(--accent)] text-[var(--accent)]"
+                        : "border-b-2 border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                    {tab.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </nav>
 
       <div
         role="tabpanel"
         id={`panel-${active}`}
         aria-labelledby={`tab-${active}`}
+        className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
         {active === "overview" && <OverviewTab />}
         {active === "auth" && <AuthSessionsTab />}
@@ -143,6 +146,6 @@ export default function SecurityCenterPage() {
         {active === "compliance" && <ComplianceTab />}
         {active === "audit" && <AuditLogTab />}
       </div>
-    </AdminPage>
+    </div>
   );
 }

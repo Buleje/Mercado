@@ -162,7 +162,7 @@ export default function CouponInput({
             }}
             disabled={loading || disabled}
             placeholder="Ej: WELCOME20"
-            className="w-full min-h-[44px] rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm font-semibold uppercase tracking-wide text-gray-800 placeholder:normal-case placeholder:font-normal placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 dark:border-card-border dark:bg-surface dark:text-foreground"
+            className="w-full min-h-[44px] rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm font-semibold uppercase tracking-wide text-gray-800 placeholder:normal-case placeholder:font-normal placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 dark:border-[var(--rule-base)] dark:bg-surface dark:text-[var(--text-primary)]"
             autoComplete="off"
             spellCheck={false}
             maxLength={30}

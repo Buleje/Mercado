@@ -173,8 +173,30 @@ export function OrdersClient() {
 
   return (
     <AdminTabShell
-      title="Pedidos · Plataforma"
-      description="Vista cross-tenant de todos los pedidos del marketplace"
+      title="Pedidos del marketplace"
+      kicker="Plataforma · Operaciones"
+      description="Vista cross-tenant de todos los pedidos. Aplicá filtros por tienda, estado o término de búsqueda para diagnosticar problemas."
+      icon={ShoppingBag}
+      stats={
+        <>
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+              Pendientes
+            </p>
+            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-amber-600 dark:text-amber-400">
+              {kpis.grouped.pendiente}
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+              GMV
+            </p>
+            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--accent)]">
+              S/{Number(kpis.totalRev).toFixed(0)}
+            </p>
+          </div>
+        </>
+      }
     >
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
@@ -308,17 +330,24 @@ function KpiCard({
   icon: typeof Clock;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 flex items-center gap-3">
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: `color-mix(in oklch, ${tone} 14%, transparent)`, color: tone }}
-      >
-        <Icon className="w-5 h-5" strokeWidth={2.25} />
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-center gap-2.5">
+        <span
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0"
+          style={{
+            background: `color-mix(in oklch, ${tone} 12%, transparent)`,
+            color: tone,
+          }}
+        >
+          <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+        </span>
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+          {label}
+        </p>
       </div>
-      <div className="min-w-0">
-        <p className="text-xs text-[var(--text-tertiary)] truncate">{label}</p>
-        <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums">{value}</p>
-      </div>
+      <p className="mt-2.5 font-display text-2xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
+        {value}
+      </p>
     </div>
   );
 }

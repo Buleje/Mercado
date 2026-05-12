@@ -321,40 +321,55 @@ export default function RepartidoresModule() {
   }
 
   return (
-    <div className="space-y-5">
-      {/* ── Header ─────────────────────────────────── */}
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--accent)]">
-            Plataforma · Operaciones
-          </p>
-          <h1 className="mt-1 text-2xl lg:text-3xl font-extrabold text-[var(--text-primary)]">
-            Repartidores
-          </h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Aprobación de inscripciones · Verificación de documentos · Acceso directo a cuentas.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={load}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Actualizar
-          </button>
-          <button
-            type="button"
-            onClick={() => exportCSV(partners)}
-            disabled={partners.length === 0}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--accent)] text-sm font-bold text-white shadow-sm shadow-[var(--accent)]/20 disabled:opacity-50 hover:opacity-90 transition-opacity"
-          >
-            <Download className="h-4 w-4" />
-            Exportar CSV
-          </button>
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
+      {/* ── Hero canónico ───────────────────────────────────────── */}
+      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-3.5 min-w-0 flex-1">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
+                <MotoIcon className="h-6 w-6" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+                  Plataforma · Operaciones
+                </p>
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                  Repartidores
+                </h1>
+                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
+                  Aprobación de inscripciones · Verificación de documentos · Acceso directo a
+                  cuentas.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={load}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+                  strokeWidth={2.25}
+                />
+                Actualizar
+              </button>
+              <button
+                type="button"
+                onClick={() => exportCSV(partners)}
+                disabled={partners.length === 0}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/20 transition hover:brightness-110 disabled:opacity-50"
+              >
+                <Download className="h-3.5 w-3.5" strokeWidth={2.25} />
+                Exportar CSV
+              </button>
+            </div>
+          </div>
         </div>
       </header>
+
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5">
 
       {/* ── KPIs ──────────────────────────────────── */}
       <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
@@ -513,6 +528,7 @@ export default function RepartidoresModule() {
           onCancel={() => setActionModal(null)}
         />
       )}
+      </div>{/* /max-w-1400 */}
     </div>
   );
 }

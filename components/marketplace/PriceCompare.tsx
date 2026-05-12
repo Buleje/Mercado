@@ -69,7 +69,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
   const savings = mostExpensive - cheapest;
 
   return (
-    <div className={cn("rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden", className)}>
+    <div className={cn("rounded-2xl border border-[var(--rule-base)] overflow-hidden", className)}>
       {/* Toggle header */}
       <button
         onClick={() => setOpen(!open)}
@@ -77,7 +77,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
       >
         <div className="flex items-center gap-2">
           <ArrowDownUp className="h-4 w-4 text-primary" />
-          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
+          <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Comparar precios
           </span>
           {prices.length > 0 && (
@@ -96,7 +96,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
 
       {/* Expandable content */}
       {open && (
-        <div className="border-t border-gray-100 dark:border-card-border">
+        <div className="border-t border-[var(--rule-base)]">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -159,7 +159,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
 
                       {/* Store info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground truncate">
+                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                           {sp.storeName}
                           {isCheapest && (
                             <span className="ml-1.5 text-[length:var(--ts-2xs)] bg-[var(--data-success-500)] text-white px-1.5 py-0.5 rounded-full font-bold">
@@ -187,7 +187,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                       <div className="text-right shrink-0">
                         <p className={cn(
                           "text-base font-extrabold",
-                          isCheapest ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-[var(--text-primary)] dark:text-foreground"
+                          isCheapest ? "text-[var(--data-success-600)] dark:text-emerald-400" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                         )}>
                           S/ {Number(sp.price).toFixed(2)}
                         </p>

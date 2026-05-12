@@ -102,27 +102,41 @@ function StatCard({
   label,
   value,
   icon: Icon,
-  iconColor,
+  tone,
   subtitle,
 }: {
   label: string;
   value: string | number;
   icon: LucideIcon;
-  iconColor: string;
+  tone: "warning" | "success" | "danger" | "info" | "accent";
   subtitle?: string;
 }) {
+  const iconBg = {
+    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    success:
+      "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
+    danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+    info: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
+    accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
+  }[tone];
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[length:var(--ts-2xs)] text-gray-500 font-bold uppercase tracking-wider">{label}</p>
-          <p className="text-2xl font-extrabold text-gray-900 dark:text-white mt-1 tabular-nums">{value}</p>
-          {subtitle && <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5">{subtitle}</p>}
-        </div>
-        <div className={cn("h-9 w-9 rounded-full flex items-center justify-center shrink-0")} style={{ backgroundColor: `${iconColor}15` }}>
-          <Icon className="h-4 w-4" style={{ color: iconColor }} />
-        </div>
+        <span
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}
+        >
+          <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+        </span>
       </div>
+      <p className="mt-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+        {label}
+      </p>
+      <p className="mt-1 font-display text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
+        {value}
+      </p>
+      {subtitle && (
+        <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{subtitle}</p>
+      )}
     </div>
   );
 }
@@ -292,209 +306,259 @@ export default function VendorApplicationsModule() {
   const avgReviewDays = stats?.avgReviewDays ?? 0;
 
   return (
-    <div className="space-y-4">
-      {/* Page Header — usa el shell unificado del superadmin (font-display + kicker accent) */}
-      <header className="flex items-start gap-3.5">
-        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-          <Building2 className="h-6 w-6" strokeWidth={1.75} aria-hidden />
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-1">
-            Marketplace
-          </p>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
-            Aplicaciones de vendedores
-          </h1>
-          <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5">
-            Review de onboarding para nuevos vendedores del marketplace.
-          </p>
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
+      {/* ── Hero canónico ───────────────────────────────────────── */}
+      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-3.5 min-w-0 flex-1">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
+                <Building2 className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+                  Marketplace · Onboarding
+                </p>
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                  Aplicaciones de vendedores
+                </h1>
+                <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
+                  Review de onboarding para nuevos vendedores del marketplace. Aprobá, rechazá o
+                  solicitá información adicional.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-stretch gap-2 flex-wrap shrink-0">
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                  Por revisar
+                </p>
+                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-amber-600 dark:text-amber-400">
+                  {pendientes}
+                </p>
+              </div>
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                  Total visibles
+                </p>
+                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
+                  {filtered.length}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
-      {error && (
-        <div className="rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-500)]/5 px-4 py-3 text-sm text-[var(--data-error-500)] flex items-center justify-between">
-          <span>{error}</span>
-          <button
-            onClick={() => setError(null)}
-            className="text-xs font-semibold underline"
-          >
-            Cerrar
-          </button>
-        </div>
-      )}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        {error && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+            <span>{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="text-xs font-bold underline"
+            >
+              Cerrar
+            </button>
+          </div>
+        )}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          label="Pendientes"
-          value={pendientes}
-          icon={Clock}
-          iconColor="#F59E0B"
-          subtitle="Requieren revisión"
-        />
-        <StatCard
-          label="Aprobadas este mes"
-          value={aprobadasEsteMes}
-          icon={CheckCircle}
-          iconColor="#10B981"
-          subtitle="Nuevos vendedores"
-        />
-        <StatCard
-          label="Rechazadas este mes"
-          value={rechazadasEsteMes}
-          icon={XCircle}
-          iconColor="#EF4444"
-          subtitle="No aprobadas"
-        />
-        <StatCard
-          label="Tiempo de review"
-          value={`${avgReviewDays} días`}
-          icon={Timer}
-          iconColor="#3B82F6"
-          subtitle="Promedio histórico"
-        />
-      </div>
-
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="search"
-            placeholder="Buscar por negocio, RUC, propietario o distrito..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] outline-none"
+        {/* KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            label="Pendientes"
+            value={pendientes}
+            icon={Clock}
+            tone="warning"
+            subtitle="Requieren revisión"
+          />
+          <StatCard
+            label="Aprobadas este mes"
+            value={aprobadasEsteMes}
+            icon={CheckCircle}
+            tone="success"
+            subtitle="Nuevos vendedores"
+          />
+          <StatCard
+            label="Rechazadas este mes"
+            value={rechazadasEsteMes}
+            icon={XCircle}
+            tone="danger"
+            subtitle="No aprobadas"
+          />
+          <StatCard
+            label="Tiempo de review"
+            value={`${avgReviewDays}d`}
+            icon={Timer}
+            tone="info"
+            subtitle="Promedio histórico"
           />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) =>
-            setStatusFilter(
-              e.target.value as VendorApplication["status"] | "all",
-            )
-          }
-          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm cursor-pointer"
-        >
-          <option value="all">Todos los estados</option>
-          <option value="pendiente">Pendientes</option>
-          <option value="aprobada">Aprobadas</option>
-          <option value="rechazada">Rechazadas</option>
-          <option value="info_solicitada">Info solicitada</option>
-        </select>
-        <button
-          onClick={() => exportCSV(filtered)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          CSV
-        </button>
-      </div>
 
-      {/* Tabla */}
-      {loading ? (
-        <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
-          <Loader2 className="h-6 w-6 mx-auto mb-3 animate-spin" />
-          <p className="text-sm font-semibold">Cargando aplicaciones…</p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
-          <Building2 className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">Sin aplicaciones que mostrar</p>
-          <p className="text-xs mt-1">Ajusta los filtros para ver más.</p>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Negocio</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide hidden sm:table-cell">RUC</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide hidden md:table-cell">Distrito</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Categoría</th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide hidden md:table-cell">Fecha</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filtered.map((a) => (
-                  <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-gray-900 dark:text-white">{a.businessName}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{a.ownerName}</p>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="font-mono text-xs text-gray-600 dark:text-gray-400">{a.ruc}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell">
-                      {a.district}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 hidden lg:table-cell">
-                      <span className="text-xs">{a.category}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell">
-                      <span className="text-xs">{fmtDate(a.submittedAt)}</span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold", STATUS_STYLES[a.status])}>
-                        {STATUS_LABELS[a.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => setSelected(a)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-[var(--accent-dark)] hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
-                          title="Ver detalles"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        {a.status === "pendiente" && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(a.id)}
-                              className="p-2 rounded-lg text-gray-400 hover:text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/20 transition-colors"
-                              title="Aprobar"
-                            >
-                              <Check className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => setSelected(a)}
-                              className="p-2 rounded-lg text-gray-400 hover:text-[var(--data-info-500)] hover:bg-[var(--data-info-50)] dark:hover:bg-[var(--data-info-500)]/20 transition-colors"
-                              title="Solicitar info"
-                            >
-                              <MessageSquare className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => setSelected(a)}
-                              className="p-2 rounded-lg text-gray-400 hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
-                              title="Rechazar"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]"
+              aria-hidden
+            />
+            <input
+              type="search"
+              placeholder="Buscar por negocio, RUC, propietario o distrito…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            />
           </div>
+          <select
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(
+                e.target.value as VendorApplication["status"] | "all",
+              )
+            }
+            className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+          >
+            <option value="all">Todos los estados</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="aprobada">Aprobadas</option>
+            <option value="rechazada">Rechazadas</option>
+            <option value="info_solicitada">Info solicitada</option>
+          </select>
+          <button
+            onClick={() => exportCSV(filtered)}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 py-2 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+          >
+            <Download className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            CSV
+          </button>
         </div>
-      )}
 
-      {selected && (
-        <ApplicationDetailsDrawer
-          application={selected}
-          onClose={() => setSelected(null)}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          onRequestInfo={handleRequestInfo}
-        />
-      )}
+        {/* Tabla */}
+        {loading ? (
+          <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] py-16 text-center">
+            <Loader2 className="h-6 w-6 mx-auto mb-3 animate-spin text-[var(--accent)]" />
+            <p className="text-sm font-bold text-[var(--text-primary)]">Cargando aplicaciones…</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-16 text-center">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
+              <Building2 className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+            </div>
+            <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
+              Sin aplicaciones que mostrar
+            </p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">
+              Ajustá los filtros para ver más.
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-left text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <th className="px-5 py-3 font-extrabold">Negocio</th>
+                    <th className="px-3 py-3 font-extrabold hidden sm:table-cell">RUC</th>
+                    <th className="px-3 py-3 font-extrabold hidden md:table-cell">Distrito</th>
+                    <th className="px-3 py-3 font-extrabold hidden lg:table-cell">Categoría</th>
+                    <th className="px-3 py-3 font-extrabold hidden md:table-cell">Fecha</th>
+                    <th className="px-3 py-3 font-extrabold text-center">Estado</th>
+                    <th className="px-5 py-3 font-extrabold text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--rule-soft)]">
+                  {filtered.map((a) => (
+                    <tr
+                      key={a.id}
+                      className="transition hover:bg-[var(--surface-sunken)]/50"
+                    >
+                      <td className="px-5 py-3">
+                        <p className="font-bold text-[var(--text-primary)]">
+                          {a.businessName}
+                        </p>
+                        <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                          {a.ownerName}
+                        </p>
+                      </td>
+                      <td className="px-3 py-3 hidden sm:table-cell">
+                        <span className="font-mono text-xs text-[var(--text-secondary)]">
+                          {a.ruc}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-[var(--text-secondary)] hidden md:table-cell">
+                        {a.district}
+                      </td>
+                      <td className="px-3 py-3 text-[var(--text-secondary)] hidden lg:table-cell">
+                        <span className="text-xs">{a.category}</span>
+                      </td>
+                      <td className="px-3 py-3 text-[var(--text-secondary)] hidden md:table-cell">
+                        <span className="text-xs">{fmtDate(a.submittedAt)}</span>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider",
+                            STATUS_STYLES[a.status],
+                          )}
+                        >
+                          {STATUS_LABELS[a.status]}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setSelected(a)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]"
+                            title="Ver detalles"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          {a.status === "pendiente" && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(a.id)}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--data-success-500)]/10 hover:text-[var(--data-success-500)]"
+                                title="Aprobar"
+                              >
+                                <Check className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => setSelected(a)}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-sky-100 hover:text-sky-700 dark:hover:bg-sky-900/40 dark:hover:text-sky-300"
+                                title="Solicitar info"
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => setSelected(a)}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-900/40 dark:hover:text-rose-300"
+                                title="Rechazar"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {selected && (
+          <ApplicationDetailsDrawer
+            application={selected}
+            onClose={() => setSelected(null)}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onRequestInfo={handleRequestInfo}
+          />
+        )}
+      </div>
     </div>
   );
 }

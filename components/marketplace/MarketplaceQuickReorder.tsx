@@ -125,7 +125,7 @@ export default function MarketplaceQuickReorder() {
   }
 
   return (
-    <section className="mt-4 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-card-border dark:bg-card sm:p-5">
+    <section className="mt-4 rounded-3xl border border-gray-200 bg-white p-4 shadow-sm dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)] sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
@@ -133,7 +133,7 @@ export default function MarketplaceQuickReorder() {
             Recompra en 1 toque
           </div>
 
-          <h2 className="mt-3 text-lg font-black text-gray-900 dark:text-foreground sm:text-xl">
+          <h2 className="mt-3 text-lg font-black text-gray-900 dark:text-[var(--text-primary)] sm:text-xl">
             Vuelve a llenar tu canasta sin buscar todo de nuevo
           </h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-muted">
@@ -155,11 +155,11 @@ export default function MarketplaceQuickReorder() {
             </span>
           </div>
 
-          <p className="mt-3 text-sm font-semibold text-gray-900 dark:text-foreground line-clamp-2">
+          <p className="mt-3 text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)] line-clamp-2">
             {previewLabel}
           </p>
           <p className="mt-1 text-xs text-gray-500 dark:text-muted">
-            Total anterior: <span className="font-bold text-gray-900 dark:text-foreground">{fmtMoney(lastOrder.total)}</span>
+            Total anterior: <span className="font-bold text-gray-900 dark:text-[var(--text-primary)]">{fmtMoney(lastOrder.total)}</span>
             {itemCount > 0 ? " · Se sumará a tu carrito actual" : " · Se volverá a cargar tu última compra"}
           </p>
         </div>
@@ -175,7 +175,7 @@ export default function MarketplaceQuickReorder() {
           <button
             onClick={handleDismiss}
             className={cn(
-              "inline-flex min-h-11 items-center justify-center rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-500 transition-colors hover:text-gray-700 dark:border-card-border dark:text-gray-400 dark:hover:text-gray-200",
+              "inline-flex min-h-11 items-center justify-center rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-500 transition-colors hover:text-gray-700 dark:border-[var(--rule-base)] dark:text-gray-400 dark:hover:text-gray-200",
             )}
           >
             Ahora no

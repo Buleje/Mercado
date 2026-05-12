@@ -27,22 +27,6 @@ const TiendasDestacadas = dynamic(
   () => import("@/components/marketplace/home/TiendasDestacadas"),
   { ssr: false },
 );
-const MarketplaceStories = dynamic(
-  () => import("@/components/marketplace/MarketplaceStories"),
-  { ssr: false },
-);
-const TrendingTodayWidget = dynamic(
-  () => import("@/components/marketplace/TrendingTodayWidget"),
-  { ssr: false },
-);
-const MarketplaceFreeShippingBar = dynamic(
-  () => import("@/components/marketplace/MarketplaceFreeShippingBar"),
-  { ssr: false },
-);
-const MarketplaceJungleProducts = dynamic(
-  () => import("@/components/marketplace/MarketplaceJungleProducts"),
-  { ssr: false },
-);
 const MarketplaceRecipesWidget = dynamic(
   () => import("@/components/marketplace/MarketplaceRecipesWidget"),
   { ssr: false },
@@ -73,14 +57,6 @@ const OfertasFlashSection = dynamic(
   () => import("@/components/marketplace/home/OfertasFlashSection"),
   { ssr: false },
 );
-const LiveActivityFeed = dynamic(
-  () => import("@/components/marketplace/home/LiveActivityFeed"),
-  { ssr: false },
-);
-const AhorraMasMegaSection = dynamic(
-  () => import("@/components/marketplace/home/AhorraMasMegaSection"),
-  { ssr: false },
-);
 const ComparedProductsSection = dynamic(
   () => import("@/components/marketplace/home/ComparedProductsSection"),
   { ssr: false },
@@ -89,14 +65,27 @@ const AsistenteHomeBanner = dynamic(
   () => import("@/components/marketplace/home/AsistenteHomeBanner"),
   { ssr: false },
 );
-const VenderMiniCTA = dynamic(
-  () => import("@/components/marketplace/home/VenderMiniCTA"),
-  { ssr: false },
-);
 const LiveOrderCounter = dynamic(
   () => import("@/components/marketplace/LiveOrderCounter"),
   { ssr: false },
 );
+
+// ─── Strips B2C que pegan a DB real ────────────────────────────────
+const MarketplaceBestsellersStrip = dynamic(
+  () => import("@/components/marketplace/home/MarketplaceBestsellersStrip"),
+  { ssr: false },
+);
+
+// REMOVIDOS (Brandon, mayo 2026 — pedido: solo data real, nada hardcodeado):
+//   - MarketplaceCategoriesNav  → tenia const CATEGORIES hardcodeado
+//   - MarketplaceBrandsStrip    → tenia const BRANDS hardcodeado
+//   - MarketplacePriceRangesStrip → tenia const RANGES hardcodeado
+//   - MarketplaceStories        → tenia const STORIES + STORY_PRESENTATIONS hardcoded
+//   - LiveActivityFeed          → eventos de actividad inventados
+//   - MarketplaceJungleProducts → FALLBACK_ITEMS hardcoded ante DB vacia
+//   - TrendingTodayWidget       → mezclaba real + mock
+//   - AhorraMasMegaSection      → secciones secundarias hardcodeadas
+//   - VenderMiniCTA             → CTA editorial duplicado del CTA bottom
 
 // Removidos (ronda A) — ahora en /tiendas o ronda B nav secundaria:
 // import MarketplaceFilters, { type MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
@@ -110,19 +99,6 @@ const LiveOrderCounter = dynamic(
 // MAX_PRICE_LIMIT reservado para ronda B (product filter bar)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _MAX_PRICE_LIMIT = 500;
-
-/**
- * SHOW_SECONDARY_HOME_SECTIONS — toggle de densidad del home.
- *
- * Feynman: con `false`, el cliente ve las secciones CORE (ofertas del día,
- * recomendaciones, top de hoy, tiendas). Las secciones secundarias (feed
- * real-time, mega ahorra, asistente, vender, flash duplicado) se mueven a
- * /descubri accesible con un CTA al final. Evita que el cliente se pierda
- * en 17+ secciones apiladas.
- *
- * Cambiar a `true` si el negocio quiere ir a full-feature display.
- */
-const SHOW_SECONDARY_HOME_SECTIONS = false;
 
 /* ── Props ──────────────────────────────────────────────────────────────────── */
 
@@ -207,74 +183,76 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
       {/* Banner promocional rotativo (slot="bodegas" editable desde superadmin) */}
       <PromoBannerCarousel slot="bodegas" />
 
-      {/* Panel de fidelidad — solo visible para clientes con sesión.
-          Render nulo si no hay customer, sin placeholder vacío. */}
+      {/* Panel de fidelidad — solo visible para clientes con sesión. */}
       <div className="mx-auto max-w-[1600px] px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
         <div className="w-full lg:max-w-sm">
           <MyFidelidadCard />
         </div>
       </div>
 
-      {/* LiveActivityStrip y LiveStats eliminados (2026-04-20) — pedido del
-          negocio: reducir ruido visual y compactar el home de bodegas. */}
-
       {/* ══════════════════════════════════════════════════════════════════
-          SECCIONES ENCAPSULADAS — cada una en una caja con borde sobre
-          fondo sunken. Espaciado compacto + contraste mosaico ML.
+          SECCIONES — TODAS PEGAN A DATA REAL DEL PROYECTO.
+          Si la DB esta vacia (sin productos / sin ofertas / sin recetas),
+          la seccion se oculta sola (cada componente hace early-return null).
+          NO hay categorias/marcas/productos inventados.
           ══════════════════════════════════════════════════════════════════ */}
       <div className="bg-[var(--surface-sunken)] py-3 sm:py-4">
         <div className="mx-auto max-w-[1600px] space-y-3 sm:space-y-4 px-3 sm:px-4 lg:px-6">
+          {/* Tiendas reales publicadas */}
           <BodegasSectionBox><TiendasDestacadas /></BodegasSectionBox>
-          <BodegasSectionBox><MarketplaceStories /></BodegasSectionBox>
+
+          {/* Top mas vendidos — desde OrderItems reales (cross-store) */}
+          <BodegasSectionBox><MarketplaceBestsellersStrip /></BodegasSectionBox>
+
+          {/* Ofertas del dia — desde Promotion DB */}
           <BodegasSectionBox><OfertasDelDiaHero /></BodegasSectionBox>
-          {SHOW_SECONDARY_HOME_SECTIONS && (
-            <BodegasSectionBox><LiveActivityFeed /></BodegasSectionBox>
-          )}
-          <BodegasSectionBox><TrendingTodayWidget /></BodegasSectionBox>
-          <BodegasSectionBox><MarketplaceJungleProducts /></BodegasSectionBox>
+
+          {/* Ofertas flash — desde Promotion con tiempo limitado */}
           <BodegasSectionBox><OfertasFlashSection /></BodegasSectionBox>
+
+          {/* Catalogo cross-store — productos reales */}
           <BodegasSectionBox>
             <MarketplaceCatalogViewSection searchQuery={search || undefined} />
           </BodegasSectionBox>
-          {SHOW_SECONDARY_HOME_SECTIONS && (
-            <BodegasSectionBox><AhorraMasMegaSection /></BodegasSectionBox>
-          )}
+
+          {/* Recetas publicas con ingredientes resueltos cross-marketplace */}
           <BodegasSectionBox><MarketplaceRecipesWidget /></BodegasSectionBox>
+
+          {/* Productos comparados — desde localStorage del cliente */}
           {isVisible("comparar-productos") && (
             <BodegasSectionBox><ComparedProductsSection /></BodegasSectionBox>
           )}
+
+          {/* Suscripcion Bodega al Mes — feature real */}
           {isVisible("bodega-al-mes") && (
             <BodegasSectionBox><SubscribeAndSaveSection /></BodegasSectionBox>
           )}
+
+          {/* Gift cards — feature real */}
           {isVisible("gift-cards") && (
             <BodegasSectionBox><GiftCardsBanner /></BodegasSectionBox>
           )}
+
+          {/* Asistente IA — feature real */}
           {isVisible("asistente-ia") && (
             <BodegasSectionBox><AsistenteHomeBanner /></BodegasSectionBox>
           )}
+
+          {/* Vistos recientemente — desde localStorage del cliente */}
           <BodegasSectionBox><MarketplaceRecentViewed /></BodegasSectionBox>
-          {SHOW_SECONDARY_HOME_SECTIONS && (
-            <BodegasSectionBox><VenderMiniCTA /></BodegasSectionBox>
-          )}
         </div>
       </div>
 
-      {/* ── CTA a /marketplace/explorar — compensa las secciones secundarias ocultas
-              (antes apuntaba a /descubri que no existe — fix Visual QA P0-3) ── */}
-      {!SHOW_SECONDARY_HOME_SECTIONS && (
-        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
-          <p className="text-sm text-[var(--text-tertiary)] mb-3">
-            ¿Quieres más? Recorré categorías, ocasiones y bodegas en Pucallpa.
-          </p>
-          <Link
-            href="/marketplace/explorar"
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
-          >
-            Explorar todo el marketplace
-            <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
-          </Link>
-        </section>
-      )}
+      {/* CTA hacia /marketplace/explorar — solo si querés ver todo */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+        <Link
+          href="/marketplace/explorar"
+          className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+        >
+          Explorar todo el catalogo
+          <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
+        </Link>
+      </section>
 
       {/* MK-62: live counter de pedidos como social proof city-level */}
       <div className="border-t border-[var(--rule-soft)]">

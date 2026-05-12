@@ -84,16 +84,20 @@ const SIDEBAR_STYLE_OPTIONS: SidebarStyleOption[] = [
   },
 ];
 
+// Labels visibles — los IDs internos (basico/pro/enterprise/max) mapean a
+// los nombres comerciales aprobados por Brandon: Free / Starter / Pro / Business.
 const PLAN_LABEL: Record<AdminPlan, string> = {
-  free: "Gratis",
-  pro: "Pro",
-  enterprise: "Enterprise",
+  basico: "Free · S/ 0",
+  pro: "Starter · S/ 89",
+  enterprise: "Pro · S/ 179",
+  max: "Business · S/ 349",
 };
 
 const PLAN_BADGE: Record<AdminPlan, string> = {
-  free: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
+  basico: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
   pro: "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/30",
   enterprise: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] border border-[var(--data-warning-500)]/30",
+  max: "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] border border-[var(--data-success-500)]/30",
 };
 
 interface PresetMode {
@@ -166,9 +170,9 @@ export function PlantillaPanelTab() {
   }, []);
 
   const stats = useMemo(() => {
-    if (!tpl) return { visible: 0, total: ADMIN_MODULE_CATALOG.length, byPlan: { free: 0, pro: 0, enterprise: 0 } };
+    if (!tpl) return { visible: 0, total: ADMIN_MODULE_CATALOG.length, byPlan: { basico: 0, pro: 0, enterprise: 0, max: 0 } };
     let visible = 0;
-    const byPlan: Record<AdminPlan, number> = { free: 0, pro: 0, enterprise: 0 };
+    const byPlan: Record<AdminPlan, number> = { basico: 0, pro: 0, enterprise: 0, max: 0 };
     for (const m of ADMIN_MODULE_CATALOG) {
       const ov = tpl.overrides[m.id] ?? {};
       const isVis = ov.visible ?? m.defaultVisible;
@@ -390,63 +394,110 @@ export function PlantillaPanelTab() {
         </div>
       )}
 
-      {/* Header editorial — banner premium con gradient sutil de marca */}
-      <header className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
+      {/* Header editorial v2 — banner premium con gradient + stats row integrada
+          y pill "en vivo" pulsante para reforzar el cambio real-time. */}
+      <header className="relative overflow-hidden rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8">
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-24 -right-20 h-64 w-64 rounded-full bg-[var(--accent)]/10 blur-3xl"
+          className="pointer-events-none absolute -top-28 -right-20 h-72 w-72 rounded-full bg-[var(--accent)]/[0.12] blur-3xl"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -bottom-16 -left-12 h-48 w-48 rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
+          className="pointer-events-none absolute -bottom-16 -left-12 h-56 w-56 rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
         />
-        <div className="relative flex items-start justify-between gap-4 flex-wrap">
+        <div className="relative flex items-start justify-between gap-5 flex-wrap">
           <div className="flex items-start gap-4 flex-1 min-w-0">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 text-white shadow-lg shadow-[var(--accent)]/30 shrink-0">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white shadow-lg shadow-[var(--accent)]/35 shrink-0">
               <Layers className="h-6 w-6" strokeWidth={2} />
             </span>
             <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+                <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
                 Configuración global · Plantilla
               </p>
-              <h2 className="text-2xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
-                Plantilla del Panel Admin
+              <h2 className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tracking-[-0.025em] text-[var(--text-primary)] leading-[1.05]">
+                Plantilla del{" "}
+                <span className="italic font-serif text-[var(--accent)]">Panel Admin.</span>
               </h2>
-              <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed max-w-2xl">
-                Define qué módulos y qué <strong className="text-[var(--text-primary)]">estilo de sidebar</strong> heredan
-                los dueños de tienda al abrir su negocio en la plataforma.
-                Los cambios <strong className="text-[var(--text-primary)]">se aplican en vivo</strong> a todos los tenants abiertos.
+              <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-3 leading-relaxed max-w-2xl">
+                Define qué módulos y qué <strong className="text-[var(--text-primary)]">estilo de sidebar</strong> heredan los dueños de tienda al abrir su negocio. Los cambios se propagan a todos los tenants abiertos.
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={openAdminPanelInNewTab}
-            className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent)]/90 hover:shadow-lg hover:shadow-[var(--accent)]/30 transition-all shrink-0"
-          >
-            <ExternalLink className="h-4 w-4" strokeWidth={2.25} />
-            Abrir panel admin
-          </button>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-50,var(--accent-soft))] text-[var(--data-success-700,var(--accent))] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
+              <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500,var(--accent))] opacity-70 animate-ping" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success-600,var(--accent))]" />
+              </span>
+              Aplicado en vivo
+            </span>
+            <button
+              type="button"
+              onClick={openAdminPanelInNewTab}
+              className="inline-flex items-center gap-1.5 h-11 px-5 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-sm font-extrabold hover:gap-2 hover:shadow-lg hover:shadow-[var(--accent)]/30 transition-all"
+            >
+              <ExternalLink className="h-4 w-4" strokeWidth={2.25} />
+              Abrir panel admin
+            </button>
+          </div>
+        </div>
+
+        {/* Stats inline en el header — antes vivían como cards separados abajo */}
+        <div className="relative mt-6 pt-6 border-t border-[var(--rule-soft)] grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {[
+            { label: "Modulos visibles", value: `${stats.visible}`, total: `/ ${stats.total}`, accent: false },
+            { label: "Free (S/ 0)",     value: String(stats.byPlan.basico), accent: false },
+            { label: "Starter (S/ 89)", value: String(stats.byPlan.pro), accent: true },
+            { label: "Pro (S/ 179)",    value: String(stats.byPlan.enterprise), accent: false, warning: true },
+            { label: "Business (S/ 349)", value: String(stats.byPlan.max), accent: false, success: true },
+          ].map((s) => (
+            <div key={s.label} className="rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-soft)] px-4 py-3">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+                {s.label}
+              </p>
+              <p className="text-2xl font-black tabular-nums tracking-[-0.025em] leading-none">
+                <span
+                  className={
+                    s.accent ? "text-[var(--accent)]" :
+                    s.warning ? "text-[var(--data-warning-700)]" :
+                    (s as { success?: boolean }).success ? "text-[var(--data-success-600,#059669)]" :
+                    "text-[var(--text-primary)]"
+                  }
+                >
+                  {s.value}
+                </span>
+                {s.total && <span className="ml-1 text-base text-[var(--text-tertiary)]">{s.total}</span>}
+              </p>
+            </div>
+          ))}
         </div>
       </header>
 
-      {/* Estilo por defecto del sidebar — qué hereda cada cliente nuevo */}
-      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
-        <div className="flex items-start gap-3 mb-5">
-          <Palette className="h-5 w-5 text-[var(--accent)] shrink-0 mt-0.5" strokeWidth={2} />
+      {/* Estilo por defecto del sidebar v2 — cards con preview realista del
+          sidebar (header tinted + 4 items con dots) en vez de 3 barritas. */}
+      <section className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8">
+        <div className="flex items-start gap-3 mb-6">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <Palette className="h-5 w-5" strokeWidth={2} />
+          </span>
           <div className="min-w-0">
-            <h3 className="text-base font-extrabold text-[var(--text-primary)]">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+              Apariencia · Sidebar
+            </p>
+            <h3 className="text-lg sm:text-xl font-black text-[var(--text-primary)] tracking-tight">
               Estilo por defecto del sidebar
             </h3>
-            <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
-              Cuando un nuevo cliente abre su tienda, su panel admin arranca con este diseño.
-              Cada tenant puede luego personalizarlo desde <em className="not-italic font-semibold text-[var(--text-primary)]">&quot;Personaliza tu navegación&quot;</em>.
+            <p className="text-sm text-[var(--text-secondary)] mt-1.5 leading-relaxed max-w-2xl">
+              Cuando un nuevo cliente abre su tienda, su panel admin arranca con este diseño. Cada tenant puede luego personalizarlo desde <em className="not-italic font-semibold text-[var(--text-primary)]">&quot;Personaliza tu navegación&quot;</em>.
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
           {SIDEBAR_STYLE_OPTIONS.map((opt) => {
             const isActive = (tpl.defaultSidebarStyle ?? "buleje") === opt.id;
+            // Detecta si el swatch es claro u oscuro para decidir texto de los mock items.
+            const isLight = opt.id === "sereno" || opt.id === "vibrante" || opt.id === "personalizado";
             return (
               <button
                 key={opt.id}
@@ -454,43 +505,106 @@ export function PlantillaPanelTab() {
                 onClick={() => setDefaultSidebarStyle(opt.id)}
                 aria-pressed={isActive}
                 className={[
-                  "group relative text-left rounded-xl border-2 p-3 transition-all",
+                  "group relative text-left rounded-2xl border-2 p-3 transition-all overflow-hidden",
                   isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm"
-                    : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/60 hover:-translate-y-0.5 hover:shadow-md",
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md shadow-[var(--accent)]/15"
+                    : "border-[var(--rule-soft)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/60 hover:-translate-y-1 hover:shadow-lg",
                 ].join(" ")}
               >
                 {/* Badge "Por defecto" cuando está activo */}
                 {isActive && (
-                  <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-black px-2 py-0.5 shadow-md uppercase tracking-wider">
+                  <span className="absolute -top-2 -right-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-black px-2 py-0.5 shadow-md uppercase tracking-wider">
                     <CheckCircle2 className="h-3 w-3" strokeWidth={3} />
                     Default
                   </span>
                 )}
 
-                {/* Swatch visual del estilo */}
+                {/* Mini-mockup realista del sidebar: header tinted con accent
+                    + 4 items con dot indicador + 1 item activo destacado. */}
                 <div
                   aria-hidden
-                  className="h-16 w-full rounded-lg mb-3 ring-1 ring-inset ring-black/5 dark:ring-white/10 flex flex-col justify-end p-2"
+                  className="relative h-28 w-full rounded-xl mb-3 ring-1 ring-inset ring-black/5 dark:ring-white/10 overflow-hidden flex"
                   style={{ background: opt.swatch }}
                 >
-                  {/* Mini items simulados del sidebar */}
-                  <div className="space-y-1">
-                    <span className="block h-1.5 w-12 rounded-full bg-white/85" />
-                    <span className="block h-1.5 w-8 rounded-full bg-white/60" />
-                    <span className="block h-1.5 w-10 rounded-full bg-white/50" />
+                  {/* Columna sidebar */}
+                  <div
+                    className="w-[40%] h-full flex flex-col gap-1.5 p-2"
+                    style={{
+                      background: isLight ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.25)",
+                      backdropFilter: "blur(8px)",
+                    }}
+                  >
+                    {/* Logo bar */}
+                    <div
+                      className="h-2 w-8 rounded-full"
+                      style={{ background: isLight ? "rgba(15,23,42,0.85)" : "rgba(255,255,255,0.95)" }}
+                    />
+                    {/* Items con dots */}
+                    {[0, 1, 2, 3].map((i) => {
+                      const isActiveItem = i === 1;
+                      return (
+                        <div key={i} className="flex items-center gap-1">
+                          <span
+                            className="h-1.5 w-1.5 rounded-full shrink-0"
+                            style={{
+                              background: isActiveItem ? opt.accentHex : (isLight ? "rgba(15,23,42,0.4)" : "rgba(255,255,255,0.4)"),
+                            }}
+                          />
+                          <span
+                            className="h-1 rounded-full"
+                            style={{
+                              width: i === 0 ? "26px" : i === 1 ? "22px" : i === 2 ? "20px" : "16px",
+                              background: isActiveItem
+                                ? opt.accentHex
+                                : (isLight ? "rgba(15,23,42,0.55)" : "rgba(255,255,255,0.55)"),
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Área principal — bloque con header y card */}
+                  <div className="flex-1 h-full p-2 flex flex-col gap-1.5">
+                    <div
+                      className="h-2 w-2/3 rounded-full"
+                      style={{ background: isLight ? "rgba(15,23,42,0.85)" : "rgba(255,255,255,0.95)" }}
+                    />
+                    <div
+                      className="h-1 w-1/2 rounded-full"
+                      style={{ background: isLight ? "rgba(15,23,42,0.4)" : "rgba(255,255,255,0.45)" }}
+                    />
+                    <div className="mt-auto flex gap-1">
+                      <div
+                        className="h-6 flex-1 rounded"
+                        style={{ background: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.15)" }}
+                      />
+                      <div
+                        className="h-6 w-6 rounded"
+                        style={{ background: opt.accentHex, opacity: 0.85 }}
+                      />
+                    </div>
                   </div>
                 </div>
 
+                {/* Header del card: label + dot accent */}
                 <div className="flex items-center gap-1.5 mb-1">
-                  <p className="text-sm font-bold text-[var(--text-primary)]">{opt.label}</p>
+                  <span
+                    aria-hidden
+                    className="inline-block h-2.5 w-2.5 rounded-full ring-2"
+                    style={{
+                      background: opt.accentHex,
+                      // @ts-expect-error: CSS var
+                      "--tw-ring-color": "var(--surface-raised)",
+                    }}
+                  />
+                  <p className="text-sm font-black text-[var(--text-primary)] truncate">{opt.label}</p>
                   {opt.requiresCustom && (
                     <span className="inline-flex items-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       · custom
                     </span>
                   )}
                 </div>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug line-clamp-2">
                   {opt.description}
                 </p>
               </button>
@@ -499,49 +613,103 @@ export function PlantillaPanelTab() {
         </div>
       </section>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Módulos visibles" value={`${stats.visible} / ${stats.total}`} intent="neutral" />
-        <StatCard label="En plan Gratis" value={String(stats.byPlan.free)} intent="neutral" />
-        <StatCard label="En plan Pro" value={String(stats.byPlan.pro)} intent="accent" />
-        <StatCard label="En Enterprise" value={String(stats.byPlan.enterprise)} intent="warning" />
-      </div>
-
-      {/* Presets rápidos */}
+      {/* Presets rápidos v2 — cards con icon pill + counter de módulos
+          calculados en runtime para feedback inmediato del impacto. */}
       <section>
-        <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
-          Presets rápidos
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {PRESET_MODES.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={() => applyPreset(preset)}
-              className="text-left rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 transition-colors"
-            >
-              <div className="flex items-center gap-2 text-[var(--accent)]">
-                {preset.icon}
-                <span className="text-sm font-bold text-[var(--text-primary)]">{preset.label}</span>
-              </div>
-              <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">
-                {preset.description}
-              </p>
-            </button>
-          ))}
+        <div className="flex items-baseline justify-between gap-3 mb-4">
+          <div>
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+              Atajos · deshabilitados
+            </p>
+            <h3 className="text-lg sm:text-xl font-black text-[var(--text-tertiary)] tracking-tight">
+              Presets rápidos
+            </h3>
+          </div>
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hidden sm:block max-w-md text-right">
+            Brandon mayo 2026 v2 — ahora los módulos se habilitan automáticamente según el plan que tenga cada negocio. Sin override manual.
+          </p>
+        </div>
+
+        {/* Banner explicativo del cambio (reemplaza la accion de los presets) */}
+        <div className="mb-4 rounded-xl border-2 border-dashed border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 px-4 py-3 flex items-start gap-3">
+          <span
+            aria-hidden
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-white"
+          >
+            <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-black text-[var(--text-primary)] leading-tight">
+              Sin atajos manuales · habilitado por plan del negocio
+            </p>
+            <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-relaxed">
+              Cuando un cliente elige un plan en <code className="font-mono text-[var(--accent)]">/abrir-tienda</code>, los módulos correspondientes se activan automáticamente.
+              Free (S/0) ve lo básico · Starter (S/89) suma inventario y fiados · Pro (S/179) suma SUNAT y marketplace · Business (S/349) desbloquea todo.
+              Los presets de abajo quedaron deshabilitados para evitar overrides accidentales.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          {PRESET_MODES.map((preset) => {
+            const moduleCount = ADMIN_MODULE_CATALOG.filter(preset.apply).length;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                disabled
+                aria-disabled="true"
+                title="Atajos deshabilitados — los modulos se habilitan por plan del negocio"
+                className="group text-left rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 p-5 cursor-not-allowed opacity-55 grayscale-[0.4]"
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <span
+                    aria-hidden
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
+                  >
+                    {preset.icon}
+                  </span>
+                  <span className="inline-flex items-baseline gap-1 rounded-full bg-[var(--surface-canvas)] border border-[var(--rule-soft)] px-2.5 py-1">
+                    <span className="text-base font-black tabular-nums text-[var(--text-tertiary)] leading-none">
+                      {moduleCount}
+                    </span>
+                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                      módulos
+                    </span>
+                  </span>
+                </div>
+                <p className="text-base font-black tracking-tight text-[var(--text-tertiary)] leading-tight line-through decoration-1">
+                  {preset.label}
+                </p>
+                <p className="mt-1.5 text-sm text-[var(--text-tertiary)] leading-relaxed">
+                  {preset.description}
+                </p>
+                <span className="mt-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <Lock className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+                  Deshabilitado
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* Lista de módulos por categoría */}
+      {/* Lista de módulos por categoría v2 — headers más fuertes, progress bar
+          mini por categoría, plan badges con icon, hover destacado por row. */}
       <section>
-        <div className="flex items-baseline justify-between mb-3">
-          <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            Módulos del panel
-          </h3>
+        <div className="flex items-end justify-between gap-3 mb-4">
+          <div>
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+              Catálogo
+            </p>
+            <h3 className="text-lg sm:text-xl font-black text-[var(--text-primary)] tracking-tight">
+              Módulos del panel
+            </h3>
+          </div>
           <button
             type="button"
             onClick={handleResetAll}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)]/40 transition-all"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Restaurar a fábrica
@@ -557,21 +725,38 @@ export function PlantillaPanelTab() {
               const ov = tpl.overrides[m.id] ?? {};
               return ov.visible ?? m.defaultVisible;
             }).length;
+            const visiblePct = (visibleInCat / items.length) * 100;
 
             return (
-              <div key={cat} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+              <div key={cat} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggleCategory(cat)}
-                  className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-[var(--surface-sunken)]/40 border-b border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="w-full flex items-center justify-between gap-3 px-5 py-3.5 bg-[var(--surface-sunken)]/60 border-b-2 border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] transition-colors"
                 >
-                  <div className="flex items-center gap-2">
-                    {isCollapsed ? <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />}
-                    <span className="text-sm font-bold text-[var(--text-primary)]">{cat}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      aria-hidden
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-soft)] text-[var(--text-secondary)] shrink-0"
+                    >
+                      {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </span>
+                    <span className="text-sm sm:text-base font-black text-[var(--text-primary)] tracking-tight">{cat}</span>
                   </div>
-                  <span className="text-xs font-semibold tabular-nums text-[var(--text-tertiary)]">
-                    {visibleInCat} / {items.length} visibles
-                  </span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {/* Progress bar mini */}
+                    <div className="hidden sm:block w-24 h-1.5 rounded-full bg-[var(--rule-base)] overflow-hidden">
+                      <span
+                        className="block h-full rounded-full bg-[var(--accent)] transition-[width]"
+                        style={{ width: `${visiblePct}%` }}
+                      />
+                    </div>
+                    <span className="inline-flex items-baseline gap-1 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
+                      <span className="text-[var(--accent)]">{visibleInCat}</span>
+                      <span className="text-[var(--text-tertiary)]">/ {items.length}</span>
+                      <span className="text-[var(--text-tertiary)] uppercase tracking-wider ml-1">visibles</span>
+                    </span>
+                  </div>
                 </button>
 
                 {!isCollapsed && (
@@ -585,19 +770,36 @@ export function PlantillaPanelTab() {
                       const isEditing = editingLabel === m.id;
 
                       return (
-                        <li key={m.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3">
-                          {/* Visibilidad toggle */}
+                        <li
+                          key={m.id}
+                          className={`flex flex-col sm:flex-row sm:items-center gap-3 px-4 sm:px-5 py-3.5 transition-colors hover:bg-[var(--surface-sunken)]/30 ${
+                            !isVisible ? "opacity-65" : ""
+                          }`}
+                        >
+                          {/* Visibilidad toggle — switch real más visible */}
                           <button
                             type="button"
                             onClick={() => updateOverride(m.id, { visible: !isVisible })}
-                            className={`inline-flex items-center justify-center h-9 w-9 rounded-lg shrink-0 transition-colors ${
-                              isVisible
-                                ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30"
-                                : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] border border-[var(--rule-base)]"
-                            }`}
+                            role="switch"
+                            aria-checked={isVisible}
                             aria-label={isVisible ? `Ocultar ${label}` : `Mostrar ${label}`}
+                            className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors ${
+                              isVisible
+                                ? "bg-[var(--accent-600,var(--accent))] border-[var(--accent-600,var(--accent))]"
+                                : "bg-[var(--surface-sunken)] border-[var(--rule-base)]"
+                            }`}
                           >
-                            {isVisible ? <Eye className="h-4 w-4" strokeWidth={2} /> : <EyeOff className="h-4 w-4" strokeWidth={2} />}
+                            <span
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-md transition-transform ${
+                                isVisible ? "translate-x-5" : "translate-x-0.5"
+                              }`}
+                            >
+                              {isVisible ? (
+                                <Eye className="h-2.5 w-2.5 text-[var(--accent)]" strokeWidth={3} />
+                              ) : (
+                                <EyeOff className="h-2.5 w-2.5 text-[var(--text-tertiary)]" strokeWidth={3} />
+                              )}
+                            </span>
                           </button>
 
                           {/* Label + descripción */}
@@ -660,9 +862,9 @@ export function PlantillaPanelTab() {
                             </p>
                           </div>
 
-                          {/* Plan selector */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            {(["free", "pro", "enterprise"] as AdminPlan[]).map((p) => (
+                          {/* Plan selector — 4 tiers alineados con pricing real */}
+                          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                            {(["basico", "pro", "enterprise", "max"] as AdminPlan[]).map((p) => (
                               <button
                                 key={p}
                                 type="button"
@@ -673,9 +875,10 @@ export function PlantillaPanelTab() {
                                     : "bg-transparent text-[var(--text-tertiary)] border border-transparent hover:border-[var(--rule-base)]"
                                 }`}
                               >
-                                {p === "enterprise" && <Crown className="h-3 w-3" />}
-                                {p === "pro" && <Sparkles className="h-3 w-3" />}
-                                {p === "free" && <Lock className="h-3 w-3 opacity-40" />}
+                                {p === "max" && <Crown className="h-3 w-3" />}
+                                {p === "enterprise" && <Sparkles className="h-3 w-3" />}
+                                {p === "pro" && <Sparkles className="h-3 w-3 opacity-60" />}
+                                {p === "basico" && <Lock className="h-3 w-3 opacity-40" />}
                                 {PLAN_LABEL[p]}
                               </button>
                             ))}
@@ -707,25 +910,4 @@ export function PlantillaPanelTab() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface StatCardProps {
-  label: string;
-  value: string;
-  intent: "neutral" | "warning" | "accent";
-}
-
-function StatCard({ label, value, intent }: StatCardProps) {
-  const valueColor =
-    intent === "warning" ? "text-[var(--data-warning-500)]" :
-    intent === "accent" ? "text-[var(--accent)]" :
-    "text-[var(--text-primary)]";
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-        {label}
-      </p>
-      <p className={`text-xl font-extrabold tabular-nums ${valueColor}`}>{value}</p>
-    </div>
-  );
-}
+// StatCard removed — los stats ahora viven integrados en el header v2.

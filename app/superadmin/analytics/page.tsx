@@ -1,19 +1,40 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+/**
+ * /superadmin/analytics — Analytics global con filtro de fechas.
+ *
+ * Mejoras 2026-05-11:
+ *  - Toolbar fija con 6 modos: Día · Semana · Mes · Año · Rango · Fecha
+ *  - Period range visible en cada KPI + chart (no más "este mes" fijo)
+ *  - Re-fetch al cambiar el periodo (pasa from/to a la API)
+ *  - KPI cards alineados al patrón canónico
+ *  - Tabla de comisiones con tokens DS + status pills consistentes
+ */
+
+import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
-  DollarSign, CheckCircle2, Clock, TrendingUp, Package,
-  AlertTriangle, XCircle, Loader2, BarChart3,
+  DollarSign,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  AlertTriangle,
+  XCircle,
+  Loader2,
+  BarChart3,
+  Calendar,
+  ChevronDown,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
 import type { TenantRow, CommissionRow, PlanId } from "@/lib/superadmin-types";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { AdminTabShell } from "../_components/_shared";
-import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChartCard";
 import { ARPUMiniChart } from "@/components/superadmin/dashboard/ARPUMiniChart";
 import ExecutiveAnalytics from "@/components/superadmin/analytics/ExecutiveAnalytics";
 
 const RevenueCharts = dynamic(() => import("@/components/RevenueCharts"), { ssr: false });
+
+// ─── Types ─────────────────────────────────────────────────────────────
 
 interface AnalyticsData {
   overview: {
@@ -43,42 +64,167 @@ interface AnalyticsData {
   monthlyRevenue: { month: string; revenue: number }[];
 }
 
-const PLAN_LABELS: Record<PlanId, { label: string; color: string }> = {
-  free:       { label: "Free",       color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" },
-  pro:        { label: "Pro",        color: "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900 dark:text-teal-300" },
-  business:   { label: "Business",   color: "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]" },
-  enterprise: { label: "Enterprise", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+// ─── Period state ──────────────────────────────────────────────────────
+
+type PeriodMode = "day" | "week" | "month" | "year" | "range" | "custom";
+
+interface Period {
+  mode: PeriodMode;
+  from: Date;
+  to: Date;
+}
+
+function startOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function endOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+function startOfWeek(d: Date): Date {
+  const x = startOfDay(d);
+  const day = x.getDay();
+  const diff = (day + 6) % 7; // lunes = 0
+  x.setDate(x.getDate() - diff);
+  return x;
+}
+function startOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+}
+function endOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+function startOfYear(d: Date): Date {
+  return new Date(d.getFullYear(), 0, 1, 0, 0, 0, 0);
+}
+function endOfYear(d: Date): Date {
+  return new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999);
+}
+
+function periodFromMode(mode: PeriodMode, anchor: Date = new Date()): Period {
+  switch (mode) {
+    case "day":
+      return { mode, from: startOfDay(anchor), to: endOfDay(anchor) };
+    case "week": {
+      const from = startOfWeek(anchor);
+      const to = endOfDay(new Date(from.getTime() + 6 * 86_400_000));
+      return { mode, from, to };
+    }
+    case "month":
+      return { mode, from: startOfMonth(anchor), to: endOfMonth(anchor) };
+    case "year":
+      return { mode, from: startOfYear(anchor), to: endOfYear(anchor) };
+    case "range":
+      // Default range: últimos 30 días
+      return {
+        mode,
+        from: startOfDay(new Date(anchor.getTime() - 29 * 86_400_000)),
+        to: endOfDay(anchor),
+      };
+    case "custom":
+      return { mode, from: startOfDay(anchor), to: endOfDay(anchor) };
+  }
+}
+
+function fmtISODate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function fmtPeriodLabel(p: Period): string {
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+  if (p.mode === "day" || p.mode === "custom") return fmt(p.from);
+  if (p.mode === "month")
+    return p.from.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
+  if (p.mode === "year") return p.from.getFullYear().toString();
+  return `${fmt(p.from)} → ${fmt(p.to)}`;
+}
+
+function fmtPeriodShortLabel(p: Period): string {
+  switch (p.mode) {
+    case "day":
+      return "hoy";
+    case "week":
+      return "esta semana";
+    case "month":
+      return "este mes";
+    case "year":
+      return "este año";
+    case "range":
+      return "rango personalizado";
+    case "custom":
+      return "fecha específica";
+  }
+}
+
+// ─── Plan badge ─────────────────────────────────────────────────────────
+
+// Labels alineados con plan-tiers.ts mayo 2026 v2.
+// PlanId DB ↔ Label visible: free→Free, pro→Starter, business→Pro, enterprise→Business.
+const PLAN_LABELS: Record<PlanId, { label: string; cls: string }> = {
+  free: {
+    label: "Free",
+    cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
+  },
+  pro: {
+    label: "Starter",
+    cls: "bg-[var(--accent)]/10 text-[var(--accent)]",
+  },
+  business: {
+    label: "Pro",
+    cls: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+  },
+  enterprise: {
+    label: "Business",
+    cls: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  },
 };
 
 function PlanBadge({ plan }: { plan: PlanId }) {
   const cfg = PLAN_LABELS[plan] ?? PLAN_LABELS.free;
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.color}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${cfg.cls}`}
+    >
       {cfg.label}
     </span>
   );
 }
 
+// ─── Component ─────────────────────────────────────────────────────────
+
 export default function AnalyticsPage() {
+  const [period, setPeriod] = useState<Period>(() => periodFromMode("month"));
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [commissions, setCommissions] = useState<CommissionRow[]>([]);
   const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [commLoading, setCommLoading] = useState(true);
   const [error, setError] = useState("");
+  const [arpuSeries, setArpuSeries] = useState<Array<{ month: string; arpu: number }>>([]);
 
   const fmtAmount = (n: number) =>
     new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
   const fmtDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
+    d
+      ? new Date(d).toLocaleDateString("es-PE", {
+          day: "2-digit",
+          month: "short",
+          year: "2-digit",
+        })
+      : "—";
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
+      const qs = `?from=${fmtISODate(period.from)}&to=${fmtISODate(period.to)}`;
       const [analyticsRes, tenantsRes] = await Promise.all([
-        fetchSuperadmin("/api/superadmin/analytics"),
+        fetchSuperadmin(`/api/superadmin/analytics${qs}`),
         fetchSuperadmin("/api/superadmin/tenants"),
       ]);
       if (!analyticsRes.ok || !tenantsRes.ok) {
@@ -96,27 +242,26 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [period]);
 
   const loadCommissions = useCallback(async () => {
     setCommLoading(true);
     try {
-      const res = await fetch("/api/superadmin/commissions?limit=20", { credentials: "include" });
+      const qs = `?limit=20&from=${fmtISODate(period.from)}&to=${fmtISODate(period.to)}`;
+      const res = await fetch(`/api/superadmin/commissions${qs}`, { credentials: "include" });
       if (!res.ok) return;
-      const data = await res.json() as { commissions: CommissionRow[] };
+      const data = (await res.json()) as { commissions: CommissionRow[] };
       setCommissions(data.commissions ?? []);
     } finally {
       setCommLoading(false);
     }
-  }, []);
+  }, [period]);
 
-  // ARPU series — viene del endpoint widgets que ya calcula 6 meses reales.
-  const [arpuSeries, setArpuSeries] = useState<Array<{ month: string; arpu: number }>>([]);
   const loadArpu = useCallback(async () => {
     try {
       const res = await fetch("/api/superadmin/dashboard/widgets", { credentials: "include" });
       if (!res.ok) return;
-      const data = await res.json() as { arpuSeries?: Array<{ month: string; arpu: number }> };
+      const data = (await res.json()) as { arpuSeries?: Array<{ month: string; arpu: number }> };
       setArpuSeries(data.arpuSeries ?? []);
     } catch {
       // silent
@@ -126,250 +271,628 @@ export default function AnalyticsPage() {
   useEffect(() => {
     void loadData();
     void loadCommissions();
+  }, [loadData, loadCommissions]);
+
+  useEffect(() => {
     void loadArpu();
-  }, [loadData, loadCommissions, loadArpu]);
+  }, [loadArpu]);
 
-  const commThisMonth = commissions.filter((c) => c.status !== "paid").reduce((s, c) => s + c.amount, 0);
-  const commPaid = commissions.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
-  const commPending = commissions.filter((c) => c.status === "pending").reduce((s, c) => s + c.amount, 0);
+  const commThisPeriod = commissions
+    .filter((c) => c.status !== "paid")
+    .reduce((s, c) => s + c.amount, 0);
+  const commPaid = commissions
+    .filter((c) => c.status === "paid")
+    .reduce((s, c) => s + c.amount, 0);
+  const commPending = commissions
+    .filter((c) => c.status === "pending")
+    .reduce((s, c) => s + c.amount, 0);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-32 text-gray-400">
-        <Loader2 className="w-6 h-6 animate-spin mr-3" /> Cargando analytics…
-      </div>
-    );
-  }
-
-  if (error || !analytics) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 gap-4 text-gray-400">
-        <p className="text-[var(--data-error-500)]">{error || "Error desconocido"}</p>
-        <button
-          type="button"
-          onClick={() => void loadData()}
-          className="px-4 py-2 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm hover:bg-[var(--accent)]/90 transition-colors"
-        >
-          Reintentar
-        </button>
-      </div>
-    );
-  }
+  const riskTenants = useMemo(
+    () =>
+      tenants.filter(
+        (t) =>
+          t.cancelAtPeriodEnd ||
+          !t.active ||
+          (t.trialEndsAt && new Date(t.trialEndsAt) < new Date()),
+      ),
+    [tenants],
+  );
 
   return (
     <AdminTabShell
       title="Analytics de plataforma"
-      description="Métricas globales de todos los tenants — ingresos, registros, conversion, churn."
+      description="Métricas globales de todos los tenants — ingresos, registros, conversión, churn."
       icon={BarChart3}
-      kicker="Plataforma Buleje"
-    >
-      {/* Growth metrics — Ola 3: removido border-top gradient semaforo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          {
-            label: "Nuevos tenants (mes)",
-            value: analytics.growth.tenantsThisMonth,
-            sub: `${analytics.growth.tenantGrowthPct > 0 ? "+" : ""}${analytics.growth.tenantGrowthPct}% vs mes anterior`,
-          },
-          {
-            label: "Pedidos este mes",
-            value: analytics.growth.ordersThisMonth,
-            sub: `${analytics.growth.orderGrowthPct > 0 ? "+" : ""}${analytics.growth.orderGrowthPct}% vs mes anterior`,
-          },
-          {
-            label: "MRR",
-            value: fmtAmount(analytics.overview.mrr),
-            sub: `ARR: ${fmtAmount(analytics.overview.arr)}`,
-          },
-          {
-            label: "Tiendas en riesgo",
-            value: analytics.atRiskCount,
-            sub: "Cancelando o trial vencido",
-          },
-        ].map(({ label, value, sub }) => (
-          <div
-            key={label}
-            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5"
-          >
-            <div className="text-[var(--text-tertiary)] text-sm font-semibold mb-2">{label}</div>
-            <div className="text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">{value}</div>
-            <div className="text-[var(--text-tertiary)] text-sm mt-1.5">{sub}</div>
+      kicker="Plataforma · Analytics"
+      stats={
+        <>
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+              Periodo
+            </p>
+            <p className="font-display text-sm font-extrabold tracking-tight mt-1 leading-none text-[var(--accent)] inline-flex items-center gap-1.5">
+              <Calendar className="h-3 w-3" aria-hidden />
+              {fmtPeriodShortLabel(period)}
+            </p>
           </div>
-        ))}
-      </div>
+          {analytics && (
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                MRR
+              </p>
+              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
+                {fmtAmount(analytics.overview.mrr)}
+              </p>
+            </div>
+          )}
+        </>
+      }
+    >
+      {/* ─── Date filter toolbar (sticky) ──────────────────────── */}
+      <PeriodToolbar period={period} onChange={setPeriod} />
 
-      {/* Revenue charts */}
-      <RevenueCharts />
-
-      {/* ─── Análisis ejecutivo profundo (8 secciones) ───────────────────── */}
-      <ExecutiveAnalytics />
-
-      {/* ARPU sólo — "Tenants por plan" se eliminó: redundante con MRR breakdown del módulo ejecutivo */}
-      {arpuSeries.length > 0 && (
-        <ARPUMiniChart data={arpuSeries} currentARPU={analytics.overview.arpu} />
+      {/* Loading overlay */}
+      {loading && (
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+          <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" />
+          Cargando analytics para {fmtPeriodLabel(period)}…
+        </div>
       )}
 
-      {/* Comisiones */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-[var(--text-secondary)]" /> Comisiones
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            {
-              label: "Comisiones del mes",
-              value: commThisMonth,
-              sub: "No liquidadas aún",
-              icon: <DollarSign className="w-3.5 h-3.5 text-[var(--text-secondary)]" />,
-            },
-            {
-              label: "Comisiones pagadas",
-              value: commPaid,
-              sub: "Status: paid",
-              icon: <CheckCircle2 className="w-3.5 h-3.5 text-[var(--text-secondary)]" />,
-            },
-            {
-              label: "Pendiente de liquidar",
-              value: commPending,
-              sub: "Status: pending",
-              icon: <Clock className="w-3.5 h-3.5 text-[var(--text-secondary)]" />,
-            },
-          ].map(({ label, value, sub, icon }) => (
-            <div
-              key={label}
-              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5"
-            >
-              <div className="text-[var(--text-tertiary)] text-sm font-semibold mb-2 flex items-center gap-1.5">
-                {icon} {label}
-              </div>
-              {commLoading ? (
-                <div className="h-8 w-24 bg-[var(--surface-sunken)] animate-pulse rounded" />
-              ) : (
-                <div className="text-3xl font-extrabold text-[var(--text-primary)] font-mono tabular-nums">
-                  {fmtAmount(value)}
-                </div>
-              )}
-              <div className="text-[var(--text-tertiary)] text-sm mt-1.5">{sub}</div>
-            </div>
-          ))}
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300"
+        >
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => void loadData()}
+            className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:brightness-110"
+          >
+            Reintentar
+          </button>
         </div>
+      )}
 
-        {/* Tabla comisiones recientes */}
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-          <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between">
-            <span className="text-base font-bold text-[var(--text-primary)]">Comisiones recientes</span>
-            <span className="text-sm font-semibold text-[var(--text-tertiary)]">Últimas 20</span>
+      {analytics && (
+        <>
+          {/* ─── Growth KPIs (canonical) ─────────────────────────── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <KpiCard
+              icon={TrendingUp}
+              label="Nuevos tenants"
+              value={analytics.growth.tenantsThisMonth}
+              sub={`${analytics.growth.tenantGrowthPct > 0 ? "+" : ""}${analytics.growth.tenantGrowthPct}% vs periodo anterior`}
+              tone={analytics.growth.tenantGrowthPct >= 0 ? "success" : "danger"}
+              periodHint={fmtPeriodShortLabel(period)}
+            />
+            <KpiCard
+              icon={CheckCircle2}
+              label="Pedidos"
+              value={analytics.growth.ordersThisMonth}
+              sub={`${analytics.growth.orderGrowthPct > 0 ? "+" : ""}${analytics.growth.orderGrowthPct}% vs periodo anterior`}
+              tone={analytics.growth.orderGrowthPct >= 0 ? "success" : "danger"}
+              periodHint={fmtPeriodShortLabel(period)}
+            />
+            <KpiCard
+              icon={DollarSign}
+              label="MRR"
+              value={fmtAmount(analytics.overview.mrr)}
+              sub={`ARR: ${fmtAmount(analytics.overview.arr)}`}
+              tone="accent"
+            />
+            <KpiCard
+              icon={AlertTriangle}
+              label="Tiendas en riesgo"
+              value={analytics.atRiskCount}
+              sub="Cancelando o trial vencido"
+              tone={analytics.atRiskCount > 0 ? "warning" : "neutral"}
+            />
           </div>
-          {commLoading ? (
-            <div className="flex items-center justify-center gap-3 py-12 text-gray-400">
-              <Loader2 className="w-5 h-5 animate-spin" /> Cargando…
-            </div>
-          ) : commissions.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">Sin registros de comisiones</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[var(--rule-base)] text-[var(--text-tertiary)] text-sm font-bold uppercase tracking-wider">
-                    <th className="text-left px-5 py-3">Orden</th>
-                    <th className="text-left px-4 py-3">Tienda</th>
-                    <th className="text-left px-4 py-3">Tipo</th>
-                    <th className="text-right px-4 py-3">Monto</th>
-                    <th className="text-right px-4 py-3">Tasa</th>
-                    <th className="text-left px-4 py-3">Estado</th>
-                    <th className="text-left px-4 py-3">Fecha</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
-                  {commissions.map((c) => (
-                    <tr key={c.id} className="hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-colors">
-                      <td className="px-5 py-3 text-sm font-mono text-[var(--text-secondary)] truncate max-w-32">{c.orderId}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-gray-400">{c.storeId ?? "—"}</td>
-                      <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">{c.type}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-[var(--text-primary)] font-mono">
-                        {fmtAmount(c.amount)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-xs text-gray-400">
-                        {(c.rate * 100).toFixed(1)}%
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            c.status === "paid"
-                              ? "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
-                              : c.status === "pending"
-                                ? "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-                          }`}
-                        >
-                          {c.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(c.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+
+          {/* ─── Charts (revenue + signups + orders) ─────────────── */}
+          <RevenueCharts
+            from={fmtISODate(period.from)}
+            to={fmtISODate(period.to)}
+            periodLabel={fmtPeriodLabel(period)}
+          />
+
+          <ExecutiveAnalytics
+            from={fmtISODate(period.from)}
+            to={fmtISODate(period.to)}
+            periodLabel={fmtPeriodLabel(period)}
+          />
+
+          {arpuSeries.length > 0 && (
+            <ARPUMiniChart data={arpuSeries} currentARPU={analytics.overview.arpu} />
           )}
-        </div>
-      </div>
 
-      {/* "Resumen de uso agregado" + "Top tiendas por actividad" eliminados — duplicaban
-          KPIs del top y el ranking de la página /superadmin/tenants. */}
+          {/* ─── Comisiones ────────────────────────────────────── */}
+          <SectionHeading
+            icon={DollarSign}
+            title="Comisiones"
+            subtitle={`Liquidaciones del marketplace · ${fmtPeriodLabel(period)}`}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <CommissionStat
+              icon={DollarSign}
+              label="Comisiones del periodo"
+              value={fmtAmount(commThisPeriod)}
+              sub="No liquidadas aún"
+              loading={commLoading}
+              tone="accent"
+            />
+            <CommissionStat
+              icon={CheckCircle2}
+              label="Pagadas"
+              value={fmtAmount(commPaid)}
+              sub="Status: paid"
+              loading={commLoading}
+              tone="success"
+            />
+            <CommissionStat
+              icon={Clock}
+              label="Pendientes"
+              value={fmtAmount(commPending)}
+              sub="Status: pending"
+              loading={commLoading}
+              tone="warning"
+            />
+          </div>
 
-      {/* Tiendas en riesgo */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 shadow-sm dark:shadow-none">
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)]" /> Tiendas en riesgo
-        </h3>
-        <p className="text-gray-400 text-xs mb-4">
-          Tiendas que cancelarán pronto, tienen trial vencido, o están suspendidas
-        </p>
-        <div className="space-y-2">
-          {tenants
-            .filter(
-              (t) =>
-                t.cancelAtPeriodEnd ||
-                !t.active ||
-                (t.trialEndsAt && new Date(t.trialEndsAt) < new Date()),
-            )
-            .map((t) => (
-              <div
-                key={t.id}
-                className="flex items-center justify-between bg-[var(--surface-sunken)]/50 rounded-xl px-4 py-3"
-              >
-                <div className="flex items-center gap-3">
-                  <div>
-                    <span className="text-[var(--text-primary)] font-semibold text-sm">{t.name}</span>
-                    <span className="text-gray-400 text-xs ml-2 font-mono">{t.slug}</span>
-                  </div>
+          {/* Tabla comisiones */}
+          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+            <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
+              <div>
+                <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                  Comisiones recientes
+                </h3>
+                <p className="text-xs text-[var(--text-tertiary)]">
+                  Últimas 20 del periodo seleccionado
+                </p>
+              </div>
+              <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                {commissions.length}
+              </span>
+            </header>
+            {commLoading ? (
+              <div className="flex items-center justify-center gap-3 py-12 text-[var(--text-tertiary)]">
+                <Loader2 className="w-5 h-5 animate-spin" /> Cargando…
+              </div>
+            ) : commissions.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
+                  <DollarSign
+                    className="h-5 w-5 text-[var(--text-tertiary)]"
+                    aria-hidden
+                  />
                 </div>
-                <div className="flex items-center gap-2">
-                  <PlanBadge plan={t.plan} />
-                  {t.cancelAtPeriodEnd && (
-                    <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Cancela pronto
-                    </span>
-                  )}
-                  {!t.active && (
-                    <span className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-xs flex items-center gap-1">
-                      <XCircle className="w-3 h-3" /> Suspendida
-                    </span>
-                  )}
+                <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
+                  Sin comisiones en el periodo
+                </p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                  Probá cambiar el filtro de fechas o ampliar el rango.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--rule-soft)] text-left text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                      <th className="px-5 py-3 font-extrabold">Orden</th>
+                      <th className="px-4 py-3 font-extrabold">Tienda</th>
+                      <th className="px-4 py-3 font-extrabold">Tipo</th>
+                      <th className="px-4 py-3 font-extrabold text-right">Monto</th>
+                      <th className="px-4 py-3 font-extrabold text-right">Tasa</th>
+                      <th className="px-4 py-3 font-extrabold">Estado</th>
+                      <th className="px-5 py-3 font-extrabold">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--rule-soft)]">
+                    {commissions.map((c) => (
+                      <tr key={c.id} className="transition hover:bg-[var(--surface-sunken)]/50">
+                        <td className="px-5 py-3 font-mono text-xs text-[var(--text-secondary)] truncate max-w-32">
+                          {c.orderId}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs text-[var(--text-tertiary)]">
+                          {c.storeId ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
+                          {c.type}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono font-semibold text-[var(--text-primary)]">
+                          {fmtAmount(c.amount)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-xs text-[var(--text-tertiary)]">
+                          {(c.rate * 100).toFixed(1)}%
+                        </td>
+                        <td className="px-4 py-3">
+                          <CommissionStatusPill status={c.status} />
+                        </td>
+                        <td className="px-5 py-3 text-xs text-[var(--text-tertiary)]">
+                          {fmtDate(c.createdAt)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {/* ─── Tiendas en riesgo ──────────────────────────────── */}
+          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+            <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                  <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                </span>
+                <div>
+                  <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                    Tiendas en riesgo
+                  </h3>
+                  <p className="text-xs text-[var(--text-tertiary)]">
+                    Tiendas que cancelarán pronto, tienen trial vencido o están suspendidas
+                  </p>
                 </div>
               </div>
-            ))}
-          {tenants.filter(
-            (t) =>
-              t.cancelAtPeriodEnd ||
-              !t.active ||
-              (t.trialEndsAt && new Date(t.trialEndsAt) < new Date()),
-          ).length === 0 && (
-            <p className="text-gray-400 text-sm text-center py-6">No hay tiendas en riesgo</p>
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                {riskTenants.length}
+              </span>
+            </header>
+            <div className="p-4">
+              {riskTenants.length === 0 ? (
+                <div className="py-10 text-center">
+                  <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
+                    No hay tiendas en riesgo
+                  </p>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                    Todas las tiendas están activas y sin trial vencido.
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {riskTenants.map((t) => (
+                    <li
+                      key={t.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="min-w-0">
+                          <p className="font-bold text-sm text-[var(--text-primary)] truncate">
+                            {t.name}
+                          </p>
+                          <p className="font-mono text-xs text-[var(--text-tertiary)]">
+                            {t.slug}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap shrink-0">
+                        <PlanBadge plan={t.plan} />
+                        {t.cancelAtPeriodEnd && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                            <Clock className="h-2.5 w-2.5" />
+                            Cancela
+                          </span>
+                        )}
+                        {!t.active && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+                            <XCircle className="h-2.5 w-2.5" />
+                            Suspendida
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        </>
+      )}
+    </AdminTabShell>
+  );
+}
+
+/* ═══════════════════════════ components ═══════════════════════════ */
+
+function PeriodToolbar({
+  period,
+  onChange,
+}: {
+  period: Period;
+  onChange: (p: Period) => void;
+}) {
+  const [showRange, setShowRange] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
+
+  const MODES: Array<{ key: PeriodMode; label: string }> = [
+    { key: "day", label: "Día" },
+    { key: "week", label: "Semana" },
+    { key: "month", label: "Mes" },
+    { key: "year", label: "Año" },
+    { key: "range", label: "Rango" },
+    { key: "custom", label: "Fecha" },
+  ];
+
+  const handleModeChange = (mode: PeriodMode) => {
+    if (mode === "range") {
+      setShowRange(true);
+      setShowCustom(false);
+      onChange(periodFromMode("range"));
+      return;
+    }
+    if (mode === "custom") {
+      setShowCustom(true);
+      setShowRange(false);
+      onChange(periodFromMode("custom"));
+      return;
+    }
+    setShowRange(false);
+    setShowCustom(false);
+    onChange(periodFromMode(mode));
+  };
+
+  const shiftAnchor = (delta: number) => {
+    const anchor = new Date(period.from);
+    if (period.mode === "day") anchor.setDate(anchor.getDate() + delta);
+    else if (period.mode === "week") anchor.setDate(anchor.getDate() + delta * 7);
+    else if (period.mode === "month") anchor.setMonth(anchor.getMonth() + delta);
+    else if (period.mode === "year") anchor.setFullYear(anchor.getFullYear() + delta);
+    onChange(periodFromMode(period.mode, anchor));
+  };
+
+  return (
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Mode tabs */}
+        <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1 overflow-x-auto">
+          {MODES.map((m) => {
+            const isActive = period.mode === m.key;
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => handleModeChange(m.key)}
+                className={`inline-flex shrink-0 items-center rounded-lg px-3.5 py-1.5 text-sm font-bold transition ${
+                  isActive
+                    ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Period label + navigation */}
+        <div className="flex items-center gap-2">
+          {(period.mode === "day" ||
+            period.mode === "week" ||
+            period.mode === "month" ||
+            period.mode === "year") && (
+            <>
+              <button
+                type="button"
+                onClick={() => shiftAnchor(-1)}
+                aria-label="Periodo anterior"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+              >
+                ‹
+              </button>
+              <span className="inline-flex h-9 items-center rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] capitalize">
+                {fmtPeriodLabel(period)}
+              </span>
+              <button
+                type="button"
+                onClick={() => shiftAnchor(1)}
+                aria-label="Periodo siguiente"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+              >
+                ›
+              </button>
+            </>
           )}
+
+          {period.mode === "range" && showRange && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={fmtISODate(period.from)}
+                onChange={(e) => {
+                  const from = startOfDay(new Date(e.target.value + "T12:00:00"));
+                  onChange({ ...period, from });
+                }}
+                className="h-9 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              />
+              <span className="text-[var(--text-tertiary)] text-xs">→</span>
+              <input
+                type="date"
+                value={fmtISODate(period.to)}
+                onChange={(e) => {
+                  const to = endOfDay(new Date(e.target.value + "T12:00:00"));
+                  onChange({ ...period, to });
+                }}
+                className="h-9 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              />
+            </div>
+          )}
+
+          {period.mode === "custom" && showCustom && (
+            <input
+              type="date"
+              value={fmtISODate(period.from)}
+              onChange={(e) => {
+                const d = new Date(e.target.value + "T12:00:00");
+                onChange({ mode: "custom", from: startOfDay(d), to: endOfDay(d) });
+              }}
+              className="h-9 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            />
+          )}
+
+          {/* Reset to today */}
+          <button
+            type="button"
+            onClick={() => onChange(periodFromMode(period.mode))}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 text-sm font-extrabold uppercase tracking-wider text-white transition hover:brightness-110"
+          >
+            Hoy
+          </button>
         </div>
       </div>
-    </AdminTabShell>
+
+      {/* Period summary line */}
+      <div className="mt-3 flex items-center gap-2 border-t border-[var(--rule-soft)] pt-3 text-xs text-[var(--text-tertiary)]">
+        <Calendar className="h-3 w-3" aria-hidden />
+        Mostrando datos del{" "}
+        <strong className="text-[var(--text-primary)]">{fmtPeriodLabel(period)}</strong>
+        <span className="text-[var(--text-tertiary)]">·</span>
+        <span>
+          {Math.ceil((period.to.getTime() - period.from.getTime()) / 86_400_000)} días
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  tone,
+  periodHint,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+  sub: string;
+  tone: "accent" | "success" | "warning" | "danger" | "neutral";
+  periodHint?: string;
+}) {
+  const iconBg = {
+    accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
+    success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
+    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+    neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+  }[tone];
+  return (
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-start justify-between gap-3">
+        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
+          <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+        </span>
+        {periodHint && (
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+            {periodHint}
+          </span>
+        )}
+      </div>
+      <p className="mt-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+        {label}
+      </p>
+      <p className="mt-1 font-display text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
+        {value}
+      </p>
+      <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{sub}</p>
+    </div>
+  );
+}
+
+function CommissionStat({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  loading,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  sub: string;
+  loading: boolean;
+  tone: "accent" | "success" | "warning";
+}) {
+  const iconBg = {
+    accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
+    success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
+    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+  }[tone];
+  return (
+    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
+      <div className="flex items-center gap-2.5">
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
+          <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+        </span>
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+          {label}
+        </p>
+      </div>
+      {loading ? (
+        <div className="mt-3 h-8 w-24 bg-[var(--surface-sunken)] animate-pulse rounded" />
+      ) : (
+        <p className="mt-3 font-display text-2xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
+          {value}
+        </p>
+      )}
+      <p className="mt-1 text-xs text-[var(--text-tertiary)]">{sub}</p>
+    </div>
+  );
+}
+
+function CommissionStatusPill({ status }: { status: CommissionRow["status"] }) {
+  const cfg =
+    status === "paid"
+      ? {
+          label: "Pagada",
+          cls: "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]",
+          dot: "bg-[var(--data-success-500)]",
+        }
+      : status === "pending"
+        ? {
+            label: "Pendiente",
+            cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
+            dot: "bg-amber-500",
+          }
+        : {
+            label: status,
+            cls: "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
+            dot: "bg-[var(--text-tertiary)]",
+          };
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${cfg.cls}`}
+    >
+      <span className={`h-1 w-1 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+}
+
+function SectionHeading({
+  icon: Icon,
+  title,
+  subtitle,
+}: {
+  icon: LucideIcon;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] pb-3">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+        <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+      </span>
+      <div>
+        <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+          {title}
+        </h2>
+        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+      </div>
+    </div>
   );
 }

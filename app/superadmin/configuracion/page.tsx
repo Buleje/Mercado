@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   robots: "noindex, nofollow",
 };
 
+// AdminTabShell + Settings icon viven dentro del Client Component porque el
+// icon de lucide es un ReactComponent ($$typeof) que no se puede serializar
+// desde un Server Component (Next 16 RSC boundary).
 export default function ConfiguracionPage() {
   return <ConfiguracionClient />;
 }

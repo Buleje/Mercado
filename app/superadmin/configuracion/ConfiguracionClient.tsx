@@ -19,12 +19,13 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import {
   Loader2, Save, CheckCircle, Upload, Smartphone, CreditCard,
-  Building2, MessageCircle, Search, AlertTriangle, X,
+  Building2, MessageCircle, Search, AlertTriangle, X, Settings,
 } from "@buleje/design-system/icons";
 import {
   PLATFORM_CONFIG_DEFAULTS,
   type PlatformConfig,
 } from "@/lib/platform-config";
+import { AdminTabShell } from "../_components/_shared";
 
 function csrf(): string {
   return document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/)?.[1] ?? "";
@@ -103,54 +104,63 @@ export default function ConfiguracionClient() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-purple)]" />
-      </main>
+      <AdminTabShell
+        title="Configuración general"
+        description="Todo lo que cambia acá se aplica en vivo en landing, registro y panel del negocio — sin redeploy."
+        icon={Settings}
+        kicker="Configuración global · Plataforma"
+      >
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
+        </div>
+      </AdminTabShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
-        <header className="mb-6 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--brand-purple)] mb-1">
-              Buleje · Plataforma
-            </p>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.02em]">
-              Configuración general
-            </h1>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Todo lo que cambia acá se aplica en vivo en landing, registro y panel
-              del negocio. Sin redeploy.
-            </p>
-          </div>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-[var(--brand-purple)] text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-[var(--brand-purple)]/30 hover:shadow-xl disabled:opacity-60 transition-all"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedAt ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" strokeWidth={2.5} />}
-            {savedAt ? "Guardado" : "Guardar cambios"}
-          </button>
-        </header>
-
-        {error && (
-          <div className="mb-4 rounded-xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-700)] dark:text-red-300 inline-flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            {error}
-            <button onClick={() => setError(null)} className="ml-auto" aria-label="Cerrar">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-
-        {/* ── 1. Pagos manuales ─────────────────────────────────────── */}
-        <Section
-          icon={<Smartphone className="h-5 w-5 text-[var(--brand-purple)]" />}
-          title="Pagos manuales"
-          subtitle="Datos que el cliente ve cuando elige pagar con Yape, Plin o transferencia."
+    <AdminTabShell
+      title="Configuración general"
+      description="Todo lo que cambia acá se aplica en vivo en landing, registro y panel del negocio — sin redeploy."
+      icon={Settings}
+      kicker="Configuración global · Plataforma"
+    >
+    <div className="space-y-6">
+      {/* Barra de acción primaria — sticky top-right; reemplaza el <header>
+          inline que duplicaba kicker/título con el AdminTabShell del wrapper. */}
+      <div className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5">
+        <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+          </span>
+          Cambios aplican en vivo
+        </p>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-sm shadow-md shadow-[var(--accent)]/25 hover:gap-2.5 hover:shadow-lg hover:shadow-[var(--accent)]/35 disabled:opacity-60 transition-all"
         >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedAt ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" strokeWidth={2.5} />}
+          {savedAt ? "Guardado" : "Guardar cambios"}
+        </button>
+      </div>
+
+      {error && (
+        <div className="rounded-2xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-700)] dark:text-red-300 inline-flex items-center gap-2 w-full">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          {error}
+          <button onClick={() => setError(null)} className="ml-auto" aria-label="Cerrar">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* ── 1. Pagos manuales ─────────────────────────────────────── */}
+      <Section
+        icon={<Smartphone className="h-5 w-5 text-[var(--accent)]" />}
+        title="Pagos manuales"
+        subtitle="Datos que el cliente ve cuando elige pagar con Yape, Plin o transferencia."
+      >
           <Subsection title="Yape">
             <Row>
               <TextField
@@ -239,7 +249,7 @@ export default function ConfiguracionClient() {
 
         {/* ── 2. Marca ─────────────────────────────────────────────── */}
         <Section
-          icon={<Building2 className="h-5 w-5 text-[var(--brand-purple)]" />}
+          icon={<Building2 className="h-5 w-5 text-[var(--accent)]" />}
           title="Marca"
           subtitle="Nombre, logo y colores que se aplican en todo el sitio."
         >
@@ -296,7 +306,7 @@ export default function ConfiguracionClient() {
 
         {/* ── 3. Contacto / Soporte ───────────────────────────────── */}
         <Section
-          icon={<MessageCircle className="h-5 w-5 text-[var(--brand-purple)]" />}
+          icon={<MessageCircle className="h-5 w-5 text-[var(--accent)]" />}
           title="Contacto y soporte"
           subtitle="Datos públicos de contacto que aparecen en footer y CTAs."
         >
@@ -338,7 +348,7 @@ export default function ConfiguracionClient() {
 
         {/* ── 4. SEO ──────────────────────────────────────────────── */}
         <Section
-          icon={<Search className="h-5 w-5 text-[var(--brand-purple)]" />}
+          icon={<Search className="h-5 w-5 text-[var(--accent)]" />}
           title="SEO defaults"
           subtitle="Lo que aparece cuando alguien comparte tu sitio en redes."
         >
@@ -361,19 +371,19 @@ export default function ConfiguracionClient() {
           />
         </Section>
 
-        {/* Sticky save al pie */}
-        <div className="mt-8 sticky bottom-4 flex justify-end z-10">
-          <button
-            onClick={save}
-            disabled={saving}
-            className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--brand-purple)] text-white font-extrabold text-sm uppercase tracking-wider shadow-2xl shadow-[var(--brand-purple)]/40 hover:shadow-2xl hover:opacity-95 disabled:opacity-60 transition-all"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedAt ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" strokeWidth={2.5} />}
-            {savedAt ? "Guardado ✓" : "Guardar todos los cambios"}
-          </button>
-        </div>
+      {/* Sticky save al pie — accent teal, sin uppercase forzado */}
+      <div className="mt-2 sticky bottom-4 flex justify-end z-10">
+        <button
+          onClick={save}
+          disabled={saving}
+          className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-sm shadow-2xl shadow-[var(--accent)]/40 hover:gap-2.5 hover:shadow-2xl hover:opacity-95 disabled:opacity-60 transition-all"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedAt ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" strokeWidth={2.5} />}
+          {savedAt ? "Guardado" : "Guardar todos los cambios"}
+        </button>
       </div>
-    </main>
+    </div>
+    </AdminTabShell>
   );
 }
 
@@ -388,25 +398,27 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mb-6 rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
-      <div className="px-5 sm:px-6 py-4 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-start gap-3">
-        <span className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand-purple)]/10">
+    <section className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+      <div className="px-5 sm:px-7 py-4 sm:py-5 border-b-2 border-[var(--rule-soft)] bg-linear-to-br from-[var(--surface-sunken)]/60 to-transparent flex items-start gap-3">
+        <span className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
           {icon}
         </span>
         <div className="min-w-0">
-          <h2 className="text-base font-extrabold leading-tight">{title}</h2>
-          <p className="mt-0.5 text-xs text-[var(--text-secondary)] leading-snug">{subtitle}</p>
+          <h2 className="text-base sm:text-lg font-black text-[var(--text-primary)] leading-tight tracking-tight">
+            {title}
+          </h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)] leading-snug">{subtitle}</p>
         </div>
       </div>
-      <div className="px-5 sm:px-6 py-5 space-y-5">{children}</div>
+      <div className="px-5 sm:px-7 py-6 space-y-6">{children}</div>
     </section>
   );
 }
 
 function Subsection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-l-2 border-[var(--brand-purple)]/30 pl-4">
-      <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--brand-purple)] mb-2.5">
+    <div className="border-l-[3px] border-[var(--accent)]/50 pl-4">
+      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
         {title}
       </p>
       <div className="space-y-3">{children}</div>
@@ -430,7 +442,10 @@ function TextField({
   const id = label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return (
     <div>
-      <label htmlFor={id} className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+      <label
+        htmlFor={id}
+        className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5"
+      >
         {label}
       </label>
       {multiline ? (
@@ -440,7 +455,7 @@ function TextField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={3}
-          className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-semibold focus:border-[var(--brand-purple)] focus:ring-2 focus:ring-[var(--brand-purple)]/20 outline-none"
+          className="w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15"
         />
       ) : (
         <input
@@ -449,7 +464,7 @@ function TextField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold focus:border-[var(--brand-purple)] focus:ring-2 focus:ring-[var(--brand-purple)]/20 outline-none"
+          className="w-full h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15"
         />
       )}
     </div>
@@ -466,10 +481,13 @@ function ColorField({
   const id = label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return (
     <div>
-      <label htmlFor={id} className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+      <label
+        htmlFor={id}
+        className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5"
+      >
         {label}
       </label>
-      <div className="flex items-center gap-2 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2">
+      <div className="flex items-center gap-2 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 transition-colors focus-within:border-[var(--accent)] focus-within:ring-4 focus-within:ring-[var(--accent)]/15">
         <input
           id={id}
           type="color"
@@ -481,7 +499,7 @@ function ColorField({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 h-8 bg-transparent text-sm font-mono font-bold focus:outline-none uppercase"
+          className="flex-1 h-8 bg-transparent text-sm font-mono font-bold text-[var(--text-primary)] focus:outline-none uppercase"
         />
       </div>
     </div>
@@ -505,12 +523,15 @@ function ImageField({
   };
   return (
     <div>
-      <label htmlFor={inputId} className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+      <label
+        htmlFor={inputId}
+        className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5"
+      >
         {label}
       </label>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
         {url ? (
-          <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border-2 border-[var(--rule-base)] bg-white">
+          <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-white">
             <Image src={url} alt={label} fill sizes="80px" className="object-contain" unoptimized />
           </div>
         ) : (
@@ -521,9 +542,9 @@ function ImageField({
         <div className="flex-1 flex flex-wrap gap-2">
           <label
             htmlFor={inputId}
-            className={`inline-flex items-center gap-1.5 h-10 px-3.5 rounded-xl bg-[var(--brand-purple)]/10 text-[var(--brand-purple)] text-xs font-extrabold uppercase tracking-wider cursor-pointer hover:bg-[var(--brand-purple)]/15 ${busy ? "opacity-60 pointer-events-none" : ""}`}
+            className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold uppercase tracking-[var(--ls-wider)] cursor-pointer hover:bg-[var(--accent)] hover:text-white transition-colors ${busy ? "opacity-60 pointer-events-none" : ""}`}
           >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" strokeWidth={2.5} />}
             {url ? "Reemplazar" : "Subir"}
           </label>
           <input
@@ -540,9 +561,9 @@ function ImageField({
           {url && (
             <button
               onClick={onClear}
-              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-600)]"
+              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-600)] transition-colors"
             >
-              <X className="h-3 w-3" /> Quitar
+              <X className="h-3 w-3" strokeWidth={2.5} /> Quitar
             </button>
           )}
         </div>
