@@ -54,6 +54,12 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+// Rate-limit: stub para que jamás bloquee con 429 en tests unitarios.
+// El test verifica lógica de negocio, no el throttle por IP.
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: vi.fn().mockResolvedValue(null),
+}));
+
 // Twilio media download — fetch global
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -183,7 +189,9 @@ describe("POST /api/whatsapp/yape-capture", () => {
 
     mockFetch
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ url: "https://cdn.meta.example.com/img.jpg" }), { status: 200 }),
+        // SECURITY: la allowlist de Meta valida hosts contra .fbcdn.net /
+        // .facebook.com / lookaside.fbsbx.com. URL del fixture alineada.
+        new Response(JSON.stringify({ url: "https://lookaside.fbsbx.com/img.jpg" }), { status: 200 }),
       )
       .mockResolvedValueOnce(new Response(FAKE_IMAGE_BYTES, { status: 200 }));
 

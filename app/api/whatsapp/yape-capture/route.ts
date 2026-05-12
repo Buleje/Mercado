@@ -213,6 +213,25 @@ function isValidImageBytes(bytes: Uint8Array): boolean {
   return false;
 }
 
+// SECURITY 2026-05-12 (audit pentest N3 — semi-SSRF): `meta.url` viene de
+// Graph API de Meta y se fetcheaba sin allowlist. Si Meta retornara un host
+// inesperado (MITM en la respuesta o redirect interno tipo 169.254.169.254),
+// el server haría una request autenticada con `Authorization: Bearer <token>`
+// a un endpoint atacante. Allowlist + `redirect: "error"` cierran el vector.
+const META_MEDIA_HOSTS = [
+  "lookaside.fbsbx.com",
+  "scontent.xx.fbcdn.net",
+  "scontent.cdninstagram.com",
+  ".fbcdn.net",
+  ".facebook.com",
+];
+
+function isAllowedMetaHost(hostname: string): boolean {
+  return META_MEDIA_HOSTS.some((h) =>
+    h.startsWith(".") ? hostname.endsWith(h) : hostname === h,
+  );
+}
+
 async function downloadMetaMedia(mediaId: string): Promise<{
   bytes: Uint8Array;
   url: string;
@@ -225,6 +244,7 @@ async function downloadMetaMedia(mediaId: string): Promise<{
   // Step 1: resolver URL
   const metaRes = await fetch(`https://graph.facebook.com/v19.0/${mediaId}`, {
     headers: { Authorization: `Bearer ${token}` },
+    redirect: "error",
   });
   if (!metaRes.ok) {
     throw new Error(
@@ -235,9 +255,24 @@ async function downloadMetaMedia(mediaId: string): Promise<{
   if (!meta.url) {
     throw new Error("[yape-capture] Meta no devolvió URL");
   }
-  // Step 2: descargar bytes
-  const binRes = await fetch(meta.url, {
+  // Step 2: descargar bytes — validar host contra allowlist primero
+  let parsed: URL;
+  try {
+    parsed = new URL(meta.url);
+  } catch {
+    throw new Error("[yape-capture] Meta url invalid");
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error("[yape-capture] Meta url must be https");
+  }
+  if (!isAllowedMetaHost(parsed.hostname)) {
+    throw new Error(
+      `[yape-capture] Meta url host not allowed: ${parsed.hostname}`,
+    );
+  }
+  const binRes = await fetch(parsed.toString(), {
     headers: { Authorization: `Bearer ${token}` },
+    redirect: "error",
   });
   if (!binRes.ok) {
     throw new Error(
