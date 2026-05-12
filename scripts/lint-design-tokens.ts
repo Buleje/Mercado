@@ -248,6 +248,10 @@ const RULES: Rule[] = [
 const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   { file: /shared[\\/]AdminTabBar\.tsx$/, allowedRules: ["no-decorative-gradient"] },
   { file: /BannerEditor\.tsx$/, allowedRules: ["no-decorative-gradient"] },
+  // DesignTab es el editor visual de design tokens del modulo Mi tienda publica.
+  // Sus gradients violet/fuchsia son previews de los tokens decorativos que el
+  // tenant puede activar — no son chrome del DS, son data del tenant.
+  { file: /admin[\\/]store-page[\\/]_components[\\/]DesignTab\.tsx$/, allowedRules: ["no-decorative-gradient", "no-legacy-gradient-prefix"] },
   // DS primitives — shared/ y packages/design-system/** pueden importar lucide-react directo.
   { file: /packages[\\/]design-system[\\/]/, allowedRules: ["ds-no-direct-lucide-import", "ds-no-style-color-inline"] },
   { file: /components[\\/]admin[\\/]shared[\\/]/, allowedRules: ["ds-no-direct-lucide-import"] },

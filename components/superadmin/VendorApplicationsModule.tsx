@@ -115,7 +115,7 @@ function StatCard({
     warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
     success:
       "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     info: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
   }[tone];
@@ -352,7 +352,7 @@ export default function VendorApplicationsModule() {
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {error && (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
             <span>{error}</span>
             <button
               onClick={() => setError(null)}
@@ -532,7 +532,7 @@ export default function VendorApplicationsModule() {
                               </button>
                               <button
                                 onClick={() => setSelected(a)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-900/40 dark:hover:text-rose-300"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-rose-100 hover:text-[var(--accent)] dark:hover:bg-rose-900/40 dark:hover:text-[var(--accent)]"
                                 title="Rechazar"
                               >
                                 <X className="h-4 w-4" />

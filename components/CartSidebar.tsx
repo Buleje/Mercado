@@ -309,7 +309,7 @@ export default function CartSidebar() {
             aria-modal="true"
             aria-label="Carrito de compras"
             data-testid="cart-sidebar"
-            className="fixed top-0 right-0 bottom-0 z-6001 w-full max-w-md bg-white dark:bg-background shadow-[0_25px_60px_-12px_rgba(0,0,0,0.45)] flex flex-col isolate"
+            className="fixed top-0 right-0 bottom-0 z-6001 w-full max-w-md bg-white dark:bg-background shadow-[var(--shadow-xl)] flex flex-col isolate"
           >
             {/* Header — gradient primary con texto blanco */}
             <div
@@ -344,7 +344,7 @@ export default function CartSidebar() {
                         </span>
                       )}
                     </div>
-                    <span className="inline-flex items-center gap-1.5 mt-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.15em] text-white/85">
+                    <span className="inline-flex items-center gap-1.5 mt-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--tracking-eyebrow)] text-white/85">
                       <span className={`h-1.5 w-1.5 rounded-full ${mode === "checkout" ? "bg-white" : "bg-emerald-300"}`} />
                       {mode === "checkout" ? "Pedido en línea" : "Pedido por WhatsApp"}
                     </span>
@@ -428,10 +428,10 @@ export default function CartSidebar() {
                   if (customer.birthday !== today) return null;
                   return (
                     <div className="mx-1 mb-2 flex items-center gap-2.5 rounded-xl bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800/30 px-3 py-2.5">
-                      <Cake className="w-5 h-5 text-pink-500 shrink-0" aria-hidden="true" />
+                      <Cake className="w-5 h-5 text-[var(--accent)] shrink-0" aria-hidden="true" />
                       <div>
-                        <p className="text-xs font-bold text-pink-700 dark:text-pink-300">¡Feliz cumpleaños, {customer.name?.split(" ")[0]}!</p>
-                        <p className="text-[length:var(--ts-2xs)] text-pink-500 dark:text-pink-400">Tienes 10% de descuento hoy — aplica automático al pagar</p>
+                        <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]">¡Feliz cumpleaños, {customer.name?.split(" ")[0]}!</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--accent)] dark:text-[var(--accent)]">Tienes 10% de descuento hoy — aplica automático al pagar</p>
                       </div>
                     </div>
                   );
@@ -590,8 +590,8 @@ export default function CartSidebar() {
                   <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700/30 rounded-xl px-3 py-2.5">
                     <Gift className="h-4 w-4 text-[var(--accent)] shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-violet-700 dark:text-[var(--accent)]">¡Es tu primera compra!</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--accent)] dark:text-violet-400">Realiza tu pedido y recibe un regalo sorpresa en tu primera entrega</p>
+                      <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]">¡Es tu primera compra!</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--accent)] dark:text-[var(--accent)]">Realiza tu pedido y recibe un regalo sorpresa en tu primera entrega</p>
                     </div>
                   </div>
                 )}
@@ -658,7 +658,7 @@ export default function CartSidebar() {
                 {customer && finalTotal > 0 && (
                   <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 rounded-xl px-3 py-2.5 border border-violet-100 dark:border-violet-800/30">
                     <Star className="h-4 w-4 text-[var(--accent)] shrink-0 fill-[var(--accent)]" />
-                    <span className="text-xs text-violet-700 dark:text-[var(--accent)]">
+                    <span className="text-xs text-[var(--accent)] dark:text-[var(--accent)]">
                       Ganarás ~<span className="font-bold">{Math.floor(finalTotal / 10) * 5} pts</span> con este pedido
                     </span>
                   </div>

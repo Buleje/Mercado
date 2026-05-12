@@ -80,7 +80,7 @@ const STATUS_META: Record<
   },
   error: {
     label: "Error",
-    cls: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
   checking: {
@@ -317,7 +317,7 @@ export default function SystemHealthPage() {
       icon: XCircle,
       label: "Problemas detectados",
       bg: "border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/20",
-      iconCls: "text-rose-600 dark:text-rose-400",
+      iconCls: "text-[var(--accent)] dark:text-[var(--accent)]",
     },
     checking: {
       icon: RefreshCw,
@@ -347,7 +347,7 @@ export default function SystemHealthPage() {
                   ? "text-[var(--data-success-500)]"
                   : healthScore >= 50
                     ? "text-amber-600 dark:text-amber-400"
-                    : "text-rose-600 dark:text-rose-400"
+                    : "text-[var(--accent)] dark:text-[var(--accent)]"
               }`}
             >
               {healthScore}
@@ -460,14 +460,14 @@ export default function SystemHealthPage() {
           {incidents.length > 0 && (
             <section className="rounded-2xl border-2 border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/30 overflow-hidden">
               <header className="flex items-center gap-3 border-b border-rose-300/40 dark:border-rose-700/30 px-5 py-3.5">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]">
                   <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                 </span>
                 <div>
-                  <h3 className="font-display text-base font-extrabold tracking-tight text-rose-800 dark:text-rose-200">
+                  <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--accent)] dark:text-[var(--accent)]">
                     Incidentes activos
                   </h3>
-                  <p className="text-xs text-rose-700/80 dark:text-rose-400/80">
+                  <p className="text-xs text-[var(--accent)]/80 dark:text-[var(--accent)]/80">
                     {incidents.length} incidente{incidents.length === 1 ? "" : "s"} requieren atención
                   </p>
                 </div>
@@ -476,11 +476,11 @@ export default function SystemHealthPage() {
                 {incidents.map((inc) => (
                   <li
                     key={inc.id}
-                    className="flex items-center gap-3 px-5 py-3 text-sm text-rose-700 dark:text-rose-300"
+                    className="flex items-center gap-3 px-5 py-3 text-sm text-[var(--accent)] dark:text-[var(--accent)]"
                   >
                     <XCircle className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
                     <span className="font-semibold flex-1">{inc.message}</span>
-                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-rose-600/80 dark:text-rose-400/80 shrink-0">
+                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]/80 dark:text-[var(--accent)]/80 shrink-0">
                       desde {new Date(inc.since).toLocaleTimeString("es-PE")}
                     </span>
                   </li>
@@ -498,14 +498,14 @@ export default function SystemHealthPage() {
                 const iconBg = {
                   accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
                   warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-                  danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+                  danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
                 }[tone];
                 const valueTone =
                   m.status === "ok"
                     ? "text-[var(--text-primary)]"
                     : m.status === "warning"
                       ? "text-amber-700 dark:text-amber-300"
-                      : "text-rose-700 dark:text-rose-300";
+                      : "text-[var(--accent)] dark:text-[var(--accent)]";
                 return (
                   <div
                     key={m.label}
@@ -592,7 +592,7 @@ export default function SystemHealthPage() {
                       <span
                         className={`font-mono text-sm font-extrabold tabular-nums ${
                           check.latency > 1000
-                            ? "text-rose-600 dark:text-rose-400"
+                            ? "text-[var(--accent)] dark:text-[var(--accent)]"
                             : check.latency > 500
                               ? "text-amber-600 dark:text-amber-400"
                               : "text-[var(--text-secondary)]"

@@ -87,8 +87,8 @@ const CATEGORIES: { id: DocCategory; label: string; icon: typeof Folder; color: 
   { id: "recent",     label: "Recientes",   icon: Clock,         color: "text-[var(--text-secondary)]" },
   { id: "contratos",  label: "Contratos",   icon: FileText,      color: "text-blue-500" },
   { id: "facturas",   label: "Facturas",    icon: FileSpreadsheet, color: "text-emerald-500" },
-  { id: "manuales",   label: "Manuales",    icon: FileText,      color: "text-violet-500" },
-  { id: "fotos",      label: "Fotos",       icon: ImageIcon,     color: "text-pink-500" },
+  { id: "manuales",   label: "Manuales",    icon: FileText,      color: "text-[var(--accent)]" },
+  { id: "fotos",      label: "Fotos",       icon: ImageIcon,     color: "text-[var(--accent)]" },
   { id: "personal",   label: "Personal",    icon: Folder,        color: "text-orange-500" },
   { id: "otros",      label: "Otros",       icon: FileIcon,      color: "text-[var(--text-tertiary)]" },
 ];
@@ -116,8 +116,8 @@ function detectCategory(file: File): DocCategory {
 }
 
 function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: string } {
-  if (type.startsWith("image/")) return { Icon: ImageIcon, tint: "text-pink-500", bg: "bg-pink-50" };
-  if (type.startsWith("video/")) return { Icon: Film, tint: "text-violet-500", bg: "bg-violet-50" };
+  if (type.startsWith("image/")) return { Icon: ImageIcon, tint: "text-[var(--accent)]", bg: "bg-pink-50" };
+  if (type.startsWith("video/")) return { Icon: Film, tint: "text-[var(--accent)]", bg: "bg-violet-50" };
   if (type.startsWith("audio/")) return { Icon: Music, tint: "text-emerald-500", bg: "bg-emerald-50" };
   if (type === "application/pdf") return { Icon: FileText, tint: "text-red-500", bg: "bg-red-50" };
   if (type.includes("spreadsheet") || type.includes("excel") || type.includes("csv")) return { Icon: FileSpreadsheet, tint: "text-emerald-500", bg: "bg-emerald-50" };
@@ -835,7 +835,7 @@ function EmptyState({ category, onUpload }: { category: DocCategory; onUpload: (
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-xl mx-auto">
         {[
           { icon: FileText, tint: "text-red-500", label: "PDF" },
-          { icon: ImageIcon, tint: "text-pink-500", label: "Imágenes" },
+          { icon: ImageIcon, tint: "text-[var(--accent)]", label: "Imágenes" },
           { icon: FileSpreadsheet, tint: "text-emerald-500", label: "Excel" },
           { icon: FileIcon, tint: "text-[var(--text-tertiary)]", label: "Otros" },
         ].map((t, i) => {

@@ -55,7 +55,7 @@ function AboutBlock({ section, primary }: { section: AboutSection; primary: stri
           >
             Conocenos
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight mb-4">
+          <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight mb-4">
             {title}
           </h2>
           <p className="text-base text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
@@ -103,7 +103,7 @@ function HoursBlock({ section, primary }: { section: HoursSection; primary: stri
           >
             Horarios
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+          <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
             {title}
           </h2>
         </div>
@@ -179,7 +179,7 @@ function PaymentBlock({ section, primary, accent: _accent }: { section: PaymentS
         >
           Métodos de pago
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
         {subtitle && (
@@ -198,7 +198,7 @@ function PaymentBlock({ section, primary, accent: _accent }: { section: PaymentS
               className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col items-center justify-center text-center transition-all hover:border-[var(--accent)]/40 hover:-translate-y-0.5"
             >
               <span
-                className={`inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${meta.gradient} text-white shadow-md mb-2`}
+                className={`inline-flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br ${meta.gradient} text-white shadow-md mb-2`}
               >
                 <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
               </span>
@@ -223,7 +223,7 @@ function HowToOrderBlock({ section, primary }: { section: HowToOrderSection; pri
         >
           Cómo pedir
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
         {subtitle && (
@@ -273,7 +273,7 @@ function FaqBlock({ section, primary }: { section: FaqSection; primary: string }
         >
           Preguntas frecuentes
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
       </div>
@@ -325,7 +325,7 @@ function GalleryBlock({ section, primary }: { section: GallerySection; primary: 
         >
           Galería
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
         {subtitle && (
@@ -354,7 +354,7 @@ function GalleryBlock({ section, primary }: { section: GallerySection; primary: 
               loading="lazy"
             />
             {img.caption && (
-              <figcaption className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-white text-xs font-bold leading-snug">
+              <figcaption className="absolute inset-x-0 bottom-0 p-3 bg-linear-to-t from-black/80 to-transparent text-white text-xs font-bold leading-snug">
                 {img.caption}
               </figcaption>
             )}
@@ -394,7 +394,7 @@ function ImageTextBlock({ section, primary }: { section: ImageTextSection; prima
           >
             Historia
           </p>
-          <h2 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight mb-4">
+          <h2 className="font-display text-3xl sm:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-tight mb-4">
             {title}
           </h2>
           <p className="text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap mb-6">
@@ -427,7 +427,7 @@ function BenefitsBlock({ section, primary }: { section: BenefitsSection; primary
         >
           Por qué elegirnos
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
       </div>

@@ -447,7 +447,7 @@ export function CategoriesTab() {
 
       {/* ── Error banner ───────────────────────────────────────── */}
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -838,7 +838,7 @@ function CategoryRow({
               </div>
             </div>
             {status === "error" && errorMsg && (
-              <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-300/60 bg-rose-50/40 px-3 py-2 text-xs font-bold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+              <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-300/60 bg-rose-50/40 px-3 py-2 text-xs font-bold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                 <span>{errorMsg}</span>
               </div>
@@ -1265,7 +1265,7 @@ function PrimaryStoreLinker({
                   type="button"
                   onClick={() => toggle(s.slug)}
                   title="Desvincular tienda"
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-900/40 dark:hover:text-rose-300"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-rose-100 hover:text-[var(--accent)] dark:hover:bg-rose-900/40 dark:hover:text-[var(--accent)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" strokeWidth={2.25} />
                 </button>

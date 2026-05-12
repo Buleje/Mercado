@@ -75,7 +75,7 @@ export default function MarketplaceCategoriesNav() {
                   className="group relative flex flex-col items-center justify-center gap-1.5 shrink-0 w-[78px] sm:w-[90px] rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-2 sm:p-2.5 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-raised)] hover:shadow-md"
                 >
                   {cat.badge && (
-                    <span className="absolute -top-1.5 -right-1.5 inline-flex items-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md shadow-rose-500/40">
+                    <span className="absolute -top-1.5 -right-1.5 inline-flex items-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md shadow-md/40">
                       {cat.badge}
                     </span>
                   )}

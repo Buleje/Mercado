@@ -439,7 +439,7 @@ function PromoBanners() {
 
             {/* ── Derecha: dashboard mock con stats que respaldan ─────────── */}
             <aside className="relative">
-              <div className="rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] p-6 sm:p-7 shadow-[0_24px_60px_-16px_rgba(0,0,0,0.30)]">
+              <div className="rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] p-6 sm:p-7 shadow-[var(--shadow-xl)]">
                 <div className="flex items-center justify-between gap-3 mb-5">
                   <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60">
                     Tu panel · Hoy
@@ -467,7 +467,7 @@ function PromoBanners() {
                     { v: "24/7",  l: "soporte" },
                   ].map(({ v, l }) => (
                     <div key={l} className="rounded-xl bg-white/[0.06] backdrop-blur px-3 py-3">
-                      <p className="text-lg sm:text-xl font-black tabular-nums leading-none tracking-[-0.025em]">
+                      <p className="text-lg sm:text-xl font-black tabular-nums leading-none tracking-tight">
                         {v === "0%" ? (
                           <>
                             <span className="text-[var(--accent)]">0</span>

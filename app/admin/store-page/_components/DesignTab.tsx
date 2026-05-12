@@ -123,7 +123,7 @@ export default function DesignTab() {
         <button
           type="button"
           onClick={() => setShowAI((s) => !s)}
-          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-4 h-10 text-sm font-black hover:opacity-90 transition-all shadow-md"
+          className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-violet-600 to-fuchsia-600 text-white px-4 h-10 text-sm font-black hover:opacity-90 transition-all shadow-md"
         >
           <Sparkles className="w-4 h-4" strokeWidth={2.5} />
           Sugerencias con IA
@@ -492,9 +492,9 @@ function AISuggestions({
   };
 
   return (
-    <div className="rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/40 dark:to-fuchsia-950/40 p-5 space-y-4">
+    <div className="rounded-2xl border-2 border-violet-200 bg-linear-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/40 dark:to-fuchsia-950/40 p-5 space-y-4">
       <div className="flex items-start gap-3">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg">
           <Wand2 className="w-5 h-5" strokeWidth={2.25} />
         </span>
         <div className="flex-1 min-w-0">
@@ -532,7 +532,7 @@ function AISuggestions({
         type="button"
         onClick={generate}
         disabled={!businessName.trim()}
-        className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white h-11 text-sm font-black shadow-md disabled:opacity-40 hover:opacity-90 transition-all"
+        className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-linear-to-r from-violet-600 to-fuchsia-600 text-white h-11 text-sm font-black shadow-md disabled:opacity-40 hover:opacity-90 transition-all"
       >
         <Sparkles className="w-4 h-4" strokeWidth={2.5} />
         Generar 3 sugerencias
@@ -558,7 +558,7 @@ function AISuggestions({
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="text-sm font-black text-[var(--text-primary)] truncate">{preset.label}</p>
                     {idx === 0 && (
-                      <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white">Top</span>
+                      <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-linear-to-r from-violet-600 to-fuchsia-600 text-white">Top</span>
                     )}
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] truncate">{preset.description}</p>

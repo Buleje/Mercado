@@ -134,8 +134,8 @@ const CAT_THEME: Record<string, { emojiBg: string; dot: string; pillHover: strin
   "bebidas": {
     emojiBg:       "bg-violet-50 dark:bg-violet-950/30",
     dot:           "bg-violet-500",
-    pillHover:     "hover:border-violet-400 hover:text-violet-700 hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-950/30",
-    linkBtn:       "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 hover:bg-violet-500 hover:text-white",
+    pillHover:     "hover:border-violet-400 hover:text-[var(--accent)] hover:bg-violet-50 dark:hover:text-[var(--accent)] dark:hover:bg-violet-950/30",
+    linkBtn:       "bg-violet-50 dark:bg-violet-950/30 text-[var(--accent)] dark:text-[var(--accent)] hover:bg-violet-500 hover:text-white",
     sectionBorder: "border-l-4 border-l-violet-400",
   },
   "limpieza": {

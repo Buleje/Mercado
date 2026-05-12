@@ -328,7 +328,7 @@ export default function ComoPagarClient() {
                   El mas usado en Pucallpa
                 </span>
               </div>
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[0.95] tracking-[-0.02em]">
+              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[0.95] tracking-tight">
                 Yape. Instantaneo, sin comision, desde tu celular.
               </h2>
               <p className="mt-4 text-base sm:text-lg text-white/85 leading-relaxed max-w-xl">
@@ -378,7 +378,7 @@ export default function ComoPagarClient() {
                 </span>
                 <Link
                   href="/tiendas"
-                  className="ml-auto inline-flex items-center gap-2 rounded-full bg-white text-violet-700 px-5 py-2.5 text-sm font-black hover:bg-white/95 transition-colors"
+                  className="ml-auto inline-flex items-center gap-2 rounded-full bg-white text-[var(--accent)] px-5 py-2.5 text-sm font-black hover:bg-white/95 transition-colors"
                 >
                   Probar ahora
                   <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
@@ -635,7 +635,7 @@ export default function ComoPagarClient() {
             <Users className="h-3.5 w-3.5" strokeWidth={2} />
             Bodegas activas en Pucallpa
           </span>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black tracking-[-0.02em] leading-tight">
+          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
             Ya sabes como pagar. Falta solo el pedido.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/70 max-w-xl mx-auto">

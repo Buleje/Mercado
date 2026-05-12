@@ -825,7 +825,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
                           {(def.id === "business" || def.id === "enterprise") && (
-                            <Crown className={`w-4 h-4 shrink-0 ${def.id === "enterprise" ? "text-[var(--data-warning-500)]" : "text-violet-500"}`} />
+                            <Crown className={`w-4 h-4 shrink-0 ${def.id === "enterprise" ? "text-[var(--data-warning-500)]" : "text-[var(--accent)]"}`} />
                           )}
                           <div>
                             <div className="flex items-center gap-2">

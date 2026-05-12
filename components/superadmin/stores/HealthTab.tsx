@@ -91,7 +91,7 @@ const CHECK_STATUS_META: Record<
   },
   missing: {
     label: "Falta",
-    cls: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
     ring: "ring-rose-500/40",
   },
@@ -122,7 +122,7 @@ function scoreColor(pct: number): {
     };
   return {
     stroke: "rgb(244 63 94)",
-    text: "text-rose-600 dark:text-rose-400",
+    text: "text-[var(--accent)] dark:text-[var(--accent)]",
     label: "Crítica",
     band: "border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/20",
     tone: "danger",
@@ -435,7 +435,7 @@ export function HealthTab() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -561,7 +561,7 @@ export function HealthTab() {
                           {item.plan}
                         </span>
                         {!item.active && (
-                          <span className="rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+                          <span className="rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
                             Inactiva
                           </span>
                         )}
@@ -584,7 +584,7 @@ export function HealthTab() {
                         {item.missingCount > 0 && (
                           <>
                             <span>·</span>
-                            <span className="font-bold text-rose-600 dark:text-rose-400">
+                            <span className="font-bold text-[var(--accent)] dark:text-[var(--accent)]">
                               {item.missingCount} faltan
                             </span>
                           </>
@@ -854,7 +854,7 @@ function KpiCard({
   const iconBg = {
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
     warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
   }[tone];
   return (

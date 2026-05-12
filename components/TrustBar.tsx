@@ -24,7 +24,7 @@ const COLOR_CYCLE = [
   { color: "text-primary", bg: { background: "rgba(45,106,79,0.08)" } },
   { color: "text-secondary", bg: { background: "rgba(244,162,97,0.08)" } },
   { color: "text-[var(--data-success-600)]", bg: { background: "rgba(16,185,129,0.08)" } },
-  { color: "text-purple-600", bg: { background: "rgba(147,51,234,0.08)" } },
+  { color: "text-[var(--accent)]", bg: { background: "rgba(147,51,234,0.08)" } },
   { color: "text-primary", bg: { background: "rgba(45,106,79,0.08)" } },
   { color: "text-[var(--data-error-500)]", bg: { background: "rgba(244,63,94,0.08)" } },
 ];

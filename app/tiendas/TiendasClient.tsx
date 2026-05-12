@@ -603,7 +603,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                           className="rounded-2xl bg-[var(--surface-sunken)]/60 border border-[var(--rule-soft)] px-3.5 py-3"
                         >
                           <div className="flex items-baseline justify-between gap-1.5 mb-1.5">
-                            <p className="text-2xl sm:text-[1.65rem] font-black tabular-nums tracking-[-0.025em] text-[var(--text-primary)] leading-none truncate">
+                            <p className="text-2xl sm:text-[1.65rem] font-black tabular-nums tracking-tight text-[var(--text-primary)] leading-none truncate">
                               {value}
                               {suffix && <span className="ml-0.5 text-base text-[var(--accent)]">{suffix}</span>}
                             </p>
@@ -1134,7 +1134,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                         </span>
                       </div>
 
-                      <h3 className="text-lg sm:text-xl font-black tracking-[-0.01em] text-[var(--text-primary)] leading-tight">
+                      <h3 className="text-lg sm:text-xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
                         {step.title}
                       </h3>
                       <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
@@ -1199,7 +1199,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   <span aria-hidden className="inline-flex h-[3px] w-8 rounded-full bg-[var(--accent)]" />
                   Sumate a Buleje
                 </p>
-                <h2 className="font-display text-2xl sm:text-3xl lg:text-[2.25rem] font-black leading-tight tracking-[-0.025em]">
+                <h2 className="font-display text-2xl sm:text-3xl lg:text-[2.25rem] font-black leading-tight tracking-tight">
                   ¿Tenes una tienda o moto?{" "}
                   <span className="text-[var(--accent)]">Trabaja con nosotros.</span>
                 </h2>

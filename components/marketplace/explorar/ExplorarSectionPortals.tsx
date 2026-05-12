@@ -176,15 +176,15 @@ function FeaturedCard({
   // Brand: gradient accent muy sutil
   // Warm: amber muy diluido (no rainbow)
   const cardBg = isBrand
-    ? "bg-gradient-to-br from-[var(--accent)]/[0.10] via-[var(--accent)]/[0.04] to-[var(--surface-raised)]"
+    ? "bg-linear-to-br from-[var(--accent)]/[0.10] via-[var(--accent)]/[0.04] to-[var(--surface-raised)]"
     : isWarm
-      ? "bg-gradient-to-br from-amber-100/40 via-amber-50/20 to-[var(--surface-raised)] dark:from-amber-950/20 dark:via-amber-950/10"
+      ? "bg-linear-to-br from-amber-100/40 via-amber-50/20 to-[var(--surface-raised)] dark:from-amber-950/20 dark:via-amber-950/10"
       : "bg-[var(--surface-raised)]";
 
   const iconBg = isBrand
     ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/25"
     : isWarm
-      ? "bg-amber-500 text-white shadow-md shadow-amber-500/25 dark:bg-amber-600"
+      ? "bg-amber-500 text-white shadow-md shadow-md/25 dark:bg-amber-600"
       : "bg-[var(--text-primary)] text-[var(--surface-canvas)]";
 
   const chipBg = isBrand
@@ -307,7 +307,7 @@ function NeutralCard({ portal }: { portal: Portal }) {
         <p className="text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] transition-colors group-hover:text-[var(--accent)]">
           {portal.eyebrow}
         </p>
-        <h3 className="mt-1 font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+        <h3 className="mt-1 font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
           {portal.title}
         </h3>
         <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-snug font-semibold">

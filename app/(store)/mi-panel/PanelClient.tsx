@@ -296,7 +296,7 @@ export default function PanelClient() {
 
         <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-end">
           <div className="min-w-0">
-            <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-white/85">
+            <p className="text-xs sm:text-sm font-bold uppercase tracking-[var(--tracking-kicker)] text-white/85">
               Mi panel · Tienda
             </p>
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.05] mt-1.5">

@@ -120,11 +120,11 @@ const DANGER_META: Record<
   },
   danger: {
     label: "Crítico",
-    pill: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    pill: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500 animate-pulse",
     border: "border-l-rose-500",
-    valueColor: "text-rose-700 dark:text-rose-300",
-    iconBg: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+    valueColor: "text-[var(--accent)] dark:text-[var(--accent)]",
+    iconBg: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     icon: AlertTriangle,
   },
 };
@@ -458,7 +458,7 @@ export function OperationsTab() {
                       isActive
                         ? "bg-[var(--accent)]/15 text-[var(--accent)]"
                         : opt.k === "danger"
-                          ? "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300"
+                          ? "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
                           : opt.k === "delayed"
                             ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
                             : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
@@ -524,7 +524,7 @@ export function OperationsTab() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -567,7 +567,7 @@ export function OperationsTab() {
                   <span
                     className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                       isCritical
-                        ? "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300"
+                        ? "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
                         : "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
                     }`}
                   >
@@ -580,7 +580,7 @@ export function OperationsTab() {
                     <p className="text-xs text-[var(--text-tertiary)] truncate leading-tight">
                       {t.delayed} demorados
                       {t.danger > 0 && (
-                        <span className="text-rose-600 dark:text-rose-400 font-bold">
+                        <span className="text-[var(--accent)] dark:text-[var(--accent)] font-bold">
                           {" · "}
                           {t.danger} críticos
                         </span>
@@ -760,7 +760,7 @@ export function OperationsTab() {
                           onClick={(e) => e.stopPropagation()}
                           className={`inline-flex h-9 items-center gap-1 rounded-xl px-3 text-xs font-extrabold uppercase tracking-wider transition ${
                             o.dangerLevel === "danger"
-                              ? "bg-rose-600 text-white shadow-md shadow-rose-600/20 hover:brightness-110"
+                              ? "bg-rose-600 text-white shadow-md shadow-md/20 hover:brightness-110"
                               : "border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/10"
                           }`}
                           aria-label="WhatsApp al negocio"
@@ -910,7 +910,7 @@ function KpiCard({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   const Tag = onClick ? "button" : "div";

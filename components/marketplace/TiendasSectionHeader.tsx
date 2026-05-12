@@ -48,7 +48,7 @@ export default function TiendasSectionHeader({
         {/* Title v2: clamp fluid + italic serif accent en el split de la
             primera palabra. Antes era plano; ahora editorial al estilo del
             hero principal para coherencia visual en toda la página. */}
-        <h2 className="text-[clamp(1.5rem,3.5vw,2.25rem)] font-black tracking-[-0.025em] text-[var(--text-primary)] leading-[1.05]">
+        <h2 className="text-[clamp(1.5rem,3.5vw,2.25rem)] font-black tracking-tight text-[var(--text-primary)] leading-[1.05]">
           {title}
         </h2>
         {subtitle && (

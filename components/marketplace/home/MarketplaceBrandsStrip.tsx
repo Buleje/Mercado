@@ -40,7 +40,7 @@ export default function MarketplaceBrandsStrip() {
             <Award className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </span>
           <div className="min-w-0">
-            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
               Marcas que ya conoces
             </h2>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-semibold mt-0.5">
@@ -73,7 +73,7 @@ export default function MarketplaceBrandsStrip() {
                 {b.initial}
               </span>
               <div className="min-w-0">
-                <p className="font-display text-base font-black tracking-[-0.015em] text-[var(--text-primary)] truncate">
+                <p className="font-display text-base font-black tracking-tight text-[var(--text-primary)] truncate">
                   {b.label}
                 </p>
                 <p className="text-[length:var(--ts-2xs)] font-black text-[var(--text-tertiary)] truncate uppercase tracking-wider">

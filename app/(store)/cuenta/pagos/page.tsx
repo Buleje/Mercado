@@ -63,7 +63,7 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
             className={cn(
               "h-5 w-5",
               method.type === "yape"
-                ? "text-purple-500"
+                ? "text-[var(--accent)]"
                 : "text-[var(--accent)]"
             )}
           />

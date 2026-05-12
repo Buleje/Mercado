@@ -175,7 +175,7 @@ const PLAN_LABELS: Record<PlanId, { label: string; cls: string }> = {
   },
   business: {
     label: "Pro",
-    cls: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+    cls: "bg-violet-100 text-[var(--accent)] dark:bg-violet-950/40 dark:text-[var(--accent)]",
   },
   enterprise: {
     label: "Business",
@@ -342,7 +342,7 @@ export default function AnalyticsPage() {
       {error && (
         <div
           role="alert"
-          className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300"
+          className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
         >
           <span>{error}</span>
           <button
@@ -577,7 +577,7 @@ export default function AnalyticsPage() {
                           </span>
                         )}
                         {!t.active && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
                             <XCircle className="h-2.5 w-2.5" />
                             Suspendida
                           </span>
@@ -776,7 +776,7 @@ function KpiCard({
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
     warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   return (

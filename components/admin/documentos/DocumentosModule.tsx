@@ -43,8 +43,8 @@ function formatBytes(b: number): string {
 }
 
 function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: string } {
-  if (type.startsWith("image/")) return { Icon: ImageIcon, tint: "text-pink-500", bg: "bg-pink-50" };
-  if (type.startsWith("video/")) return { Icon: Film, tint: "text-violet-500", bg: "bg-violet-50" };
+  if (type.startsWith("image/")) return { Icon: ImageIcon, tint: "text-[var(--accent)]", bg: "bg-pink-50" };
+  if (type.startsWith("video/")) return { Icon: Film, tint: "text-[var(--accent)]", bg: "bg-violet-50" };
   if (type.startsWith("audio/")) return { Icon: Music, tint: "text-emerald-500", bg: "bg-emerald-50" };
   if (type === "application/pdf") return { Icon: FileText, tint: "text-red-500", bg: "bg-red-50" };
   if (type.includes("spreadsheet") || type.includes("excel") || type.includes("csv")) return { Icon: FileSpreadsheet, tint: "text-emerald-500", bg: "bg-emerald-50" };
@@ -690,7 +690,7 @@ function DocCard({
               <span key={t} className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">#{t}</span>
             ))}
             {doc.aiTags.slice(0, 1).map((t) => (
-              <span key={`ai-${t}`} className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 font-bold inline-flex items-center gap-0.5">
+              <span key={`ai-${t}`} className="text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded bg-violet-100 text-[var(--accent)] font-bold inline-flex items-center gap-0.5">
                 <Sparkles className="h-2.5 w-2.5" />{t}
               </span>
             ))}

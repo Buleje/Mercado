@@ -131,7 +131,7 @@ function PromoCardItem({
 
         {/* Title + subtitle */}
         <div>
-          <h3 className="text-xl sm:text-3xl font-black tracking-[-0.025em] leading-[1.05]">
+          <h3 className="text-xl sm:text-3xl font-black tracking-tight leading-[1.05]">
             {title}
           </h3>
           <p className="hidden sm:block mt-2 text-sm sm:text-base opacity-85 max-w-[28ch] leading-snug">

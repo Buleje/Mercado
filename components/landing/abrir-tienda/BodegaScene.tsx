@@ -83,7 +83,7 @@ export default function BodegaScene() {
         initial={reducedMotion ? false : { y: 16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute inset-x-0 top-6 bottom-0 rounded-[2rem] overflow-hidden bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.15)]"
+        className="absolute inset-x-0 top-6 bottom-0 rounded-[2rem] overflow-hidden bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
       >
         {/* Toldo / awning con franjas teal */}
         <div className="relative h-12 flex">
@@ -167,7 +167,7 @@ export default function BodegaScene() {
         </div>
 
         {/* Contador con tablet — dashboard en vivo */}
-        <div className="mt-2 mx-4 mb-4 rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] p-4 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.30)]">
+        <div className="mt-2 mx-4 mb-4 rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] p-4 shadow-[var(--shadow-lg)]">
           <div className="flex items-start justify-between gap-2 mb-2.5">
             <div className="inline-flex items-center gap-2">
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 backdrop-blur">
@@ -213,7 +213,7 @@ export default function BodegaScene() {
         initial={reducedMotion ? false : { x: 14, y: 8, opacity: 0 }}
         animate={{ x: 0, y: 0, opacity: 1 }}
         transition={{ delay: 0.45, duration: 0.5 }}
-        className="absolute -right-2 sm:-right-6 top-32 sm:top-36 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[0_16px_36px_-8px_rgba(0,0,0,0.16)] p-3 w-28 sm:w-32 rotate-[6deg]"
+        className="absolute -right-2 sm:-right-6 top-32 sm:top-36 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] p-3 w-28 sm:w-32 rotate-[6deg]"
       >
         <div className="aspect-square rounded-lg bg-[var(--surface-canvas)] flex items-center justify-center">
           <QrCode className="h-12 w-12 sm:h-14 sm:w-14 text-[var(--text-primary)]" strokeWidth={1.5} />
@@ -238,9 +238,9 @@ export default function BodegaScene() {
             initial={reducedMotion ? false : { y: 12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.55 + i * 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className={`absolute ${positions[i]} z-10 inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[0_8px_20px_-6px_rgba(0,0,0,0.14)]`}
+            className={`absolute ${positions[i]} z-10 inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-lg)]`}
           >
-            <span className="text-base sm:text-lg font-black tabular-nums tracking-[-0.025em] text-[var(--accent)] leading-none whitespace-nowrap">
+            <span className="text-base sm:text-lg font-black tabular-nums tracking-tight text-[var(--accent)] leading-none whitespace-nowrap">
               {p.value}
             </span>
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-secondary)] leading-tight max-w-[10ch]">

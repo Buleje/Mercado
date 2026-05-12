@@ -98,7 +98,7 @@ export function PaicheLoading({
         </div>
         {/* Texto */}
         <div className="relative mt-8 text-center px-4">
-          <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
+          <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tracking-tight text-[var(--text-primary)] leading-tight">
             {label ?? defaultLabel}
           </p>
           <p className="mt-2 text-[length:var(--ts-base)] font-semibold text-[var(--text-secondary)]">
@@ -131,7 +131,7 @@ export function PaicheLoading({
         <PaicheMascot size={size} animated strokeWidth={1.75} />
       </div>
       {(label || defaultLabel) && (
-        <p className="relative mt-4 text-[length:var(--ts-sm)] font-bold uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+        <p className="relative mt-4 text-[length:var(--ts-sm)] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-secondary)]">
           {label ?? defaultLabel}
         </p>
       )}

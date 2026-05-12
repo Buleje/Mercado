@@ -651,7 +651,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               {[
                 { icon: Truck, text: "Delivery gratis a domicilio", color: "text-[var(--data-success-500)]" },
                 { icon: Clock, text: "Entrega en 30-60 minutos", color: "text-[var(--data-success-500)]" },
-                { icon: Shield, text: "Pago seguro: Yape o efectivo", color: "text-violet-500" },
+                { icon: Shield, text: "Pago seguro: Yape o efectivo", color: "text-[var(--accent)]" },
                 { icon: Package, text: "Productos frescos garantizados", color: "text-[var(--data-warning-500)]" },
               ].map((b, i) => (
                 <div

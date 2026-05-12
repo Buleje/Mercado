@@ -30,13 +30,13 @@ const TRUST_ITEMS: TrustItem[] = [
 export default function TrustBar() {
   return (
     <section
-      className="relative border-b border-[var(--rule-soft)] bg-gradient-to-b from-[var(--surface-canvas)] to-[var(--surface-sunken)]"
+      className="relative border-b border-[var(--rule-soft)] bg-linear-to-b from-[var(--surface-canvas)] to-[var(--surface-sunken)]"
       aria-label="Garantías de la tienda"
     >
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         {/* Heading subtle */}
         <div className="text-center mb-8 sm:mb-10">
-          <p className="text-[length:var(--ts-2xs)] sm:text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-primary)]">
+          <p className="text-[length:var(--ts-2xs)] sm:text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--color-primary)]">
             ¿Por qué comprarme?
           </p>
           <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
@@ -53,7 +53,7 @@ export default function TrustBar() {
             return (
               <li
                 key={item.label}
-                className="group relative flex flex-col items-start gap-4 p-5 sm:p-6 rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-[var(--color-primary)]/40 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.12)] transition-all duration-[var(--dur-base)]"
+                className="group relative flex flex-col items-start gap-4 p-5 sm:p-6 rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-xl)] transition-all duration-[var(--dur-base)]"
                 style={{ animationDelay: `${idx * 60}ms` }}
               >
                 {/* Número de orden, decorativo */}

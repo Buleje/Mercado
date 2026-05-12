@@ -523,7 +523,7 @@ function SectionEditorModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header con kicker descriptivo + counter */}
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 bg-linear-to-r from-primary/5 to-transparent dark:from-primary/10">
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <Package className="h-5 w-5 text-primary" />
@@ -837,7 +837,7 @@ function SectionEditorModal({
 // tienda. Asi el dueño no tipea a ciegas — ve qué bloque está activando.
 
 function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
-  const cell = "rounded-md bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700";
+  const cell = "rounded-md bg-linear-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700";
   const accent = "bg-primary/30";
   const muted = "rounded-full bg-gray-300 dark:bg-gray-600";
 
@@ -898,7 +898,7 @@ function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
     case "daily_special":
       return (
         <div className="h-full w-full flex items-center gap-2 p-2">
-          <div className={cn("h-12 w-12 shrink-0", cell, "bg-gradient-to-br from-[var(--data-warning-500)]/40 to-[var(--data-error-500)]/40")} />
+          <div className={cn("h-12 w-12 shrink-0", cell, "bg-linear-to-br from-[var(--data-warning-500)]/40 to-[var(--data-error-500)]/40")} />
           <div className="flex-1 flex flex-col gap-1">
             <div className={cn("h-1.5 w-3/4", muted)} />
             <div className={cn("h-1 w-1/2", muted)} />
@@ -908,7 +908,7 @@ function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
       );
     case "seasonal_promo":
       return (
-        <div className="h-full w-full flex items-center justify-center bg-gradient-to-r from-primary/30 via-primary/15 to-primary/30 px-2 gap-1.5">
+        <div className="h-full w-full flex items-center justify-center bg-linear-to-r from-primary/30 via-primary/15 to-primary/30 px-2 gap-1.5">
           <Tag className="h-3.5 w-3.5 text-primary" />
           <div className={cn("h-1.5 w-1/3", muted)} />
         </div>
@@ -1004,7 +1004,7 @@ function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
       );
     case "delivery_map":
       return (
-        <div className="h-full w-full bg-gradient-to-br from-primary/10 to-primary/30 flex items-center justify-center relative">
+        <div className="h-full w-full bg-linear-to-br from-primary/10 to-primary/30 flex items-center justify-center relative">
           <MapIcon className="h-5 w-5 text-primary/70" />
           <div className="absolute bottom-1 left-1 right-1 h-0.5 bg-white/30 rounded-full" />
         </div>
@@ -1181,7 +1181,7 @@ function SortableRow({
       {/* ── Mini-mockup visual del bloque ─────────────────────────────── */}
       <div
         className={cn(
-          "h-16 mx-3.5 mb-3.5 rounded-xl border overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card transition-all",
+          "h-16 mx-3.5 mb-3.5 rounded-xl border overflow-hidden bg-linear-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card transition-all",
           section.enabled
             ? "border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
             : "border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] opacity-50"
@@ -1478,7 +1478,7 @@ export default function StorefrontEditor() {
            cambia cuando activa/desactiva un link. */
         <div className="space-y-5">
           {/* ── Preview del menu navbar real ────────────────────────── */}
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card overflow-hidden">
+          <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-linear-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card overflow-hidden">
             <div className="px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-white/50 dark:bg-[var(--surface-raised)]/50">
               Vista previa de tu menú
             </div>

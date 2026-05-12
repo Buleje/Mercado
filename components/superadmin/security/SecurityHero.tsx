@@ -40,7 +40,7 @@ const STATUS_CONFIG: Record<
   },
   critical: {
     label: "Crítico",
-    cls: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
 };

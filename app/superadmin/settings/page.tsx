@@ -477,13 +477,13 @@ function PlanPriceCard({
     violet: {
       border: "border-violet-300/40 dark:border-violet-700/40",
       badge:
-        "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300",
+        "bg-violet-100 dark:bg-violet-950/40 text-[var(--accent)] dark:text-[var(--accent)]",
       ring: "focus-within:ring-violet-400/40",
     },
     indigo: {
       border: "border-indigo-300/40 dark:border-indigo-700/40",
       badge:
-        "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300",
+        "bg-indigo-100 dark:bg-indigo-950/40 text-[var(--accent)] dark:text-[var(--accent)]",
       ring: "focus-within:ring-indigo-400/40",
     },
   }[tier.accent];

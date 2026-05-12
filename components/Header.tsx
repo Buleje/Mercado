@@ -1196,7 +1196,7 @@ export default function Header() {
               className={cn(
                 "relative flex items-center justify-center rounded-full transition-all shrink-0",
                 hasActiveOrder
-                  ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400 shadow-[var(--shadow-lg)] shadow-amber-400/30 hover:bg-amber-200"
+                  ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400 shadow-[var(--shadow-lg)] shadow-md/30 hover:bg-amber-200"
                   : scrolled
                     ? "h-9 w-9 bg-primary/10 text-primary hover:bg-primary/20"
                     : "h-9 w-9 bg-white/15 text-white hover:bg-white/25"

@@ -67,13 +67,13 @@ function PreviewSectionBox({
 }) {
   return (
     <section className="rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden shadow-sm">
-      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-soft)] bg-gradient-to-r from-[var(--accent)]/5 via-[var(--surface-canvas)] to-[var(--surface-canvas)] px-5 sm:px-6 py-4 sm:py-5">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-soft)] bg-linear-to-r from-[var(--accent)]/5 via-[var(--surface-canvas)] to-[var(--surface-canvas)] px-5 sm:px-6 py-4 sm:py-5">
         <div className="min-w-0">
           <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
             <span className="h-[3px] w-8 rounded-full bg-[var(--accent)]" aria-hidden />
             {eyebrow}
           </p>
-          <h3 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] mt-2 leading-tight">
+          <h3 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] mt-2 leading-tight">
             {title}
           </h3>
           <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5 font-semibold">{subtitle}</p>

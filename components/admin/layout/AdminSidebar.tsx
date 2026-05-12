@@ -642,11 +642,11 @@ export function AdminSidebar({
         compras: "text-orange-300/90",
         finanzas: "text-emerald-300/90",
         clientes: "text-[var(--data-error-500)]/90",
-        "marketplace-ops": "text-fuchsia-300/90",
+        "marketplace-ops": "text-[var(--accent)]/90",
         analytics: "text-cyan-300/90",
         comunicacion: "text-teal-300/90",
         documentos: "text-slate-300/90",
-        "mi-tienda": "text-pink-300/90",
+        "mi-tienda": "text-[var(--accent)]/90",
         metas: "text-yellow-300/90",
       }
     : {
@@ -657,11 +657,11 @@ export function AdminSidebar({
         compras: "text-orange-600",
         finanzas: "text-[var(--data-success-600)]",
         clientes: "text-[var(--data-error-500)]",
-        "marketplace-ops": "text-fuchsia-600",
+        "marketplace-ops": "text-[var(--accent)]",
         analytics: "text-cyan-600",
         comunicacion: "text-[var(--accent-dark)]",
         documentos: "text-slate-600",
-        "mi-tienda": "text-pink-600",
+        "mi-tienda": "text-[var(--accent)]",
         metas: "text-yellow-600",
       };
 

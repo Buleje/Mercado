@@ -482,7 +482,7 @@ function PresetCard({
           {preset.meta.author === "buleje" ? "Oficial" : "Custom"}
         </span>
         <h3
-          className="mt-1.5 text-xl font-black leading-tight tracking-[-0.01em]"
+          className="mt-1.5 text-xl font-black leading-tight tracking-tight"
           style={{ color: preset.colors.textPrimary }}
         >
           {preset.meta.name}

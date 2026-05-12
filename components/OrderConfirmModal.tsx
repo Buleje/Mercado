@@ -191,7 +191,7 @@ export default function OrderConfirmModal() {
                   onClick={handleReject}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[var(--data-error-500)] px-5 py-3.5 text-base font-bold text-white shadow-[var(--shadow-md)] shadow-red-500/20 hover:bg-[var(--data-error-600)] transition-all"
+                  className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-[var(--data-error-500)] px-5 py-3.5 text-base font-bold text-white shadow-[var(--shadow-md)] shadow-md/20 hover:bg-[var(--data-error-600)] transition-all"
                 >
                   <XCircle className="h-5 w-5" />
                   Rechazar pedido

@@ -247,7 +247,7 @@ export default function QuickAddModal() {
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 340, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-2xl mx-0 sm:mx-4 max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-[28px] bg-white shadow-[0_25px_60px_-12px_rgba(0,0,0,0.35)] dark:bg-[var(--surface-raised)] border border-[var(--rule-base)]"
+            className="relative w-full max-w-2xl mx-0 sm:mx-4 max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-[28px] bg-white shadow-[var(--shadow-xl)] dark:bg-[var(--surface-raised)] border border-[var(--rule-base)]"
           >
             {/* Botón cerrar flotante (sobre la imagen) */}
             <button
@@ -262,7 +262,7 @@ export default function QuickAddModal() {
             {/* Body con scroll — layout 2-col en desktop (imagen + info) */}
             <div className="flex flex-1 flex-col overflow-y-auto sm:flex-row">
               {/* Columna IMAGEN (40% en desktop, 100% mobile) */}
-              <div className="relative shrink-0 w-full sm:w-[44%] aspect-[4/3] sm:aspect-auto sm:min-h-[420px] bg-gradient-to-br from-[var(--surface-sunken)] to-[var(--surface-canvas)]">
+              <div className="relative shrink-0 w-full sm:w-[44%] aspect-[4/3] sm:aspect-auto sm:min-h-[420px] bg-linear-to-br from-[var(--surface-sunken)] to-[var(--surface-canvas)]">
                 {product.image ? (
                   <Image
                     src={product.image}

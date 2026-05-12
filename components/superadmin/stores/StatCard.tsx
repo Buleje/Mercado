@@ -30,7 +30,7 @@ export function StatCard({ icon, label, value, sub, trend }: StatCardProps) {
             trend === "up"
               ? "text-[var(--data-success-500)]"
               : trend === "down"
-                ? "text-rose-600 dark:text-rose-400"
+                ? "text-[var(--accent)] dark:text-[var(--accent)]"
                 : "text-[var(--text-tertiary)]"
           }`}
         >

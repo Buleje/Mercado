@@ -72,7 +72,7 @@ export default function ExplorarHowItWorks() {
         {/* Connector line desktop */}
         <div
           aria-hidden
-          className="hidden md:block absolute top-[88px] left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-[var(--accent)]/40 to-transparent z-0"
+          className="hidden md:block absolute top-[88px] left-[16%] right-[16%] h-px bg-linear-to-r from-transparent via-[var(--accent)]/40 to-transparent z-0"
         />
 
         {STEPS.map((s, idx) => {
@@ -99,7 +99,7 @@ export default function ExplorarHowItWorks() {
                 <p className="mt-5 text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                   Paso {s.num}
                 </p>
-                <h3 className="mt-1.5 font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-[1.05]">
+                <h3 className="mt-1.5 font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-[1.05]">
                   {s.title}
                 </h3>
                 <p className="mt-3 text-sm sm:text-base text-[var(--text-secondary)] leading-snug font-semibold">

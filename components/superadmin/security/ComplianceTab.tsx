@@ -48,7 +48,7 @@ const STATUS_META: Record<
   fail: {
     label: "No cumple",
     icon: XCircle,
-    cls: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
   na: {
@@ -276,7 +276,7 @@ export function ComplianceTab() {
             </div>
           </div>
           {/* Percentage display */}
-          <div className="flex items-center justify-center border-t md:border-t-0 md:border-l border-[var(--rule-soft)] bg-gradient-to-br from-[var(--accent)]/5 via-transparent to-transparent p-8">
+          <div className="flex items-center justify-center border-t md:border-t-0 md:border-l border-[var(--rule-soft)] bg-linear-to-br from-[var(--accent)]/5 via-transparent to-transparent p-8">
             <div className="text-center">
               <p className="font-display text-6xl font-extrabold tabular-nums tracking-tight text-[var(--accent)]">
                 {stats.percentage}%
@@ -592,7 +592,7 @@ function ExportDialog({
             {error && (
               <p
                 role="alert"
-                className="flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400"
+                className="flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]"
               >
                 <AlertTriangle className="h-3 w-3 shrink-0" />
                 {error}

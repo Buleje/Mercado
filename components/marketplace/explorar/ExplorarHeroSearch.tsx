@@ -194,7 +194,7 @@ export default function ExplorarHeroSearch() {
           <div className="grid grid-cols-4 gap-3 sm:gap-6">
             {STATS.map((s) => (
               <div key={s.label} className="text-center sm:text-left group cursor-default">
-                <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-black tabular-nums tracking-[-0.025em] text-[var(--text-primary)] leading-none transition-colors group-hover:text-[var(--accent)]">
+                <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-black tabular-nums tracking-tight text-[var(--text-primary)] leading-none transition-colors group-hover:text-[var(--accent)]">
                   {s.value}
                 </p>
                 <p className="mt-1.5 text-[length:var(--ts-2xs)] sm:text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -251,7 +251,7 @@ export default function ExplorarHeroSearch() {
       {/* Bottom fade */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-[var(--surface-canvas)]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-b from-transparent to-[var(--surface-canvas)]"
       />
     </section>
   );

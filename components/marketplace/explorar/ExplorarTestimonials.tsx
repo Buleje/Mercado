@@ -84,7 +84,7 @@ export default function ExplorarTestimonials() {
               </div>
 
               {/* Quote */}
-              <p className="font-display text-lg sm:text-xl font-black text-[var(--text-primary)] leading-snug tracking-[-0.01em]">
+              <p className="font-display text-lg sm:text-xl font-black text-[var(--text-primary)] leading-snug tracking-tight">
                 &ldquo;{r.text}&rdquo;
               </p>
 

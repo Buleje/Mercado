@@ -386,5 +386,5 @@ export const SECTION_TAG_STYLES: Record<SectionTemplate["tag"], string> = {
   informacion: "bg-[var(--accent-soft)] text-[var(--accent)]",
   operaciones: "bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)]",
   trust: "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)]",
-  soporte: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+  soporte: "bg-violet-100 text-[var(--accent)] dark:bg-violet-950/40 dark:text-[var(--accent)]",
 };

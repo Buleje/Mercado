@@ -56,7 +56,7 @@ export default function MarketplacePriceRangesStrip() {
         <p className="text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
           Compra por presupuesto
         </p>
-        <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
           ¿Cuánto querés gastar hoy?
         </h2>
       </header>

@@ -436,7 +436,7 @@ export function NavegacionTab() {
         </header>
 
         {/* Mockup */}
-        <div className="bg-gradient-to-b from-[var(--surface-sunken)] to-transparent p-6">
+        <div className="bg-linear-to-b from-[var(--surface-sunken)] to-transparent p-6">
           <div
             className={`mx-auto transition-all ${
               previewDevice === "mobile" ? "max-w-[380px]" : "max-w-full"
@@ -585,7 +585,7 @@ export function NavegacionTab() {
             const Icon = mode.icon;
             const tonePill = {
               accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-              violet: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+              violet: "bg-violet-100 text-[var(--accent)] dark:bg-violet-950/40 dark:text-[var(--accent)]",
               amber: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
             }[mode.tone];
             return (
@@ -761,11 +761,11 @@ function NavbarLinkChip({
         }
       }}
       title={`Click para ocultar "${label}"\n${href}`}
-      className="group relative inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm font-bold text-[var(--text-primary)] transition cursor-pointer hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 dark:hover:border-rose-700/40 dark:hover:bg-rose-950/30 dark:hover:text-rose-300"
+      className="group relative inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm font-bold text-[var(--text-primary)] transition cursor-pointer hover:border-rose-300 hover:bg-rose-50 hover:text-[var(--accent)] dark:hover:border-rose-700/40 dark:hover:bg-rose-950/30 dark:hover:text-[var(--accent)]"
     >
       <span>{label}</span>
       <X
-        className="h-3 w-3 text-[var(--text-tertiary)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-rose-600 dark:group-hover:text-rose-300"
+        className="h-3 w-3 text-[var(--text-tertiary)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--accent)] dark:group-hover:text-[var(--accent)]"
         strokeWidth={2.5}
       />
     </div>
@@ -788,11 +788,11 @@ function MobileNavLink({
       title={`Click para ocultar "${label}"\n${href}`}
       className="group flex w-full items-center justify-between gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 text-left transition hover:border-rose-300 hover:bg-rose-50 dark:hover:border-rose-700/40 dark:hover:bg-rose-950/30"
     >
-      <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-rose-700 dark:group-hover:text-rose-300">
+      <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] dark:group-hover:text-[var(--accent)]">
         {label}
       </span>
       <X
-        className="h-3.5 w-3.5 text-[var(--text-tertiary)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-rose-600 dark:group-hover:text-rose-300"
+        className="h-3.5 w-3.5 text-[var(--text-tertiary)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--accent)] dark:group-hover:text-[var(--accent)]"
         strokeWidth={2.5}
       />
     </button>

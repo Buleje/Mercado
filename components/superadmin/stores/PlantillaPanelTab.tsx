@@ -415,7 +415,7 @@ export function PlantillaPanelTab() {
                 <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
                 Configuración global · Plantilla
               </p>
-              <h2 className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tracking-[-0.025em] text-[var(--text-primary)] leading-[1.05]">
+              <h2 className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tracking-tight text-[var(--text-primary)] leading-[1.05]">
                 Plantilla del{" "}
                 <span className="italic font-serif text-[var(--accent)]">Panel Admin.</span>
               </h2>
@@ -456,7 +456,7 @@ export function PlantillaPanelTab() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
                 {s.label}
               </p>
-              <p className="text-2xl font-black tabular-nums tracking-[-0.025em] leading-none">
+              <p className="text-2xl font-black tabular-nums tracking-tight leading-none">
                 <span
                   className={
                     s.accent ? "text-[var(--accent)]" :

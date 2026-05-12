@@ -25,8 +25,8 @@ const ICON_BG: Record<KPITone, string> = {
   teal: "bg-[var(--accent)]/10 text-[var(--accent)]",
   sky: "bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300",
   amber: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-  purple: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
-  rose: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+  purple: "bg-violet-100 text-[var(--accent)] dark:bg-violet-950/40 dark:text-[var(--accent)]",
+  rose: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
 };
 
 interface Props {
@@ -105,7 +105,7 @@ export function KPIHeroCard({
     trend === "up"
       ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
       : trend === "down"
-        ? "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300"
+        ? "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)]";
 
   return (

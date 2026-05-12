@@ -172,7 +172,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
           {/* Promo principal — ocupa 2 columnas en desktop */}
           {hasImage ? (
             // ─── VARIANTE CON IMAGEN — banner inmersivo ───────────────
-            <div className="sm:col-span-2 relative overflow-hidden rounded-3xl border border-[var(--rule-soft)] min-h-[300px] sm:min-h-[400px] group shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)]">
+            <div className="sm:col-span-2 relative overflow-hidden rounded-3xl border border-[var(--rule-soft)] min-h-[300px] sm:min-h-[400px] group shadow-[var(--shadow-xl)]">
               <Image
                 src={promo.image!}
                 alt={promo.title}
@@ -183,7 +183,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 unoptimized={promo.image!.startsWith("data:")}
               />
               {/* Overlay degradado para legibilidad */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />
+              <div className="absolute inset-0 bg-linear-to-r from-black/75 via-black/45 to-black/15" />
 
               <div className="relative z-10 h-full flex flex-col justify-end px-7 sm:px-12 py-8 sm:py-10 max-w-2xl">
                 <div className="inline-flex items-center gap-1.5 self-start mb-4 px-3.5 py-2 rounded-full bg-white/95 backdrop-blur-sm shadow-[var(--shadow-lg)]">
@@ -201,7 +201,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 {ctaHref ? (
                   <Link
                     href={ctaHref}
-                    className="mt-6 self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[var(--color-primary)] text-base font-extrabold shadow-[var(--shadow-xl)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-[1.03] active:scale-[0.99] transition-all"
+                    className="mt-6 self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[var(--color-primary)] text-base font-extrabold shadow-[var(--shadow-xl)] hover:shadow-[var(--shadow-xl)] hover:scale-[1.03] active:scale-[0.99] transition-all"
                   >
                     {promo.cta}
                     <ArrowRight className="w-5 h-5" />
@@ -209,7 +209,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 ) : (
                   <button
                     onClick={handleCta}
-                    className="mt-6 self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[var(--color-primary)] text-base font-extrabold shadow-[var(--shadow-xl)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-[1.03] active:scale-[0.99] transition-all"
+                    className="mt-6 self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[var(--color-primary)] text-base font-extrabold shadow-[var(--shadow-xl)] hover:shadow-[var(--shadow-xl)] hover:scale-[1.03] active:scale-[0.99] transition-all"
                   >
                     {promo.cta}
                     <ArrowRight className="w-5 h-5" />
@@ -219,7 +219,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
             </div>
           ) : (
             // ─── VARIANTE WASH TEAL — fallback editorial con presencia ──────────────
-            <div className="sm:col-span-2 relative flex flex-col sm:flex-row items-center gap-5 sm:gap-10 bg-gradient-to-br from-[color-mix(in_oklch,var(--surface-canvas)_85%,var(--color-primary)_15%)] to-[color-mix(in_oklch,var(--surface-canvas)_92%,var(--color-primary)_8%)] rounded-3xl border-2 border-[var(--color-primary)]/15 px-6 sm:px-10 py-8 sm:py-10 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.10)] min-h-[260px]">
+            <div className="sm:col-span-2 relative flex flex-col sm:flex-row items-center gap-5 sm:gap-10 bg-linear-to-br from-[color-mix(in_oklch,var(--surface-canvas)_85%,var(--color-primary)_15%)] to-[color-mix(in_oklch,var(--surface-canvas)_92%,var(--color-primary)_8%)] rounded-3xl border-2 border-[var(--color-primary)]/15 px-6 sm:px-10 py-8 sm:py-10 shadow-[var(--shadow-xl)] min-h-[260px]">
               <span className="shrink-0 h-20 w-20 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-white hidden sm:inline-flex shadow-[var(--shadow-xl)] shadow-[var(--color-primary)]/30" aria-hidden="true">
                 <Tag className="w-9 h-9" strokeWidth={2} />
               </span>
@@ -274,7 +274,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 <span className="absolute top-0 right-0 h-16 w-16 rounded-full bg-[var(--color-primary)]/8 blur-2xl group-hover:bg-[var(--color-primary)]/15 transition-colors" aria-hidden="true" />
 
                 <div className="relative">
-                  <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold text-[var(--color-primary)] uppercase tracking-[0.15em] mb-2">
+                  <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold text-[var(--color-primary)] uppercase tracking-[var(--tracking-eyebrow)] mb-2">
                     <Tag className="w-2.5 h-2.5" />
                     {sp.category.replace(/-/g, " ")}
                   </span>

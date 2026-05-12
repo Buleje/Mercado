@@ -615,7 +615,7 @@ function MarketplaceTiendaTab() {
       )}
 
       {/* ── Hero preview: cómo se verá tu tienda en el marketplace ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-gradient-to-br from-primary/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-primary/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5">
           {/* Logo / Avatar */}
@@ -1160,7 +1160,7 @@ function MarketplaceComisionesTab() {
       )}
 
       {/* ── Hero card: total + barra de distribución ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-gradient-to-br from-primary/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-primary/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="absolute -top-20 -right-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
           <div>
@@ -1574,7 +1574,7 @@ function NewCouponModal({
         aria-label="Crear nuevo cupón"
       >
         {/* Header con preview del cupón */}
-        <div className="relative overflow-hidden rounded-t-3xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 border-b border-[var(--rule-base)]">
+        <div className="relative overflow-hidden rounded-t-3xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent p-6 border-b border-[var(--rule-base)]">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 h-8 w-8 inline-flex items-center justify-center rounded-full bg-white border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
@@ -1836,7 +1836,7 @@ function MarketplaceResenasTab() {
   return (
     <div className="space-y-6">
       {/* ── Hero: rating promedio + distribución ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-gradient-to-br from-[var(--data-warning)]/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-[var(--data-warning)]/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-[var(--data-warning)]/10 blur-3xl pointer-events-none" />
         <div className="relative grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-6 items-center">
           {/* Promedio grande */}
@@ -1978,7 +1978,7 @@ function MarketplaceResenasTab() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       {/* Avatar con iniciales */}
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 text-primary font-extrabold text-sm shrink-0">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-primary/20 to-primary/5 border border-primary/20 text-primary font-extrabold text-sm shrink-0">
                         {initials(review.name)}
                       </div>
 
@@ -2227,7 +2227,7 @@ function MarketplaceFidelidadTab() {
             <div
               key={key}
               className={cn(
-                "relative overflow-hidden rounded-2xl border-2 p-4 transition-all bg-gradient-to-br",
+                "relative overflow-hidden rounded-2xl border-2 p-4 transition-all bg-linear-to-br",
                 tv.gradient,
                 isCurrent ? `ring-4 ${tv.ring} border-[var(--data-warning)]` : "border-[var(--rule-base)]"
               )}
@@ -2295,7 +2295,7 @@ function MarketplaceFidelidadTab() {
         <div className="space-y-4">
           {/* Hero del cliente */}
           <div className={cn(
-            "relative overflow-hidden rounded-2xl border-2 p-5 sm:p-6 bg-gradient-to-br",
+            "relative overflow-hidden rounded-2xl border-2 p-5 sm:p-6 bg-linear-to-br",
             currentTier.gradient
           )}>
             <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">

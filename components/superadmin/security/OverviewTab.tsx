@@ -70,13 +70,13 @@ const SEVERITY_META: Record<
   critical: {
     icon: ShieldAlert,
     label: "Crítica",
-    cls: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
   high: {
     icon: ShieldAlert,
     label: "Alta",
-    cls: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
   medium: {
@@ -187,7 +187,7 @@ export function OverviewTab() {
         role="alert"
         className="rounded-2xl border border-rose-300/60 bg-rose-50/40 p-5 dark:border-rose-700/40 dark:bg-rose-950/30"
       >
-        <div className="flex items-start gap-3 text-rose-700 dark:text-rose-300">
+        <div className="flex items-start gap-3 text-[var(--accent)] dark:text-[var(--accent)]">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
             <p className="font-display text-base font-extrabold">
@@ -474,7 +474,7 @@ function KpiCard({
     tone === "warning"
       ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
       : tone === "danger"
-        ? "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300"
+        ? "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]"
         : tone === "success"
           ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
           : "bg-[var(--accent)]/10 text-[var(--accent)]";
@@ -482,7 +482,7 @@ function KpiCard({
     tone === "warning"
       ? "text-amber-700 dark:text-amber-300"
       : tone === "danger"
-        ? "text-rose-700 dark:text-rose-300"
+        ? "text-[var(--accent)] dark:text-[var(--accent)]"
         : "text-[var(--text-primary)]";
   return (
     <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
@@ -516,7 +516,7 @@ function PostureCheck({
   const meta = {
     ok: { cls: "text-[var(--data-success-500)]", dot: "bg-[var(--data-success-500)]", txt: "Activo" },
     warning: { cls: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500", txt: "Revisar" },
-    error: { cls: "text-rose-600 dark:text-rose-400", dot: "bg-rose-500", txt: "Inactivo" },
+    error: { cls: "text-[var(--accent)] dark:text-[var(--accent)]", dot: "bg-rose-500", txt: "Inactivo" },
   }[status];
   return (
     <li className="flex items-center justify-between gap-3 px-5 py-3">

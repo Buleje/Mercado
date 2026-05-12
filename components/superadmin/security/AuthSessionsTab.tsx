@@ -246,7 +246,7 @@ export function AuthSessionsTab() {
         <button
           type="button"
           onClick={() => setRevokeOpen(true)}
-          className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-rose-600/20 transition hover:bg-rose-700"
+          className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-md/20 transition hover:bg-rose-700"
         >
           <LogOut className="h-4 w-4" strokeWidth={2.5} />
           Forzar logout
@@ -279,7 +279,7 @@ export function AuthSessionsTab() {
         ) : error ? (
           <div
             role="alert"
-            className="m-5 rounded-xl border border-rose-300/60 bg-rose-50/40 p-4 flex items-start gap-2 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300"
+            className="m-5 rounded-xl border border-rose-300/60 bg-rose-50/40 p-4 flex items-start gap-2 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
           >
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <span className="text-sm">{error}</span>
@@ -496,7 +496,7 @@ export function AuthSessionsTab() {
           <AlertDialog.Overlay className="fixed inset-0 z-[60] bg-black/65 backdrop-blur-sm" />
           <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-2xl p-6">
             <div className="flex items-start gap-3">
-              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300">
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]">
                 <AlertTriangle className="h-5 w-5" strokeWidth={1.75} aria-hidden />
               </span>
               <div className="flex-1 min-w-0">
@@ -529,7 +529,7 @@ export function AuthSessionsTab() {
                   void handleRevokeAll();
                 }}
                 disabled={revoking}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-extrabold uppercase tracking-wider bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/20 disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-extrabold uppercase tracking-wider bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-md/20 disabled:opacity-50"
               >
                 {revoking ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -565,7 +565,7 @@ function MiniKpi({
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
     warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   return (

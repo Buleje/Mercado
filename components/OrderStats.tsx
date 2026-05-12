@@ -57,7 +57,7 @@ export function OrderStats({
       label: "Completados",
       value: completedOrders.toString(),
       icon: CheckCircle2,
-      color: "text-[var(--accent)] dark:text-violet-400",
+      color: "text-[var(--accent)] dark:text-[var(--accent)]",
       bgColor: "bg-violet-50 dark:bg-violet-950/20",
     },
   ];
@@ -68,7 +68,7 @@ export function OrderStats({
         label: "Ticket Promedio",
         value: `S/${averageOrderValue.toFixed(2)}`,
         icon: Package,
-        color: "text-indigo-600 dark:text-indigo-400",
+        color: "text-[var(--accent)] dark:text-[var(--accent)]",
         bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
       }
     );

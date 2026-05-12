@@ -262,7 +262,7 @@ export default function SpinWheel() {
       `}</style>
 
       <div
-        className="relative max-w-md w-full p-6 sm:p-8 text-center rounded-[28px] bg-gradient-to-br from-white via-white to-[var(--color-primary)]/5 dark:from-card dark:via-card dark:to-[var(--color-primary)]/10 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.5)] border border-white/40 dark:border-white/10"
+        className="relative max-w-md w-full p-6 sm:p-8 text-center rounded-[28px] bg-linear-to-br from-white via-white to-[var(--color-primary)]/5 dark:from-card dark:via-card dark:to-[var(--color-primary)]/10 shadow-[var(--shadow-xl)] border border-white/40 dark:border-white/10"
         style={{ animation: "spinwheel-pop 0.4s cubic-bezier(0.16,1,0.3,1) both" }}
       >
         {/* Close button */}
@@ -280,7 +280,7 @@ export default function SpinWheel() {
             {/* Header con gift box */}
             <div className="mb-5">
               <div
-                className="mx-auto w-20 h-20 rounded-3xl flex items-center justify-center mb-4 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] shadow-xl shadow-[var(--color-primary)]/40 relative"
+                className="mx-auto w-20 h-20 rounded-3xl flex items-center justify-center mb-4 bg-linear-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] shadow-xl shadow-[var(--color-primary)]/40 relative"
                 style={{ animation: spinning ? "none" : "spinwheel-pulse 2s ease-in-out infinite" }}
               >
                 <Gift className="w-10 h-10 text-white" strokeWidth={1.75} />
@@ -339,7 +339,7 @@ export default function SpinWheel() {
               type="button"
               onClick={spin}
               disabled={spinning}
-              className="w-full h-14 rounded-2xl bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-extrabold text-base tracking-wide shadow-xl shadow-[var(--color-primary)]/35 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full h-14 rounded-2xl bg-linear-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-extrabold text-base tracking-wide shadow-xl shadow-[var(--color-primary)]/35 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {spinning ? (
                 <span className="inline-flex items-center gap-2">
@@ -391,8 +391,8 @@ export default function SpinWheel() {
                 className={cn(
                   "mx-auto w-24 h-24 rounded-full flex items-center justify-center mb-4 shadow-xl",
                   result.value === -1
-                    ? "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shadow-gray-300/40"
-                    : "bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 shadow-amber-500/40"
+                    ? "bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 shadow-gray-300/40"
+                    : "bg-linear-to-br from-amber-300 via-amber-400 to-amber-500 shadow-md/40"
                 )}
               >
                 {result.value === -1 ? (
@@ -412,7 +412,7 @@ export default function SpinWheel() {
               </p>
 
               {result.value !== -1 && (
-                <div className="bg-gradient-to-br from-[var(--color-primary)]/10 to-[var(--color-primary)]/5 rounded-2xl px-5 py-5 mb-5 border-2 border-[var(--color-primary)]/20">
+                <div className="bg-linear-to-br from-[var(--color-primary)]/10 to-[var(--color-primary)]/5 rounded-2xl px-5 py-5 mb-5 border-2 border-[var(--color-primary)]/20">
                   <p className="text-3xl sm:text-4xl font-extrabold text-[var(--color-primary)] tracking-tight mb-3">
                     {result.label}
                   </p>
@@ -431,7 +431,7 @@ export default function SpinWheel() {
                         }}
                         className="inline-flex items-center gap-3 w-full justify-center px-4 py-3.5 bg-white dark:bg-surface rounded-xl border-2 border-dashed border-[var(--color-primary)]/50 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 transition-all"
                       >
-                        <span className="font-mono text-xl sm:text-2xl font-extrabold text-[var(--color-primary)] tracking-[0.15em]">{couponCode}</span>
+                        <span className="font-mono text-xl sm:text-2xl font-extrabold text-[var(--color-primary)] tracking-[var(--tracking-eyebrow)]">{couponCode}</span>
                         {copied ? (
                           <span className="inline-flex items-center gap-1 text-[var(--data-success-600)]">
                             <Check className="h-4 w-4" />
@@ -465,7 +465,7 @@ export default function SpinWheel() {
             <button
               type="button"
               onClick={dismiss}
-              className="w-full h-14 rounded-2xl bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-extrabold text-base tracking-wide shadow-xl shadow-[var(--color-primary)]/35 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.99] transition-all"
+              className="w-full h-14 rounded-2xl bg-linear-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-extrabold text-base tracking-wide shadow-xl shadow-[var(--color-primary)]/35 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.99] transition-all"
             >
               {result.value === -1 ? "Seguir comprando" : "¡Genial, a comprar!"}
             </button>

@@ -478,7 +478,7 @@ export default function RecetarioClient() {
             <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               Recetario peruano
             </p>
-            <h1 className="mt-1 font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+            <h1 className="mt-1 font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
               Cocina rico con lo que hay en tu bodega
             </h1>
             <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] max-w-2xl">

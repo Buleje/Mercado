@@ -55,17 +55,17 @@ const ACTION_META: Record<
   },
   login_locked: {
     label: "login_locked",
-    cls: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
   login_honeypot: {
     label: "login_honeypot",
-    cls: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
   "2fa_failed": {
     label: "2fa_failed",
-    cls: "border-rose-300/60 bg-rose-50/60 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300",
+    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
   "2fa_challenge": {
@@ -368,7 +368,7 @@ export function AuditLogTab() {
         ) : error ? (
           <div
             role="alert"
-            className="m-5 rounded-xl border border-rose-300/60 bg-rose-50/40 p-4 flex items-start gap-2 text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300"
+            className="m-5 rounded-xl border border-rose-300/60 bg-rose-50/40 p-4 flex items-start gap-2 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
           >
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <span className="text-sm">{error}</span>
@@ -491,7 +491,7 @@ function MiniStat({
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
     warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300",
+    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   return (

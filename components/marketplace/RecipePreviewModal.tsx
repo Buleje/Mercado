@@ -238,7 +238,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                   </span>
                 )}
               </div>
-              <Dialog.Title className="font-display text-2xl sm:text-3xl font-black text-white leading-tight tracking-[-0.02em] drop-shadow-md">
+              <Dialog.Title className="font-display text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight drop-shadow-md">
                 {recipe.nombre}
               </Dialog.Title>
             </div>

@@ -166,7 +166,7 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
           exit={{ opacity: 0, y: -16 }}
           role="status"
           aria-live="polite"
-          className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2 rounded-xl bg-[var(--data-success-600)] px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-emerald-900/20"
+          className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2 rounded-xl bg-[var(--data-success-600)] px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-md/20"
         >
           {sharedCartToast}
         </m.div>

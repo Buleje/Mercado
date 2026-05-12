@@ -83,7 +83,7 @@ const STATUS_META = {
   },
   rejected: {
     label: "Rechazado",
-    pill: "border-rose-300 bg-rose-100/80 text-rose-800 dark:border-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+    pill: "border-rose-300 bg-rose-100/80 text-[var(--accent)] dark:border-rose-700 dark:bg-rose-950/50 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
 } as const;
@@ -276,7 +276,7 @@ export default function PagosPendientesClient() {
 
       {/* ─── Error ──────────────────────────────────────────────── */}
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border-2 border-rose-300/50 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/50 dark:bg-rose-950/40 dark:text-rose-300">
+        <div className="flex items-center gap-3 rounded-xl border-2 border-rose-300/50 bg-rose-50 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/50 dark:bg-rose-950/40 dark:text-[var(--accent)]">
           <X className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden />
           {error}
         </div>
@@ -441,7 +441,7 @@ function ProofCard({ proof, onClick }: { proof: PaymentProof; onClick: () => voi
         {/* Bottom gradient overlay */}
         <div
           aria-hidden
-          className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent"
+          className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/70 via-black/30 to-transparent"
         />
         {/* Top badges */}
         <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
@@ -627,7 +627,7 @@ function ProofModal({
                 <button
                   disabled={actioning}
                   onClick={onApprove}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:opacity-60"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-md/20 transition hover:bg-emerald-700 disabled:opacity-60"
                 >
                   {actioning ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -650,8 +650,8 @@ function ProofModal({
                   onClick={() => setRejectOpen(!rejectOpen)}
                   className={`inline-flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-bold transition ${
                     rejectOpen
-                      ? "border-rose-400 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-rose-300 hover:text-rose-600 dark:hover:text-rose-400"
+                      ? "border-rose-400 bg-rose-50 text-[var(--accent)] dark:bg-rose-950/40 dark:text-[var(--accent)]"
+                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-rose-300 hover:text-[var(--accent)] dark:hover:text-[var(--accent)]"
                   }`}
                 >
                   <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
@@ -660,7 +660,7 @@ function ProofModal({
               </div>
               {rejectOpen && (
                 <div className="rounded-xl border-2 border-rose-300/60 bg-rose-50/60 p-3 dark:border-rose-700/40 dark:bg-rose-950/30">
-                  <label className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-300">
+                  <label className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:text-[var(--accent)]">
                     Motivo del rechazo (lo recibe por WhatsApp)
                   </label>
                   <textarea

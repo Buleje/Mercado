@@ -92,7 +92,7 @@ export function LocationConfirmModal({
             style={{ boxShadow: "0 30px 70px -15px rgba(0,0,0,0.45)" }}
           >
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-[var(--rule-soft)] bg-gradient-to-b from-[color-mix(in_oklch,var(--color-primary,#00B4A6)_4%,transparent)] to-transparent">
+            <div className="flex items-start justify-between gap-3 px-6 py-5 border-b border-[var(--rule-soft)] bg-linear-to-b from-[color-mix(in_oklch,var(--color-primary,#00B4A6)_4%,transparent)] to-transparent">
               <div className="flex items-start gap-3 min-w-0">
                 <div
                   className="h-11 w-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md"

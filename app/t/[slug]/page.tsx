@@ -270,7 +270,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         {/* Gradient mask abajo para suavizar borde con la siguiente seccion */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[var(--surface-canvas)]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-b from-transparent to-[var(--surface-canvas)]"
         />
 
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-28 sm:pb-32">
@@ -292,7 +292,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 )}
               </p>
 
-              <h1 className="font-display text-[clamp(2.5rem,7vw,4.5rem)] font-black text-white tracking-[-0.035em] leading-[0.95] mb-5">
+              <h1 className="font-display text-[clamp(2.5rem,7vw,4.5rem)] font-black text-white tracking-[var(--ls-tight)] leading-[0.95] mb-5">
                 {heroTitle}
               </h1>
 
@@ -373,7 +373,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                       className="w-32 h-32 rounded-full object-cover"
                     />
                   ) : (
-                    <span className="text-7xl font-black text-white tracking-[-0.05em]">
+                    <span className="text-7xl font-black text-white tracking-[var(--ls-tight)]">
                       {logoText}
                     </span>
                   )}
@@ -570,7 +570,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
               Cómo pedir
             </p>
-            <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+            <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
               Hacé tu pedido en 3 pasos
             </h2>
           </div>
@@ -647,7 +647,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
             Información del negocio
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+          <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
             Lo que tenés que saber de {displayName}
           </h2>
         </div>
