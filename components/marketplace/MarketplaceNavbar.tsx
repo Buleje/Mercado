@@ -434,8 +434,12 @@ export default function MarketplaceNavbar() {
 
             {/* ── Right cluster (desktop) ── */}
             <div className="hidden md:flex items-center gap-1.5 ml-auto">
-              {/* Language + Theme — siempre arrancan en español + light */}
-              <LanguageSwitcher />
+              {/* Language + Theme — siempre arrancan en español + light.
+                  Brandon mayo 2026: el selector de idioma solo aparece
+                  cuando el superadmin tiene activo el modo "Marketplace
+                  completo". En Solo Tiendas (default) es ruido — los
+                  vecinos de Pucallpa solo hablan español. */}
+              {!isTiendasOnly && <LanguageSwitcher />}
               <ThemeToggle className="!h-10 !w-10" />
               <div
                 className="mx-0.5 h-6 w-px bg-[var(--rule-soft)]"

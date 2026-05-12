@@ -125,9 +125,9 @@ export default function CheckoutDatosPage() {
       <div className="pt-6 sm:pt-8 pb-6">
         <Link
           href="/marketplace/carrito"
-          className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors mb-2"
+          className="inline-flex items-center gap-2 h-11 sm:h-9 px-3.5 sm:px-3 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 transition-all shadow-sm mb-3"
         >
-          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
           Volver al carrito
         </Link>
         <h1 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">

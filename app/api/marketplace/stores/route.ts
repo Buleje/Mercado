@@ -146,10 +146,25 @@ export async function GET(req: NextRequest) {
           ? { OR: [{ category }, { slug: { in: manualCategoryStoreSlugs } }] }
           : { category }
         : {};
+      // Brandon mayo 2026: el filtro por zona antes solo matcheaba la columna
+      // DB store.zone, pero el response usa finalZone que tambien acepta el
+      // override del superadmin (manualStoreZones). Resultado: en /tiendas
+      // se mostraba "Calleria" pero al filtrar → 0 stores porque ninguna
+      // tienda lo tenia escrito en DB. Ahora el filtro hace OR(DB, override).
+      const zoneOverrideSlugs = zone
+        ? Object.entries(manualStoreZones)
+            .filter(([, z]) => z === zone)
+            .map(([slug]) => slug)
+        : [];
+      const zoneClause = zone
+        ? zoneOverrideSlugs.length > 0
+          ? { OR: [{ zone }, { slug: { in: zoneOverrideSlugs } }] }
+          : { zone }
+        : {};
       stores = await prisma.store.findMany({
         where: {
           isPublished: true,
-          ...(zone   && { zone }),
+          ...zoneClause,
           ...categoryClause,
           ...(search && { name: { contains: search, mode: "insensitive" as const } }),
         },
