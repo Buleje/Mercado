@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 // ─── Schemas de validación ────────────────────────────────────────────────────
 
@@ -115,6 +117,8 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-churn-playbooks"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requirePlatformAPI(req);
   if ("status" in auth) return auth;
 
@@ -157,6 +161,14 @@ export async function PATCH(req: NextRequest) {
     id,
     name: updated.name,
   });
+  logSuperadminAction(
+    "update_churn_playbook",
+    `Actualizó playbook "${updated.name}"`,
+    { playbookId: id, changes: updateData },
+    auth.username,
+  ).catch((err) =>
+    logger.error("[churn/playbooks PATCH] audit log failed", { err: String(err) }),
+  );
 
   return NextResponse.json({ playbook: updated });
 }
@@ -165,6 +177,8 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const _rl = await applyRateLimit(req, "STRICT", "superadmin-churn-playbooks"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requirePlatformAPI(req);
   if ("status" in auth) return auth;
 
@@ -190,6 +204,14 @@ export async function DELETE(req: NextRequest) {
     id,
     name: updated.name,
   });
+  logSuperadminAction(
+    "deactivate_churn_playbook",
+    `Desactivó playbook "${updated.name}"`,
+    { playbookId: id, previousName: existing.name },
+    auth.username,
+  ).catch((err) =>
+    logger.error("[churn/playbooks DELETE] audit log failed", { err: String(err) }),
+  );
 
   return NextResponse.json({ ok: true, playbook: updated });
 }

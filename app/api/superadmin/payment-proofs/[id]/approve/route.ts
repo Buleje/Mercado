@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 /**
  * POST /api/superadmin/payment-proofs/[id]/approve
@@ -90,6 +91,23 @@ export async function POST(
     logger.error("[payment-proof/approve] mark-approved failed", { error: String(err), proofId: id });
     return NextResponse.json({ error: "Error al aprobar" }, { status: 500 });
   }
+
+  // Audit log financial action — quién, qué tenant, qué plan, qué monto.
+  logSuperadminAction(
+    "approve_payment_proof",
+    `Aprobó pago de ${proof.ownerName} (${proof.tenantSlug}) — S/${proof.amountPEN} ${proof.planTier}`,
+    {
+      proofId: id,
+      tenantId,
+      tenantSlug: proof.tenantSlug,
+      planTier: proof.planTier,
+      amountPEN: proof.amountPEN,
+      method: proof.method,
+    },
+    platformUser,
+  ).catch((err) =>
+    logger.error("[payment-proof/approve] audit log failed", { err: String(err) }),
+  );
 
   // 3) WhatsApp de bienvenida — fire-and-forget
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";

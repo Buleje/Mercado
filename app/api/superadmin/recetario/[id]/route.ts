@@ -5,6 +5,8 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
+import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -99,6 +101,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-recetario-X"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   try {
     const session = await requirePlatform(req);
     if (!session) {
@@ -146,6 +150,15 @@ export async function PUT(
       data,
     });
 
+    logSuperadminAction(
+      "update_receta",
+      `Editó receta "${updated.nombre}" (tenant: ${updated.tenantId})`,
+      { recetaId: id, tenantId: updated.tenantId, changes: data },
+      session.username,
+    ).catch((err) =>
+      logger.error("[superadmin/recetario] PUT audit failed", { err: String(err) }),
+    );
+
     return NextResponse.json({
       id: updated.id,
       nombre: updated.nombre,
@@ -166,6 +179,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-recetario-X"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   try {
     const session = await requirePlatform(req);
     if (!session) {
@@ -185,6 +200,15 @@ export async function DELETE(
     // Delete ingredientes first (cascade should handle it, but be explicit)
     await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
     await prisma.receta.delete({ where: { id } });
+
+    logSuperadminAction(
+      "delete_receta",
+      `Eliminó receta "${existing.nombre}" (tenant: ${existing.tenantId})`,
+      { recetaId: id, tenantId: existing.tenantId, recetaName: existing.nombre },
+      session.username,
+    ).catch((err) =>
+      logger.error("[superadmin/recetario] DELETE audit failed", { err: String(err) }),
+    );
 
     return NextResponse.json({ ok: true, message: "Receta eliminada" });
   } catch (e) {
