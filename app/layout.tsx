@@ -4,25 +4,24 @@ import Script from "next/script";
 import { Geist, Instrument_Serif } from "next/font/google";
 
 // Body — Geist: tipografía moderna, neutral, optimizada para pantalla.
-// preload: false silencia el warning "preloaded but not used within a few
-// seconds" que se dispara cuando la navegación client-side retrasa el uso
-// inicial de la fuente. display:swap mantiene FOUT instantáneo.
+// PERF 2026-05-12 (Performance agent P0): preload TRUE para Geist (body
+// usado en TODAS las páginas). Reduce FOUT 300-600ms en 3G de Pucallpa.
+// Antes preload: false silenciaba un warning pero costaba tiempo real.
 const GeistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
-  preload: false,
+  preload: true,
 });
 
 // Display — Instrument Serif: serif contemporáneo con carácter editorial.
-// Menos florido que Fraunces italic, competente con las ilustraciones
-// line-art (paiche, tucán, doña elena). Regular weight 400.
-// Transmite: "diario independiente de barrio", no "logo de boutique".
+// PERF 2026-05-12: preload TRUE — fuente usada en headings/landing pages.
+// display:swap mantiene FOUT instantáneo si la fuente tarda.
 const InstrumentDisplay = Instrument_Serif({
   variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
-  preload: false,
+  preload: true,
   weight: ["400"],
   style: ["normal", "italic"],
 });

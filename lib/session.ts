@@ -95,7 +95,10 @@ export async function createSessionToken(
 ): Promise<string> {
   // SECURITY 2026-05-07 (pentest F1): jti único por access token para
   // permitir revocación inmediata en logout (blacklist en cacheStore).
-  const jti = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  // SECURITY 2026-05-12 (pentest H004): jti usa crypto.randomUUID (CSPRNG).
+  // Antes Math.random (Xorshift128+ V8) era predecible — atacante podría
+  // forjar jti futuros para envenenar blacklist de revocación de tokens.
+  const jti = `${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`;
   const payload = JSON.stringify({
     role,
     username,
@@ -124,7 +127,10 @@ export async function createRefreshToken(
 ): Promise<string> {
   // SECURITY 2026-05-06 (pentest H007): jti único por refresh token para
   // permitir blacklist en Redis (consumed-once semantics).
-  const jti = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  // SECURITY 2026-05-12 (pentest H004): jti usa crypto.randomUUID (CSPRNG).
+  // Antes Math.random (Xorshift128+ V8) era predecible — atacante podría
+  // forjar jti futuros para envenenar blacklist de revocación de tokens.
+  const jti = `${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`;
   const payload = JSON.stringify({
     role,
     username,

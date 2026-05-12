@@ -4,6 +4,7 @@ import { z } from "zod";
 import { chatModel } from "@/lib/ai/provider";
 import { logger } from "@/lib/logger";
 import { aiCostGuard } from "@/lib/ai/cost-control";
+import { processSafeInput } from "@/lib/ai-safety/sanitize";
 
 export const WhatsappIntent = z.enum([
   "saludo",
@@ -98,7 +99,10 @@ export async function classifyWhatsappIntent(
       messages: [
         {
           role: "user",
-          content: `Clasifica este mensaje. Responde solo con JSON {intent, confidence}:\n\n${trimmed}`,
+          // SECURITY 2026-05-12 (Code Reviewer P2): processSafeInput escapa
+          // patrones de prompt injection en el mensaje del usuario antes de
+          // incluirlo en el prompt LLM, aunque ya esté en messages[] separado.
+          content: `Clasifica este mensaje. Responde solo con JSON {intent, confidence}:\n\n${processSafeInput(trimmed)}`,
         },
       ],
       maxOutputTokens: 300,

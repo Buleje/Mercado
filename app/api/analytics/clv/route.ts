@@ -36,13 +36,18 @@ export type CLVResponse = {
 };
 
 export async function GET(req: NextRequest) {
-  const authErr = await requireAdmin(req);
-  if (authErr instanceof NextResponse) return authErr;
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
 
-  // Aggregate orders by customerPhone (non-cancelled)
+  // SECURITY 2026-05-12 (audit data-finops P0): TODAS las queries deben
+  // scopear por tenantId. Antes el groupBy mezclaba órdenes de TODOS los
+  // tenants → data leak cross-tenant en CLV de SaaS multi-tenant.
+  const tenantId = auth.tenantId;
+
+  // Aggregate orders by customerPhone (non-cancelled) — scope por tenantId
   const rows = await prisma.order.groupBy({
     by: ["customerPhone"],
-    where: { status: { not: "cancelado" }, customerPhone: { not: null } },
+    where: { tenantId, status: { not: "cancelado" }, customerPhone: { not: null } },
     _sum: { total: true },
     _count: { id: true },
   });
@@ -53,19 +58,19 @@ export async function GET(req: NextRequest) {
 
   const phones = rows.map(r => r.customerPhone as string);
 
-  // Get first + last order dates per customer
+  // Get first + last order dates per customer — TODOS con tenantId scope
   const [firstOrders, lastOrders, customers] = await Promise.all([
     prisma.order.groupBy({
       by: ["customerPhone"],
-      where: { status: { not: "cancelado" }, customerPhone: { in: phones } },
+      where: { tenantId, status: { not: "cancelado" }, customerPhone: { in: phones } },
       _min: { createdAt: true },
     }),
     prisma.order.groupBy({
       by: ["customerPhone"],
-      where: { status: { not: "cancelado" }, customerPhone: { in: phones } },
+      where: { tenantId, status: { not: "cancelado" }, customerPhone: { in: phones } },
       _max: { createdAt: true },
     }),
-    prisma.customer.findMany({ where: { phone: { in: phones } }, select: { phone: true, name: true } }),
+    prisma.customer.findMany({ where: { tenantId, phone: { in: phones } }, select: { phone: true, name: true } }),
   ]);
 
   const firstMap = new Map(firstOrders.map(r => [r.customerPhone, r._min.createdAt as Date]));
