@@ -38,10 +38,11 @@ export interface PaymentApproval {
   id: string;
   /**
    * tenantId del tenant dueño de la conversación que generó esta approval.
-   * Nullable durante expand phase (rows pre-fix). Backfill desde
-   * Conversation.tenantId pendiente.
+   * CONTRACT PHASE (2026-05-11): la columna es NOT NULL en DB tras 0 rows
+   * legacy. Todos los callers pasan tenantId obligatorio desde
+   * Conversation.tenantId.
    */
-  tenantId: string | null;
+  tenantId: string;
   conversationId: string | null;
   customerPhone: string;
   expectedAmount: number;
@@ -102,7 +103,7 @@ async function bootstrap(): Promise<void> {
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "PaymentApproval" (
         "id"              TEXT PRIMARY KEY,
-        "tenantId"        TEXT,
+        "tenantId"        TEXT NOT NULL,
         "conversationId"  TEXT,
         "customerPhone"   TEXT NOT NULL,
         "expectedAmount"  DECIMAL(12,2) NOT NULL,
@@ -119,7 +120,9 @@ async function bootstrap(): Promise<void> {
         "createdAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
-      -- Idempotent: si la tabla existe sin tenantId, agregarlo (expand phase)
+      -- Contract phase (2026-05-11): tenantId NOT NULL aplicado vía Supabase MCP.
+      -- ADD COLUMN IF NOT EXISTS sigue idempotente para envs legacy con expand;
+      -- el SET NOT NULL queda como migration externa (0 rows actuales, safe).
       ALTER TABLE "PaymentApproval" ADD COLUMN IF NOT EXISTS "tenantId" TEXT;
       CREATE INDEX IF NOT EXISTS "PaymentApproval_status_idx"
         ON "PaymentApproval"("status");
@@ -146,7 +149,7 @@ async function bootstrap(): Promise<void> {
 function rowToApproval(r: Record<string, unknown>): PaymentApproval {
   return {
     id: String(r.id),
-    tenantId: r.tenantId == null ? null : String(r.tenantId),
+    tenantId: String(r.tenantId),
     conversationId: r.conversationId == null ? null : String(r.conversationId),
     customerPhone: String(r.customerPhone),
     expectedAmount: Number(r.expectedAmount),
