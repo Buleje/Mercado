@@ -11,6 +11,7 @@ import {
 } from "@/lib/documents/storage";
 import { aiCategorize } from "@/lib/documents/ai-categorize";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 
 const ListQuery = z.object({
@@ -27,6 +28,8 @@ const ListQuery = z.object({
 export async function GET(req: NextRequest) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:list");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -54,6 +57,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const rl = await applyRateLimit(req, "STRICT", "documents:upload");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

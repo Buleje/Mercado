@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const ZoneSchema = z.object({
   id: z.string().min(1),
@@ -40,6 +41,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/delivery-zones — save all zones
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

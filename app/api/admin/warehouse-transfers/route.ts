@@ -6,6 +6,7 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { logActivity } from "@/lib/activity-logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const CreateSchema = z.object({
   fromWarehouseId: z.string().min(1),
@@ -75,6 +76,8 @@ export async function GET(req: NextRequest) {
 /** POST /api/admin/warehouse-transfers — record a new transfer */
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-warehouse-transfers"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
   const blocked = await requireActiveSubscription(auth.tenantId);
@@ -179,6 +182,8 @@ export async function POST(req: NextRequest) {
 /** PATCH /api/admin/warehouse-transfers — update transfer status */
 export async function PATCH(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-warehouse-transfers"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

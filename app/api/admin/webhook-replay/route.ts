@@ -17,10 +17,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "STRICT", "admin-webhook-replay");
   if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
 
   const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
