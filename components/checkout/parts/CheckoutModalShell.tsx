@@ -105,14 +105,14 @@ export function CheckoutModalShell({
               <div className="flex-1 overflow-y-auto">{children}</div>
 
               {footerSlot && (
-                <div className="shrink-0 border-t border-[var(--rule-soft)] bg-white/95 dark:bg-card/95 backdrop-blur-md">
+                <div className="shrink-0 border-t border-[var(--rule-soft)] bg-white/95 dark:bg-[var(--surface-raised)]/95 backdrop-blur-md">
                   {footerSlot}
                 </div>
               )}
 
               {/* CK-2: Footer sticky mobile — solo visible en pantallas < sm */}
               {mobileFooterSlot && (
-                <div className="sm:hidden shrink-0 border-t border-[var(--rule-soft)] bg-white/95 dark:bg-card/95 backdrop-blur-md">
+                <div className="sm:hidden shrink-0 border-t border-[var(--rule-soft)] bg-white/95 dark:bg-[var(--surface-raised)]/95 backdrop-blur-md">
                   {mobileFooterSlot}
                 </div>
               )}

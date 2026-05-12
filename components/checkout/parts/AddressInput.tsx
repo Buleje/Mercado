@@ -92,7 +92,7 @@ export function AddressInput({
                 <select
                   value={address.streetType}
                   onChange={(e) => onStreetTypeChange(e.target.value)}
-                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
                 >
                   <option value="Calle">Calle</option>
                   <option value="Avenida">Avenida</option>
@@ -109,7 +109,7 @@ export function AddressInput({
                   value={address.streetNumber}
                   onChange={(e) => onStreetNumberChange(e.target.value)}
                   placeholder="N° / Lote"
-                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                  className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
                 />
               </div>
               <input
@@ -117,7 +117,7 @@ export function AddressInput({
                 value={address.streetName}
                 onChange={(e) => onStreetNameChange(e.target.value)}
                 placeholder="Nombre de la vía (ej: Ucayali, San Martín)"
-                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
               />
               {address.location && (
                 <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
@@ -139,7 +139,7 @@ export function AddressInput({
                 onChange={(e) => onLocationChange(e.target.value)}
                 placeholder="Ej: Jr. Ucayali 450"
                 data-testid="location-input"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-[var(--text-primary)] dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
               />
             </div>
           )}

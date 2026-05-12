@@ -32,11 +32,11 @@ export function CheckoutDeliverySchedule({
   onUseCustomDateTimeChange,
 }: CheckoutDeliveryScheduleProps) {
   const inputClass =
-    "w-full h-12 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-white dark:bg-card text-foreground focus:border-[var(--color-primary,#00B4A6)] focus:outline-none transition-colors text-sm tabular-nums";
+    "w-full h-12 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] focus:border-[var(--color-primary,#00B4A6)] focus:outline-none transition-colors text-sm tabular-nums";
 
   return (
     <div className="space-y-3">
-      <label className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+      <label className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
         <Clock
           className="h-4 w-4"
           strokeWidth={2}
@@ -135,7 +135,7 @@ export function CheckoutDeliverySchedule({
                   "w-full flex items-center gap-3 rounded-2xl border-2 px-4 py-3 transition-all text-left",
                   isAsap
                     ? "shadow-sm"
-                    : "border-[var(--rule-soft)] bg-white dark:bg-card hover:border-[var(--color-primary,#00B4A6)]/40",
+                    : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--color-primary,#00B4A6)]/40",
                 )}
                 style={
                   isAsap
@@ -166,7 +166,7 @@ export function CheckoutDeliverySchedule({
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-extrabold text-foreground leading-tight">
+                  <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                     Lo antes posible
                   </p>
                   <p className="text-xs text-muted leading-tight mt-0.5">
@@ -226,7 +226,7 @@ export function CheckoutDeliverySchedule({
                             ? "border-transparent text-white shadow-sm"
                             : slot.disabled
                               ? "border-[var(--rule-soft)] bg-[var(--surface-sunken)] text-muted opacity-50 cursor-not-allowed line-through"
-                              : "border-[var(--rule-soft)] bg-white dark:bg-card text-foreground hover:border-[var(--color-primary,#00B4A6)]/40 hover:text-[var(--color-primary,#00B4A6)]",
+                              : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--color-primary,#00B4A6)]/40 hover:text-[var(--color-primary,#00B4A6)]",
                         )}
                         style={
                           active

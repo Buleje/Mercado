@@ -94,7 +94,7 @@ const STATUS_META: Record<
   confirmado: {
     label: "Confirmado",
     icon: CheckCircle2,
-    tone: "text-foreground bg-[var(--surface-sunken)] dark:bg-surface",
+    tone: "text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-surface",
     dot: "bg-foreground",
   },
   en_camino: {
@@ -154,10 +154,10 @@ function OrderListCard({ order }: { order: UiOrder }) {
       <Link
         href={`/cuenta/pedidos/${encodeURIComponent(order.id)}/seguimiento`}
         className={cn(
-          "block rounded-xl border bg-white dark:bg-card p-4 transition-colors",
+          "block rounded-xl border bg-[var(--surface-raised)] p-4 transition-colors",
           isActive
-            ? "border-gray-100 dark:border-card-border hover:border-gray-200 dark:hover:border-card-border/80"
-            : "border-gray-100 dark:border-card-border hover:border-gray-200",
+            ? "border-[var(--rule-base)] hover:border-gray-200 dark:hover:border-[var(--rule-base)]/80"
+            : "border-[var(--rule-base)] hover:border-gray-200",
         )}
       >
         <div className="flex items-center gap-3">
@@ -185,7 +185,7 @@ function OrderListCard({ order }: { order: UiOrder }) {
                 {order.storeName}
               </span>
             </div>
-            <p className="text-sm font-semibold text-foreground truncate mt-0.5">
+            <p className="text-sm font-semibold text-[var(--text-primary)] truncate mt-0.5">
               #{order.id.slice(-8).toUpperCase()}
             </p>
             <p className="text-[length:var(--ts-2xs)] text-muted truncate">
@@ -193,7 +193,7 @@ function OrderListCard({ order }: { order: UiOrder }) {
             </p>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <span className="text-sm font-extrabold text-foreground tabular-nums">
+            <span className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
               {fmtSoles(order.total)}
             </span>
             <span className="text-[length:var(--ts-2xs)] text-muted">{fmtDate(order.createdAt)}</span>
@@ -271,7 +271,7 @@ export default function PedidosPage() {
         <div>
           <Link
             href="/cuenta"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-[var(--text-primary)] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Volver a mi cuenta
@@ -280,7 +280,7 @@ export default function PedidosPage() {
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
               Historial
             </span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mt-1">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] mt-1">
               Mis pedidos
             </h1>
             <p className="mt-2 text-sm text-muted">
@@ -290,7 +290,7 @@ export default function PedidosPage() {
         </div>
 
         {isLoading ? (
-          <section className="rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card px-6 py-12 text-center">
+          <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 text-center">
             <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
             <p className="mt-3 text-sm text-muted">Cargando tus pedidos…</p>
           </section>
@@ -311,7 +311,7 @@ export default function PedidosPage() {
                 </span>
                 <h2
                   id="active-orders-heading"
-                  className="text-base font-extrabold tracking-tight text-foreground mt-0.5"
+                  className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
                 >
                   {active.length} {active.length === 1 ? "pedido" : "pedidos"} activos
                 </h2>
@@ -324,11 +324,11 @@ export default function PedidosPage() {
             </ul>
           </section>
         ) : (
-          <section className="rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card px-6 py-12 text-center">
+          <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 text-center">
             <div className="flex justify-center text-muted" aria-hidden="true">
               <PedidoLlegando size={180} />
             </div>
-            <p className="mt-4 text-base font-extrabold text-foreground tracking-tight">
+            <p className="mt-4 text-base font-extrabold text-[var(--text-primary)] tracking-tight">
               Tu próximo pedido te espera
             </p>
             <p className="mt-1 text-sm text-muted max-w-sm mx-auto leading-relaxed">
@@ -354,7 +354,7 @@ export default function PedidosPage() {
                 </span>
                 <h2
                   id="past-orders-heading"
-                  className="text-base font-extrabold tracking-tight text-foreground mt-0.5"
+                  className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
                 >
                   Anteriores
                 </h2>

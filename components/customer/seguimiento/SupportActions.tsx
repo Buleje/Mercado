@@ -44,7 +44,7 @@ export function SupportActions({
     <section
       aria-labelledby="tracking-support-heading"
       className={cn(
-        "rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-5 sm:p-6",
+        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
         className,
       )}
     >
@@ -54,7 +54,7 @@ export function SupportActions({
         </span>
         <h2
           id="tracking-support-heading"
-          className="text-base font-extrabold tracking-tight text-foreground mt-0.5"
+          className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
         >
           ¿Algo anda mal?
         </h2>
@@ -63,7 +63,7 @@ export function SupportActions({
       <div className="grid grid-cols-2 gap-2 mb-3">
         <a
           href={`tel:${storePhone.replace(/\s+/g, "")}`}
-          className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-gray-200 dark:border-card-border hover:border-gray-300 dark:hover:border-card-border/80 text-sm font-bold text-foreground transition-colors"
+          className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 text-sm font-bold text-[var(--text-primary)] transition-colors"
         >
           <Phone className="h-4 w-4" strokeWidth={1.75} />
           Llamar a {storeName}
@@ -80,7 +80,7 @@ export function SupportActions({
         ) : (
           <button
             type="button"
-            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-gray-200 dark:border-card-border opacity-60 text-sm font-bold text-muted cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-[var(--rule-base)] opacity-60 text-sm font-bold text-muted cursor-not-allowed"
             disabled
             aria-disabled="true"
           >
@@ -90,7 +90,7 @@ export function SupportActions({
         )}
       </div>
 
-      <div className="pt-3 border-t border-gray-100 dark:border-card-border">
+      <div className="pt-3 border-t border-[var(--rule-base)]">
         <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-[var(--ls-wider)] text-muted mb-2">
           Respuestas rápidas
         </p>
@@ -106,7 +106,7 @@ export function SupportActions({
                   "inline-flex items-center gap-1.5 h-8 rounded-full border px-3 text-[length:var(--ts-2xs)] font-semibold transition-colors",
                   isSent
                     ? "bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 text-[var(--accent-dark)] dark:text-teal-300"
-                    : "border-gray-200 dark:border-card-border hover:border-gray-300 dark:hover:border-card-border/80 text-foreground",
+                    : "border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 text-[var(--text-primary)]",
                 )}
               >
                 {isSent ? (
@@ -127,7 +127,7 @@ export function SupportActions({
         </p>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-card-border flex items-center gap-2 text-[length:var(--ts-2xs)] text-muted">
+      <div className="mt-4 pt-4 border-t border-[var(--rule-base)] flex items-center gap-2 text-[length:var(--ts-2xs)] text-muted">
         <MessageSquare className="h-3 w-3 shrink-0" />
         <span>
           También puedes reportar cualquier problema por WhatsApp directo a {storeName}.

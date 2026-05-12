@@ -362,7 +362,7 @@ function SmartReorder({
                 {i + 1}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground truncate">
+                <p className="text-sm font-bold text-[var(--text-primary)] truncate">
                   {item.name}
                 </p>
                 <p className="text-xs text-muted">
@@ -425,7 +425,7 @@ function FilterPills({
               onClick={() => onSelect(key)}
               className={cn(
                 "flex items-center justify-between gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all w-full",
-                !active && "text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface",
+                !active && "text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface",
               )}
               style={
                 active
@@ -567,7 +567,7 @@ function OrderDetailModal({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full sm:max-w-2xl bg-white dark:bg-card rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto shadow-2xl">
+      <div className="relative z-10 w-full sm:max-w-2xl bg-[var(--surface-raised)] rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto shadow-2xl">
         {/* Hero gradiente con status */}
         <div
           className="relative px-6 pt-6 pb-5 text-white overflow-hidden"
@@ -605,7 +605,7 @@ function OrderDetailModal({
             </button>
           </div>
           <div className="relative mt-4 flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 text-sm font-extrabold px-3 py-1.5 rounded-full bg-white text-foreground">
+            <span className="inline-flex items-center gap-1.5 text-sm font-extrabold px-3 py-1.5 rounded-full bg-white text-[var(--text-primary)]">
               <span className={cn("h-2 w-2 rounded-full", st.dot, isActive && "animate-pulse")} />
               {st.label}
             </span>
@@ -639,14 +639,14 @@ function OrderDetailModal({
               />
               <div className="relative h-full p-5 flex flex-col justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-2xl bg-white dark:bg-card flex items-center justify-center shadow-md">
+                  <div className="w-10 h-10 rounded-2xl bg-[var(--surface-raised)] flex items-center justify-center shadow-md">
                     <Truck className="h-5 w-5 text-primary animate-pulse" strokeWidth={2.25} />
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-primary">
                       Tu pedido va en camino
                     </p>
-                    <p className="text-base font-extrabold text-foreground">
+                    <p className="text-base font-extrabold text-[var(--text-primary)]">
                       ETA aprox. 25 min
                     </p>
                   </div>
@@ -697,14 +697,14 @@ function OrderDetailModal({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-foreground truncate">
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">
                       {item.name}
                     </p>
                     <p className="text-xs text-muted">
                       {item.quantity} {item.unit}
                     </p>
                   </div>
-                  <p className="text-base font-extrabold text-foreground shrink-0 tabular-nums">
+                  <p className="text-base font-extrabold text-[var(--text-primary)] shrink-0 tabular-nums">
                     {fmt((item.price ?? 0) * (item.quantity ?? 0))}
                   </p>
                 </div>
@@ -734,7 +734,7 @@ function OrderDetailModal({
                 Gratis
               </span>
             </div>
-            <div className="flex justify-between text-base font-extrabold text-foreground border-t border-gray-100 dark:border-card-border pt-2">
+            <div className="flex justify-between text-base font-extrabold text-[var(--text-primary)] border-t border-[var(--rule-base)] pt-2">
               <span>Total</span>
               <span className="tabular-nums">{fmt(order.total)}</span>
             </div>
@@ -748,7 +748,7 @@ function OrderDetailModal({
               <div className="flex items-start gap-2 text-sm">
                 <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-primary" strokeWidth={2.25} />
                 <div>
-                  <p className="text-foreground font-bold">{order.deliveryAddress}</p>
+                  <p className="text-[var(--text-primary)] font-bold">{order.deliveryAddress}</p>
                   {order.deliveryWindow && (
                     <p className="text-xs text-muted mt-0.5">
                       Ventana: {order.deliveryWindow}
@@ -769,7 +769,7 @@ function OrderDetailModal({
                   <Truck className="h-6 w-6 text-[var(--data-warning-600)] dark:text-amber-400" strokeWidth={2.25} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-extrabold text-foreground">
+                  <p className="text-sm font-extrabold text-[var(--text-primary)]">
                     {order.courierName}
                   </p>
                   {order.courierPhone && (
@@ -795,7 +795,7 @@ function OrderDetailModal({
             {order.paymentMethod && (
               <p>
                 Pago con{" "}
-                <span className="font-bold text-foreground">
+                <span className="font-bold text-[var(--text-primary)]">
                   {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}
                 </span>
               </p>
@@ -803,7 +803,7 @@ function OrderDetailModal({
             {order.storeName && (
               <p>
                 Bodega:{" "}
-                <span className="font-bold text-foreground">{order.storeName}</span>
+                <span className="font-bold text-[var(--text-primary)]">{order.storeName}</span>
                 {order.storeDistance ? ` · ${order.storeDistance}` : ""}
               </p>
             )}
@@ -812,7 +812,7 @@ function OrderDetailModal({
           <div className="flex gap-2 pt-1 pb-2">
             <button
               type="button"
-              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-extrabold text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-extrabold text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
             >
               <Download className="h-4 w-4" />
               Boleta
@@ -883,14 +883,14 @@ function ActiveOrderCard({
             <Truck className="h-5 w-5 text-white animate-pulse" strokeWidth={2.5} />
           </div>
           <div className="min-w-0">
-            <p className="text-base font-extrabold text-foreground leading-tight">
+            <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
               #{shortId(order.id)}
             </p>
             <p className="text-xs text-muted">{fmtDate(order.createdAt)}</p>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-base font-extrabold tabular-nums text-foreground">
+          <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">
             {fmt(order.total)}
           </p>
           <p className="text-xs text-muted">
@@ -1021,7 +1021,7 @@ function CompletedOrderCard({
 
   return (
     <div
-      className="rounded-3xl p-5 transition-all hover:-translate-y-0.5 bg-white dark:bg-card"
+      className="rounded-3xl p-5 transition-all hover:-translate-y-0.5 bg-[var(--surface-raised)]"
       style={{
         border: isCancelled
           ? "1px solid color-mix(in oklch, var(--data-error-500) 22%, transparent)"
@@ -1052,7 +1052,7 @@ function CompletedOrderCard({
             />
           </div>
           <div className="min-w-0">
-            <p className="text-base font-extrabold text-foreground leading-tight">
+            <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
               #{shortId(order.id)}
             </p>
             <p className="text-xs text-muted">
@@ -1063,7 +1063,7 @@ function CompletedOrderCard({
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-base font-extrabold tabular-nums text-foreground">
+          <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">
             {fmt(order.total)}
           </p>
           <span
@@ -1480,7 +1480,7 @@ export default function MisPedidosPage() {
               <ClipboardList className="h-10 w-10 text-primary/60" strokeWidth={1.75} />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-foreground">
+              <h2 className="text-xl font-extrabold text-[var(--text-primary)]">
                 Consultá tu historial
               </h2>
               <p className="text-base text-muted mt-2 leading-relaxed">
@@ -1541,7 +1541,7 @@ export default function MisPedidosPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por #ID o producto"
-                  className="w-full h-12 pl-12 pr-4 rounded-2xl border-2 text-base font-medium text-foreground placeholder:text-muted/70 transition-colors focus:outline-none focus:border-primary"
+                  className="w-full h-12 pl-12 pr-4 rounded-2xl border-2 text-base font-medium text-[var(--text-primary)] placeholder:text-muted/70 transition-colors focus:outline-none focus:border-primary"
                   style={{
                     background: "var(--color-card)",
                     borderColor: "var(--color-card-border)",
@@ -1574,7 +1574,7 @@ export default function MisPedidosPage() {
               {filteredActive.length > 0 && (
                 <section>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                    <h2 className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2">
                       <span className="relative flex h-2.5 w-2.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--data-warning-500)] opacity-75" />
                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--data-warning-500)]" />
@@ -1601,7 +1601,7 @@ export default function MisPedidosPage() {
               {filteredCompleted.length > 0 && (
                 <section>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-extrabold text-foreground">
+                    <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
                       Historial
                     </h2>
                     <span className="text-sm text-muted font-bold">
@@ -1680,7 +1680,7 @@ export default function MisPedidosPage() {
                     }}
                   />
                   <div className="relative">
-                    <p className="text-base font-extrabold text-foreground">
+                    <p className="text-base font-extrabold text-[var(--text-primary)]">
                       ¿Necesitás algo más?
                     </p>
                     <p className="text-sm text-muted mt-1 mb-4">
@@ -1702,7 +1702,7 @@ export default function MisPedidosPage() {
                       </Link>
                       <Link
                         href="/mi-panel"
-                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-foreground text-sm font-extrabold border-2 transition-colors hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-[var(--text-primary)] text-sm font-extrabold border-2 transition-colors hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
                         style={{
                           background: "var(--color-card)",
                           borderColor: "var(--color-card-border)",

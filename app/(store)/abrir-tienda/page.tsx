@@ -26,6 +26,9 @@ const PlansToggle = dynamic(
 const LiveSignupTicker = dynamic(
   () => import("@/components/landing/abrir-tienda/LiveSignupTicker"),
 );
+const BodegaScene = dynamic(
+  () => import("@/components/landing/abrir-tienda/BodegaScene"),
+);
 
 export const metadata: Metadata = {
   title: "Activa tu tienda online — Plataforma todo-en-uno",
@@ -142,36 +145,14 @@ export default function AbrirTiendaPage() {
                 </div>
               </div>
 
-              {/* Trust card */}
+              {/* Trust illustration — bodega con tecnología vendiendo en vivo.
+                  v2 (2026-05-10): antes era un card con 4 stats de texto. Brandon
+                  pidió algo "ilustrativo y referencial a la página", al estilo
+                  del PhoneMockup del home. BodegaScene muestra una bodega
+                  estilizada (toldo, estantes, contador con tablet Buleje
+                  ticker en vivo) + las 4 garantías como pills flotando. */}
               <div className="relative">
-                <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 sm:p-10 shadow-sm">
-                  <p className="text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-8">
-                    Garantías Buleje
-                  </p>
-                  <div className="space-y-7">
-                    {[
-                      { value: "S/ 0", label: "Comisión los primeros 90 días" },
-                      { value: "5 min", label: "Estás vendiendo desde el registro" },
-                      // Mayo 2026: "+42% ventas promedio" eliminado tras
-                      // designer audit. No tenemos datos reales para sustentarlo;
-                      // reemplazado por feature concreta y verificable.
-                      { value: "Yape · Plin", label: "Cobrás como ya cobras" },
-                      { value: "24/7", label: "Soporte humano por WhatsApp" },
-                    ].map(({ value, label }, idx) => (
-                      <div
-                        key={label}
-                        className={`flex items-baseline gap-5 ${idx > 0 ? "pt-5 border-t border-[var(--rule-soft)]" : ""}`}
-                      >
-                        <span className="text-[clamp(2rem,4.5vw,3rem)] font-black tabular-nums tracking-[-0.035em] text-[var(--accent)] leading-none w-[5ch] shrink-0">
-                          {value}
-                        </span>
-                        <span className="text-sm sm:text-base text-[var(--text-secondary)] leading-snug font-medium">
-                          {label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <BodegaScene />
               </div>
             </div>
           </div>

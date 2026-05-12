@@ -95,7 +95,7 @@ function AddressCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-            <span className="text-base font-extrabold text-foreground">
+            <span className="text-base font-extrabold text-[var(--text-primary)]">
               {addr.label}
             </span>
             {addr.isDefault && (
@@ -111,7 +111,7 @@ function AddressCard({
               </span>
             )}
           </div>
-          <p className="text-sm font-semibold text-foreground leading-snug">
+          <p className="text-sm font-semibold text-[var(--text-primary)] leading-snug">
             {addr.address}
           </p>
           {addr.reference && (
@@ -131,7 +131,7 @@ function AddressCard({
                 Marcar como principal
               </button>
             )}
-            <button className="inline-flex items-center gap-1 text-xs font-extrabold text-muted hover:text-foreground transition-colors">
+            <button className="inline-flex items-center gap-1 text-xs font-extrabold text-muted hover:text-[var(--text-primary)] transition-colors">
               <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
               Editar
             </button>
@@ -353,7 +353,7 @@ export default function DireccionesPage() {
               style={{ color: "var(--color-primary-dark, #009690)" }}
             />
           </div>
-          <p className="text-sm text-foreground leading-relaxed">
+          <p className="text-sm text-[var(--text-primary)] leading-relaxed">
             Las direcciones guardadas se usarán automáticamente al realizar un
             nuevo pedido. Puedes tener hasta{" "}
             <strong style={{ color: "var(--color-primary-dark, #009690)" }}>

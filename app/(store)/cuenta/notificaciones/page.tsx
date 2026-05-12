@@ -187,7 +187,7 @@ function FilterPills({
               className={cn(
                 "flex items-center justify-between gap-2 px-3 py-3 rounded-xl text-sm font-bold transition-all w-full",
                 !active &&
-                  "text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface",
+                  "text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface",
               )}
               style={
                 active
@@ -345,7 +345,7 @@ function NotifCard({
                     aria-label="No leído"
                   />
                 )}
-                <p className="text-base font-extrabold text-foreground leading-tight">
+                <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                   {notification.title}
                 </p>
               </div>
@@ -509,7 +509,7 @@ function NotifSettings({
         </div>
         <h2
           id="settings-heading"
-          className="text-xl font-extrabold text-foreground tracking-tight"
+          className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight"
         >
           Cómo querés recibir avisos
         </h2>
@@ -544,7 +544,7 @@ function NotifSettings({
                   />
                 </div>
                 <div>
-                  <p className="text-sm font-extrabold text-foreground">
+                  <p className="text-sm font-extrabold text-[var(--text-primary)]">
                     {row.label}
                   </p>
                   <p className="text-xs text-muted">{row.sublabel}</p>
@@ -579,7 +579,7 @@ function NotifSettings({
                       "text-sm font-extrabold",
                       row.disabled
                         ? "text-muted"
-                        : "text-foreground",
+                        : "text-[var(--text-primary)]",
                     )}
                   >
                     {row.label}
@@ -913,7 +913,7 @@ export default function NotificacionesPage() {
               <div className="flex items-center justify-between mb-4">
                 <h2
                   id="notif-list-heading"
-                  className="text-lg font-extrabold text-foreground flex items-center gap-2"
+                  className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2"
                 >
                   <Bell className="h-5 w-5 text-primary" strokeWidth={2.5} />
                   {TABS.find((t) => t.key === activeTab)?.label ?? "Notificaciones"}
@@ -978,7 +978,7 @@ export default function NotificacionesPage() {
             <div>
               <Link
                 href="/mi-panel"
-                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-muted hover:text-foreground transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-muted hover:text-[var(--text-primary)] transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
                 Volver a mi cuenta

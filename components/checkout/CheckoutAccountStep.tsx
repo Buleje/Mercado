@@ -105,7 +105,7 @@ export function CheckoutAccountStep({
             <User className="h-5 w-5 text-primary" strokeWidth={2} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-extrabold text-foreground tracking-tight leading-tight">
+            <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
               {mode === "menu" && "¿Cómo querés continuar?"}
               {mode === "search" && "Buscar mi cuenta"}
               {mode === "signup" && "Crear cuenta nueva"}
@@ -120,7 +120,7 @@ export function CheckoutAccountStep({
             <button
               type="button"
               onClick={() => setMode("menu")}
-              className="text-xs font-bold text-muted hover:text-foreground"
+              className="text-xs font-bold text-muted hover:text-[var(--text-primary)]"
             >
               ← Volver
             </button>
@@ -136,7 +136,7 @@ export function CheckoutAccountStep({
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={googleLoading}
-                className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-white dark:bg-card border-2 border-[var(--rule-base)] dark:border-card-border text-foreground font-bold text-sm hover:border-primary/50 hover:shadow-md transition-all disabled:opacity-60"
+                className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] font-bold text-sm hover:border-primary/50 hover:shadow-md transition-all disabled:opacity-60"
               >
                 {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleLogo />}
                 {googleLoading ? "Conectando…" : "Continuar con Google"}
@@ -155,13 +155,13 @@ export function CheckoutAccountStep({
             <button
               type="button"
               onClick={() => setMode("search")}
-              className="w-full p-4 flex items-center gap-4 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:border-primary/40 hover:shadow-md text-left transition-all group"
+              className="w-full p-4 flex items-center gap-4 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary/40 hover:shadow-md text-left transition-all group"
             >
               <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
                 <Phone className="h-5 w-5 text-primary group-hover:text-white" strokeWidth={2} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground leading-tight">Ya tengo cuenta</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">Ya tengo cuenta</p>
                 <p className="text-xs text-muted mt-0.5 leading-snug">Buscar mis datos por número de celular</p>
               </div>
               <ArrowRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
@@ -172,13 +172,13 @@ export function CheckoutAccountStep({
               <button
                 type="button"
                 onClick={() => setMode("signup")}
-                className="w-full p-4 flex items-center gap-4 rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:border-primary/40 hover:shadow-md text-left transition-all group"
+                className="w-full p-4 flex items-center gap-4 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary/40 hover:shadow-md text-left transition-all group"
               >
                 <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
                   <UserPlus className="h-5 w-5 text-primary group-hover:text-white" strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground leading-tight">Crear cuenta</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">Crear cuenta</p>
                   <p className="text-xs text-muted mt-0.5 leading-snug">Solo nombre + celular · 30 segundos</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
@@ -191,7 +191,7 @@ export function CheckoutAccountStep({
                 type="button"
                 onClick={onSkipAccount}
                 data-testid="checkout-skip-account"
-                className="text-sm font-semibold text-muted hover:text-foreground transition-colors underline-offset-4 hover:underline"
+                className="text-sm font-semibold text-muted hover:text-[var(--text-primary)] transition-colors underline-offset-4 hover:underline"
               >
                 Continuar sin cuenta →
               </button>
@@ -201,7 +201,7 @@ export function CheckoutAccountStep({
 
         {/* ── BUSCAR ────────────────────────────────────────────── */}
         {mode === "search" && (
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-5 flex flex-col gap-3 bg-white dark:bg-card">
+          <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5 flex flex-col gap-3 bg-[var(--surface-raised)]">
             <label className="text-xs font-bold text-muted uppercase tracking-wider">
               Número de celular
             </label>
@@ -217,12 +217,12 @@ export function CheckoutAccountStep({
                   onKeyDown={(e) => e.key === "Enter" && onPhoneSearch()}
                   autoFocus
                   className={cn(
-                    "w-full pl-10 pr-3 h-12 rounded-xl border-2 text-base text-foreground placeholder:text-muted focus:ring-2 outline-none transition-all",
+                    "w-full pl-10 pr-3 h-12 rounded-xl border-2 text-base text-[var(--text-primary)] placeholder:text-muted focus:ring-2 outline-none transition-all",
                     phoneQuery.length === 0
-                      ? "border-[var(--rule-base)] dark:border-card-border focus:border-primary focus:ring-primary/20"
+                      ? "border-[var(--rule-base)] dark:border-[var(--rule-base)] focus:border-primary focus:ring-primary/20"
                       : phoneQueryValidation.valid
                         ? "border-[var(--data-success-500)] focus:ring-[var(--data-success-500)]/20"
-                        : "border-[var(--rule-base)] dark:border-card-border focus:border-primary focus:ring-primary/20"
+                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] focus:border-primary focus:ring-primary/20"
                   )}
                 />
               </div>
@@ -267,7 +267,7 @@ export function CheckoutAccountStep({
 
         {/* ── SIGNUP ────────────────────────────────────────────── */}
         {mode === "signup" && onCreateAccount && (
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-5 space-y-4 bg-white dark:bg-card">
+          <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5 space-y-4 bg-[var(--surface-raised)]">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-muted uppercase tracking-wider">Tu nombre</label>
               <div className="relative">
@@ -279,7 +279,7 @@ export function CheckoutAccountStep({
                   placeholder="María González"
                   maxLength={60}
                   autoFocus
-                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
             </div>
@@ -294,7 +294,7 @@ export function CheckoutAccountStep({
                   onChange={(e) => setSignupPhone(e.target.value.replace(/[^\d]/g, ""))}
                   placeholder="987 654 321"
                   maxLength={9}
-                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
               {signupPhone.length > 0 && signupPhone.length < 9 && (
@@ -317,7 +317,7 @@ export function CheckoutAccountStep({
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-base text-foreground placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  className="w-full pl-10 pr-3 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
             </div>
@@ -341,7 +341,7 @@ export function CheckoutAccountStep({
         )}
 
         {/* Trust signals */}
-        <div className="flex items-center justify-center gap-4 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border flex-wrap">
+        <div className="flex items-center justify-center gap-4 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex-wrap">
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted">
             <ShieldCheck className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>Compra protegida</span>

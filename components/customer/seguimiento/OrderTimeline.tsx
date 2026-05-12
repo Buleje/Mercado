@@ -43,7 +43,7 @@ export function OrderTimeline({ timeline, className }: Props) {
     <section
       aria-labelledby="tracking-timeline-heading"
       className={cn(
-        "rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-5 sm:p-6",
+        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
         className,
       )}
     >
@@ -53,7 +53,7 @@ export function OrderTimeline({ timeline, className }: Props) {
         </span>
         <h2
           id="tracking-timeline-heading"
-          className="text-base sm:text-lg font-extrabold tracking-tight text-foreground mt-0.5"
+          className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
         >
           Progreso en tiempo real
         </h2>
@@ -83,7 +83,7 @@ export function OrderTimeline({ timeline, className }: Props) {
                     "bg-foreground border-foreground text-white dark:text-background",
                   isCurrent && "bg-primary border-primary text-white",
                   isFuture &&
-                    "bg-white dark:bg-card border-gray-200 dark:border-card-border text-muted",
+                    "bg-[var(--surface-raised)] border-[var(--rule-base)] text-muted",
                 )}
                 aria-hidden
               >
@@ -101,7 +101,7 @@ export function OrderTimeline({ timeline, className }: Props) {
                 <p
                   className={cn(
                     "text-sm font-extrabold tracking-tight",
-                    (isDone || isCurrent) && "text-foreground",
+                    (isDone || isCurrent) && "text-[var(--text-primary)]",
                     isFuture && "text-muted",
                   )}
                 >

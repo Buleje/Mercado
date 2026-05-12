@@ -87,18 +87,18 @@ export function DeliveryMapMock({
     <section
       aria-labelledby="tracking-map-heading"
       className={cn(
-        "relative rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card overflow-hidden",
+        "relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden",
         className,
       )}
     >
-      <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+      <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-[var(--rule-base)] flex items-center justify-between">
         <div>
           <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
             Ubicación en vivo
           </span>
           <h2
             id="tracking-map-heading"
-            className="text-base font-extrabold tracking-tight text-foreground mt-0.5"
+            className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
           >
             Ruta del repartidor
           </h2>
@@ -108,7 +108,7 @@ export function DeliveryMapMock({
             type="button"
             onClick={() => setZoomed(true)}
             aria-label="Acercar mapa"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 dark:border-card-border text-muted hover:text-foreground hover:border-gray-300 dark:hover:border-card-border/80 transition-colors"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-muted hover:text-[var(--text-primary)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
@@ -116,7 +116,7 @@ export function DeliveryMapMock({
             type="button"
             onClick={() => setZoomed(false)}
             aria-label="Alejar mapa"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 dark:border-card-border text-muted hover:text-foreground hover:border-gray-300 dark:hover:border-card-border/80 transition-colors"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-muted hover:text-[var(--text-primary)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 transition-colors"
           >
             <Minus className="h-3.5 w-3.5" strokeWidth={2} />
           </button>
@@ -199,7 +199,7 @@ export function DeliveryMapMock({
           {/* Pin origen (bodega) */}
           <g transform={`translate(${ROUTE_POINTS[0][0]}, ${ROUTE_POINTS[0][1]})`}>
             <circle r="9" className="fill-white dark:fill-card stroke-foreground" strokeWidth="2" />
-            <g transform="translate(-5,-5)" className="text-foreground">
+            <g transform="translate(-5,-5)" className="text-[var(--text-primary)]">
               <Store width={10} height={10} />
             </g>
           </g>
@@ -226,8 +226,8 @@ export function DeliveryMapMock({
         </svg>
 
         {/* Footer info sobre el mapa */}
-        <div className="absolute left-3 bottom-3 right-3 flex items-center justify-between bg-white/95 dark:bg-card/95 backdrop-blur rounded-xl border border-gray-100 dark:border-card-border px-3 py-2">
-          <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-foreground">
+        <div className="absolute left-3 bottom-3 right-3 flex items-center justify-between bg-white/95 dark:bg-[var(--surface-raised)]/95 backdrop-blur rounded-xl border border-[var(--rule-base)] px-3 py-2">
+          <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-primary)]">
             <Navigation className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
             <span className="font-bold tabular-nums">
               {Math.round(p * 100)}%
@@ -236,7 +236,7 @@ export function DeliveryMapMock({
           </div>
           <div className="text-[length:var(--ts-2xs)] text-muted truncate max-w-[60%]">
             {driverName ? (
-              <span className="font-semibold text-foreground">{driverName}</span>
+              <span className="font-semibold text-[var(--text-primary)]">{driverName}</span>
             ) : (
               <span>Repartidor</span>
             )}
@@ -246,9 +246,9 @@ export function DeliveryMapMock({
       </div>
 
       {/* Leyenda */}
-      <div className="px-5 py-3 sm:px-6 border-t border-gray-100 dark:border-card-border flex flex-wrap items-center gap-4 text-[length:var(--ts-2xs)] text-muted">
+      <div className="px-5 py-3 sm:px-6 border-t border-[var(--rule-base)] flex flex-wrap items-center gap-4 text-[length:var(--ts-2xs)] text-muted">
         <span className="inline-flex items-center gap-1.5">
-          <Store className="h-3 w-3 text-foreground" strokeWidth={2} />
+          <Store className="h-3 w-3 text-[var(--text-primary)]" strokeWidth={2} />
           {storeLabel}
         </span>
         <span className="inline-flex items-center gap-1.5">

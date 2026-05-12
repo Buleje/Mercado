@@ -62,7 +62,7 @@ export function OrderItemsDetailModal({
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 340, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full sm:max-w-xl max-h-[90svh] flex flex-col rounded-t-3xl sm:rounded-[28px] bg-white dark:bg-card overflow-hidden"
+            className="relative w-full sm:max-w-xl max-h-[90svh] flex flex-col rounded-t-3xl sm:rounded-[28px] bg-[var(--surface-raised)] overflow-hidden"
             style={{ boxShadow: "0 30px 70px -15px rgba(0,0,0,0.45)" }}
           >
             {/* Header */}
@@ -77,7 +77,7 @@ export function OrderItemsDetailModal({
                   <ShoppingBag className="h-5 w-5" strokeWidth={2.25} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-extrabold text-foreground tracking-tight leading-tight">
+                  <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
                     Detalle de tu pedido
                   </h3>
                   <p className="text-xs text-muted leading-snug mt-0.5">
@@ -89,7 +89,7 @@ export function OrderItemsDetailModal({
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar"
-                className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] text-foreground transition-colors"
+                className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] text-[var(--text-primary)] transition-colors"
               >
                 <X className="h-4 w-4" strokeWidth={2.5} />
               </button>
@@ -131,7 +131,7 @@ export function OrderItemsDetailModal({
 
                   <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                     <div className="min-w-0">
-                      <p className="text-sm sm:text-base font-bold text-foreground leading-tight line-clamp-2">
+                      <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] leading-tight line-clamp-2">
                         {item.name}
                       </p>
                       {item.unit && (
@@ -166,7 +166,7 @@ export function OrderItemsDetailModal({
             <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50 px-6 py-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted">Subtotal</span>
-                <span className="tabular-nums font-semibold text-foreground">{fmt(cartTotal)}</span>
+                <span className="tabular-nums font-semibold text-[var(--text-primary)]">{fmt(cartTotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex items-center justify-between text-sm text-[var(--data-success-600)]">
@@ -176,7 +176,7 @@ export function OrderItemsDetailModal({
               )}
               <div className="h-px bg-[var(--rule-soft)] my-1" />
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-foreground">Total a pagar</span>
+                <span className="text-sm font-bold text-[var(--text-primary)]">Total a pagar</span>
                 <span
                   className="text-2xl font-extrabold tabular-nums tracking-tight"
                   style={{ color: "var(--color-primary, #00B4A6)" }}

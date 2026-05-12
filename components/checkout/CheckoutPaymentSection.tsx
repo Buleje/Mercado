@@ -450,7 +450,7 @@ export function CheckoutPaymentSection({
                 }
                 onKeyDown={(e) => e.key === "Enter" && onValidateCoupon()}
                 placeholder="CÓDIGO"
-                className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted text-foreground bg-white dark:bg-card focus:outline-none transition-colors"
+                className="w-full h-12 rounded-xl border-2 pl-9 pr-3 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans placeholder:text-muted text-[var(--text-primary)] bg-[var(--surface-raised)] focus:outline-none transition-colors"
                 style={{
                   borderColor:
                     "color-mix(in oklch, var(--color-primary, #00B4A6) 22%, transparent)",

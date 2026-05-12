@@ -73,7 +73,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
     <section
       aria-labelledby="tracking-share-heading"
       className={cn(
-        "rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-5 sm:p-6",
+        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
         className,
       )}
     >
@@ -84,7 +84,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
           </span>
           <h2
             id="tracking-share-heading"
-            className="text-base font-extrabold tracking-tight text-foreground mt-0.5"
+            className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5"
           >
             Enviar el link del seguimiento
           </h2>
@@ -127,15 +127,15 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
 
       {status === "ready" && shareUrl && (
         <div className="mt-4 space-y-2">
-          <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface px-3 py-2">
-            <code className="text-[length:var(--ts-2xs)] text-foreground truncate flex-1 tabular-nums">
+          <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface px-3 py-2">
+            <code className="text-[length:var(--ts-2xs)] text-[var(--text-primary)] truncate flex-1 tabular-nums">
               {shareUrl}
             </code>
             <button
               type="button"
               onClick={handleCopy}
               aria-label="Copiar link"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-gray-300 dark:hover:border-card-border/80 text-muted hover:text-foreground transition-colors"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 text-muted hover:text-[var(--text-primary)] transition-colors"
             >
               {copied ? <Check className="h-3.5 w-3.5 text-[var(--accent-dark)]" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
@@ -153,7 +153,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-gray-200 dark:border-card-border hover:border-gray-300 dark:hover:border-card-border/80 text-sm font-bold text-foreground transition-colors"
+              className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 text-sm font-bold text-[var(--text-primary)] transition-colors"
             >
               {copied ? (
                 <>

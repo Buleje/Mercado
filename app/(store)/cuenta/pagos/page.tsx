@@ -44,10 +44,10 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
   return (
     <div
       className={cn(
-        "bg-white dark:bg-card rounded-xl border p-4",
+        "bg-[var(--surface-raised)] rounded-xl border p-4",
         method.isDefault
           ? "border-primary/30 dark:border-primary/40"
-          : "border-gray-100 dark:border-card-border"
+          : "border-[var(--rule-base)]"
       )}
     >
       <div className="flex items-center gap-3">
@@ -70,7 +70,7 @@ function PaymentCard({ method }: { method: PaymentMethod }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">
+            <span className="text-sm font-semibold text-[var(--text-primary)]">
               {method.label}
             </span>
             {method.isDefault && (
@@ -154,10 +154,10 @@ export default function PagosPage() {
         </div>
 
         {/* Coming soon */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5 flex flex-col items-center gap-3 text-center">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-5 flex flex-col items-center gap-3 text-center">
           <BalanzaVacia size={60} className="text-gray-200 dark:text-muted/30" />
           <div>
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               Más opciones proximamente
             </p>
             <p className="text-xs text-muted mt-1 max-w-xs mx-auto">
@@ -166,7 +166,7 @@ export default function PagosPage() {
           </div>
           <button
             disabled
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed border-gray-200 dark:border-card-border text-sm font-semibold text-muted cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed border-[var(--rule-base)] text-sm font-semibold text-muted cursor-not-allowed"
           >
             <Plus className="h-4 w-4" />
             Agregar tarjeta (pronto)
@@ -174,7 +174,7 @@ export default function PagosPage() {
         </div>
 
         {/* Security note */}
-        <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4">
           <div className="flex items-start gap-3">
             <CreditCard className="h-4 w-4 text-muted shrink-0 mt-0.5" />
             <p className="text-xs text-muted leading-relaxed">

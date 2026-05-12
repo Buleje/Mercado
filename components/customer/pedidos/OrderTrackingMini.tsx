@@ -50,7 +50,7 @@ export function OrderTrackingMini({
   return (
     <div
       className={cn(
-        "rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-4 flex flex-col gap-3 hover:border-gray-200 dark:hover:border-card-border/80 transition-colors",
+        "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-3 hover:border-gray-200 dark:hover:border-[var(--rule-base)]/80 transition-colors",
         className,
       )}
     >
@@ -67,7 +67,7 @@ export function OrderTrackingMini({
               </span>
             )}
           </div>
-          <p className="text-sm font-extrabold text-foreground tracking-tight mt-0.5">
+          <p className="text-sm font-extrabold text-[var(--text-primary)] tracking-tight mt-0.5">
             {STEP_META[status].label}
           </p>
         </div>
@@ -95,7 +95,7 @@ export function OrderTrackingMini({
                   isDone && "bg-foreground border-foreground text-white dark:text-background",
                   isCurrent && "bg-primary border-primary text-white",
                   isFuture &&
-                    "bg-white dark:bg-card border-gray-200 dark:border-card-border text-muted",
+                    "bg-[var(--surface-raised)] border-[var(--rule-base)] text-muted",
                 )}
                 aria-hidden
               >

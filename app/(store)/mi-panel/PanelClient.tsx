@@ -600,7 +600,7 @@ export default function PanelClient() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm sm:text-base font-extrabold text-foreground truncate">
+                          <p className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] truncate">
                             Pedido #{order.id.slice(-6).toUpperCase()}
                           </p>
                           <span
@@ -806,7 +806,7 @@ export default function PanelClient() {
             >
               ¿Sabías?
             </p>
-            <p className="text-sm text-foreground mt-1 leading-snug">
+            <p className="text-sm text-[var(--text-primary)] mt-1 leading-snug">
               Por cada S/10 que gastas, ganas <strong>5 puntos</strong>.
               Acumúlalos y aplícalos como descuento en tu próximo pedido.
             </p>

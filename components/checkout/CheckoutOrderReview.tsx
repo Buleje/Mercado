@@ -55,7 +55,7 @@ export function CheckoutOrderReview({
               <p className="text-[length:var(--ts-2xs)] font-bold text-primary uppercase tracking-wider">
                 Entregaremos en
               </p>
-              <p className="text-sm font-bold text-gray-800 dark:text-foreground mt-0.5 truncate">
+              <p className="text-sm font-bold text-gray-800 dark:text-[var(--text-primary)] mt-0.5 truncate">
                 {displayLocation}
               </p>
               {displayReference && (
@@ -105,7 +105,7 @@ export function CheckoutOrderReview({
             {items.length === 1 ? "producto" : "productos"})
           </span>
           <span className="flex items-center gap-2">
-            <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">
+            <span className="text-sm font-extrabold text-gray-900 dark:text-[var(--text-primary)]">
               S/{finalTotal.toFixed(2)}
             </span>
             <svg
@@ -123,7 +123,7 @@ export function CheckoutOrderReview({
             </svg>
           </span>
         </summary>
-        <div className="rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden bg-white dark:bg-card shadow-sm">
+        <div className="rounded-2xl border border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)] shadow-sm">
           <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 dark:divide-card-border">
             {items.map((item) => (
               <div
@@ -150,7 +150,7 @@ export function CheckoutOrderReview({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-800 dark:text-foreground truncate leading-tight">
+                  <p className="text-sm font-bold text-gray-800 dark:text-[var(--text-primary)] truncate leading-tight">
                     {item.name}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
@@ -169,14 +169,14 @@ export function CheckoutOrderReview({
                     )}
                   </div>
                 </div>
-                <p className="text-sm font-extrabold text-gray-900 dark:text-foreground shrink-0 tabular-nums">
+                <p className="text-sm font-extrabold text-gray-900 dark:text-[var(--text-primary)] shrink-0 tabular-nums">
                   S/{(item.price * item.quantity).toFixed(2)}
                 </p>
               </div>
             ))}
           </div>
           {/* Summary breakdown */}
-          <div className="px-4 py-2.5 border-t border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 space-y-1">
+          <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 space-y-1">
             <div className="flex justify-between text-xs text-gray-500">
               <span>Subtotal</span>
               <span>
