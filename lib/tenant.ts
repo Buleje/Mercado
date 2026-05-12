@@ -158,6 +158,71 @@ const TENANT_MODELS = new Set([
   "orderStatusHistory",
   // ── Marketplace ledger ──
   "commissionLedger",
+  // ── 2026-05-11 audit P2-1: 40+ modelos que faltaban ──
+  // Catálogo extendido (todos tienen tenantId directo en schema)
+  "productAnalytics",
+  "productImage",
+  "productVariant",
+  "productModifierGroup",
+  "productModifierOption",
+  // Reviews
+  "reviewVote",
+  // Sales/analytics
+  "salesAnomaly",
+  "stockoutPrediction",
+  // Loyalty + Subscriptions
+  "loyaltyTransaction",
+  "subscription",
+  "subscriptionDelivery",
+  // Gift cards (financial)
+  "giftCard",
+  "giftCardRedemption",
+  // Payment approval (Yape vision, audit P0-2)
+  "paymentApproval",
+  // Documents (datos privados, drive enterprise)
+  "document",
+  "documentFolder",
+  "documentShare",
+  "documentTemplate",
+  "documentAuditLog",
+  // AI conversations
+  "aIConversation",
+  "conversationMessage",
+  "conversationThread",
+  // Live commerce
+  "liveProduct",
+  "liveSession",
+  "liveChatMessage",
+  "liveViewerEvent",
+  // Sponsored / ads
+  "sponsoredBoost",
+  // Wholesale
+  "wholesaleOrder",
+  // Tenant pages / CMS
+  "tenantFeatureFlag",
+  "tenantPageProductOverride",
+  "tenantPagePromotion",
+  "tenantPageVisit",
+  "tenantStorePage",
+  "blockTemplate",
+  "pageHero",
+  "storeBanner",
+  // Vendor lifecycle
+  "vendorApplication",
+  // Delivery extended
+  "deliveryOffer",
+  "deliveryRoute",
+  "deliveryRouteStop",
+  "deliveryTracking",
+  // Credit extended
+  "creditReminder",
+  "creditScoreHistory",
+  // Socio Buleje (programa de fidelidad cross-store)
+  "socioBillingCycle",
+  "socioCashbackEntry",
+  "socioMembership",
+  // Event sourcing
+  "eventDeadLetter",
 ]);
 
 /**
