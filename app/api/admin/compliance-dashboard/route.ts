@@ -27,7 +27,17 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
+  // SECURITY 2026-05-12 (pentest N3 audit): guard explícito contra tenantId
+  // undefined/falsy. Si auth.tenantId fuese null por sesión rota, `where:
+  // {tenantId: null}` retornaría TODOS los tenants (data leak cross-tenant).
   const tenantId = auth.tenantId;
+  if (!tenantId || typeof tenantId !== "string" || tenantId.length === 0) {
+    logger.error("[compliance-dashboard] tenantId vacio post-requireAdmin", { user: auth.username });
+    return NextResponse.json(
+      { error: "tenantId requerido", details: "Sesión inválida — re-login requerido" },
+      { status: 403 },
+    );
+  }
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);

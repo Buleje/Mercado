@@ -9,19 +9,28 @@
  * Headers CORS permisivos — el spec es público por diseño (es documentación).
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { generateOpenAPIDoc } from "@/lib/openapi/generator";
+import { applyRateLimit } from "@/lib/rate-limit";
 
-// Cache en memory — se regenera al hot-reload. En prod este endpoint
-// debería ser cacheado por Vercel Edge cache.
-let cachedDoc: ReturnType<typeof generateOpenAPIDoc> | null = null;
+// SECURITY 2026-05-12 (pentest N5 audit): race condition al cold-start.
+// Antes `if (!cachedDoc) cachedDoc = generateOpenAPIDoc()` ejecutaba el
+// generador en N lambdas concurrentes warming. Ahora usamos una promesa
+// compartida para deduplicar el work.
+let cachedDocPromise: Promise<ReturnType<typeof generateOpenAPIDoc>> | null = null;
 
-export async function GET() {
-  if (!cachedDoc) {
-    cachedDoc = generateOpenAPIDoc();
+export async function GET(req: NextRequest) {
+  // SECURITY 2026-05-12 (pentest N4 audit): rate-limit GENEROUS para evitar
+  // scraping bot del spec (reconnaissance pasiva sin rate previo).
+  const _rl = await applyRateLimit(req, "GENEROUS", "openapi-spec");
+  if (_rl) return _rl;
+
+  if (!cachedDocPromise) {
+    cachedDocPromise = Promise.resolve(generateOpenAPIDoc());
   }
+  const doc = await cachedDocPromise;
 
-  return NextResponse.json(cachedDoc, {
+  return NextResponse.json(doc, {
     headers: {
       "Cache-Control": "public, max-age=3600, s-maxage=86400",
       "Access-Control-Allow-Origin": "*",

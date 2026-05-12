@@ -25,8 +25,12 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 // Dedupe in-memory: hash → timestamp. TTL 1h para no spammear Sentry.
+// SECURITY 2026-05-12 (pentest N2 audit): cap duro a 10k entries para evitar
+// DoS de memoria. Atacante con botnet puede enviar hashes únicos infinitos →
+// sin cap, Map crece sin tope hasta OOM la lambda Vercel.
 const recentReports = new Map<string, number>();
 const DEDUPE_TTL_MS = 60 * 60 * 1000;
+const MAX_REPORTS_IN_MEMORY = 10_000;
 
 function reportHash(violation: Record<string, unknown>): string {
   const directive = String(violation["violated-directive"] ?? "");
@@ -39,6 +43,10 @@ function isDuplicate(hash: string): boolean {
   // Cleanup viejos
   for (const [k, ts] of recentReports.entries()) {
     if (now - ts > DEDUPE_TTL_MS) recentReports.delete(k);
+  }
+  // SECURITY N2 audit: si pasamos el cap, limpiar TODO el Map (memory DoS guard)
+  if (recentReports.size >= MAX_REPORTS_IN_MEMORY) {
+    recentReports.clear();
   }
   if (recentReports.has(hash)) return true;
   recentReports.set(hash, now);

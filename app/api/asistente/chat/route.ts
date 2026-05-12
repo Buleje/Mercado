@@ -5,6 +5,7 @@ import { chatModel, getActiveProvider } from "@/lib/ai/provider";
 import { searchProductsCrossTenant } from "@/lib/whatsapp/concierge/cross-tenant-search";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { processSafeInput } from "@/lib/ai-safety/sanitize";
 
 // Next 16 con cacheComponents: true prohíbe `export const dynamic`. El handler
 // es dinámico por naturaleza (lee req.json), no necesita la flag.
@@ -111,12 +112,16 @@ export async function POST(req: NextRequest) {
         limit: 5,
       });
       if (results.length > 0) {
+        // SECURITY 2026-05-12 (H1 audit AI re-fix tras pentest detectó regression):
+        // sanitizar p.name y p.storeName antes de interpolar al LLM. El vendor
+        // controla esos campos → indirect prompt injection. processSafeInput
+        // escapa quotes, newlines, control chars + detecta patrones conocidos.
         productsBlock =
           "\n\n[PRODUCTOS DISPONIBLES]\n" +
           results
             .map(
               (p, i) =>
-                `${i + 1}. ${p.name} — S/${p.price.toFixed(2)} (${p.storeName})`,
+                `${i + 1}. ${processSafeInput(p.name)} — S/${p.price.toFixed(2)} (${processSafeInput(p.storeName)})`,
             )
             .join("\n");
         productsForUi = results.map((p) => ({
