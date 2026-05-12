@@ -55,12 +55,12 @@ export const PLANS: Record<PlanId, PlanDef> = {
   },
   pro: {
     id: "pro",
-    name: "Pro",
-    description: "Para negocios en crecimiento que necesitan más poder",
-    priceMonthly: 49,
-    priceYearly: 470, // ~20% discount ($39.17/mo)
+    name: "Starter",
+    description: "Para bodegas con flujo diario que ya quieren crecer",
+    priceMonthly: 89,
+    priceYearly: 854, // ~20% off anual (~S/71/mo)
     color: "blue",
-    popular: true,
+    popular: false, // el "Mas elegido" pasa a business (label "Pro")
     limits: {
       maxProducts: 500,
       maxUsers: 10,
@@ -78,11 +78,12 @@ export const PLANS: Record<PlanId, PlanDef> = {
   },
   business: {
     id: "business",
-    name: "Business",
-    description: "Para negocios establecidos con múltiples sucursales",
-    priceMonthly: 149,
-    priceYearly: 1430, // ~20% discount ($119.17/mo)
+    name: "Pro",
+    description: "Sweet spot: bodega establecida que ya vende online",
+    priceMonthly: 179,
+    priceYearly: 1720, // ~20% off anual (~S/143/mo)
     color: "violet",
+    popular: true, // badge "Mas elegido" — el 60% del mercado va aqui
     limits: {
       maxProducts: -1,
       maxUsers: -1,
@@ -100,14 +101,14 @@ export const PLANS: Record<PlanId, PlanDef> = {
   },
   enterprise: {
     id: "enterprise",
-    name: "Enterprise",
-    description: "Para cadenas y franquicias con requerimientos avanzados",
-    // Canonical price. Matches lib/superadmin-types.ts:DEFAULT_SETTINGS.priceEnterprise
-    // and Stripe price_1TRogQ8wsdxsjwKC9245XlfE ("Buleje Max" recurring monthly PEN).
-    // NOTE: static default only — runtime consumers must use `getPlanPrice("enterprise")`
-    // which reads from the PlatformSetting("plan-prices") row in DB.
-    priceMonthly: 299,
-    priceYearly: 2870, // ~20% discount (~S/239/mo)
+    name: "Business",
+    description: "Cadenas, productores y mayoristas · sin limites",
+    // Canonical price mayo 2026 v2 — alineado con plan-tiers.ts PLAN_MAX.
+    // Stripe Price ID: ver STRIPE_PRICE_IDS.max en plan-tiers.ts.
+    // NOTE: static default — runtime consumers usan `getPlanPrice("enterprise")`
+    // que lee del PlatformSetting("plan-prices") en DB.
+    priceMonthly: 349,
+    priceYearly: 3140, // ~25% off anual (~S/261/mo)
     color: "amber",
     limits: {
       maxProducts: -1,
@@ -163,10 +164,11 @@ export function planLimitPayload(resource: string, current: number, max: number,
 }
 
 // ─── Single source of truth para precios de planes ────────────────────────────
-// Fix del bug MRR fake 2026-04-09 — antes había 3 lugares desincronizados:
-//   · lib/superadmin-types.ts:DEFAULT_SETTINGS (499)
-//   · app/api/superadmin/analytics/route.ts PLAN_PRICES (399) ← estaba mal
-//   · lib/plans.ts PLANS.enterprise.priceMonthly (399)        ← estaba mal
+// Brandon mayo 2026 v2 — alineado 1:1 con lib/billing/plan-tiers.ts:
+//   free (Free)        S/ 0
+//   pro (Starter)      S/ 89
+//   business (Pro)     S/ 179
+//   enterprise (Business) S/ 349
 //
 // Los defaults canónicos viven acá (archivo client-safe). Los helpers runtime
 // `getPlanPrice` / `getAllPlanPrices` que consultan `PlatformSetting` viven en
@@ -176,9 +178,9 @@ export function planLimitPayload(resource: string, current: number, max: number,
 /** Defaults canónicos — si no hay override en DB, se usan estos. */
 export const DEFAULT_PLAN_PRICES: Record<PlanId, number> = {
   free: 0,
-  pro: 49,
-  business: 149,
-  enterprise: 299,
+  pro: 89,
+  business: 179,
+  enterprise: 349,
 };
 
 /**

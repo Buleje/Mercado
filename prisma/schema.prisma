@@ -4168,13 +4168,17 @@ model LiveViewerEvent {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PaymentApproval — Yape Vision close-loop (cross-tenant, sin tenantId).
+// PaymentApproval — Yape Vision close-loop.
 // Tabla creada en migration 20260502120000_add_payment_approval. La IA Claude
 // Sonnet 4.6 Vision compara captura vs expectedAmount; humanos del equipo
 // Buleje revisan dudas en /superadmin/pagos-yape.
+// expand-migrate-contract: tenantId TEXT NULLABLE (ccfffa33) →
+// NOT NULL aplicado via pg ALTER TABLE (multi-tenant-contract-audit branch).
+// audit-first: verificado 0 rows NULL antes de SET NOT NULL.
 // ─────────────────────────────────────────────────────────────────────────────
 model PaymentApproval {
   id              String    @id
+  tenantId        String
   conversationId  String?
   customerPhone   String
   expectedAmount  Decimal   @db.Decimal(12, 2)
@@ -4193,6 +4197,8 @@ model PaymentApproval {
 
   @@index([status])
   @@index([conversationId])
+  @@index([tenantId])
+  @@index([tenantId, status])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

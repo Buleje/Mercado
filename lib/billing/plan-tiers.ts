@@ -4,18 +4,22 @@
  * Sistema de tiers del plan vendor de Buleje. FUENTE ÚNICA DE VERDAD —
  * /abrir-tienda, superadmin y el panel del negocio leen de acá.
  *
- * 4 planes (Brandon mayo 2026 — sin tier gratis, charm pricing):
+ * 4 planes (Brandon, sprint mayo 2026 v2 — orientado a calidad +
+ * mejores entradas de precios):
  *
- *   - basico     · S/ 39/mes  · "Estándar" — primer mes 100% off
- *   - pro        · S/ 99/mes  · "Pro"     — 1er mes 50% off
- *   - enterprise · S/ 159/mes · "Enterprise" — 1er mes 50% off
- *   - max        · S/ 199/mes · "Max"     — 1er mes 50% off
+ *   - basico     · "Free"     · S/ 0/mes    · siempre gratis, limites estrictos (funnel)
+ *   - pro        · "Starter"  · S/ 89/mes   · 1er mes gratis · bodega chica con flujo diario
+ *   - enterprise · "Pro"      · S/ 179/mes  · 1er mes 50% off · sweet spot, badge "Mas elegido"
+ *   - max        · "Business" · S/ 349/mes  · 1er mes 50% off · multi-sucursal premium
  *
- * Anual: 20% descuento sobre 12 meses (≈ 2.4 meses gratis).
+ * Anual: 20-25% descuento sobre 12 meses.
  *
- * El id interno (`basico`/`pro`/...) NO cambió por compatibilidad con
- * cientos de archivos que lo referencian. Sólo cambió el LABEL visible
- * ("Básico" → "Estándar") y los precios.
+ * IDs internos (`basico`/`pro`/`enterprise`/`max`) MANTENIDOS para no
+ * romper ~100 archivos del repo. Solo cambian:
+ *   - Labels visibles ("Estandar" → "Free", "Pro" → "Starter", etc.)
+ *   - Precios mensuales
+ *   - Limites + features
+ *   - Tagline + highlights
  *
  * El plan se persiste en localStorage (key `buleje:vendor-plan-tier`).
  * En producción debería leerse del campo `tenant.plan` de la DB y
@@ -64,12 +68,20 @@ export interface PlanDefinition {
 }
 
 /** Stripe Price IDs generados por scripts/setup-stripe-plans.mjs (modo TEST).
- *  Para producción: regenerar con keys de Live mode y reemplazar acá. */
+ *
+ *  Regenerados mayo 2026 v2 con precios nuevos:
+ *    - Starter (tier "pro"):       S/ 89/mes
+ *    - Pro (tier "enterprise"):    S/ 179/mes
+ *    - Business (tier "max"):      S/ 349/mes
+ *
+ *  Para producción: regenerar con STRIPE_SECRET_KEY de live mode y
+ *  reemplazar acá (mismos product names → reuso de productos en Stripe).
+ *  Free (tier "basico") no necesita price_id porque es gratis. */
 export const STRIPE_PRICE_IDS = {
   basico: null,
-  pro: "price_1TRogN8wsdxsjwKCg37NUz0j",
-  enterprise: "price_1TRogO8wsdxsjwKCCRpqTv24",
-  max: "price_1TRogQ8wsdxsjwKC9245XlfE",
+  pro: "price_1TW0fm8wsdxsjwKCViqixJfF",
+  enterprise: "price_1TW0fn8wsdxsjwKCYyZAwdI7",
+  max: "price_1TW0fp8wsdxsjwKCE5q7VHL9",
 } as const;
 
 export type PlanFeature =
@@ -102,36 +114,31 @@ export interface PlanLimits {
 
 export const PLAN_BASICO: PlanDefinition = {
   id: "basico",
-  label: "Estándar",
-  tagline: "Empezá a vender online sin complicarte",
-  monthlyPrice: 39,
-  price: "S/ 39",
+  label: "Free",
+  tagline: "Probá Buleje sin tarjeta · siempre gratis",
+  monthlyPrice: 0,
+  price: "S/ 0",
   period: "/mes",
-  firstMonthDiscount: 100, // primer mes gratis (100% off)
-  annualDiscount: 20,
+  firstMonthDiscount: 0, // ya es gratis, no necesita descuento
+  annualDiscount: 0,     // anual no aplica a tier gratis
   accent: "muted",
   highlights: [
-    "Tu tienda online lista en minutos",
-    "Hasta 50 productos cargados",
-    "Pedidos por WhatsApp y caja registradora",
-    "Inventario y clientes con fiados",
-    "Primer mes gratis · sin tarjeta",
+    "Tienda online básica · sin tarjeta",
+    "Hasta 20 productos cargados",
+    "Hasta 30 pedidos al mes",
+    "Pedidos por WhatsApp + POS básico",
+    "Sin compromiso · upgrade cuando quieras",
   ],
   unlockedTabs: new Set<Tab>([
     // Inicio (limitado: solo dashboard + asistente)
     "vendor-dashboard",
     "asistente-ia",
-    "metas-logros",
-    // Ventas (POS + pedidos)
+    // Ventas (POS + pedidos basicos)
     "ventas-caja",
     "pedidos",
-    // Productos & inventario
+    // Productos (limitado a 20)
     "productos",
-    "inventario",
-    // Clientes (sin préstamos)
-    "clientes",
-    "fiados",
-    // Mi tienda
+    // Mi tienda (customizer si)
     "store-customizer",
     "pagina-inicio",
     // Config (siempre)
@@ -141,7 +148,7 @@ export const PLAN_BASICO: PlanDefinition = {
   ]),
   features: new Set<PlanFeature>([]),
   limits: {
-    maxProducts: 50,
+    maxProducts: 20,
     maxBranches: 1,
     maxRiders: 0,
     maxAdminUsers: 1,
@@ -151,50 +158,92 @@ export const PLAN_BASICO: PlanDefinition = {
 
 export const PLAN_PRO: PlanDefinition = {
   id: "pro",
+  label: "Starter",
+  tagline: "Para bodegas con flujo diario que ya quieren crecer",
+  monthlyPrice: 89,
+  price: "S/ 89",
+  period: "/mes",
+  firstMonthDiscount: 100, // primer mes 100% gratis para Starter
+  annualDiscount: 20,
+  accent: "primary",
+  recommended: false, // el "Mas elegido" pasa a Pro (179)
+  highlights: [
+    "Productos ilimitados · 1 admin",
+    "Inventario, clientes y fiados completos",
+    "Yape automatico + pedidos WhatsApp",
+    "Tu marca en tu storefront · sin Buleje",
+    "Primer mes gratis · sin tarjeta",
+  ],
+  unlockedTabs: new Set<Tab>([
+    // Todo Free
+    ...PLAN_BASICO.unlockedTabs,
+    // Inventario completo
+    "inventario",
+    // Clientes + fiados
+    "clientes",
+    "fiados",
+    // Documentos basicos (boleta interna, no SUNAT todavia)
+    "documentos",
+    // Plata basico (ingresos/egresos)
+    "plata",
+    // Metas/logros + soporte
+    "metas-logros",
+    "support-inbox",
+    "turnos",
+  ]),
+  features: new Set<PlanFeature>([]),
+  limits: {
+    maxProducts: null,
+    maxBranches: 1,
+    maxRiders: 0,
+    maxAdminUsers: 1,
+  },
+  stripePriceId: STRIPE_PRICE_IDS.pro,
+};
+
+export const PLAN_ENTERPRISE: PlanDefinition = {
+  id: "enterprise",
   label: "Pro",
-  tagline: "Para negocios que ya venden y quieren escalar",
-  monthlyPrice: 99,
-  price: "S/ 99",
+  tagline: "Sweet spot: bodega establecida que ya vende online",
+  monthlyPrice: 179,
+  price: "S/ 179",
   period: "/mes",
   firstMonthDiscount: 50,
   annualDiscount: 20,
-  accent: "primary",
-  recommended: true,
+  accent: "indigo",
+  recommended: true, // BADGE "MAS ELEGIDO" — el 60% del mercado va aqui
   highlights: [
-    "Productos ilimitados · 3 repartidores propios",
-    "Facturación electrónica SUNAT incluida",
-    "Compras, cotizaciones y notas de crédito",
-    "Promos, fidelización y chat con clientes",
-    "Aparece destacado en el marketplace",
+    "Productos ilimitados · 2 sucursales · 5 admins",
+    "Facturacion SUNAT + cotizaciones + guias",
+    "Promociones, fidelizacion y chat con clientes",
+    "Aparece destacado en el marketplace cross-store",
+    "Prestamos, scoring, recetas y compras a proveedor",
   ],
   unlockedTabs: new Set<Tab>([
-    // Todo Básico
-    ...PLAN_BASICO.unlockedTabs,
-    // Compras
+    // Todo Starter
+    ...PLAN_PRO.unlockedTabs,
+    // Compras a proveedor
     "compras",
     "contratos",
     "devoluciones-proveedor",
-    // Ventas pro: SUNAT y documentos
+    // Documentos SUNAT
     "cotizaciones",
     "guias-remision",
     "notas-credito",
     "facturacion",
-    // Clientes pro: préstamos + chat + soporte
-    "prestamos",
-    "marketplace-chat",
-    "support-inbox",
-    // Gráficos básicos
-    "analytics-pro",
-    "plata",
-    // Marketplace ops
-    "marketplace",
-    "delivery-partners",
-    // Promos + scoring + tesoreria
+    // Promociones, scoring, prestamos
     "promociones",
+    "prestamos",
     "scoring",
-    "tesoreria",
-    "turnos",
+    // Recetas + tesoreria
     "recetas",
+    "tesoreria",
+    // Marketplace destacado
+    "marketplace",
+    "marketplace-chat",
+    "delivery-partners",
+    // Analytics basico
+    "analytics-pro",
   ]),
   features: new Set<PlanFeature>([
     "sunat-billing",
@@ -202,49 +251,51 @@ export const PLAN_PRO: PlanDefinition = {
   ]),
   limits: {
     maxProducts: null,
-    maxBranches: 1,
+    maxBranches: 2,
     maxRiders: 3,
     maxAdminUsers: 5,
   },
-  stripePriceId: STRIPE_PRICE_IDS.pro,
+  stripePriceId: STRIPE_PRICE_IDS.enterprise,
 };
 
-export const PLAN_ENTERPRISE: PlanDefinition = {
-  id: "enterprise",
-  label: "Enterprise",
-  tagline: "Cadenas y operaciones de varias sucursales",
-  monthlyPrice: 159,
-  price: "S/ 159",
+export const PLAN_MAX: PlanDefinition = {
+  id: "max",
+  label: "Business",
+  tagline: "Cadenas, productores y mayoristas · sin limites",
+  monthlyPrice: 349,
+  price: "S/ 349",
   period: "/mes",
   firstMonthDiscount: 50,
-  annualDiscount: 20,
-  accent: "indigo",
+  annualDiscount: 25,
+  accent: "amber",
   highlights: [
-    "Hasta 10 sucursales con stock independiente",
-    "Forecasting con IA y panel de auditoría",
-    "Membresías, gift cards y suscripciones",
-    "20 repartidores y 25 admins del panel",
-    "API y webhooks para integrar tus sistemas",
+    "Sucursales, repartidores y admins ilimitados",
+    "Forecasting IA + sugerencias automaticas",
+    "Lives streaming + ventas en vivo",
+    "Membresias, gift cards y suscripciones",
+    "Soporte 24/7 por WhatsApp con account manager",
   ],
   unlockedTabs: new Set<Tab>([
-    // Todo Pro
-    ...PLAN_PRO.unlockedTabs,
-    // Inicio enterprise: IA avanzada
+    // Todo Pro (S/179)
+    ...PLAN_ENTERPRISE.unlockedTabs,
+    // IA avanzada
     "ai-command",
     "sugerencias-ia",
-    // Gráficos avanzados + forecasting
+    // Performance avanzado + auditoria
     "rendimiento",
     "colas",
     "auditoria",
     "forecasting",
-    // Marketplace enterprise
+    // Marketplace premium
     "delivery-live",
     "subscriptions",
     "gift-cards-admin",
     "socio-members",
+    // Lives streaming exclusivo
+    "lives-admin",
   ]),
   features: new Set<PlanFeature>([
-    ...PLAN_PRO.features,
+    ...PLAN_ENTERPRISE.features,
     "forecasting",
     "ai-command",
     "ai-suggestions",
@@ -253,40 +304,6 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
     "subscriptions",
     "gift-cards",
     "socio-program",
-  ]),
-  limits: {
-    maxProducts: null,
-    maxBranches: 10,
-    maxRiders: 20,
-    maxAdminUsers: 25,
-  },
-  stripePriceId: STRIPE_PRICE_IDS.enterprise,
-};
-
-export const PLAN_MAX: PlanDefinition = {
-  id: "max",
-  label: "Max",
-  tagline: "Todo desbloqueado · sin límites · soporte 24/7",
-  monthlyPrice: 199,
-  price: "S/ 199",
-  period: "/mes",
-  firstMonthDiscount: 50,
-  annualDiscount: 25,
-  accent: "amber",
-  highlights: [
-    "Lives streaming + ventas en vivo",
-    "White-label completo (tu marca, tu dominio)",
-    "IA premium: comandos por voz y sugerencias",
-    "Sucursales y repartidores ilimitados",
-    "Soporte prioritario 24/7 con tu account manager",
-  ],
-  unlockedTabs: new Set<Tab>([
-    // Todo Enterprise + lives streaming exclusivo
-    ...PLAN_ENTERPRISE.unlockedTabs,
-    "lives-admin",
-  ]),
-  features: new Set<PlanFeature>([
-    ...PLAN_ENTERPRISE.features,
     "white-label",
     "live-streaming",
     "premium-support",

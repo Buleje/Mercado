@@ -83,10 +83,12 @@ export interface PlatformSettings {
  * Fix del bug MRR fake 2026-04-09 — ver docs/research/superadmin-improvements-2026-04-09.md
  */
 export const DEFAULT_SETTINGS: PlatformSettings = {
+  // Brandon mayo 2026 v2 — precios alineados con plan-tiers.ts:
+  //   priceFree=Free (S/0) · pricePro=Starter (S/89) · priceBusiness=Pro (S/179) · priceEnterprise=Business (S/349)
   priceFree: 0,
-  pricePro: 49,
-  priceBusiness: 149,
-  priceEnterprise: 299,
+  pricePro: 89,
+  priceBusiness: 179,
+  priceEnterprise: 349,
   commissionDefault: 2.5,
   limitsFreeProducts: 50,
   limitsFreeUsers: 2,
