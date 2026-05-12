@@ -28,6 +28,17 @@ export async function recordCommission(params: {
   rate: number;
   tenantId?: string;
 }): Promise<void> {
+  // P1-1 multi-tenant: commission ledger es DINERO cross-vendor; un default
+  // silente a "main" significa que la comisión queda atribuida al tenant
+  // equivocado. Fallback observable hasta que todos los callers pasen tenantId.
+  const tenantId = params.tenantId ?? "main";
+  if (!params.tenantId) {
+    logger.warn("[commissions] missing tenantId — falling back to 'main'", {
+      orderId: params.orderId,
+      type: params.type,
+      amount: params.amount,
+    });
+  }
   try {
     await prisma.commissionLedger.create({
       data: {
@@ -38,7 +49,7 @@ export async function recordCommission(params: {
         amount: params.amount,
         rate: params.rate,
         status: "pending",
-        tenantId: params.tenantId ?? "main",
+        tenantId,
       },
     });
   } catch (err) {
