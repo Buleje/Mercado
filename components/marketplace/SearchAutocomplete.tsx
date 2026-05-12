@@ -288,7 +288,7 @@ export default function SearchAutocomplete({
           placeholder={placeholder}
           autoComplete="off"
           className={cn(
-            "w-full pl-12 py-3.5 pr-12 rounded-2xl border text-base font-medium",
+            "w-full pl-12 py-3.5 pr-14 rounded-2xl border text-base font-medium",
             "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900",
             "text-[var(--text-primary)] dark:text-white placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)]",
             "outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
@@ -317,19 +317,21 @@ export default function SearchAutocomplete({
           <button
             type="button"
             onClick={isListening ? stopListening : startListening}
-            aria-label="Buscar por voz"
+            aria-label={isListening ? "Detener búsqueda por voz" : "Buscar por voz (micrófono)"}
             aria-pressed={isListening}
+            title={isListening ? "Escuchando… toca para detener" : "Buscar por voz"}
             className={cn(
-              "absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full transition-colors",
+              // Tap target accesible (≥44×44 en mobile) y boton mas visible.
+              "absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full transition-all",
               isListening
-                ? "text-[var(--data-error-500)] animate-pulse hover:bg-red-50 dark:hover:bg-red-900/20"
-                : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800",
+                ? "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)] ring-2 ring-[var(--data-error-500)]/40 animate-pulse"
+                : "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)]/15 hover:scale-105",
             )}
           >
             {isListening ? (
-              <MicOff className="h-4 w-4" aria-hidden="true" />
+              <MicOff className="h-5 w-5" aria-hidden="true" strokeWidth={2} />
             ) : (
-              <Mic className="h-4 w-4" aria-hidden="true" />
+              <Mic className="h-5 w-5" aria-hidden="true" strokeWidth={2} />
             )}
           </button>
         ) : null}

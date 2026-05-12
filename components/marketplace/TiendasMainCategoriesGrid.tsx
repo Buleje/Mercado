@@ -70,12 +70,18 @@ interface TiendasMainCategoriesGridProps {
    *  tengan ≥1 tienda asociada — si no, ocultamos la categoría (y la sección
    *  entera si no queda ninguna). Evita filtros muertos. */
   stores?: ReadonlyArray<{ category?: string | null }>;
+  /** True mientras stores está cargando — evita parpadeo de defaults
+   *  hardcodeados cuando los filtros vacían el array. Brandon mayo 2026:
+   *  antes con stores=[] mostrabamos los 11 defaults aunque NO había
+   *  tiendas reales asociadas. */
+  storesLoading?: boolean;
 }
 
 export default function TiendasMainCategoriesGrid({
   selected,
   onSelect,
   stores = [],
+  storesLoading = false,
 }: TiendasMainCategoriesGridProps) {
   const [categories, setCategories] = useState<MainCategory[]>(DEFAULT_CATEGORIES);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -182,10 +188,14 @@ export default function TiendasMainCategoriesGrid({
   }, []);
 
   // Filtrar categorías a las que están vinculadas a ≥1 tienda real.
-  // Si stores aún no cargó (length=0), mostramos todo para no parpadear.
+  // Brandon mayo 2026: antes si stores=[] mostrabamos los 11 defaults
+  // (decorativos sin tienda real). Ahora distinguimos "loading" del
+  // resultado vacío real — sólo durante loading mantenemos el render
+  // para evitar layout shift; resuelto a 0 → ocultamos la sección.
   // Comparación case-insensitive (la DB puede tener "Bodega" / "bodega").
   const visibleCategories = (() => {
-    if (stores.length === 0) return categories;
+    if (storesLoading) return categories; // skeleton-ish mientras cargan
+    if (stores.length === 0) return []; // resuelto 0 stores → hidden via guard
     const used = new Set(
       stores
         .map((s) => (s.category ?? "").toString().trim().toLowerCase())

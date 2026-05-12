@@ -264,8 +264,9 @@ export default function ComoPagarClient() {
           <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           Pagas como prefieras
         </p>
-        <h1 className="font-display text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold tracking-[-0.03em] leading-[0.95] text-[var(--text-primary)] max-w-3xl">
-          5 maneras reales de pagar.<br className="hidden sm:block" /> Vos eliges cual.
+        <h1 className="font-display text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold tracking-[-0.035em] leading-[0.98] text-[var(--text-primary)] max-w-3xl">
+          5 maneras reales de pagar.<br className="hidden sm:block" />{" "}
+          <span className="italic font-serif text-[var(--accent)]">Vos elegís cuál.</span>
         </h1>
         <p className="mt-5 text-lg sm:text-xl text-[var(--text-secondary)] leading-[1.4] max-w-2xl">
           Sin tarjeta obligatoria. Sin tramites. Si nunca compraste online,
@@ -328,8 +329,8 @@ export default function ComoPagarClient() {
                   El mas usado en Pucallpa
                 </span>
               </div>
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[0.95] tracking-tight">
-                Yape. Instantaneo, sin comision, desde tu celular.
+              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[0.95] tracking-[-0.02em]">
+                Yape. <span className="italic font-serif">Instantáneo,</span> sin comisión, desde tu celular.
               </h2>
               <p className="mt-4 text-base sm:text-lg text-white/85 leading-relaxed max-w-xl">
                 Si ya tenes Yape activo, pagar es escanear el QR de la bodega
@@ -400,8 +401,8 @@ export default function ComoPagarClient() {
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             En 1 vistazo
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            ¿Cual te conviene?
+          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]">
+            ¿Cuál te <span className="italic font-serif text-[var(--accent)]">conviene?</span>
           </h2>
           <p className="mt-2 text-base text-[var(--text-secondary)]">
             Compara las 5 opciones segun lo que necesitas hoy.
@@ -484,8 +485,9 @@ export default function ComoPagarClient() {
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Otros metodos
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            Si Yape no te queda, hay 4 maneras mas.
+          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]">
+            Si Yape no te queda, hay{" "}
+            <span className="italic font-serif text-[var(--accent)]">4 maneras más.</span>
           </h2>
         </div>
 
@@ -635,8 +637,9 @@ export default function ComoPagarClient() {
             <Users className="h-3.5 w-3.5" strokeWidth={2} />
             Bodegas activas en Pucallpa
           </span>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
-            Ya sabes como pagar. Falta solo el pedido.
+          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.02em] leading-[1]">
+            Ya sabes cómo pagar.{" "}
+            <span className="italic font-serif text-[var(--accent)]">Falta sólo el pedido.</span>
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/70 max-w-xl mx-auto">
             Mira las bodegas que ya estan delivereando hoy y arma tu primer

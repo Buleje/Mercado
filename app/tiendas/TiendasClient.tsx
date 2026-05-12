@@ -766,6 +766,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         selected={category}
         onSelect={setCategory}
         stores={stores}
+        storesLoading={loading}
       />
 
       {/* ── Filtros + Grid — directo, sin hero pesado ─────────────────── */}
@@ -815,7 +816,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   onClick={() => setSubCategoryId(null)}
                   aria-pressed={subCategoryId === null}
                   className={cn(
-                    "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-xl border-2 transition-all px-3 py-2.5 min-w-[88px]",
+                    "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-2xl border-2 transition-all px-3 py-3 min-w-[96px] sm:min-w-[88px]",
                     subCategoryId === null
                       ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                       : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
@@ -823,7 +824,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 >
                   <span
                     className={cn(
-                      "h-9 w-9 rounded-lg flex items-center justify-center",
+                      "h-11 w-11 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center",
                       subCategoryId === null
                         ? "bg-[var(--accent-600,var(--accent))] text-white"
                         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
@@ -852,7 +853,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                       aria-pressed={active}
                       title={s.description || s.label}
                       className={cn(
-                        "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-xl border-2 transition-all px-3 py-2.5 min-w-[88px]",
+                        "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-2xl border-2 transition-all px-3 py-3 min-w-[96px] sm:min-w-[88px]",
                         active
                           ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                           : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
@@ -860,7 +861,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     >
                       <span
                         className={cn(
-                          "h-9 w-9 rounded-lg overflow-hidden flex items-center justify-center",
+                          "h-11 w-11 sm:h-9 sm:w-9 rounded-lg overflow-hidden flex items-center justify-center",
                           active
                             ? "bg-[var(--accent-600,var(--accent))] text-white"
                             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
@@ -915,7 +916,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     onClick={() => setZone(z.id)}
                     aria-pressed={active}
                     className={cn(
-                      "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-xl border-2 transition-all px-3 py-2.5 min-w-[88px]",
+                      "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-2xl border-2 transition-all px-3 py-3 min-w-[96px] sm:min-w-[88px]",
                       active
                         ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                         : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
@@ -923,7 +924,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   >
                     <span
                       className={cn(
-                        "h-9 w-9 rounded-lg flex items-center justify-center text-[length:var(--ts-2xs)] font-extrabold tracking-tight",
+                        "h-11 w-11 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center text-[length:var(--ts-2xs)] font-extrabold tracking-tight",
                         active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                       )}
                     >
