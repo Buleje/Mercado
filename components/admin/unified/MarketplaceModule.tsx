@@ -1334,6 +1334,14 @@ function MarketplaceCuponesTab() {
     saving, form, setForm,
     handleCreate, toggleActive, deleteCoupon,
   } = useMarketplaceCoupons();
+  // PERF (audit React Compiler 2026-05-12): `now` capturado con useState lazy.
+  // Refresh cada hora para que "expira en <7d" se mantenga actualizado en
+  // sesiones largas del admin.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   if (loading) return <TableSkeleton />;
 
@@ -1342,7 +1350,7 @@ function MarketplaceCuponesTab() {
   const totalUses = coupons.reduce((s, c) => s + (c.usedCount || 0), 0);
   const expiringSoon = coupons.filter((c) => {
     if (!c.expiresAt) return false;
-    const days = (new Date(c.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    const days = (new Date(c.expiresAt).getTime() - now) / (1000 * 60 * 60 * 24);
     return days > 0 && days < 7;
   }).length;
 
@@ -1413,7 +1421,7 @@ function MarketplaceCuponesTab() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {coupons.map((c) => {
-            const expired = c.expiresAt ? new Date(c.expiresAt).getTime() < Date.now() : false;
+            const expired = c.expiresAt ? new Date(c.expiresAt).getTime() < now : false;
             const usagePct = c.maxUses ? Math.min(100, (c.usedCount / c.maxUses) * 100) : 0;
             return (
               <div
