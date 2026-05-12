@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
 /** Slug used by the original single-store deployment. */
@@ -8,12 +9,18 @@ export const DEFAULT_TENANT_SLUG = "main";
  * Find a Tenant record by either its ID (CUID) or slug.
  * Use this everywhere you need to look up a Tenant from auth.tenantId
  * or x-tenant-id header — the value may be either format.
+ *
+ * PERF 2026-05-12 (audit N+1 fix): memoizado con React.cache por request.
+ * Antes se detectaba el patron 3x tenant.findFirst dentro de una sola request
+ * cuando varios componentes/rutas llamaban este helper en cascada. React.cache
+ * deduplica dentro del mismo render tree server-side.
  */
-export async function findTenantByIdOrSlug(tenantId: string) {
+export const findTenantByIdOrSlug = cache(async (tenantId: string) => {
+  if (!tenantId) return null;
   return prisma.tenant.findFirst({
     where: { OR: [{ id: tenantId }, { slug: tenantId }] },
   });
-}
+});
 
 /**
  * Read the tenant slug injected by Next.js edge middleware.
