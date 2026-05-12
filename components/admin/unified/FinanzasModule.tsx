@@ -1,4 +1,6 @@
 "use client";
+
+import { logger } from "@/lib/logger";
 import { CardTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -118,7 +120,7 @@ function HealthSemaphore() {
         const payablesVencidos = kpis?.payablesVencidosMonto ?? 0;
         setData({ ingresos, gastos, efectivo, gastosMensuales: gastos, fiadosVencidos, payablesVencidos });
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -215,7 +217,7 @@ function ComparativoMensual() {
 
         setChartData(months);
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -290,7 +292,7 @@ function PuntoEquilibrio() {
         const ventasHoy = kpis?.ventasHoy ?? kpis?.salesToday ?? 0;
         setData({ gastoDiario: Math.round(gastoDiario), ventasHoy: Math.round(ventasHoy) });
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -415,7 +417,7 @@ function GastosDonut() {
 
         setGastos(result);
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -525,7 +527,7 @@ function ProyeccionCierreMes() {
         const gastosMes = expenses?.totalMonth ?? expenses?.total ?? 0;
         setData({ ventasMes, gastosMes, diasTranscurridos, diasTotales });
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -605,7 +607,7 @@ function ResumenFiscal() {
         const compras = expenses?.totalMonth ?? expenses?.total ?? 0;
         setData({ ventas, compras });
       })
-      .catch(() => {})
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -1770,7 +1772,7 @@ function IntelligenceKPIStrip() {
           productos: d.productosActivos ?? d.activeProducts ?? 0,
         });
       })
-      .catch(() => {});
+      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }));
   }, []);
 
   if (!kpis) return null;
