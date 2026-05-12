@@ -15,16 +15,19 @@ import { runWithAuditContext } from "@/lib/audit/audit-context";
  *   1. Admin del tenant del customer (puede consultar/editar prefs)
  *   2. Customer-session con phone matching el query
  */
+type AuthOk = { ok: true; tenantId: string };
+type AuthFail = { ok: false; status: number; error: string };
+
 async function authorizePhoneAccess(
   req: NextRequest,
   phone: string,
-): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  // 1. Admin
+): Promise<AuthOk | AuthFail> {
+  // 1. Admin — scope al tenant del admin (NUNCA cross-tenant)
   const admin = await tryAdmin(req);
   if (admin) {
-    return { ok: true };
+    return { ok: true, tenantId: admin.tenantId };
   }
-  // 2. Customer-session
+  // 2. Customer-session — scope al tenant del payload
   const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
   if (!sessionToken) return { ok: false, status: 401, error: "unauthorized" };
   const payload = await getCustomerPayload(sessionToken);
@@ -33,7 +36,10 @@ async function authorizePhoneAccess(
   if (!sessionPhone || sessionPhone !== queryPhone) {
     return { ok: false, status: 403, error: "forbidden" };
   }
-  return { ok: true };
+  if (!payload?.tenantId) {
+    return { ok: false, status: 403, error: "forbidden" };
+  }
+  return { ok: true, tenantId: payload.tenantId };
 }
 
 // GET /api/customer-preferences?phone=XXX
@@ -47,8 +53,12 @@ export async function GET(req: NextRequest) {
   const auth = await authorizePhoneAccess(req, phone);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const customer = await prisma.customer.findUnique({
-    where: { phone },
+  // CRITICAL FIX 2026-05-11 (audit P0-1): Customer.phone es @unique GLOBAL
+  // (TD-040 fase 3 pendiente). findUnique({where:{phone}}) leía el primer
+  // customer con ese phone en cualquier tenant — leak de preferencias cross-tenant.
+  // Ahora findFirst con tenantId del autorizador (admin tenant o customer session).
+  const customer = await prisma.customer.findFirst({
+    where: { phone, tenantId: auth.tenantId },
     select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
   });
 
@@ -87,9 +97,17 @@ export async function PATCH(req: NextRequest) {
   // Round 15 M004: audit log de Customer prefs update con phone como actor.
   return runWithAuditContext(req, phone, async () => {
     try {
-      const updated = await prisma.customer.update({
-        where: { phone },
+      // CRITICAL FIX 2026-05-11 (audit P0-1): updateMany con tenantId
+      // double-filter para evitar escritura cross-tenant via phone @unique.
+      const result = await prisma.customer.updateMany({
+        where: { phone, tenantId: auth.tenantId },
         data,
+      });
+      if (result.count === 0) {
+        return NextResponse.json({ error: "customer not found" }, { status: 404 });
+      }
+      const updated = await prisma.customer.findFirst({
+        where: { phone, tenantId: auth.tenantId },
         select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
       });
       return NextResponse.json(updated);

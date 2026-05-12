@@ -41,6 +41,7 @@ export const MarketplaceStoreProductsDB = {
               image: true,
               category: true,
               unit: true,
+              stock: true,
               modifierGroups: {
                 where: { isActive: true },
                 orderBy: { position: "asc" },
@@ -72,6 +73,9 @@ export const MarketplaceStoreProductsDB = {
         productImage:       r.product.image,
         productCategory:    r.product.category,
         productUnit:        r.product.unit,
+        // stock: null = no controla stock (restaurante/servicios) → no se
+        // valida en checkout. 0 = agotado real. >0 = tope por producto.
+        stock:              r.product.stock,
         modifierGroups: r.product.modifierGroups.map((g) => ({
           id: g.id,
           name: g.name,
@@ -149,6 +153,8 @@ export const MarketplaceStoreProductsDB = {
       productImage:       product.image,
       productCategory:    product.category,
       productUnit:        product.unit,
+      // stock: el select de upsert no incluye stock; usar list() para refresh con stock real.
+      stock:              null,
       modifierGroups:     [], // upsert no fetcha modifierGroups; usar list() para refresh
     };
   },

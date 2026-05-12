@@ -95,7 +95,7 @@ describe("PaymentApprovalDb", () => {
   describe("findByPhonePending", () => {
     it("retorna null cuando no hay approval pending para el phone", async () => {
       mockQueryRaw.mockResolvedValue([]);
-      const result = await PaymentApprovalDb.findByPhonePending("51999000111");
+      const result = await PaymentApprovalDb.findByPhonePending("51999000111", "tenant-test");
       expect(result).toBeNull();
     });
 
@@ -103,7 +103,7 @@ describe("PaymentApprovalDb", () => {
       const row = makeApprovalRow({ customerPhone: "51987654321", status: "pending" });
       mockQueryRaw.mockResolvedValue([row]);
 
-      const result = await PaymentApprovalDb.findByPhonePending("51987654321");
+      const result = await PaymentApprovalDb.findByPhonePending("51987654321", "tenant-test");
 
       expect(result).not.toBeNull();
       expect(result!.customerPhone).toBe("51987654321");
@@ -268,6 +268,7 @@ describe("PaymentApprovalDb", () => {
       mockQueryRaw.mockResolvedValue([row]);
 
       const result = await PaymentApprovalDb.create({
+        tenantId: "tenant-test",
         customerPhone: "51987654321",
         expectedAmount: 75.0,
         imageUrl: "https://cdn.example.com/img.jpg",
@@ -291,6 +292,7 @@ describe("PaymentApprovalDb", () => {
 
       await expect(
         PaymentApprovalDb.create({
+          tenantId: "tenant-test",
           customerPhone: "51000000000",
           expectedAmount: 50.0,
           imageUrl: "https://example.com/img.jpg",

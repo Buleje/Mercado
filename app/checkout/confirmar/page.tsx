@@ -52,6 +52,12 @@ type PerStoreResult = {
   success: boolean;
   orderId?: string | number;
   error?: string;
+  /** Código de error del backend para distinguir 409/422 y guiar al cliente. */
+  errorCode?: string;
+  /** Producto que falló stock (para mostrar CTA "Ajustar X en mi carrito"). */
+  errorProductName?: string;
+  /** Stock disponible en el momento del fallo. */
+  errorAvailable?: number | null;
 };
 
 export default function CheckoutConfirmarPage() {
@@ -179,7 +185,17 @@ export default function CheckoutConfirmarPage() {
                   : typeof data?.error?.message === "string"
                     ? data.error.message
                     : `Error ${r.status}`;
-            throw new Error(detail);
+            // Adjuntar metadata estructurada (code/productName/available)
+            // al Error para que la UI pueda mostrar un mensaje accionable.
+            const errWithMeta = new Error(detail) as Error & {
+              code?: string;
+              productName?: string | null;
+              available?: number | null;
+            };
+            errWithMeta.code = typeof data?.code === "string" ? data.code : undefined;
+            errWithMeta.productName = typeof data?.productName === "string" ? data.productName : null;
+            errWithMeta.available = typeof data?.available === "number" ? data.available : null;
+            throw errWithMeta;
           }
           return r.json();
         });
@@ -205,8 +221,21 @@ export default function CheckoutConfirmarPage() {
           (v && "id" in v ? v.id : undefined);
         return { storeName: g.storeName, storeSlug: g.storeSlug, success: true, orderId };
       }
-      const message = r.reason instanceof Error ? r.reason.message : "Error desconocido";
-      return { storeName: g.storeName, storeSlug: g.storeSlug, success: false, error: message };
+      const reason = r.reason as (Error & {
+        code?: string;
+        productName?: string | null;
+        available?: number | null;
+      }) | undefined;
+      const message = reason instanceof Error ? reason.message : "Error desconocido";
+      return {
+        storeName: g.storeName,
+        storeSlug: g.storeSlug,
+        success: false,
+        error: message,
+        errorCode: reason?.code,
+        errorProductName: reason?.productName ?? undefined,
+        errorAvailable: reason?.available ?? null,
+      };
     });
     setResults(next);
 
@@ -474,11 +503,37 @@ export default function CheckoutConfirmarPage() {
                   <p className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)]">
                     {r.storeName}
                   </p>
-                  {r.error && (
+                  {r.error && r.errorCode === "STOCK_INSUFFICIENT" ? (
+                    <div className="mt-1 space-y-2">
+                      <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-relaxed">
+                        Sin stock para{" "}
+                        <strong className="text-[var(--text-primary)]">
+                          {r.errorProductName ?? "uno de los productos"}
+                        </strong>
+                        {typeof r.errorAvailable === "number" && r.errorAvailable >= 0 && (
+                          <>
+                            {" "}— quedan{" "}
+                            <strong className="tabular-nums text-[var(--data-warning-500,#f97316)]">
+                              {r.errorAvailable}
+                            </strong>
+                            .
+                          </>
+                        )}{" "}
+                        Volvé al carrito a ajustar la cantidad y reintentá.
+                      </p>
+                      <Link
+                        href="/marketplace/carrito"
+                        className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:underline"
+                      >
+                        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                        Ajustar mi carrito
+                      </Link>
+                    </div>
+                  ) : r.error ? (
                     <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mt-0.5">
                       {r.error}
                     </p>
-                  )}
+                  ) : null}
                   {r.success && r.orderId && (
                     <Link
                       href={`/pedido/${r.orderId}/gracias`}

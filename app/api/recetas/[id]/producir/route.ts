@@ -42,13 +42,21 @@ export async function POST(
     }
 
     // Deduct ingredient stock in a transaction
+    // eslint-disable-next-line no-restricted-properties -- $transaction legítima: lookup + update + insert atómico multi-tabla con tenantId en cada WHERE. Refactor a RecetasDB.producirAtomic pendiente.
     const costoReal = await prisma.$transaction(async (tx) => {
       let totalCosto = 0;
 
       for (const ing of receta.ingredientes) {
         const cantidadNecesaria = ing.cantidad * parsed.data.cantidad;
 
-        const producto = await tx.product.findUnique({ where: { id: ing.productoId } });
+        // CRITICAL FIX 2026-05-11 (audit P0 CRIT-2): scope tenantId al
+        // findUnique y al update. Antes un admin podía crear receta apuntando
+        // a productoId de otro tenant y al "producir" decrementaba stock
+        // ajeno (DoS de inventario competidor). El POST/PATCH de recetas
+        // también valida ownership ahora.
+        const producto = await tx.product.findFirst({
+          where: { id: ing.productoId, tenantId: auth.tenantId, deletedAt: null },
+        });
         if (!producto) {
           throw new Error(`Producto ${ing.productoId} no encontrado`);
         }
@@ -61,8 +69,8 @@ export async function POST(
         }
 
         const newStock = prevStock - cantidadNecesaria;
-        await tx.product.update({
-          where: { id: ing.productoId },
+        await tx.product.updateMany({
+          where: { id: ing.productoId, tenantId: auth.tenantId },
           data: { stock: newStock },
         });
 
@@ -102,16 +110,19 @@ export async function POST(
       // SECURITY 2026-05-05 (audit cross-tenant #high): scope tenantId.
       // Antes si receta.productoId apuntaba a producto de otro tenant
       // (configuración corrupta), incrementaba stock ajeno.
+      // eslint-disable-next-line no-restricted-properties -- post-transaction lookup scoped por tenantId. Refactor a ProductsDB pendiente.
       const prod = await prisma.product.findFirst({
         where: { id: receta.productoId, tenantId: auth.tenantId },
       });
       if (prod) {
         const prevStock = prod.stock ?? 0;
         const newStock = prevStock + parsed.data.cantidad;
-        await prisma.product.update({
-          where: { id: receta.productoId },
+        // eslint-disable-next-line no-restricted-properties -- updateMany con tenantId obligatorio. Refactor a ProductsDB pendiente.
+        await prisma.product.updateMany({
+          where: { id: receta.productoId, tenantId: auth.tenantId },
           data: { stock: newStock },
         });
+        // eslint-disable-next-line no-restricted-properties -- create scoped a tenantId del auth. Refactor a InventoryMovementsDB pendiente.
         await prisma.inventoryMovement.create({
           data: {
             tenantId: auth.tenantId,
@@ -132,9 +143,7 @@ export async function POST(
       "Producir", "receta",
       `Producción de "${receta.nombre}" x${parsed.data.cantidad} — costo real: S/${costoReal.toFixed(2)}`,
       lote.id, auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+    ).catch((err) => logger.error("[recetas] activity log failed", { err: String(err) }));
 
     return NextResponse.json(lote, { status: 201 });
   } catch (e) {

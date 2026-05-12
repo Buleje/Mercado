@@ -50,6 +50,12 @@ export type DbStoreProduct = {
   productImage: string | null;
   productCategory: string;
   productUnit: string;
+  /**
+   * Stock disponible del producto. null = no controla stock (restaurante,
+   * servicios). 0 = agotado y no se debe permitir agregar al carrito.
+   * Cualquier número positivo es el límite máximo por producto.
+   */
+  stock: number | null;
   modifierGroups: DbStoreProductModifierGroup[];
 };
 

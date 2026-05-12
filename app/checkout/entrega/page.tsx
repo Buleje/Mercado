@@ -34,6 +34,7 @@ import { useCustomer } from "@/contexts/customer-context";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import PaymentMethodCard from "@/components/marketplace/checkout/PaymentMethodCard";
 import AddressPicker from "@/components/marketplace/checkout/AddressPicker";
+import { LocationConfirmModal } from "@/components/checkout/parts/LocationConfirmModal";
 import {
   CheckoutTransitionOverlay,
   useCheckoutTransition,
@@ -178,6 +179,13 @@ export default function CheckoutEntregaPage() {
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [geoSuccess, setGeoSuccess] = useState(false);
+
+  // Modal de confirmación con mapa: el cliente puede ajustar el pin GPS
+  // antes de que se rellenen los campos del form. Mejora la precisión
+  // sin obligar al cliente a editar lat/lon manualmente.
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+  const [mapInitial, setMapInitial] = useState<{ lat: number; lon: number; address: string } | null>(null);
+  const [mapLoading, setMapLoading] = useState(false);
 
   // Round 23: ubigeo cargado desde server (no más bundle de 350KB).
   const [departamentos, setDepartamentos] = useState<UbigeoEntry[]>([]);
@@ -413,39 +421,27 @@ export default function CheckoutEntregaPage() {
       const pos = await getPositionWithRetry();
       const { latitude, longitude } = pos.coords;
 
-      // Round 23 (Performance): reverse-geocode + ubigeo match ahora 100%
-      // server-side. Antes el cliente cargaba el dataset INEI (~350KB) +
-      // hacía fetch directo a Nominatim. Ahora una sola llamada al endpoint
-      // /api/marketplace/reverse-geocode que devuelve {address, departamento,
-      // provincia, distrito} listo para usar.
-      const r = await fetch(
-        `/api/marketplace/reverse-geocode?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`,
-      );
-      if (!r.ok) throw new Error("reverse-geocode failed");
-      const data = await r.json();
-      const street = (data.street as string | null) ?? "";
-      const match = (data.match ?? {}) as {
-        departamento?: { code: string; nombre: string } | null;
-        provincia?: { code: string; nombre: string } | null;
-        distrito?: { code: string; nombre: string } | null;
-      };
+      // Pre-fetch de la dirección con los coords iniciales del GPS para
+      // mostrarla como hint en el modal mientras el cliente ajusta el pin.
+      // Si falla, el modal igual se abre — sólo perdemos el preview textual.
+      let initialAddress = "";
+      try {
+        const r = await fetch(
+          `/api/marketplace/reverse-geocode?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`,
+        );
+        if (r.ok) {
+          const data = await r.json();
+          initialAddress = (data.displayName as string | undefined) ?? "";
+        }
+      } catch {
+        /* fire-and-forget per CLAUDE.md rule #7 */
+      }
 
-      setAddress({
-        address: street || address.address,
-        departmentCode: match.departamento?.code ?? "",
-        departmentName: match.departamento?.nombre ?? "",
-        provinceCode: match.provincia?.code ?? "",
-        provinceName: match.provincia?.nombre ?? "",
-        districtCode: match.distrito?.code ?? "",
-        districtName: match.distrito?.nombre ?? "",
-        zone:
-          match.distrito && match.provincia && match.departamento
-            ? `${match.distrito.nombre}, ${match.provincia.nombre}, ${match.departamento.nombre}`
-            : ((data.displayName as string | undefined) ?? "") || address.zone,
-      });
-
-      setGeoSuccess(true);
-      setTimeout(() => setGeoSuccess(false), 3500);
+      // Abrir el modal de confirmación. El reverse-geocode definitivo
+      // (con coords posiblemente ajustadas por drag del pin) ocurre en
+      // handleMapConfirm() tras "Confirmar ubicación".
+      setMapInitial({ lat: latitude, lon: longitude, address: initialAddress });
+      setMapModalOpen(true);
     } catch (err) {
       const ge = err as GeolocationPositionError;
       if (ge?.code === 1) {
@@ -462,7 +458,54 @@ export default function CheckoutEntregaPage() {
     } finally {
       setGeoLoading(false);
     }
-  }, [setAddress, address.address, address.zone]);
+  }, []);
+
+  // Confirma la ubicación tras el ajuste del mapa. Aquí re-fetchamos el
+  // reverse-geocode con las coords FINALES (post-drag) y poblamos todos
+  // los campos del form: departamento, provincia, distrito + dirección.
+  const handleMapConfirm = useCallback(
+    async (lat: number, lon: number, displayAddr: string) => {
+      setMapLoading(true);
+      try {
+        const r = await fetch(
+          `/api/marketplace/reverse-geocode?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lon)}`,
+        );
+        if (!r.ok) throw new Error("reverse-geocode failed");
+        const data = await r.json();
+        const street = (data.street as string | null) ?? "";
+        const match = (data.match ?? {}) as {
+          departamento?: { code: string; nombre: string } | null;
+          provincia?: { code: string; nombre: string } | null;
+          distrito?: { code: string; nombre: string } | null;
+        };
+
+        setAddress({
+          address: street || displayAddr || address.address,
+          departmentCode: match.departamento?.code ?? "",
+          departmentName: match.departamento?.nombre ?? "",
+          provinceCode: match.provincia?.code ?? "",
+          provinceName: match.provincia?.nombre ?? "",
+          districtCode: match.distrito?.code ?? "",
+          districtName: match.distrito?.nombre ?? "",
+          zone:
+            match.distrito && match.provincia && match.departamento
+              ? `${match.distrito.nombre}, ${match.provincia.nombre}, ${match.departamento.nombre}`
+              : (data.displayName as string | undefined) ?? displayAddr ?? "",
+        });
+
+        setGeoSuccess(true);
+        setTimeout(() => setGeoSuccess(false), 3500);
+        setUseNewAddress(true); // marcar que el cliente está usando una dirección nueva
+        setActiveAddressId(null);
+      } catch {
+        setGeoError("No pudimos identificar tu dirección. Llená los campos manualmente.");
+      } finally {
+        setMapLoading(false);
+        setMapModalOpen(false);
+      }
+    },
+    [setAddress, address.address],
+  );
 
   const { isPending, pendingLabel, navigateTo } = useCheckoutTransition();
   const { hydrated } = useCheckoutData();
@@ -772,6 +815,15 @@ export default function CheckoutEntregaPage() {
                   className={cn(selectCls(false), "disabled:opacity-50 disabled:cursor-not-allowed")}
                 >
                   <option value="">Seleccioná</option>
+                  {/* Option fantasma: si vino del GPS o dirección guardada y
+                      el fetch de provincias aún no llegó, mostramos el nombre
+                      ya cargado para evitar que el select aparezca vacío. */}
+                  {address.provinceCode &&
+                    !provincias.find((p) => p.code === address.provinceCode) && (
+                      <option value={address.provinceCode}>
+                        {address.provinceName || "Cargando…"}
+                      </option>
+                    )}
                   {provincias.map((p) => (
                     <option key={p.code} value={p.code}>
                       {p.nombre}
@@ -789,6 +841,12 @@ export default function CheckoutEntregaPage() {
                   className={cn(selectCls(false), "disabled:opacity-50 disabled:cursor-not-allowed")}
                 >
                   <option value="">Seleccioná</option>
+                  {address.districtCode &&
+                    !distritos.find((d) => d.code === address.districtCode) && (
+                      <option value={address.districtCode}>
+                        {address.districtName || "Cargando…"}
+                      </option>
+                    )}
                   {distritos.map((d) => (
                     <option key={d.code} value={d.code}>
                       {d.nombre}
@@ -1162,6 +1220,17 @@ export default function CheckoutEntregaPage() {
         />
       </div>
       <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
+      {mapInitial && (
+        <LocationConfirmModal
+          open={mapModalOpen}
+          onClose={() => setMapModalOpen(false)}
+          initialLat={mapInitial.lat}
+          initialLon={mapInitial.lon}
+          initialAddress={mapInitial.address}
+          loading={mapLoading}
+          onConfirm={handleMapConfirm}
+        />
+      )}
     </>
   );
 }

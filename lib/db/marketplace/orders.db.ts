@@ -248,25 +248,49 @@ export const MarketplaceOrdersDB = {
     // 4. Transacción atómica: stock + order + commission + cupón + loyalty (F4, F1)
     // eslint-disable-next-line no-restricted-properties -- $transaction legítima: operaciones atómicas multi-tabla en marketplace checkout.
     await prisma.$transaction(async (tx) => {
-      // F4: decrementar stock de cada producto (con guard de stock suficiente)
+      // F4: decrementar stock — SKIP cuando producto no controla stock (null).
+      // Semantica:
+      //   - stock IS NULL → restaurante/servicio sin inventario → permitido, no decrement.
+      //   - stock = 0   → agotado → throw 409 (frontend debe haberlo bloqueado antes).
+      //   - stock > 0   → decrementar con guard atomico (stock >= quantity).
       for (const item of orderItems) {
         const storeProduct = storeProducts.find(
           (sp) => sp.id === params.items.find((pi) => pi.productId === item.productId && pi.name === item.name)?.storeProductId
         );
-        if (storeProduct?.productId) {
-          // eslint-disable-next-line no-restricted-properties -- $transaction interna: decrement scoped a productId+tenantId con stock guard.
-          const upd = await tx.product.updateMany({
-            where: {
-              id:        storeProduct.productId,
-              tenantId:  store.tenantId,
-              stock:     { gte: item.quantity },
-              deletedAt: null,
-            },
-            data: { stock: { decrement: item.quantity } },
-          });
-          if (upd.count === 0) {
-            throw new Error(`Stock insuficiente para ${item.name}`);
-          }
+        if (!storeProduct?.productId) continue;
+
+        // Lookup stock actual para distinguir null (no controla) vs 0 (agotado).
+        // eslint-disable-next-line no-restricted-properties -- $transaction interna: lookup scoped a productId+tenantId para stock semantics.
+        const current = await tx.product.findFirst({
+          where: { id: storeProduct.productId, tenantId: store.tenantId, deletedAt: null },
+          select: { stock: true },
+        });
+        if (!current) {
+          throw new Error(`Producto no disponible: ${item.name}`);
+        }
+        if (current.stock == null) {
+          // No controla stock → permitido sin decrement.
+          continue;
+        }
+        if (current.stock < item.quantity) {
+          throw new Error(
+            `Stock insuficiente para ${item.name} (quedan ${current.stock}, pediste ${item.quantity})`,
+          );
+        }
+
+        // eslint-disable-next-line no-restricted-properties -- $transaction interna: decrement con guard atomico para cerrar race window.
+        const upd = await tx.product.updateMany({
+          where: {
+            id:        storeProduct.productId,
+            tenantId:  store.tenantId,
+            stock:     { gte: item.quantity },
+            deletedAt: null,
+          },
+          data: { stock: { decrement: item.quantity } },
+        });
+        if (upd.count === 0) {
+          // Otro pedido tomó el stock entre el lookup y este update.
+          throw new Error(`Stock insuficiente para ${item.name}`);
         }
       }
 

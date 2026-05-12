@@ -38,12 +38,17 @@ interface ResolvedCapture {
   imageBytes: Uint8Array;
   imageUrl: string; // URL canónica para guardar en BD (puede expirar)
   conversationId: string | null;
+  /** tenantId del tenant dueño de la conversación (audit P0-2). */
+  tenantId: string;
   expectedAmount: number;
 }
 
 interface ConversationLookup {
   id: string;
   total: number;
+  /** tenantId del tenant dueño de la conversación — requerido por
+   *  PaymentApproval (audit P0-2 fix 2026-05-11). */
+  tenantId: string;
 }
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
@@ -111,6 +116,7 @@ async function lookupActiveConversation(
               id: string;
               cartItems: unknown;
               expiresAt: Date;
+              tenantId: string;
             }>
           >;
         };
@@ -136,7 +142,7 @@ async function lookupActiveConversation(
       0,
     );
 
-    return { id: row.id, total };
+    return { id: row.id, total, tenantId: row.tenantId };
   } catch (err) {
     logger.error("[yape-capture] lookupActiveConversation failed", {
       error: err instanceof Error ? err.message : String(err),
@@ -316,6 +322,7 @@ async function resolveCapture(
       imageBytes: bytes,
       imageUrl: parsed.data.MediaUrl0,
       conversationId: conv.id,
+      tenantId: conv.tenantId,
       expectedAmount: conv.total,
     };
   }
@@ -352,6 +359,7 @@ async function resolveCapture(
     imageBytes: bytes,
     imageUrl: url,
     conversationId: conv.id,
+    tenantId: conv.tenantId,
     expectedAmount: conv.total,
   };
 }
@@ -423,9 +431,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Idempotency F2: si ya hay una pending para este phone, no creamos otra
+  // Idempotency F2: si ya hay una pending para este phone+tenant, no creamos otra.
+  // CRITICAL FIX 2026-05-11 (audit P0-2): scoped por tenantId del tenant
+  // dueño de la conversación. Antes confundía pendings del mismo phone en
+  // tenants distintos (re-uso de approval ajena).
   const existing = await PaymentApprovalDb.findByPhonePending(
     resolved.customerPhone,
+    resolved.tenantId,
   );
 
   let approvalId: string;
@@ -447,6 +459,7 @@ export async function POST(req: NextRequest) {
       });
     }
     const created = await PaymentApprovalDb.create({
+      tenantId: resolved.tenantId,
       customerPhone: resolved.customerPhone,
       expectedAmount: safeAmount,
       imageUrl: resolved.imageUrl,

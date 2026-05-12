@@ -1,6 +1,6 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { GiftCardsDB } from "@/lib/db/gift-cards.db";
-import { getTenantIdFromRequest } from "@/lib/tenant";
+import { requireCustomer } from "@/lib/auth/require-customer";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { logger } from "@/lib/logger";
 
@@ -24,15 +24,21 @@ export async function GET(
   }
 
   try {
-    const tenantId = getTenantIdFromRequest(req);
-    const userId = req.headers.get("x-user-id");
+    // CRITICAL FIX 2026-05-11 (audit P0-6): antes la "ownership" se decidia
+    // leyendo `req.headers.get("x-user-id")` — cualquier cliente podia inyectar
+    // ese header y leer gift cards ajenas. Ahora usamos customer session
+    // firmada (cookie HttpOnly) como SOLA fuente de identidad.
+    const customer = await requireCustomer(req);
+    if (customer instanceof NextResponse) return customer;
+    const tenantId = customer.tenantId;
+    const userId = customer.customerId;
 
     const card = await GiftCardsDB.getById(tenantId, id);
     if (!card) return apiError("Gift card no encontrada", 404);
 
     // Autorizacion: solo sender o recipient pueden ver el detalle
     const isOwner =
-      userId && (card.senderUserId === userId || card.redeemedByUserId === userId);
+      card.senderUserId === userId || card.redeemedByUserId === userId;
     if (!isOwner) return apiError("No autorizado", 403);
 
     return apiSuccess({ giftCard: card });

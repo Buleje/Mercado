@@ -69,7 +69,10 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const currentCount = await prisma.product.count();
+    // SECURITY: count scoped al tenant. Sin esto, un tenant nuevo veía
+    // currentCount=30 (de otro tenant) y nunca se sembraban sus demos.
+    // eslint-disable-next-line no-restricted-properties -- count scoped por tenantId. Refactor a ProductsDB pendiente.
+    const currentCount = await prisma.product.count({ where: { tenantId: auth.tenantId } });
     if (currentCount >= 10) {
       return NextResponse.json({
         created: 0,
@@ -79,6 +82,7 @@ export async function POST(req: NextRequest) {
 
     let created = 0;
     for (const p of PRODUCTOS_BODEGA) {
+      // eslint-disable-next-line no-restricted-properties -- create scoped por tenantId del auth. Refactor a ProductsDB.create pendiente.
       await prisma.product.create({
         data: {
           tenantId: auth.tenantId,
@@ -114,14 +118,40 @@ export async function DELETE(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Remove FK-dependent records first (same order as full clear-data)
-    await prisma.bundleItem.deleteMany({ where: { productId: { in: DEMO_IDS } } });
-    await prisma.priceHistory.deleteMany({ where: { productId: { in: DEMO_IDS } } });
-    await prisma.inventoryMovement.deleteMany({ where: { productId: { in: DEMO_IDS } } });
-    await prisma.saleItem.deleteMany({ where: { productId: { in: DEMO_IDS } } });
-    await prisma.purchaseItem.deleteMany({ where: { productId: { in: DEMO_IDS } } });
-    await prisma.orderItem.deleteMany({ where: { productId: { in: DEMO_IDS } } });
-    const { count } = await prisma.product.deleteMany({ where: { id: { in: DEMO_IDS } } });
+    // CRITICAL FIX 2026-05-11 (audit P0 — cross-tenant wipe):
+    // Antes, los deleteMany se ejecutaban con `productId: { in: DEMO_IDS }` sin
+    // tenantId, lo que destruía productos 1-24 y todo su historial (OrderItem,
+    // SaleItem, InventoryMovement) en TODOS los tenants. Cualquier admin podía
+    // disparar este DELETE y borrar inventario y ventas de la competencia.
+    //
+    // Fix: filtrar primero por (id IN DEMO_IDS AND tenantId = auth.tenantId)
+    // y usar el set resultante en los borrados de children. Tablas con
+    // tenantId propio reciben filtro doble.
+    // eslint-disable-next-line no-restricted-properties -- ownership lookup scoped por tenantId. Refactor a ProductsDB pendiente.
+    const ownedProducts = await prisma.product.findMany({
+      where: { id: { in: DEMO_IDS }, tenantId: auth.tenantId },
+      select: { id: true },
+    });
+    const ownedIds = ownedProducts.map((p) => p.id);
+    if (ownedIds.length === 0) {
+      return NextResponse.json({ ok: true, deleted: 0 });
+    }
+
+    /* eslint-disable no-restricted-properties -- $transaction cascada de borrado para FK-dependientes. productIds pre-filtrados al tenantId. */
+    await prisma.$transaction([
+      // BundleItem / SaleItem / PurchaseItem / OrderItem: no tienen tenantId
+      // directo, pero los productIds vienen pre-filtrados al tenant.
+      prisma.bundleItem.deleteMany({ where: { productId: { in: ownedIds } } }),
+      prisma.priceHistory.deleteMany({ where: { productId: { in: ownedIds }, tenantId: auth.tenantId } }),
+      prisma.inventoryMovement.deleteMany({ where: { productId: { in: ownedIds }, tenantId: auth.tenantId } }),
+      prisma.saleItem.deleteMany({ where: { productId: { in: ownedIds } } }),
+      prisma.purchaseItem.deleteMany({ where: { productId: { in: ownedIds } } }),
+      prisma.orderItem.deleteMany({ where: { productId: { in: ownedIds } } }),
+    ]);
+    const { count } = await prisma.product.deleteMany({
+      where: { id: { in: ownedIds }, tenantId: auth.tenantId },
+    });
+    /* eslint-enable no-restricted-properties */
     return NextResponse.json({ ok: true, deleted: count });
   } catch (e) {
     logger.error("[demo-products] DELETE error", { error: (e as Error).message, tenantId: auth.tenantId });

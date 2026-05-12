@@ -1,9 +1,10 @@
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import ChatBubble from "@/components/marketplace/ChatBubble";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
+import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
 
 // Deduplicate getBySlug across generateMetadata + page render in the same
@@ -153,9 +154,20 @@ function StoreJsonLd({
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
+// Cache Components (Next 16): la página delega TODO el fetch a un loader
+// async wrappeado en <Suspense>. Si no, Next reporta "Uncached data accessed
+// outside of <Suspense>" porque las DB calls bloquean el render completo.
+// El Suspense local permite que el shell se prerender, y los datos streaman.
 export default async function StoreDetailPage({ params }: Props) {
   const { slug } = await params;
+  return (
+    <Suspense fallback={<PaicheLoading variant="page" label="Abriendo la tienda…" />}>
+      <StoreDetailContent slug={slug} />
+    </Suspense>
+  );
+}
 
+async function StoreDetailContent({ slug }: { slug: string }) {
   // 1. Fetch store
   const store = await getStoreBySlug(slug);
   if (!store) notFound();

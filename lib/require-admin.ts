@@ -66,7 +66,23 @@ export async function requireAdmin(
   // The header may contain a slug (from Referer) which doesn't match DB IDs.
   // RULE: for DB queries, always prefer the JWT's tenantId (CUID).
   const headerTenantId = req.headers.get("x-tenant-id");
-  const effectiveTenantId = payload.tenantId || headerTenantId || "main";
+  // CRITICAL FIX 2026-05-11 (audit P1-1): nunca defaultear silenciosamente a
+  // "main". Si JWT y header están vacíos, retornar 401 para forzar al cliente
+  // a re-autenticarse en vez de operar como tenant principal por error.
+  const effectiveTenantId = payload.tenantId || headerTenantId;
+  if (!effectiveTenantId) {
+    logger.error("[AUTH] No tenantId in JWT or header — refusing to default to 'main'", {
+      username: payload.username,
+      role: payload.role,
+      method,
+      path,
+      ip,
+    });
+    return NextResponse.json(
+      { error: "unauthorized", message: "Sesión sin tenant — vuelve a iniciar sesión" },
+      { status: 401 },
+    );
+  }
 
   if (headerTenantId && headerTenantId !== payload.tenantId) {
     // Mismatch between middleware header and JWT. This happens when:
@@ -134,6 +150,9 @@ export async function tryAdmin(req: NextRequest): Promise<SessionPayload | null>
   const headerTenantId = req.headers.get("x-tenant-id");
   // JWT's tenantId is always the canonical CUID — prefer it over header
   // which may contain a slug from Referer.
-  const effectiveTenantId = payload.tenantId || headerTenantId || "main";
+  // CRITICAL FIX 2026-05-11 (audit P1-1): si ambos son null, devolver null
+  // (sesión inválida) en vez de defaultear a "main" silenciosamente.
+  const effectiveTenantId = payload.tenantId || headerTenantId;
+  if (!effectiveTenantId) return null;
   return { ...payload, tenantId: effectiveTenantId };
 }

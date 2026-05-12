@@ -298,11 +298,12 @@ export default function StoreCatalog({
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 lg:gap-6">
                 {items.map((p, idx) => (
                   <UnifiedProductCard
                     key={p.id}
                     index={idx}
+                    hideStore
                     href={`/marketplace/${storeSlug}/producto/${p.productId}`}
                     product={{
                       id: p.productId,
@@ -311,6 +312,7 @@ export default function StoreCatalog({
                       image: p.productImage,
                       unit: p.productUnit,
                       category: p.productCategory,
+                      stock: p.stock ?? undefined,
                       storeId,
                       storeName,
                       storeSlug,
@@ -325,11 +327,12 @@ export default function StoreCatalog({
         </div>
       ) : (
         // Grid plano cuando hay filtro de categoría o búsqueda activa.
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 lg:gap-6">
           {filtered.map((p, idx) => (
             <UnifiedProductCard
               key={p.id}
               index={idx}
+              hideStore
               href={`/marketplace/${storeSlug}/producto/${p.productId}`}
               product={{
                 id: p.productId,

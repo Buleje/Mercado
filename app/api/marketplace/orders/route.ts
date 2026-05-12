@@ -460,11 +460,28 @@ export async function POST(req: NextRequest) {
     const msg = err instanceof Error ? err.message : String(err);
 
     // Errores de negocio conocidos → 409/422 (no 500)
-    if (msg.startsWith("Stock insuficiente para ")) {
-      return NextResponse.json({ error: msg }, { status: 409 });
+    if (msg.startsWith("Stock insuficiente para ") || msg.startsWith("Producto no disponible: ")) {
+      // Parsear el nombre del producto y stock disponible para que el
+      // frontend pueda mostrar UI clara y permitir al cliente ajustar.
+      // Formato del error: "Stock insuficiente para X (quedan N, pediste M)"
+      // o el formato legacy sin números: "Stock insuficiente para X".
+      const match = msg.match(/Stock insuficiente para (.+?)(?:\s*\(quedan (\d+),\s*pediste (\d+)\))?$/);
+      const productName = match?.[1] ?? null;
+      const available = match?.[2] ? Number(match[2]) : null;
+      const requested = match?.[3] ? Number(match[3]) : null;
+      return NextResponse.json(
+        {
+          error: msg,
+          code: "STOCK_INSUFFICIENT",
+          productName,
+          available,
+          requested,
+        },
+        { status: 409 },
+      );
     }
     if (msg === "Cupón inválido o expirado" || msg === "Cupón ya alcanzó el límite de usos" || msg === "Cupón ya consumido") {
-      return NextResponse.json({ error: msg }, { status: 422 });
+      return NextResponse.json({ error: msg, code: "COUPON_INVALID" }, { status: 422 });
     }
     if (msg === "Puntos de fidelidad insuficientes") {
       return NextResponse.json({ error: msg }, { status: 422 });

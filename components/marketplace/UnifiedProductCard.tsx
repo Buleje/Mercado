@@ -107,6 +107,9 @@ export interface UnifiedProductCardProps {
   href?: string;
   /** Índice en la lista, para escalonar la animación de entrada */
   index?: number;
+  /** Si true, oculta el nombre de la tienda (util en storefront /marketplace/[slug]
+      donde el contexto de tienda ya es obvio y repetirlo es ruido visual). */
+  hideStore?: boolean;
 }
 
 /* ── Formateador de moneda ──────────────────────────────────────────────────── */
@@ -149,6 +152,7 @@ export default function UnifiedProductCard({
   endsAt,
   href,
   index = 0,
+  hideStore = false,
 }: UnifiedProductCardProps) {
   const { addItemWithUndo } = useCartWithUndo();
   const { items: cartItems } = useMarketplaceCart();
@@ -249,6 +253,9 @@ export default function UnifiedProductCard({
       image: product.image ?? null,
       unit: product.unit ?? null,
       description: product.description ?? null,
+      // Snapshot del stock para que el carrito pueda capar el inc y evitar
+      // el 409 del checkout. null = restaurante/servicio sin inventario.
+      stock: product.stock ?? null,
     });
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
@@ -427,8 +434,10 @@ export default function UnifiedProductCard({
           </p>
         )}
 
-        {/* Tienda — text-sm, ícono más grande para legibilidad */}
-        {product.storeName && (
+        {/* Tienda — text-sm, ícono más grande para legibilidad.
+            Oculta cuando `hideStore` (ej. dentro de /marketplace/[slug] el
+            contexto es obvio y repetirlo en cada card es ruido visual). */}
+        {product.storeName && !hideStore && (
           <div className="mt-2 flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]">
             <StoreIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{product.storeName}</span>

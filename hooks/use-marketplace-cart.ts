@@ -32,6 +32,12 @@ export interface CartItem {
   modifiers?: SelectedModifier[];
   /** Hash de modifier ids para deduplicar cart entries. */
   modifierHash?: string;
+  /**
+   * Stock disponible al momento de agregar al carrito. null = sin límite
+   * (restaurante / no controla). El front bloquea el inc si quantity >= stock
+   * para evitar el 409 del checkout. Snapshot — no refresca al cambiar DB.
+   */
+  stock?: number | null;
 }
 
 /** Crea un hash determinístico a partir de los optionIds elegidos. */
@@ -178,9 +184,17 @@ export function useMarketplaceCart() {
         );
         if (idx !== -1) {
           const updated = [...prev];
+          const existing = updated[idx];
+          const requested = existing.quantity + (item.quantity ?? 1);
+          // Stock guard: si el producto controla stock (no es null), tope a
+          // ese máximo para evitar 409 al checkout. null = sin límite.
+          const cap = item.stock ?? existing.stock;
+          const finalQty = cap != null && cap > 0 ? Math.min(requested, cap) : requested;
           updated[idx] = {
-            ...updated[idx],
-            quantity: updated[idx].quantity + (item.quantity ?? 1),
+            ...existing,
+            quantity: finalQty,
+            // Refrescar stock snapshot si vino actualizado.
+            stock: item.stock !== undefined ? item.stock : existing.stock,
           };
           return updated;
         }
@@ -219,7 +233,11 @@ export function useMarketplaceCart() {
           if (modifierHash !== undefined && (i.modifierHash ?? "") !== modifierHash) {
             return i;
           }
-          return { ...i, quantity };
+          // Stock guard: si el producto controla stock, capamos a ese máximo
+          // para evitar enviar quantities imposibles al backend (409).
+          const cap = i.stock;
+          const final = cap != null && cap > 0 ? Math.min(quantity, cap) : quantity;
+          return { ...i, quantity: final };
         }),
       );
     },

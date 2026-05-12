@@ -17,6 +17,7 @@
  * en app/marketplace/layout.tsx por StoreProviders (el original).
  */
 
+import { Suspense } from "react";
 import { CartProvider } from "@/contexts/cart-context";
 import { CustomerProvider } from "@/contexts/customer-context";
 import { ToastProvider } from "@/contexts/toast-context";
@@ -42,7 +43,13 @@ export default function MarketplaceStoreProviders({
     <TenantSlugProvider slug={tenantSlug}>
       <ToastProvider>
         <SettingsProvider>
-          <ThemeInjector />
+          {/* ThemeInjector usa usePathname() que dispara connection() en SSR.
+              Next 16 Cache Components exige que cualquier acceso a uncached
+              data esté dentro de <Suspense>, o reporta "blocking-route" y
+              retrasa el render completo. Wrap surgical → desbloquea el shell. */}
+          <Suspense fallback={null}>
+            <ThemeInjector />
+          </Suspense>
           <CartProvider tenantSlug={tenantSlug}>
             <FavoritesProvider>
               <WishlistProvider>

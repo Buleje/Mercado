@@ -51,8 +51,13 @@ export async function GET(req: NextRequest) {
         house_number?: string;
         suburb?: string;
         city_district?: string;
+        neighbourhood?: string;
         city?: string;
+        town?: string;
+        village?: string;
+        municipality?: string;
         county?: string;
+        region?: string;
         state?: string;
       };
     };
@@ -60,10 +65,16 @@ export async function GET(req: NextRequest) {
     const addr = data.address ?? {};
     const match = bestMatchFromGeocode({
       state: addr.state ?? null,
+      region: addr.region ?? null,
       county: addr.county ?? null,
+      municipality: addr.municipality ?? null,
       city: addr.city ?? null,
+      town: addr.town ?? null,
+      village: addr.village ?? null,
       suburb: addr.suburb ?? null,
       city_district: addr.city_district ?? null,
+      neighbourhood: addr.neighbourhood ?? null,
+      displayName: data.display_name ?? null,
     });
 
     const street = [addr.road, addr.house_number].filter(Boolean).join(" ").trim();
