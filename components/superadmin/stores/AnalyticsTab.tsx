@@ -91,6 +91,10 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
   const [orders, setOrders] = useState<MarketplaceOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<PeriodId>("30d");
+  // PERF (audit React Compiler 2026-05-12): `now` capturado con useState lazy
+  // init (única forma pura de Date.now()). Refresh cada 5 min para dashboards
+  // de larga sesión — admin abre la tab y la deja un rato.
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     setLoading(true);
@@ -99,11 +103,15 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
       .then((d) => setOrders(d.orders ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    // Refresh `now` cada 5 min para que los buckets temporales no se congelen
+    const id = setInterval(() => setNow(Date.now()), 5 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   // Filter by period
   const periodConfig = PERIODS.find((p) => p.id === period) ?? PERIODS[1];
-  const cutoffMs = periodConfig.id === "all" ? 0 : Date.now() - periodConfig.days * 86_400_000;
+  const cutoffMs = periodConfig.id === "all" ? 0 : now - periodConfig.days * 86_400_000;
   const filteredOrders = useMemo(
     () => orders.filter((o) => new Date(o.createdAt).getTime() >= cutoffMs),
     [orders, cutoffMs],
@@ -154,7 +162,6 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
       string,
       { bucket: string; revenue: number; orders: number; cancelled: number }
     >();
-    const now = Date.now();
     const start = days >= 9999 ? 0 : now - days * 86_400_000;
     for (const o of filteredOrders) {
       const t = new Date(o.createdAt).getTime();
@@ -178,7 +185,7 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
       buckets.set(key, cur);
     }
     return Array.from(buckets.values());
-  }, [filteredOrders, periodConfig]);
+  }, [filteredOrders, periodConfig, now]);
 
   // AOV trend (mismo bucketing)
   const aovTrend = useMemo(

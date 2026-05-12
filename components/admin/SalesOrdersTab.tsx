@@ -138,6 +138,15 @@ export default function SalesOrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // PERF (audit React Compiler 2026-05-12): nowMs captured con useState lazy.
+  // Refresh cada 60s para que alertas "sin atender >1h" se actualicen sin requerir
+  // refresh manual. Reemplaza el patrón pre-existente de Date.now() en useMemo
+  // que el React Compiler detecta como impuro.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<"today" | "week" | "month" | "all">("all");
@@ -1565,16 +1574,17 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
     return { promedio, count: tiempos.length };
   }, [orders]);
 
-  // BUG-FIX (audit 2026-05-05): nowMs movido DENTRO del useMemo para que NO
-  // sea una nueva ref cada render — antes recalculaba todo el filtro sobre
-  // orders en cada render del componente padre causando jank.
+  // BUG-FIX (audit 2026-05-05 + React Compiler 2026-05-12): nowMs viene del
+  // state arriba (con setInterval 60s para refresh automático). Eso evita:
+  //  - Date.now() impuro dentro de useMemo (React Compiler error)
+  //  - Recalcular en cada render del padre (jank original)
+  // El interval garantiza que "sin atender >1h" se actualiza sin refresh manual.
   const alertas = useMemo(() => {
-    const nowMs = Date.now();
     const unaHora = 60 * 60 * 1000;
     const sinAtender = orders.filter(o => o.status === 'pendiente' && (nowMs - new Date(o.createdAt).getTime()) > unaHora).length;
     const sinDireccion = orders.filter(o => !['entregado', 'cancelado', 'delivered', 'cancelled'].includes(o.status) && !o.customerName).length;
     return { sinAtender, sinDireccion, tasaCumplimiento: kpis.tasaCumplimiento };
-  }, [orders, kpis.tasaCumplimiento]);
+  }, [orders, kpis.tasaCumplimiento, nowMs]);
 
   const totalPedidos = orders.length;
 
