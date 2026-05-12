@@ -26,6 +26,7 @@ import {
   ADMIN_MODULE_CATALOG,
   onAdminTemplateChange,
   readAdminTemplate,
+  fetchAdminTemplate,
 } from "@/lib/admin-template";
 
 export interface AdminTemplateOverlay {
@@ -41,17 +42,22 @@ export interface AdminTemplateOverlay {
 export function useAdminTemplateOverlay(): AdminTemplateOverlay {
   const [template, setTemplate] = useState<AdminTemplate>(() => readAdminTemplate());
 
-  // Suscripción al evento de cambio — se dispara cuando el superadmin
-  // edita la plantilla (en este o cualquier otro tab del browser, gracias
-  // al storage event que también lanza CustomEvents en multi-tab si se quiere).
+  // Primer paint: leemos del cache (localStorage) para evitar flash. En
+  // paralelo pedimos la versión real al servidor; si difiere, re-renderea.
+  // De ahí en adelante, los CustomEvents y el storage event mantienen
+  // sincronizado el overlay con cualquier guardado del superadmin.
   useEffect(() => {
+    let alive = true;
+    fetchAdminTemplate().then((remote) => {
+      if (alive) setTemplate(remote);
+    });
     const unsubscribe = onAdminTemplateChange((next) => setTemplate(next));
-    // También sincronizar con cambios en otras pestañas (storage event)
     const onStorage = (e: StorageEvent) => {
       if (e.key === "buleje-admin-template") setTemplate(readAdminTemplate());
     };
     window.addEventListener("storage", onStorage);
     return () => {
+      alive = false;
       unsubscribe();
       window.removeEventListener("storage", onStorage);
     };

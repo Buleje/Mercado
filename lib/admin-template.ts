@@ -195,6 +195,91 @@ export function resetAdminTemplate(): void {
   }
 }
 
+// ─── API-backed persistence (fuente de verdad: PlatformSetting global) ──────
+// localStorage queda como cache warm para el primer paint; la fuente de
+// verdad cross-browser/cross-tenant es la DB vía /api/admin-template.
+
+const API_ENDPOINT = "/api/platform/admin-template";
+
+/**
+ * Lee la plantilla desde la DB (vía /api/admin-template). Actualiza el
+ * localStorage como cache + dispara el evento de cambio para que los
+ * consumers reactivos (admin sidebars, overlay) re-renderen.
+ * Si la red falla, devuelve la versión cacheada en localStorage.
+ */
+export async function fetchAdminTemplate(): Promise<AdminTemplate> {
+  if (typeof window === "undefined") return EMPTY_TEMPLATE;
+  try {
+    const res = await fetch(API_ENDPOINT, { cache: "no-store", credentials: "same-origin" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = (await res.json()) as { template?: Partial<AdminTemplate> };
+    const tpl: AdminTemplate = {
+      overrides: data.template?.overrides ?? {},
+      order: data.template?.order ?? [],
+      defaultSidebarStyle: data.template?.defaultSidebarStyle ?? "buleje",
+      version: data.template?.version ?? SCHEMA_VERSION,
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tpl));
+      window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: tpl }));
+    } catch {
+      // silencioso
+    }
+    return tpl;
+  } catch {
+    return readAdminTemplate();
+  }
+}
+
+export interface SaveResult {
+  ok: boolean;
+  template?: AdminTemplate;
+  error?: string;
+  /** Issues de validación cuando el server respondió 400. */
+  issues?: Array<{ path: (string | number)[]; message: string }>;
+}
+
+/**
+ * Persiste la plantilla en DB vía PUT /api/admin-template (requiere sesión
+ * de superadmin). En éxito: refresca el cache localStorage y dispara el
+ * evento para que los admin paneles abiertos re-renderen al instante.
+ */
+export async function saveAdminTemplate(tpl: AdminTemplate): Promise<SaveResult> {
+  if (typeof window === "undefined") return { ok: false, error: "SSR" };
+  try {
+    const { csrfHeaders } = await import("@/lib/csrf-client");
+    const res = await fetch(API_ENDPOINT, {
+      method: "PUT",
+      headers: csrfHeaders({ "content-type": "application/json" }),
+      credentials: "same-origin",
+      body: JSON.stringify({
+        overrides: tpl.overrides,
+        order: tpl.order,
+        defaultSidebarStyle: tpl.defaultSidebarStyle ?? "buleje",
+        version: SCHEMA_VERSION,
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      template?: AdminTemplate;
+      issues?: SaveResult["issues"];
+    };
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? `HTTP ${res.status}`, issues: data.issues };
+    }
+    const saved = data.template ?? tpl;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+      window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: saved }));
+    } catch {
+      // silencioso
+    }
+    return { ok: true, template: saved };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "network-error" };
+  }
+}
+
 // ─── Resolución efectiva ────────────────────────────────────────────────────
 
 /** Devuelve la lista de módulos en el orden y configuración efectiva (catálogo + overrides). */
