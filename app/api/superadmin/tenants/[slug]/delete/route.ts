@@ -4,6 +4,7 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 
 async function requirePlatform(req: NextRequest) {
