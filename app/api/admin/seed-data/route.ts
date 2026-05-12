@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
   // Sin where:{tenantId}, deleteMany borra datos de TODOS los tenants (P0 #7).
   const tenantId = auth.tenantId;
 
+  /* eslint-disable no-restricted-syntax -- Modelos indirectos (ADR-101): pageVersion/pageBlock/bundleItem/shoppingListItem/returnItem/saleItem/orderItem/etc usan FK al padre tenant-scoped. El where: { padre: { tenantId } } es correcto y safe; la AST rule no detecta nesting. */
   try {
     // ── Clear all data for THIS tenant only ───────────
     await prisma.aBTestEvent.deleteMany({ where: { tenantId } });
@@ -509,4 +510,5 @@ export async function POST(req: NextRequest) {
     logger.error("[SEED-DATA] error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Error al generar datos de simulación" }, { status: 500 });
   }
+  /* eslint-enable no-restricted-syntax */
 }

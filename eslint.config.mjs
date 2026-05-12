@@ -230,11 +230,15 @@ const eslintConfig = defineConfig([
   //
   // STATUS 2026-05-11:
   //   - demo-products: clean (cerrado por audit CRIT-1)
-  //   - clear-data, import-data, seed-data: ~20 deleteMany legacy sin
-  //     tenantId. Pendiente cleanup en sprint próximo. Mantener fuera de
-  //     la error-zone hasta entonces para no romper CI.
+  //   - clear-data, import-data, seed-data: clean tras audit (modelos
+  //     indirectos usan eslint-disable con ADR-101).
   {
-    files: ["app/api/admin/demo-products/**"],
+    files: [
+      "app/api/admin/demo-products/**",
+      "app/api/admin/clear-data/**",
+      "app/api/admin/import-data/**",
+      "app/api/admin/seed-data/**",
+    ],
     rules: {
       "no-restricted-syntax": [
         "error",

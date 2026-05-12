@@ -168,6 +168,7 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
     // Persistir en ActivityLog del tenant — fire-and-forget pero importante
+    // eslint-disable-next-line no-restricted-properties -- audit del propio clear-data: tenantId obligatorio en data; no hay AuditDB wrapper específico para esta acción nuclear.
     prisma.activityLog
       .create({
         data: {
