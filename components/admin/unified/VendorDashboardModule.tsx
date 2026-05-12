@@ -15,17 +15,16 @@ import {
   Package,
   Truck,
   Users,
-  Tag,
   Wallet,
 } from "@buleje/design-system/icons";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import DashboardDateRange, { getDefaultRange, type DateRange } from "@/components/admin/inicio/DashboardDateRange";
 import dynamic from "next/dynamic";
 import { BulejeLoader } from "@/components/admin/inicio/_shared";
+import EmptyDateRangeState from "@/components/admin/inicio/EmptyDateRangeState";
 
 // ── Lazy-loaded components (tab-gated, not immediately visible) ─────────────
 const DashboardLoading = () => <BulejeLoader variant="card" size={48} label="Cargando dashboard..." />;
-const InicioDashboard = dynamic(() => import("@/components/admin/inicio/InicioDashboard"), { ssr: false, loading: DashboardLoading });
 const VendorKPICards = dynamic(() => import("@/components/admin/vendor-dashboard/VendorKPICards").then(m => ({ default: m.VendorKPICards })), { ssr: false });
 const VendorPendingOrders = dynamic(() => import("@/components/admin/vendor-dashboard/VendorPendingOrders").then(m => ({ default: m.VendorPendingOrders })), { ssr: false });
 const VendorLowStockList = dynamic(() => import("@/components/admin/vendor-dashboard/VendorLowStockList").then(m => ({ default: m.VendorLowStockList })), { ssr: false });
@@ -41,9 +40,13 @@ const MarketplaceAdvancedCharts = dynamic(
 );
 const VentasDashboard = dynamic(() => import("@/components/admin/inicio/VentasDashboard"), { ssr: false, loading: DashboardLoading });
 const CajaDashboard = dynamic(() => import("@/components/admin/inicio/CajaDashboard"), { ssr: false, loading: DashboardLoading });
+// Brandon mayo 2026: Productos e Inventario tenian KPIs duplicados (Valor
+// Inventario, Stock Critico, Agotados, Sin Movimiento, Productos Activos).
+// Se unificaron bajo la tab "Inventario". ProductosDashboard e
+// InicioDashboard (v1) siguen disponibles para otros consumers pero ya
+// no se montan en este modulo — la tab "general" usa V2.
 const InventarioDashboard = dynamic(() => import("@/components/admin/inicio/InventarioDashboard"), { ssr: false, loading: DashboardLoading });
 const ComprasDashboard = dynamic(() => import("@/components/admin/inicio/ComprasDashboard"), { ssr: false, loading: DashboardLoading });
-const ProductosDashboard = dynamic(() => import("@/components/admin/inicio/ProductosDashboard"), { ssr: false, loading: DashboardLoading });
 const ClientesDashboard = dynamic(() => import("@/components/admin/inicio/ClientesDashboard"), { ssr: false, loading: DashboardLoading });
 
 // ADR-064 Ola B — TodayHub hero unificado (drop-in al tab "general")
@@ -60,16 +63,15 @@ const InicioDashboardV2 = dynamic(
 
 const MODULE_ID = "vendor-dashboard";
 
-type InicioTab = "general" | "ventas" | "caja" | "inventario" | "compras" | "productos" | "clientes" | "marketplace";
+type InicioTab = "general" | "ventas" | "caja" | "inventario" | "compras" | "clientes" | "marketplace";
 
 // ── Prefetch map: preload tab chunks on hover ──────────────────────────────
 const TAB_PREFETCH: Record<InicioTab, () => void> = {
-  general:     () => { void import("@/components/admin/inicio/InicioDashboard"); },
+  general:     () => { void import("@/components/admin/inicio/InicioDashboardV2"); },
   ventas:      () => { void import("@/components/admin/inicio/VentasDashboard"); },
   caja:        () => { void import("@/components/admin/inicio/CajaDashboard"); },
   inventario:  () => { void import("@/components/admin/inicio/InventarioDashboard"); },
   compras:     () => { void import("@/components/admin/inicio/ComprasDashboard"); },
-  productos:   () => { void import("@/components/admin/inicio/ProductosDashboard"); },
   clientes:    () => { void import("@/components/admin/inicio/ClientesDashboard"); },
   marketplace: () => { void import("@/components/admin/unified/MarketplaceModule"); },
 };
@@ -80,31 +82,9 @@ const TABS: AdminTab[] = [
   { id: "caja",        label: "Caja",        icon: Wallet },
   { id: "inventario",  label: "Inventario",  icon: Package },
   { id: "compras",     label: "Compras",     icon: Truck },
-  { id: "productos",   label: "Productos",   icon: Tag },
   { id: "clientes",    label: "Clientes",    icon: Users },
   { id: "marketplace", label: "Marketplace", icon: Store },
 ];
-
-function KPISkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28 animate-pulse" />
-      ))}
-    </div>
-  );
-}
-
-function CardSkeleton({ rows = 3 }: { rows?: number }) {
-  return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6  space-y-3">
-      <div className="h-4 bg-[var(--surface-sunken)] rounded w-1/3 animate-pulse" />
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="h-10 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
-      ))}
-    </div>
-  );
-}
 
 const REFRESH_INTERVAL_MS = 30_000;
 
@@ -165,9 +145,8 @@ export default function VendorDashboardModule() {
     general: `Resumen ${rangeTxt} con KPIs, ventas, caja, inventario y clientes vinculados.`,
     ventas: `Ventas ${rangeTxt}: tendencias, tickets y top productos.`,
     caja: `Movimientos de caja ${rangeTxt}: ingresos, egresos y flujo.`,
-    inventario: "Stock crítico, alertas de vencimiento y rotación.",
+    inventario: `Inventario y catálogo ${rangeTxt}: stock crítico, rotación, agotados y unidades vendidas.`,
     compras: `Compras ${rangeTxt}: proveedores, deudas y órdenes.`,
-    productos: `Rendimiento ${rangeTxt}: categorías, unidades y márgenes.`,
     clientes: `Clientes ${rangeTxt}: nuevos, recurrentes y ticket promedio.`,
     marketplace: lastUpdated
       ? `Marketplace actualizado a las ${lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`
@@ -213,7 +192,6 @@ export default function VendorDashboardModule() {
         {tab === "caja" && <CajaDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
         {tab === "inventario" && <InventarioDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
         {tab === "compras" && <ComprasDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
-        {tab === "productos" && <ProductosDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
         {tab === "clientes" && <ClientesDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
 
         {tab === "marketplace" && (
@@ -235,24 +213,48 @@ export default function VendorDashboardModule() {
               <BulejeLoader variant="card" size={56} label="Cargando marketplace..." />
             )}
 
-            {!loading && data && (
-              <div className="space-y-6">
-                <SalesAnomalyAlert storeSlug={storeSlug} />
-                <VendorKPICards kpis={data.kpis} />
-                <VendorQuickActions />
-                <StockoutPredictionWidget storeSlug={storeSlug} />
-                <VendorWeeklyChart data={data.weeklyRevenue} />
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <VendorPendingOrders orders={data.pendingOrders} />
-                  <VendorLowStockList products={data.lowStockProducts} />
-                </div>
-                <VendorRecentSales sales={data.recentSales} />
-                <SponsoredAdminPanel storeSlug={storeSlug} />
+            {!loading && data && (() => {
+              // Brandon mayo 2026: si el vendor marketplace no tiene
+              // actividad (sin ventas, pedidos ni weekly revenue), mostramos
+              // un solo empty-state en vez del wall de KPIs en cero.
+              const noActivity =
+                data.kpis.salesToday === 0 &&
+                data.kpis.salesYesterday === 0 &&
+                data.kpis.salesLastWeek === 0 &&
+                data.pendingOrders.length === 0 &&
+                data.recentSales.length === 0 &&
+                data.weeklyRevenue.every((d) => d.total === 0);
+              if (noActivity) {
+                return (
+                  <EmptyDateRangeState
+                    dateRange={dateRange}
+                    metric="actividad de marketplace"
+                    icon={Store}
+                    title="Tu tienda todavía no tiene ventas en el marketplace"
+                    description="Cuando tu primera venta entre desde el marketplace de Buleje, vas a ver acá ingresos por día, pedidos pendientes, top productos y predicción de quiebre de stock."
+                    action={{ label: "Ver mis productos", href: "/admin?tab=inventario" }}
+                  />
+                );
+              }
+              return (
+                <div className="space-y-6">
+                  <SalesAnomalyAlert storeSlug={storeSlug} />
+                  <VendorKPICards kpis={data.kpis} />
+                  <VendorQuickActions />
+                  <StockoutPredictionWidget storeSlug={storeSlug} />
+                  <VendorWeeklyChart data={data.weeklyRevenue} />
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <VendorPendingOrders orders={data.pendingOrders} />
+                    <VendorLowStockList products={data.lowStockProducts} />
+                  </div>
+                  <VendorRecentSales sales={data.recentSales} />
+                  <SponsoredAdminPanel storeSlug={storeSlug} />
 
-                {/* ── Charts especializados marketplace (6 draggables: funnel, ingresos 6m, top productos, ratings, comparativa, heatmap) ── */}
-                <MarketplaceAdvancedCharts />
-              </div>
-            )}
+                  {/* ── Charts especializados marketplace (6 draggables: funnel, ingresos 6m, top productos, ratings, comparativa, heatmap) ── */}
+                  <MarketplaceAdvancedCharts />
+                </div>
+              );
+            })()}
           </div>
         )}
       </AdminTabBar>

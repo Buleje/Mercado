@@ -11,7 +11,7 @@
  * 6. Heatmap pedidos hora × día 30d
  */
 
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useState } from "react";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import {
   BulejeComposedChart,
@@ -19,6 +19,9 @@ import {
 } from "@/components/ui-system/charts";
 import { DashboardSection } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import EmptyDateRangeState from "./EmptyDateRangeState";
+import { Store } from "@buleje/design-system/icons";
+import { getDefaultRange } from "./DashboardDateRange";
 
 type Order = {
   id: string | number;
@@ -32,6 +35,10 @@ type Product = { id: number | string; name: string; price: number };
 
 export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts() {
   const { data } = useDashboardData();
+  // Snapshot del reloj al primer render — evita "Cannot call impure
+  // function" del lint react-hooks/purity y mantiene el rango estable
+  // entre re-renders (patrón también usado en InventarioDashboard).
+  const [nowMs] = useState(() => Date.now());
 
   const orders = (data?.orders ?? []) as Order[];
   const reviews = (data?.reviews ?? []) as Review[];
@@ -39,7 +46,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
 
   // ── 1. FUNNEL DE PEDIDOS ────────────────────────────────────────────────
   const funnel = useMemo(() => {
-    const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const last30 = nowMs - 30 * 24 * 60 * 60 * 1000;
     const recent = orders.filter((o) => new Date(o.createdAt).getTime() >= last30);
     const recibidos = recent.length;
     const confirmados = recent.filter((o) =>
@@ -71,7 +78,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
     const conversion = recibidos > 0 ? Math.round((entregados / recibidos) * 100) : 0;
     const dropOffAtConfirm = recibidos - confirmados;
     return { data, recibidos, entregados, cancelados, conversion, dropOffAtConfirm };
-  }, [orders]);
+  }, [orders, nowMs]);
 
   // ── 2. INGRESOS MENSUALES 6M ────────────────────────────────────────────
   const monthly = useMemo(() => {
@@ -98,7 +105,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
 
   // ── 3. TOP PRODUCTOS MARKETPLACE ─────────────────────────────────────────
   const topProducts = useMemo(() => {
-    const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const last30 = nowMs - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<string | number, { name: string; pedidos: number; unidades: number; ingresos: number }>();
     orders
       .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
@@ -126,7 +133,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
         unidades: r.unidades,
       }));
     return { rows, total: rows.length, maxIngresos: rows[0]?.ingresos ?? 0 };
-  }, [orders, products]);
+  }, [orders, products, nowMs]);
 
   // ── 4. RATINGS ──────────────────────────────────────────────────────────
   const ratings = useMemo(() => {
@@ -144,7 +151,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
 
   // ── 5. COMPARATIVA SEMANAL ──────────────────────────────────────────────
   const comp = useMemo(() => {
-    const now = Date.now();
+    const now = nowMs;
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map(() => ({
       day: "",
@@ -176,11 +183,11 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       r.previous = Math.round(r.previous);
     });
     return buckets;
-  }, [orders]);
+  }, [orders, nowMs]);
 
   // ── 6. HEATMAP HORA × DÍA 30D ───────────────────────────────────────────
   const heatmap = useMemo(() => {
-    const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const last30 = nowMs - 30 * 24 * 60 * 60 * 1000;
     const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
     const BUCKETS = [
       { label: "Madrugada", range: [0, 5] },
@@ -209,7 +216,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       { idx: -1, value: 0 },
     );
     return { matrix, max, buckets: BUCKETS, days: DAYS, peak };
-  }, [orders]);
+  }, [orders, nowMs]);
 
   const fmtS = (v: number) =>
     `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
@@ -494,6 +501,24 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       },
     },
   ];
+
+  // Brandon mayo 2026: si no hay actividad (ni orders ni reviews) no
+  // tiene sentido pintar 6 cards con KPIs en cero. Cae al empty-state
+  // canónico del proyecto, mismo formato que las otras secciones.
+  // (Se evalúa DESPUÉS de los useMemo para no romper Rules of Hooks).
+  const noActivity = orders.length === 0 && reviews.length === 0;
+  if (noActivity) {
+    return (
+      <EmptyDateRangeState
+        dateRange={getDefaultRange()}
+        metric="actividad de marketplace"
+        icon={Store}
+        title="Tu marketplace todavía no registra movimientos"
+        description="Cuando empiecen a entrar pedidos y reseñas vas a ver acá el funnel de conversión, ingresos por mes, top productos, ratings y picos por franja horaria."
+        action={{ label: "Ver mis productos", href: "/admin?tab=inventario" }}
+      />
+    );
+  }
 
   return <DraggableSections items={sections} storageKey="marketplace-advanced-order" layout="grid" />;
 });
