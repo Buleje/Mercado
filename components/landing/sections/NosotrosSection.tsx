@@ -131,7 +131,7 @@ export default function NosotrosSection() {
             {VALUES.map(({ icon: Icon, keyTitle, keyDesc }) => (
               <article
                 key={keyTitle}
-                className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 transition-all duration-300 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
+                className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 transition-all duration-[var(--dur-base)] hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
               >
                 <span
                   aria-hidden

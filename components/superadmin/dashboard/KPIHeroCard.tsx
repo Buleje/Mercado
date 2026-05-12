@@ -134,7 +134,7 @@ export function KPIHeroCard({
         <div className="mt-3 flex items-center gap-2 flex-wrap">
           {typeof delta === "number" && (
             <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider tabular-nums ${deltaCls}`}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider tabular-nums ${deltaCls}`}
             >
               <TrendIcon className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               {delta > 0 ? "+" : ""}
@@ -142,7 +142,7 @@ export function KPIHeroCard({
             </span>
           )}
           {deltaLabel && (
-            <span className="text-[10px] font-bold text-[var(--text-tertiary)]">{deltaLabel}</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">{deltaLabel}</span>
           )}
         </div>
       )}

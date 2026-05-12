@@ -81,7 +81,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
             return (
               <div
                 key={product.id}
-                className={`group relative rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden transition-all duration-300 ${
+                className={`group relative rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden transition-all duration-[var(--dur-base)] ${
                   inView
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-4"
@@ -100,7 +100,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                     src={product.image}
                     alt={product.name}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     placeholder="blur"
                     blurDataURL={BLUR_DATA_URL}
@@ -111,7 +111,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                   {/* Progress bar — teal accent, sin urgencia rojo alarmista */}
                   <div className="absolute bottom-0 inset-x-0 h-1 bg-[var(--rule-soft)]">
                     <div
-                      className="h-full bg-[var(--accent)] transition-all duration-700"
+                      className="h-full bg-[var(--accent)] transition-all duration-[var(--dur-slower)]"
                       style={{
                         width: `${Math.max(5, (stockLeft / LOW_STOCK_THRESHOLD) * 100)}%`,
                       }}
@@ -154,7 +154,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                   ) : (
                     <button
                       onClick={() => guardedAdd(product)}
-                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold shadow-[var(--shadow-sm)] transition-all duration-200 active:scale-95"
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold shadow-[var(--shadow-sm)] transition-all duration-[var(--dur-fast)] active:scale-95"
                     >
                       <ShoppingCart className="h-3.5 w-3.5" />
                       Agregar al carrito

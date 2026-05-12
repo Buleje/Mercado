@@ -170,7 +170,7 @@ function LocationForm({
             whileHover={{ scale: loadingGeo ? 1 : 1.02 }}
             whileTap={{ scale: loadingGeo ? 1 : 0.97 }}
             className={cn(
-              "mt-3 w-full flex items-center justify-center gap-2.5 rounded-xl py-3 font-semibold text-sm transition-all duration-200 border-2",
+              "mt-3 w-full flex items-center justify-center gap-2.5 rounded-xl py-3 font-semibold text-sm transition-all duration-[var(--dur-fast)] border-2",
               loadingGeo
                 ? "bg-primary/8 border-primary/15 text-primary/60 cursor-not-allowed"
                 : "bg-primary/8 border-primary/25 text-primary hover:bg-primary hover:text-white hover:border-primary hover:shadow-[var(--shadow-lg)] hover:shadow-primary/25"
@@ -573,7 +573,7 @@ export default function CustomerModal() {
                                 key={loc.id}
                                 onClick={() => setActive(loc.id)}
                                 className={cn(
-                                  "w-full text-left flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer",
+                                  "w-full text-left flex items-start gap-3 p-3.5 rounded-xl border-2 transition-all duration-[var(--dur-fast)] cursor-pointer",
                                   isActive ? "border-primary bg-primary/5 shadow-[var(--shadow-sm)]" : "border-gray-100 hover:border-primary/30 hover:bg-gray-50"
                                 )}
                               >
@@ -624,7 +624,7 @@ export default function CustomerModal() {
                         <button
                           type="button"
                           onClick={handleOrderSubmit}
-                          className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-bold text-white shadow-[var(--shadow-lg)] shadow-primary/20 hover:bg-primary-dark active:scale-[0.98] transition-all duration-200"
+                          className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-base font-bold text-white shadow-[var(--shadow-lg)] shadow-primary/20 hover:bg-primary-dark active:scale-[0.98] transition-all duration-[var(--dur-fast)]"
                         >
                           ✓ Confirmar y Enviar Pedido
                         </button>

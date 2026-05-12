@@ -316,7 +316,7 @@ export function OverviewTab() {
                           {meta.title}
                         </p>
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${sev.cls}`}
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${sev.cls}`}
                         >
                           <span className={`h-1 w-1 rounded-full ${sev.dot}`} />
                           {sev.label}
@@ -326,13 +326,13 @@ export function OverviewTab() {
                         {ev.detail}
                       </p>
                       {ev.ipAddress && (
-                        <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-tertiary)]">
+                        <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           <Globe className="h-2.5 w-2.5" aria-hidden />
                           {ev.ipAddress}
                         </span>
                       )}
                     </div>
-                    <time className="shrink-0 whitespace-nowrap text-[10px] text-[var(--text-tertiary)]">
+                    <time className="shrink-0 whitespace-nowrap text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                       {fmtRelative(ev.createdAt)}
                     </time>
                   </li>
@@ -442,7 +442,7 @@ export function OverviewTab() {
                 <span className="font-mono text-xs font-bold text-[var(--text-primary)] truncate">
                   {sip.ip}
                 </span>
-                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold tabular-nums text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
                   <TrendingUp className="h-2.5 w-2.5" />
                   {sip.failedAttempts} fails
                 </span>
@@ -531,7 +531,7 @@ function PostureCheck({
           <p className="text-xs text-[var(--text-tertiary)]">{detail}</p>
         </div>
       </div>
-      <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider ${meta.cls}`}>
+      <span className={`inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}>
         <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
         {meta.txt}
       </span>

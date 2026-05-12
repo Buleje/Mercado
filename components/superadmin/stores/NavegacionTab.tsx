@@ -344,7 +344,7 @@ export function NavegacionTab() {
               <Undo2 className="h-3.5 w-3.5" strokeWidth={2.25} />
               Deshacer
               {history.length > 0 && (
-                <span className="rounded-full bg-[var(--accent)]/10 px-1.5 text-[10px] font-extrabold text-[var(--accent)]">
+                <span className="rounded-full bg-[var(--accent)]/10 px-1.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
                   {history.length}
                 </span>
               )}
@@ -449,7 +449,7 @@ export function NavegacionTab() {
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
               </div>
-              <div className="flex-1 rounded-md bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-3 py-1 text-[10px] font-mono text-[var(--text-tertiary)] truncate">
+              <div className="flex-1 rounded-md bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate">
                 buleje.pe{scopeLinks[0]?.href ?? "/"}
               </div>
             </div>
@@ -524,14 +524,14 @@ export function NavegacionTab() {
           {hiddenLinks.length > 0 && (
             <div className="mt-5 max-w-3xl mx-auto">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] flex items-center gap-1.5">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] flex items-center gap-1.5">
                   <EyeOff className="h-3 w-3" strokeWidth={2.25} />
                   Enlaces ocultos ({hiddenLinks.length}) · click para mostrar
                 </p>
                 <button
                   type="button"
                   onClick={() => showAll(previewScope)}
-                  className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)] hover:underline"
+                  className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] hover:underline"
                 >
                   Mostrar todos
                 </button>
@@ -557,7 +557,7 @@ export function NavegacionTab() {
           )}
 
           {hiddenLinks.length === 0 && visibleLinks.length > 0 && (
-            <p className="mt-4 text-center text-[10px] font-bold uppercase tracking-wider text-[var(--data-success-500)]">
+            <p className="mt-4 text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-500)]">
               ✓ Todos los enlaces visibles
             </p>
           )}
@@ -607,7 +607,7 @@ export function NavegacionTab() {
                     <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                   </span>
                   {isActive && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/20">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/20">
                       <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={3} />
                       Activo
                     </span>
@@ -624,7 +624,7 @@ export function NavegacionTab() {
                     className="h-3 w-3 shrink-0 text-[var(--text-tertiary)]"
                     strokeWidth={2.25}
                   />
-                  <p className="text-[10px] font-bold text-[var(--text-secondary)] truncate">
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] truncate">
                     {mode.preview}
                   </p>
                 </div>
@@ -836,7 +836,7 @@ function NavScopeSection({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span
-            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
               hiddenCount === 0
                 ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
                 : "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
@@ -853,7 +853,7 @@ function NavScopeSection({
             <button
               type="button"
               onClick={onShowAll}
-              className="inline-flex h-7 items-center gap-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+              className="inline-flex h-7 items-center gap-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
             >
               <Eye className="h-3 w-3" strokeWidth={2.25} />
               Todos
@@ -863,7 +863,7 @@ function NavScopeSection({
             <button
               type="button"
               onClick={onHideAll}
-              className="inline-flex h-7 items-center gap-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] transition hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-7 items-center gap-1 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] transition hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]"
             >
               <EyeOff className="h-3 w-3" strokeWidth={2.25} />
               Ninguno
@@ -912,7 +912,7 @@ function NavScopeSection({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1 rounded-md border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-secondary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+                      className="inline-flex items-center gap-1 rounded-md border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
                     >
                       {link.href}
                       <ExternalLink className="h-2.5 w-2.5" />

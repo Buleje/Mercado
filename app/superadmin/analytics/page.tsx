@@ -187,7 +187,7 @@ function PlanBadge({ plan }: { plan: PlanId }) {
   const cfg = PLAN_LABELS[plan] ?? PLAN_LABELS.free;
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${cfg.cls}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${cfg.cls}`}
     >
       {cfg.label}
     </span>
@@ -452,7 +452,7 @@ export default function AnalyticsPage() {
                   Últimas 20 del periodo seleccionado
                 </p>
               </div>
-              <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+              <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
                 {commissions.length}
               </span>
             </header>
@@ -479,7 +479,7 @@ export default function AnalyticsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)] text-left text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
                       <th className="px-5 py-3 font-extrabold">Orden</th>
                       <th className="px-4 py-3 font-extrabold">Tienda</th>
                       <th className="px-4 py-3 font-extrabold">Tipo</th>
@@ -537,7 +537,7 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
               </div>
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
                 {riskTenants.length}
               </span>
             </header>
@@ -571,13 +571,13 @@ export default function AnalyticsPage() {
                       <div className="flex items-center gap-2 flex-wrap shrink-0">
                         <PlanBadge plan={t.plan} />
                         {t.cancelAtPeriodEnd && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
                             <Clock className="h-2.5 w-2.5" />
                             Cancela
                           </span>
                         )}
                         {!t.active && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
                             <XCircle className="h-2.5 w-2.5" />
                             Suspendida
                           </span>
@@ -786,7 +786,7 @@ function KpiCard({
           <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         {periodHint && (
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
             {periodHint}
           </span>
         )}
@@ -865,7 +865,7 @@ function CommissionStatusPill({ status }: { status: CommissionRow["status"] }) {
           };
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${cfg.cls}`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${cfg.cls}`}
     >
       <span className={`h-1 w-1 rounded-full ${cfg.dot}`} />
       {cfg.label}

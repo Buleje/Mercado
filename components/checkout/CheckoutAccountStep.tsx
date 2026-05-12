@@ -146,7 +146,7 @@ export function CheckoutAccountStep({
             {onGoogleSignIn && (
               <div className="flex items-center gap-3 py-1">
                 <div className="flex-1 h-px bg-[var(--rule-soft)]" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted">o</span>
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">o</span>
                 <div className="flex-1 h-px bg-[var(--rule-soft)]" />
               </div>
             )}
@@ -308,7 +308,7 @@ export function CheckoutAccountStep({
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
                 Email
-                <span className="text-[10px] font-normal text-muted normal-case tracking-normal">(opcional)</span>
+                <span className="text-[length:var(--ts-2xs)] font-normal text-muted normal-case tracking-normal">(opcional)</span>
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
@@ -334,7 +334,7 @@ export function CheckoutAccountStep({
               {signupLoading ? "Creando cuenta…" : "Crear cuenta y continuar"}
             </m.button>
 
-            <p className="text-[11px] text-muted text-center leading-relaxed">
+            <p className="text-xs text-muted text-center leading-relaxed">
               Tu cuenta queda solo en {storeName ?? "esta tienda"} — no se comparte con otras tiendas ni con marketplace.
             </p>
           </div>
@@ -342,15 +342,15 @@ export function CheckoutAccountStep({
 
         {/* Trust signals */}
         <div className="flex items-center justify-center gap-4 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex-wrap">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
             <ShieldCheck className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>Compra protegida</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
             <Lock className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>SSL encriptado</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted">
             <User className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
             <span>Solo en {storeName ?? "esta tienda"}</span>
           </div>

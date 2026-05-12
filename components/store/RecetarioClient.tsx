@@ -149,7 +149,7 @@ function RecetaCard({
       className="group"
     >
       <div className={cn(
-        "rounded-xl overflow-hidden bg-[var(--surface-raised)] border transition-[border-color,box-shadow,transform] duration-200",
+        "rounded-xl overflow-hidden bg-[var(--surface-raised)] border transition-[border-color,box-shadow,transform] duration-[var(--dur-fast)]",
         cookable
           ? "border-[var(--rule-soft)] hover:border-[var(--accent)]/40 hover:shadow-md"
           : "border-[var(--data-warning-200,#fde68a)]/60 hover:shadow-md"

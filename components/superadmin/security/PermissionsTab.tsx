@@ -156,14 +156,14 @@ export function PermissionsTab() {
           >
             <div className="flex items-center gap-1.5">
               <KeyRound className="h-3 w-3 text-[var(--text-tertiary)]" aria-hidden />
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] truncate">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] truncate">
                 {s.label}
               </p>
             </div>
             <p className="mt-1 font-display text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
               {s.coverage}%
             </p>
-            <div className="mt-1.5 flex items-center gap-1 text-[10px] text-[var(--text-tertiary)]">
+            <div className="mt-1.5 flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               <span className="inline-flex items-center gap-0.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
                 {s.full}
@@ -231,7 +231,7 @@ export function PermissionsTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-[var(--surface-canvas)] z-10">
-                <tr className="border-b border-[var(--rule-soft)] text-left text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
                   <th className="px-5 py-3 font-extrabold">Recurso</th>
                   {RBAC_ROLES.map((role) => (
                     <th key={role.role} className="px-2 py-3 font-extrabold text-center">
@@ -266,10 +266,10 @@ export function PermissionsTab() {
                                 aria-hidden
                               />
                             )}
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                            <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
                               {group}
                             </span>
-                            <span className="text-[10px] text-[var(--text-tertiary)]">
+                            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                               ({rows.length})
                             </span>
                           </div>
@@ -286,7 +286,7 @@ export function PermissionsTab() {
                                 <span className="font-bold text-[var(--text-primary)]">
                                   {row.label}
                                 </span>
-                                <span className="font-mono text-[10px] text-[var(--text-tertiary)]">
+                                <span className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                                   {row.resource}
                                 </span>
                               </div>

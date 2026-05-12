@@ -256,7 +256,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       role="article"
       aria-label={product.name}
       className={cn(
-        "product-card group relative bg-[var(--surface-raised)] rounded-2xl overflow-hidden border border-[var(--rule-base)] hover:shadow-[var(--shadow-xl)] hover:shadow-primary/10 hover:border-primary/30 transition-shadow duration-300 flex flex-col",
+        "product-card group relative bg-[var(--surface-raised)] rounded-2xl overflow-hidden border border-[var(--rule-base)] hover:shadow-[var(--shadow-xl)] hover:shadow-primary/10 hover:border-primary/30 transition-shadow duration-[var(--dur-base)] flex flex-col",
         isOutOfStock && "opacity-60 pointer-events-none"
       )}
       onMouseEnter={handlePrefetch}
@@ -342,7 +342,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
         className={cn(
           // MK-12: mínimo 44px en mobile (h-11 w-11) para cumplir a11y tap target
-          "absolute z-10 flex items-center justify-center h-11 w-11 rounded-full transition-all duration-200 pointer-events-auto",
+          "absolute z-10 flex items-center justify-center h-11 w-11 rounded-full transition-all duration-[var(--dur-fast)] pointer-events-auto",
           isOutOfStock || isLowStock || product.stock === 1 ? "top-8 right-1.5" : "top-1.5 right-1.5",
           fav
             ? "bg-[var(--data-error-500)] text-white shadow-[var(--shadow-md)] scale-110"
@@ -357,7 +357,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         onClick={handleCompareToggle}
         aria-label={isInCompare(product.id) ? "Quitar de comparación" : "Agregar a comparación"}
         className={cn(
-          "absolute z-10 flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-full transition-all duration-200 pointer-events-auto opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
+          "absolute z-10 flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-full transition-all duration-[var(--dur-fast)] pointer-events-auto opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
           isOutOfStock || isLowStock || product.stock === 1 ? "top-[4.2rem] right-1.5" : "top-[2.8rem] right-2",
           isInCompare(product.id)
             ? "bg-primary text-white shadow-[var(--shadow-md)] scale-105"
@@ -386,7 +386,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
             loading="lazy"
             unoptimized={product.image.startsWith("data:")}
             className={cn(
-              "object-cover transition-opacity duration-300 group-hover:scale-105",
+              "object-cover transition-opacity duration-[var(--dur-base)] group-hover:scale-105",
               "[transition-property:opacity,transform] [transition-duration:300ms,500ms]",
               imgLoaded ? "opacity-100" : "opacity-0"
             )}
@@ -404,7 +404,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         {onQuickView && (
           <button
             onClick={handleQuickView}
-            className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+            className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-[var(--dur-base)] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
             aria-label={`Vista rápida de ${product.name}`}
           >
             <span className="flex items-center gap-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] rounded-full px-3 py-1.5 text-xs font-bold shadow-[var(--shadow-lg)] scale-90 group-hover:scale-100 transition-transform">
@@ -548,7 +548,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 }}
                 className={cn(
                   // MK-12: 44px mínimo en todos los tamaños
-                  "flex items-center justify-center h-11 w-11 rounded-2xl text-white shadow-[var(--shadow-lg)] hover:scale-105 active:scale-95 transition-all duration-200 shrink-0 animate-[scaleIn_0.15s_ease-out]",
+                  "flex items-center justify-center h-11 w-11 rounded-2xl text-white shadow-[var(--shadow-lg)] hover:scale-105 active:scale-95 transition-all duration-[var(--dur-fast)] shrink-0 animate-[scaleIn_0.15s_ease-out]",
                   justAdded ? "bg-[var(--accent)] scale-95" : "bg-primary hover:bg-primary-dark"
                 )}
                 aria-label={`Agregar ${product.name} al carrito`}

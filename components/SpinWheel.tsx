@@ -354,7 +354,7 @@ export default function SpinWheel() {
             </button>
 
             {/* Footer trust line */}
-            <div className="mt-4 flex items-center justify-center gap-x-3 gap-y-1 flex-wrap text-[10px] font-bold uppercase tracking-wider text-muted">
+            <div className="mt-4 flex items-center justify-center gap-x-3 gap-y-1 flex-wrap text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">
               <span>1 giro por persona</span>
               <span className="h-1 w-1 rounded-full bg-muted/50" />
               <span>Cupón válido 7 días</span>
@@ -423,7 +423,7 @@ export default function SpinWheel() {
                     </div>
                   ) : couponCode ? (
                     <div className="space-y-2">
-                      <p className="text-[10px] text-muted uppercase tracking-[0.18em] font-bold">Tu código de cupón</p>
+                      <p className="text-[length:var(--ts-2xs)] text-muted uppercase tracking-[0.18em] font-bold">Tu código de cupón</p>
                       <button
                         type="button"
                         onClick={async () => {

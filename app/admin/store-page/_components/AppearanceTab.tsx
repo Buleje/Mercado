@@ -386,14 +386,14 @@ function Field({ label, children, hint, count, max }: {
           {label}
         </span>
         {max != null && count != null && (
-          <span className={`text-[10px] font-bold tabular-nums ${over ? "text-[var(--data-warning-600,#d97706)]" : "text-[var(--text-tertiary)]"}`}>
+          <span className={`text-[length:var(--ts-2xs)] font-bold tabular-nums ${over ? "text-[var(--data-warning-600,#d97706)]" : "text-[var(--text-tertiary)]"}`}>
             {count}/{max}
           </span>
         )}
       </div>
       {children}
       {hint && (
-        <p className="mt-1.5 text-[11px] text-[var(--text-tertiary)] leading-snug">
+        <p className="mt-1.5 text-xs text-[var(--text-tertiary)] leading-snug">
           {hint}
         </p>
       )}
@@ -510,7 +510,7 @@ function HeroEditor({
       {/* Plantillas — desplegable */}
       {showTemplates && (
         <div className="px-5 py-4 bg-[var(--surface-sunken)]/40 border-b border-[var(--rule-soft)]">
-          <p className="text-[11px] font-black uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+          <p className="text-xs font-black uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
             Elegí una plantilla · sobrescribe título, subtítulo y botón
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -525,10 +525,10 @@ function HeroEditor({
                   <span aria-hidden className="text-lg">{tpl.emoji}</span>
                   <span className="text-sm font-black text-[var(--text-primary)]">{tpl.label}</span>
                 </div>
-                <p className="text-[11px] text-[var(--text-secondary)] leading-snug">
+                <p className="text-xs text-[var(--text-secondary)] leading-snug">
                   {tpl.description}
                 </p>
-                <p className="mt-2 text-[10px] font-bold text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="mt-2 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
                   Aplicar →
                 </p>
               </button>
@@ -544,7 +544,7 @@ function HeroEditor({
           {/* Completeness bar */}
           <div className="rounded-lg bg-[var(--surface-sunken)]/60 border border-[var(--rule-soft)] px-3.5 py-2.5">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+              <span className="text-xs font-black uppercase tracking-wider text-[var(--text-tertiary)]">
                 Completitud del hero
               </span>
               <span className="text-xs font-black tabular-nums text-[var(--text-primary)]">
@@ -553,12 +553,12 @@ function HeroEditor({
             </div>
             <div className="h-1.5 rounded-full bg-[var(--rule-soft)] overflow-hidden">
               <div
-                className="h-full bg-[var(--accent)] transition-all duration-300"
+                className="h-full bg-[var(--accent)] transition-all duration-[var(--dur-base)]"
                 style={{ width: `${completeness}%` }}
               />
             </div>
             {completeness < 100 && (
-              <p className="mt-1.5 text-[10px] text-[var(--text-tertiary)] flex items-center gap-1">
+              <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-1">
                 <Lightbulb className="h-3 w-3 text-[var(--data-warning-500)]" strokeWidth={2} aria-hidden />
                 {!title ? "Empezá con un título" :
                   !subtitle ? "Agregá un subtítulo claro" :
@@ -652,7 +652,7 @@ function HeroEditor({
         {/* ── Preview en vivo ── */}
         <div className="p-5 bg-[var(--surface-sunken)]/30 flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[11px] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+            <p className="text-xs font-black uppercase tracking-wider text-[var(--text-tertiary)]">
               Vista previa en vivo
             </p>
             <div role="group" aria-label="Modo de vista previa" className="inline-flex items-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] p-0.5">
@@ -660,7 +660,7 @@ function HeroEditor({
                 type="button"
                 onClick={() => setPreviewMode("desktop")}
                 aria-pressed={previewMode === "desktop"}
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 h-7 text-[11px] font-bold transition-colors ${previewMode === "desktop" ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]" : "text-[var(--text-secondary)]"}`}
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 h-7 text-xs font-bold transition-colors ${previewMode === "desktop" ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]" : "text-[var(--text-secondary)]"}`}
               >
                 <Monitor className="h-3 w-3" strokeWidth={2} />
                 Desktop
@@ -669,7 +669,7 @@ function HeroEditor({
                 type="button"
                 onClick={() => setPreviewMode("mobile")}
                 aria-pressed={previewMode === "mobile"}
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 h-7 text-[11px] font-bold transition-colors ${previewMode === "mobile" ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]" : "text-[var(--text-secondary)]"}`}
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 h-7 text-xs font-bold transition-colors ${previewMode === "mobile" ? "bg-[var(--text-primary)] text-[var(--surface-canvas)]" : "text-[var(--text-secondary)]"}`}
               >
                 <Smartphone className="h-3 w-3" strokeWidth={2} />
                 Mobile
@@ -725,15 +725,15 @@ function HeroPreviewDesktop({ title, subtitle, imageUrl, ctaLabel, primaryColor,
         }}
       />
       <div className="absolute inset-0 flex flex-col justify-center px-5 py-4">
-        <p className="text-white text-[15px] font-black leading-tight tracking-tight drop-shadow-md line-clamp-2">
+        <p className="text-white text-base font-black leading-tight tracking-tight drop-shadow-md line-clamp-2">
           {title || "Tu título aparece aquí"}
         </p>
-        <p className="mt-1.5 text-white/85 text-[10px] leading-snug drop-shadow-md line-clamp-2">
+        <p className="mt-1.5 text-white/85 text-[length:var(--ts-2xs)] leading-snug drop-shadow-md line-clamp-2">
           {subtitle || "Y debajo, una frase corta que explique qué hacés."}
         </p>
         {ctaLabel && (
           <span
-            className="mt-2.5 inline-flex items-center gap-1 self-start rounded-full bg-white px-3 h-6 text-[10px] font-black"
+            className="mt-2.5 inline-flex items-center gap-1 self-start rounded-full bg-white px-3 h-6 text-[length:var(--ts-2xs)] font-extrabold"
             style={{ color: primaryColor }}
           >
             {ctaLabel}
@@ -753,7 +753,7 @@ function HeroPreviewMobile({ title, subtitle, imageUrl, ctaLabel, primaryColor, 
   return (
     <div className="w-[200px] aspect-[9/16] rounded-2xl overflow-hidden border-[8px] border-[var(--text-primary)] shadow-lg relative bg-black">
       {/* Status bar mock */}
-      <div className="absolute top-0 inset-x-0 h-4 bg-black flex items-center justify-center text-[7px] font-bold text-white z-10">
+      <div className="absolute top-0 inset-x-0 h-4 bg-black flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white z-10">
         9:41
       </div>
       {imageUrl ? (
@@ -769,15 +769,15 @@ function HeroPreviewMobile({ title, subtitle, imageUrl, ctaLabel, primaryColor, 
         }}
       />
       <div className="absolute inset-x-0 bottom-0 top-4 flex flex-col justify-end px-4 pb-5">
-        <p className="text-white text-[13px] font-black leading-tight tracking-tight drop-shadow-md line-clamp-3">
+        <p className="text-white text-sm font-black leading-tight tracking-tight drop-shadow-md line-clamp-3">
           {title || "Tu título"}
         </p>
-        <p className="mt-1.5 text-white/85 text-[9px] leading-snug drop-shadow-md line-clamp-3">
+        <p className="mt-1.5 text-white/85 text-[length:var(--ts-2xs)] leading-snug drop-shadow-md line-clamp-3">
           {subtitle || "Subtítulo de muestra para ver cómo queda."}
         </p>
         {ctaLabel && (
           <span
-            className="mt-2.5 inline-flex items-center justify-center gap-1 rounded-full bg-white py-1.5 text-[10px] font-black self-stretch"
+            className="mt-2.5 inline-flex items-center justify-center gap-1 rounded-full bg-white py-1.5 text-[length:var(--ts-2xs)] font-black self-stretch"
             style={{ color: primaryColor }}
           >
             {ctaLabel}

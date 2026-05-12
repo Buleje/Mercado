@@ -665,7 +665,7 @@ export default function CatalogoTiendaTab() {
                             {p.name}
                           </p>
                           {!p.visible && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+                            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
                               Oculto
                             </span>
                           )}

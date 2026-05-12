@@ -211,7 +211,7 @@ export default function ProductVariantSelector({
       {selected && finalPrice !== null && (
         <p className="text-sm font-semibold text-primary">
           Precio:{" "}
-          <span className="text-lg font-black">{fmt(finalPrice)}</span>
+          <span className="text-lg font-extrabold">{fmt(finalPrice)}</span>
           {selected.priceModifier !== 0 && (
             <span className="ml-1.5 text-xs text-[var(--text-tertiary)] dark:text-muted font-normal">
               ({selected.priceModifier > 0 ? "+" : ""}

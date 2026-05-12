@@ -144,7 +144,7 @@ function StepDot({ n, current }: { n: number; current: Step }) {
   const active = n === current;
   return (
     <div
-      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-200 ${
+      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-[var(--dur-fast)] ${
         done   ? "bg-[var(--data-success-500)] border-[var(--data-success-500)] text-white" :
         active ? "bg-[var(--accent)] border-[var(--accent)] text-white" :
                  "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-400"
@@ -456,7 +456,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                 </span>
               </div>
               {i < 2 && (
-                <div className={`w-10 sm:w-16 h-0.5 mb-4 transition-all duration-300 ${step > n ? "bg-emerald-400" : "bg-gray-200 dark:bg-gray-700"}`} />
+                <div className={`w-10 sm:w-16 h-0.5 mb-4 transition-all duration-[var(--dur-base)] ${step > n ? "bg-emerald-400" : "bg-gray-200 dark:bg-gray-700"}`} />
               )}
             </div>
           ))}
@@ -727,7 +727,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                           {([1, 2, 3, 4] as const).map((bar) => (
                             <div
                               key={bar}
-                              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                              className={`h-1 flex-1 rounded-full transition-all duration-[var(--dur-base)] ${
                                 bar <= passwordStrength.score ? passwordStrength.color : "bg-gray-200 dark:bg-gray-700"
                               }`}
                             />

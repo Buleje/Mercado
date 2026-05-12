@@ -27,7 +27,7 @@ function PreviewImage({ src, alt, eager }: { src: string; alt: string; eager: bo
       alt={alt}
       width={200}
       height={200}
-      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[var(--dur-slow)]"
       loading={eager ? "eager" : "lazy"}
       priority={eager}
       fetchPriority={eager ? "high" : "auto"}
@@ -103,7 +103,7 @@ export default function ProductsPreview() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className={`text-center mb-14 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mb-14 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             <Sparkles className="h-3.5 w-3.5" />
             {hp.previewBadge}
@@ -123,7 +123,7 @@ export default function ProductsPreview() {
         </div>
 
         {/* Category pills */}
-        <div className={`flex flex-wrap items-center justify-center gap-2.5 mb-10 transition-all duration-700 delay-100 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`flex flex-wrap items-center justify-center gap-2.5 mb-10 transition-all duration-[var(--dur-slower)] delay-100 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           {showcaseCategories.map((cat) => (
             <Link
               key={cat.id}
@@ -150,7 +150,7 @@ export default function ProductsPreview() {
               key={product.id}
               href="/tienda"
               onClick={() => trackProductView({ id: product.id, name: product.name, category: product.category, price: product.price })}
-              className={`group relative bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300 ${
+              className={`group relative bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-[var(--dur-base)] ${
                 inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
               }`}
               style={inView ? { animationDelay: `${150 + i * 80}ms` } : undefined}
@@ -166,7 +166,7 @@ export default function ProductsPreview() {
               <div className="aspect-square overflow-hidden bg-gray-50 relative">
                 <PreviewImage src={product.image} alt={product.name} eager={i < 2} />
                 {/* Hover overlay — "Ver en tienda" */}
-                <div className="absolute inset-0 bg-primary/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute inset-0 bg-primary/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--dur-base)]">
                   <span className="text-white text-sm font-bold flex items-center gap-1.5">
                     <ShoppingCart className="h-5 w-5" />
                     Ver en tienda
@@ -192,10 +192,10 @@ export default function ProductsPreview() {
         </div>
 
         {/* CTA — more prominent */}
-        <div className={`text-center transition-all duration-700 delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center transition-all duration-[var(--dur-slower)] delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <Link
             href="/tienda"
-            className="group inline-flex items-center gap-3 bg-primary hover:bg-primary-dark text-white font-extrabold text-base rounded-2xl px-10 py-4.5 shadow-[var(--shadow-lg)] shadow-primary/25 hover:shadow-[var(--shadow-xl)] hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5"
+            className="group inline-flex items-center gap-3 bg-primary hover:bg-primary-dark text-white font-extrabold text-base rounded-2xl px-10 py-4.5 shadow-[var(--shadow-lg)] shadow-primary/25 hover:shadow-[var(--shadow-xl)] hover:shadow-primary/30 transition-all duration-[var(--dur-base)] hover:-translate-y-0.5"
           >
             <ShoppingCart className="h-5 w-5" />
             {hp.previewCtaText}

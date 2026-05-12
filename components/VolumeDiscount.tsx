@@ -107,7 +107,7 @@ export default function VolumeDiscount() {
                 <div className="w-full h-1.5 rounded-full bg-gray-100 dark:bg-surface overflow-hidden">
                   <div
                     className={cn(
-                      "h-full rounded-full transition-all duration-500",
+                      "h-full rounded-full transition-all duration-[var(--dur-slow)]",
                       totalQty >= tier.min ? "bg-primary" : "bg-gray-200 dark:bg-surface"
                     )}
                     style={{ width: totalQty >= tier.min ? "100%" : `${Math.min(100, (totalQty / tier.min) * 100)}%` }}

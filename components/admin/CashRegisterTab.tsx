@@ -1253,7 +1253,7 @@ export default function CashRegisterTab() {
       {/* Open register modal */}
       {showOpen && (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowOpen(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1376,7 +1376,7 @@ export default function CashRegisterTab() {
         
         return (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowClose(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1545,7 +1545,7 @@ export default function CashRegisterTab() {
       {/* Add movement modal */}
       {showMovement && (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowMovement(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1670,7 +1670,7 @@ export default function CashRegisterTab() {
         
         return (
           <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueo(false)}>
-            <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
               {/* Header */}
               <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1833,7 +1833,7 @@ export default function CashRegisterTab() {
       {/* Arqueo Guiado modal */}
       {showArqueoGuiado && currentRegister && (
         <div className="modal-backdrop p-4" onClick={e => e.target === e.currentTarget && setShowArqueoGuiado(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-3">

@@ -77,7 +77,7 @@ export default function MarketplacePriceRangesStrip() {
             </span>
 
             <div className="relative">
-              <p className="text-[11px] font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <p className="text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 {r.label}
               </p>
               <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-black tracking-[-0.035em] text-[var(--text-primary)] mt-1 leading-none">
@@ -90,7 +90,7 @@ export default function MarketplacePriceRangesStrip() {
                 {r.examples.map((e) => (
                   <span
                     key={e}
-                    className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 py-0.5 text-[10px] font-black text-[var(--text-tertiary)]"
+                    className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black text-[var(--text-tertiary)]"
                   >
                     {e}
                   </span>

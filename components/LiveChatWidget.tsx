@@ -209,7 +209,7 @@ export default function LiveChatWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 h-14 sm:h-[60px] rounded-full px-5 gap-2.5 flex items-center justify-center transition-all duration-300 hover:gap-3 hover:shadow-[0_16px_36px_-6px_color-mix(in_oklch,var(--color-primary,#00B4A6)_55%,transparent)] active:scale-95"
+          className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 h-14 sm:h-[60px] rounded-full px-5 gap-2.5 flex items-center justify-center transition-all duration-[var(--dur-base)] hover:gap-3 hover:shadow-[0_16px_36px_-6px_color-mix(in_oklch,var(--color-primary,#00B4A6)_55%,transparent)] active:scale-95"
           style={{
             background:
               "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",

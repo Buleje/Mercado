@@ -128,7 +128,7 @@ export default function ExplorarSectionPortals() {
       <div className="mb-8 sm:mb-12 flex items-end justify-between gap-4 flex-wrap">
         <div className="max-w-xl">
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
-            <span className="font-mono font-black">02</span>
+            <span className="font-mono font-extrabold">02</span>
             <span className="h-px w-6 bg-[var(--rule-base)]" aria-hidden />
             <span>Destinos disponibles</span>
           </div>
@@ -234,7 +234,7 @@ function FeaturedCard({
           />
         </span>
         <span
-          className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-[var(--ls-wider)] ${chipBg}`}
+          className={`inline-flex items-center rounded-full border px-3 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] ${chipBg}`}
         >
           {portal.eyebrow}
         </span>
@@ -318,7 +318,7 @@ function NeutralCard({ portal }: { portal: Portal }) {
           {portal.preview.slice(0, 3).map((p) => (
             <span
               key={p}
-              className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-0.5 text-[10px] font-black text-[var(--text-secondary)]"
+              className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black text-[var(--text-secondary)]"
             >
               {p}
             </span>

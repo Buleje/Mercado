@@ -385,7 +385,7 @@ function TemplatesModal({
             >
               <div className="flex items-start justify-between gap-2 mb-3">
                 <span className="text-2xl">{tpl.emoji}</span>
-                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${SECTION_TAG_STYLES[tpl.tag]}`}>
+                <span className={`text-[length:var(--ts-2xs)] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${SECTION_TAG_STYLES[tpl.tag]}`}>
                   {tpl.tag}
                 </span>
               </div>
@@ -395,7 +395,7 @@ function TemplatesModal({
               <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-snug">
                 {tpl.description}
               </p>
-              <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
+              <p className="mt-3 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
                 Agregar →
               </p>
             </button>
@@ -650,7 +650,7 @@ function SectionEditor({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={img.url} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[var(--text-tertiary)] text-[10px] font-bold">
+                  <div className="w-full h-full flex items-center justify-center text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] font-bold">
                     Foto {i + 1}
                   </div>
                 )}
@@ -710,7 +710,7 @@ function SectionEditor({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={data.imageUrl} alt="" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-[var(--text-tertiary)] text-[10px] font-bold">
+                <div className="w-full h-full flex items-center justify-center text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] font-bold">
                   Preview
                 </div>
               )}

@@ -115,16 +115,16 @@ export default function StatsCounter() {
             <div
               key={stat.label}
               style={started ? { animationDelay: `${i * 120}ms` } : undefined}
-              className={`relative group rounded-2xl p-6 sm:p-8 text-center bg-[var(--surface-raised)] border border-gray-100/80 dark:border-[var(--rule-base)] hover:border-primary/25 hover:shadow-[0_8px_32px_rgba(45,106,79,0.12)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${
+              className={`relative group rounded-2xl p-6 sm:p-8 text-center bg-[var(--surface-raised)] border border-gray-100/80 dark:border-[var(--rule-base)] hover:border-primary/25 hover:shadow-[0_8px_32px_rgba(45,106,79,0.12)] hover:-translate-y-0.5 transition-all duration-[var(--dur-base)] overflow-hidden ${
                 started ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
               }`}
             >
               {/* Hover gradient */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: stat.accentGradient }} />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--dur-slow)]" style={{ background: stat.accentGradient }} />
 
               <div className="relative z-10">
                 <div
-                  className="inline-flex items-center justify-center h-12 w-12 rounded-xl mb-5 group-hover:scale-110 transition-transform duration-300"
+                  className="inline-flex items-center justify-center h-12 w-12 rounded-xl mb-5 group-hover:scale-110 transition-transform duration-[var(--dur-base)]"
                   style={{ background: stat.accent + "18", color: stat.accent }}
                 >
                   <stat.icon className="h-5.5 w-5.5" />

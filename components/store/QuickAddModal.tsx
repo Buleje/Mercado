@@ -297,7 +297,7 @@ export default function QuickAddModal() {
 
                 {/* Badge de categoría flotante */}
                 {product.category && (
-                  <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)] shadow-md backdrop-blur">
+                  <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-primary)] shadow-md backdrop-blur">
                     {product.category}
                   </div>
                 )}
@@ -313,7 +313,7 @@ export default function QuickAddModal() {
 
                 {/* Stock low indicator */}
                 {!outOfStock && product.stock != null && product.stock > 0 && product.stock <= 5 && (
-                  <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
+                  <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white shadow-md">
                     Solo quedan {product.stock}
                   </div>
                 )}
@@ -344,7 +344,7 @@ export default function QuickAddModal() {
                 </div>
 
                 {/* Línea con detalle delivery + pago */}
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                   <span className="inline-flex items-center gap-1">
                     <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                     25 min
@@ -362,7 +362,7 @@ export default function QuickAddModal() {
                 {/* Descripción con borde sutil */}
                 {product.description && (
                   <div className="mt-5 rounded-2xl bg-[var(--surface-sunken)] px-4 py-3.5 border border-[var(--rule-soft)]">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                       Descripción
                     </p>
                     <p className="text-sm leading-relaxed text-[var(--text-primary)]">

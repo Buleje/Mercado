@@ -364,7 +364,7 @@ export default function Testimonials() {
                 key={i}
                 onClick={() => goTo(i)}
                 className={cn(
-                  "h-2 rounded-full transition-all duration-300",
+                  "h-2 rounded-full transition-all duration-[var(--dur-base)]",
                   i === safeCurrent ? "w-6 bg-primary" : "w-2 bg-primary/30 hover:bg-primary/50"
                 )}
                 aria-label={`Testimonio ${i + 1}`}

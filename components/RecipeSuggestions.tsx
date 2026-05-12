@@ -85,7 +85,7 @@ export default function RecipeSuggestions() {
     <section ref={ref} className="py-14 sm:py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className={`text-center mb-10 sm:mb-14 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mb-10 sm:mb-14 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-1.5 bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-400 text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <Sparkles className="w-3.5 h-3.5" />
             Inspiración
@@ -115,7 +115,7 @@ export default function RecipeSuggestions() {
             return (
               <div
                 key={recipe.name}
-                className={`group bg-[var(--surface-raised)] rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col ${
+                className={`group bg-[var(--surface-raised)] rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-[var(--dur-base)] flex flex-col ${
                   inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
                 style={{ transitionDelay: inView ? `${i * 120}ms` : "0ms" }}

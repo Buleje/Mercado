@@ -454,7 +454,7 @@ export function OperationsTab() {
                 {opt.label}
                 {count > 0 && (
                   <span
-                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold tabular-nums ${
+                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${
                       isActive
                         ? "bg-[var(--accent)]/15 text-[var(--accent)]"
                         : opt.k === "danger"
@@ -702,13 +702,13 @@ export function OperationsTab() {
                             {o.customerName || "Cliente sin nombre"}
                           </p>
                           <span
-                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${meta.pill}`}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.pill}`}
                           >
                             <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
                             {meta.label}
                           </span>
                           {isAttended && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
                               <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={3} />
                               Atendido
                             </span>
@@ -722,14 +722,14 @@ export function OperationsTab() {
 
                       {/* Chronometer / SLA */}
                       <div>
-                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                           {STATUS_LABEL[o.status] ?? o.status}
                         </p>
                         <p className={`font-display text-lg font-extrabold tabular-nums leading-tight ${meta.valueColor}`}>
                           {fmtMinutes(o.minutesElapsed)}
                         </p>
                         {o.isOpen && (
-                          <p className="text-[10px] text-[var(--text-tertiary)] leading-none">
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-none">
                             SLA: {fmtMinutes(o.slaMinutes)}
                             {o.overrun > 0 && (
                               <span className={`font-bold ml-1 ${meta.valueColor}`}>
@@ -741,7 +741,7 @@ export function OperationsTab() {
                       </div>
 
                       <div>
-                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                           Total
                         </p>
                         <p className="font-display text-lg font-extrabold tabular-nums text-[var(--text-primary)] leading-tight">
@@ -847,7 +847,7 @@ export function OperationsTab() {
                         ]}
                       />
                       <div>
-                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
+                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
                           <ExternalLink className="h-3 w-3" strokeWidth={2.25} />
                           Acciones
                         </p>
@@ -959,7 +959,7 @@ function DetailBlock({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
+      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
         <HeaderIcon className="h-3 w-3" strokeWidth={2.25} />
         {title}
       </p>
@@ -969,7 +969,7 @@ function DetailBlock({
           const ValIcon = item.icon;
           return (
             <div key={item.label} className="flex flex-col gap-0.5">
-              <dt className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                 {item.label}
               </dt>
               <dd className={`font-semibold text-[var(--text-primary)] ${item.capitalize ? "capitalize" : ""}`}>

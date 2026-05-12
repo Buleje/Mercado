@@ -52,7 +52,7 @@ function buildColumns(
     render: (row) => (
       <span
         className={[
-          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider",
+          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
           row.isPublished
             ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
             : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",

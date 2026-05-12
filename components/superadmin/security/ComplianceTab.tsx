@@ -316,7 +316,7 @@ export function ComplianceTab() {
               >
                 {label}
                 <span
-                  className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold tabular-nums ${
+                  className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${
                     isActive
                       ? "bg-[var(--accent)]/15 text-[var(--accent)]"
                       : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
@@ -472,7 +472,7 @@ function ChecklistSection({
                     </div>
                   </div>
                   <span
-                    className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${meta.cls}`}
+                    className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}
                   >
                     <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
                     {meta.label}
@@ -565,7 +565,7 @@ function ExportDialog({
               29733 Art. 18-20.
             </Dialog.Description>
             <label className="block">
-              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+              <span className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                 Tenant slug *
               </span>
               <input
@@ -579,7 +579,7 @@ function ExportDialog({
               />
             </label>
             <label className="block">
-              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+              <span className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                 DNI / Documento del cliente *
               </span>
               <input

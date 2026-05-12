@@ -303,7 +303,7 @@ function EarlyAdopterPlaceholder() {
               <div className="mt-6">
                 <div className="relative h-3 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                   <span
-                    className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-[var(--accent)] to-[var(--accent-600,var(--accent))] transition-[width] duration-1000"
+                    className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-[var(--accent)] to-[var(--accent-600,var(--accent))] transition-[width] duration-[var(--dur-slower)]"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
@@ -630,7 +630,7 @@ function PaymentMethods() {
           {METHODS.map((m) => (
             <article
               key={m.id}
-              className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 transition-all duration-300 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
+              className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 transition-all duration-[var(--dur-base)] hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
             >
               <div className="flex items-center justify-between gap-3 mb-4">
                 {m.type === "digital" ? (

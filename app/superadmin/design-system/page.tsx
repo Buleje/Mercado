@@ -266,14 +266,14 @@ export default function DesignSystemPage() {
                       className="inline-block h-2 w-2 rounded-full shrink-0"
                       style={{ background: activePreset.colors.accent }}
                     />
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                       Activo
                     </span>
                     <span className="text-xs font-extrabold text-[var(--text-primary)]">
                       {activePreset.meta.name}
                     </span>
                     {updatedAt && (
-                      <span className="text-[10px] text-[var(--text-tertiary)]">
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                         ·{" "}
                         {new Date(updatedAt).toLocaleString("es-PE", {
                           dateStyle: "short",
@@ -347,7 +347,7 @@ export default function DesignSystemPage() {
               {label}
               {typeof count === "number" && (
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold normal-case tracking-normal ${
+                  className={`px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold normal-case tracking-normal ${
                     view === key
                       ? "bg-[var(--accent)]/10 text-[var(--accent)]"
                       : "bg-[var(--rule-base)] text-[var(--text-tertiary)]"
@@ -461,7 +461,7 @@ function PresetCard({
       }`}
     >
       {isActive && (
-        <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent)] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md">
+        <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
           <Check className="h-3 w-3" strokeWidth={3} /> En uso
         </span>
       )}
@@ -475,7 +475,7 @@ function PresetCard({
         }}
       >
         <span
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider w-fit"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider w-fit"
           style={{ background: preset.colors.accent, color: "white" }}
         >
           <Palette className="h-3 w-3" strokeWidth={2.5} />
@@ -506,7 +506,7 @@ function PresetCard({
           ))}
         </div>
 
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           <dt className="text-[var(--text-tertiary)] font-extrabold uppercase tracking-wider">Headings</dt>
           <dd
             className="text-[var(--text-primary)] truncate font-bold"
@@ -1229,7 +1229,7 @@ function FieldText({
           mono ? "font-mono text-xs" : ""
         }`}
       />
-      {hint && <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
     </div>
   );
 }
@@ -1308,7 +1308,7 @@ function FieldRange({
         onChange={(e) => onChange(parseFloat(e.target.value))}
         className="w-full accent-[var(--accent)]"
       />
-      {hint && <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
     </div>
   );
 }
@@ -1410,7 +1410,7 @@ function FieldToggle({
           <span className="h-5 w-5 rounded-full bg-white shadow-sm" />
         </span>
       </button>
-      {hint && <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
     </div>
   );
 }
@@ -1443,7 +1443,7 @@ function PreviewPane({ tokens }: { tokens: DesignTokens }) {
               key={d}
               type="button"
               onClick={() => setDevice(d)}
-              className={`h-8 px-3 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-colors ${
+              className={`h-8 px-3 rounded-lg text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider transition-colors ${
                 device === d
                   ? "bg-[var(--accent)] text-white"
                   : "text-[var(--text-secondary)]"

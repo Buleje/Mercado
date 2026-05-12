@@ -140,7 +140,7 @@ export default function Products() {
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
               transition={{ duration: 0.4, delay: 0.06 * i }}
-              className="group bg-[var(--surface-raised)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5"
+              className="group bg-[var(--surface-raised)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-[var(--dur-base)] hover:-translate-y-1.5"
             >
               {/* Image */}
               <div className="relative overflow-hidden aspect-4/3">
@@ -149,7 +149,7 @@ export default function Products() {
                   alt={product.name}
                   fill
                   sizes="(max-width: 1024px) 50vw, 25vw"
-                  className="object-cover group-hover:scale-108 transition-transform duration-500"
+                  className="object-cover group-hover:scale-108 transition-transform duration-[var(--dur-slow)]"
                   loading="lazy"
                 />
                 {product.badge && (
@@ -157,7 +157,7 @@ export default function Products() {
                     {product.badge}
                   </span>
                 )}
-                <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--dur-fast)]">
                   <div className="h-8 w-8 rounded-full bg-white shadow-md flex items-center justify-center">
                     <ShoppingCart className="h-4 w-4 text-primary" />
                   </div>
@@ -200,7 +200,7 @@ export default function Products() {
             <a
               key={cat}
               href="#contacto"
-              className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-[var(--surface-raised)] px-5 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-primary hover:text-white hover:border-primary transition-all duration-200 shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-[var(--surface-raised)] px-5 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-primary hover:text-white hover:border-primary transition-all duration-[var(--dur-fast)] shadow-sm"
             >
               <Tag className="h-3.5 w-3.5" />
               {cat}

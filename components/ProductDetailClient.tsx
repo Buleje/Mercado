@@ -813,7 +813,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                         src={rp.image}
                         alt={rp.name}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
                         sizes="(max-width: 640px) 50vw, 25vw"
                       />
                     )}

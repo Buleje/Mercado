@@ -854,7 +854,7 @@ function FaqAccordion() {
                   >
                     <span>{item.q}</span>
                     <svg
-                      className={`size-4 shrink-0 text-muted transition-transform duration-200 ${
+                      className={`size-4 shrink-0 text-muted transition-transform duration-[var(--dur-fast)] ${
                         isOpen ? "rotate-180" : ""
                       }`}
                       fill="none"

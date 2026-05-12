@@ -529,7 +529,7 @@ function SectionEditorModal({
               <Package className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Editar sección</p>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">Editar sección</p>
               <h2 className="text-lg font-extrabold text-[var(--text-primary)] leading-tight">{sectionLabel}</h2>
             </div>
           </div>
@@ -572,7 +572,7 @@ function SectionEditorModal({
               {/* Sugerencias clickeables */}
               {titleSuggestions.length > 0 && (
                 <div className="pt-1">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">
                     Sugerencias para esta sección
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -888,7 +888,7 @@ function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
                 <div className="absolute top-0.5 left-0.5 h-1 w-1 rounded-full bg-[var(--data-error-500)]" />
               )}
               {sectionKey === "favorites" && (
-                <div className="absolute top-0.5 right-0.5 text-[6px]">♥</div>
+                <div className="absolute top-0.5 right-0.5 text-[length:var(--ts-2xs)]">♥</div>
               )}
             </div>
           ))}
@@ -920,7 +920,7 @@ function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
           <div className="flex gap-0.5">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-3 w-4 rounded-sm bg-[var(--data-error-500)]/40 flex items-center justify-center">
-                <span className="text-[7px] font-mono text-[var(--data-error-500)]">0{i}</span>
+                <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--data-error-500)]">0{i}</span>
               </div>
             ))}
           </div>
@@ -951,11 +951,11 @@ function SectionThumbnail({ sectionKey }: { sectionKey: string }) {
     case "featured_carousel":
       return (
         <div className="h-full w-full flex items-center gap-1.5 p-2">
-          <div className="text-[8px] text-muted">‹</div>
+          <div className="text-[length:var(--ts-2xs)] text-muted">‹</div>
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className={cn("flex-1", cell)} />
           ))}
-          <div className="text-[8px] text-muted">›</div>
+          <div className="text-[length:var(--ts-2xs)] text-muted">›</div>
         </div>
       );
     case "testimonials":
@@ -1136,7 +1136,7 @@ function SortableRow({
               {section.label}
             </p>
             {!section.enabled && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
                 Oculta
               </span>
             )}
@@ -1479,7 +1479,7 @@ export default function StorefrontEditor() {
         <div className="space-y-5">
           {/* ── Preview del menu navbar real ────────────────────────── */}
           <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card overflow-hidden">
-            <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-muted border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-white/50 dark:bg-[var(--surface-raised)]/50">
+            <div className="px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-white/50 dark:bg-[var(--surface-raised)]/50">
               Vista previa de tu menú
             </div>
             <div className="px-4 py-3 flex items-center gap-2.5 flex-wrap">
@@ -1526,7 +1526,7 @@ export default function StorefrontEditor() {
                       {item.label}
                     </p>
                     {!item.visible && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+                      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
                         Oculto
                       </span>
                     )}

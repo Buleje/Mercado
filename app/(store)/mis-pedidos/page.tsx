@@ -480,7 +480,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
     <div className="relative">
       <div className="absolute top-4 left-4 right-4 h-0.5 bg-[var(--surface-sunken)] dark:bg-surface" />
       <div
-        className="absolute top-4 left-4 h-0.5 bg-primary/40 transition-all duration-500"
+        className="absolute top-4 left-4 h-0.5 bg-primary/40 transition-all duration-[var(--dur-slow)]"
         style={{
           width:
             currentIdx <= 0
@@ -497,7 +497,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
             <div key={step.status} className="flex flex-col items-center gap-1.5 w-16">
               <div
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 z-10 relative",
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-[var(--dur-base)] z-10 relative",
                   isCurrent
                     ? "bg-primary text-white shadow-md shadow-primary/30 scale-110"
                     : isCompleted
@@ -520,7 +520,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
                 {step.label}
               </span>
               {isCurrent && (
-                <span className="text-[10px] text-primary/70 font-bold uppercase tracking-wider">
+                <span className="text-[length:var(--ts-2xs)] text-primary/70 font-bold uppercase tracking-wider">
                   Ahora
                 </span>
               )}
@@ -902,7 +902,7 @@ function ActiveOrderCard({
       <div className="mb-4">
         <div className="relative h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
           <div
-            className="absolute top-0 left-0 h-full transition-all duration-700"
+            className="absolute top-0 left-0 h-full transition-all duration-[var(--dur-slower)]"
             style={{
               width: `${progress * 100}%`,
               background:

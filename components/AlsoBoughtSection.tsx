@@ -178,7 +178,7 @@ export default function AlsoBoughtSection({
                   src={product.image}
                   alt={product.name}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
                   sizes="(max-width: 640px) 50vw, 25vw"
                 />
               )}

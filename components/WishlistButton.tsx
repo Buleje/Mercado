@@ -38,7 +38,7 @@ export default function WishlistButton({ productId, className, size = "md" }: Wi
       aria-label={inList ? "Quitar de wishlist" : "Agregar a wishlist"}
       aria-pressed={inList}
       className={cn(
-        "flex items-center justify-center rounded-full transition-all duration-200 active:scale-90",
+        "flex items-center justify-center rounded-full transition-all duration-[var(--dur-fast)] active:scale-90",
         size === "md" ? "h-11 w-11" : "h-9 w-9",
         inList
           ? "bg-[var(--data-error-500)] text-white shadow-md scale-110"

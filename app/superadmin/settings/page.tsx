@@ -498,7 +498,7 @@ function PlanPriceCard({
         >
           {tier.label}
         </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
           {tier.tagline}
         </span>
       </div>
@@ -560,7 +560,7 @@ function PlanLimitsCard({
         >
           Plan {plan}
         </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
           Topes mensuales
         </span>
       </div>
@@ -659,7 +659,7 @@ function ToggleCard({
         </div>
         <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{desc}</p>
         {active && tone === "warning" && (
-          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
             <AlertTriangle className="h-3 w-3" aria-hidden />
             Activo · público bloqueado
           </p>

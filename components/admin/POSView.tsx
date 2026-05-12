@@ -550,7 +550,7 @@ function SaleCompleteModal({
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]">
         {/* Header — success + titulo + total */}
         <div className="px-6 pt-8 pb-6 text-center relative overflow-hidden">
           <SaleConfetti />

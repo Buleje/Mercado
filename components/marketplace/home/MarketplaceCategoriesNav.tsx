@@ -75,14 +75,14 @@ export default function MarketplaceCategoriesNav() {
                   className="group relative flex flex-col items-center justify-center gap-1.5 shrink-0 w-[78px] sm:w-[90px] rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-2 sm:p-2.5 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-raised)] hover:shadow-md"
                 >
                   {cat.badge && (
-                    <span className="absolute -top-1.5 -right-1.5 inline-flex items-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-md shadow-rose-500/40">
+                    <span className="absolute -top-1.5 -right-1.5 inline-flex items-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md shadow-rose-500/40">
                       {cat.badge}
                     </span>
                   )}
                   <span className="inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-primary)] transition-all group-hover:bg-[var(--accent)] group-hover:text-white group-hover:scale-110">
                     <Icon className="h-5 w-5 sm:h-5 sm:w-5" strokeWidth={2} aria-hidden />
                   </span>
-                  <span className="text-[11px] sm:text-xs font-black text-[var(--text-primary)] text-center leading-tight">
+                  <span className="text-xs sm:text-xs font-black text-[var(--text-primary)] text-center leading-tight">
                     {cat.label}
                   </span>
                 </Link>

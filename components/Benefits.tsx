@@ -142,7 +142,7 @@ export default function Benefits() {
                 >
                   <div className="dark:hidden">
                     <div
-                      className="inline-flex items-center justify-center h-13 w-13 rounded-xl mb-5 transition-transform duration-300 group-hover:scale-110"
+                      className="inline-flex items-center justify-center h-13 w-13 rounded-xl mb-5 transition-transform duration-[var(--dur-base)] group-hover:scale-110"
                       style={{ background: benefit.accent + "18", color: benefit.accent }}
                     >
                       <benefit.icon className="h-6 w-6" />
@@ -196,7 +196,7 @@ export default function Benefits() {
         </div>
 
         {/* CTA */}
-        <div className={`text-center mt-12 transition-all duration-700 delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mt-12 transition-all duration-[var(--dur-slower)] delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <Link
             href="/tienda"
             className="group inline-flex items-center gap-2.5 text-primary hover:text-primary-dark font-bold text-base transition-colors"

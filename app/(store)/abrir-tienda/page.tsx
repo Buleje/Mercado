@@ -204,7 +204,7 @@ export default function AbrirTiendaPage() {
                           </span>
                         </span>
                         <ChevronDown
-                          className="h-5 w-5 shrink-0 text-[var(--text-tertiary)] group-open:rotate-180 group-open:text-[var(--accent)] transition-all duration-200"
+                          className="h-5 w-5 shrink-0 text-[var(--text-tertiary)] group-open:rotate-180 group-open:text-[var(--accent)] transition-all duration-[var(--dur-fast)]"
                           strokeWidth={2}
                         />
                       </summary>

@@ -18,7 +18,7 @@ export default function DeliveryZoneMap() {
     <section ref={ref} className="py-16 sm:py-24 bg-surface">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className={`text-center mb-12 sm:mb-16 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mb-12 sm:mb-16 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             <Truck className="w-3.5 h-3.5" />
             Delivery
@@ -43,7 +43,7 @@ export default function DeliveryZoneMap() {
             {ZONES.map((zone, i) => (
               <div
                 key={zone.name}
-                className={`group flex items-center gap-4 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl px-5 py-4 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 transition-all duration-500 ${
+                className={`group flex items-center gap-4 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl px-5 py-4 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 transition-all duration-[var(--dur-slow)] ${
                   inView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"
                 }`}
                 style={{ transitionDelay: inView ? `${i * 80}ms` : "0ms" }}
@@ -75,7 +75,7 @@ export default function DeliveryZoneMap() {
           </div>
 
           {/* Visual map */}
-          <div className={`relative rounded-3xl p-8 overflow-hidden transition-all duration-700 ${inView ? "opacity-100 scale-100" : "opacity-0 scale-95"}`} style={{ background: "linear-gradient(135deg, rgba(45,106,79,0.05), rgba(45,106,79,0.08), rgba(52,211,153,0.05))" }}>
+          <div className={`relative rounded-3xl p-8 overflow-hidden transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 scale-100" : "opacity-0 scale-95"}`} style={{ background: "linear-gradient(135deg, rgba(45,106,79,0.05), rgba(45,106,79,0.08), rgba(52,211,153,0.05))" }}>
             {/* Decorative dots */}
             <div className="absolute top-4 right-4 w-16 h-16 opacity-10" style={{ backgroundImage: "radial-gradient(circle, var(--color-primary) 1px, transparent 1px)", backgroundSize: "8px 8px" }} />
             <div className="absolute bottom-4 left-4 w-16 h-16 opacity-10" style={{ backgroundImage: "radial-gradient(circle, var(--color-primary) 1px, transparent 1px)", backgroundSize: "8px 8px" }} />
@@ -86,7 +86,7 @@ export default function DeliveryZoneMap() {
                 return (
                   <div
                     key={zone.name}
-                    className="absolute rounded-full border-2 transition-all duration-1000"
+                    className="absolute rounded-full border-2 transition-all duration-[var(--dur-slower)]"
                     style={{
                       width: `${size}%`,
                       height: `${size}%`,

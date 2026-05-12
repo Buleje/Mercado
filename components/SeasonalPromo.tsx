@@ -148,7 +148,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
       {/* Wash teal solo cuando NO hay imagen custom */}
       {!hasImage && (
         <div
-          className="absolute inset-0 transition-opacity duration-700 border-y border-[var(--rule-soft)]"
+          className="absolute inset-0 transition-opacity duration-[var(--dur-slower)] border-y border-[var(--rule-soft)]"
           style={{ background: TEAL_WASH }}
         />
       )}
@@ -156,7 +156,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
       <div className="relative mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         {/* Header de sección con presencia */}
         <div className="text-center mb-8 sm:mb-10">
-          <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-primary)]">
+          <p className="text-[length:var(--ts-2xs)] sm:text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-primary)]">
             Esta semana
           </p>
           <h2 className="mt-2 text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)] tracking-tight">
@@ -178,7 +178,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 alt={promo.title}
                 fill
                 sizes="(max-width: 640px) 100vw, 66vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                className="object-cover transition-transform duration-[var(--dur-slower)] group-hover:scale-105"
                 priority={safeIdx === 0}
                 unoptimized={promo.image!.startsWith("data:")}
               />
@@ -188,7 +188,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
               <div className="relative z-10 h-full flex flex-col justify-end px-7 sm:px-12 py-8 sm:py-10 max-w-2xl">
                 <div className="inline-flex items-center gap-1.5 self-start mb-4 px-3.5 py-2 rounded-full bg-white/95 backdrop-blur-sm shadow-[var(--shadow-lg)]">
                   <Tag className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-                  <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary)]">
+                  <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary)]">
                     Oferta de Temporada
                   </span>
                 </div>
@@ -226,7 +226,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
               <div className="flex-1 min-w-0 text-center sm:text-left">
                 <div className="flex items-center justify-center sm:justify-start gap-2 mb-3">
                   <Tag className="w-4 h-4 text-[var(--color-primary)] sm:hidden" />
-                  <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary)]">
+                  <span className="text-[length:var(--ts-2xs)] sm:text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary)]">
                     Oferta de Temporada
                   </span>
                 </div>
@@ -274,7 +274,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 <span className="absolute top-0 right-0 h-16 w-16 rounded-full bg-[var(--color-primary)]/8 blur-2xl group-hover:bg-[var(--color-primary)]/15 transition-colors" aria-hidden="true" />
 
                 <div className="relative">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[var(--color-primary)] uppercase tracking-[0.15em] mb-2">
+                  <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold text-[var(--color-primary)] uppercase tracking-[0.15em] mb-2">
                     <Tag className="w-2.5 h-2.5" />
                     {sp.category.replace(/-/g, " ")}
                   </span>
@@ -299,7 +299,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 onClick={() => setIdx(i)}
                 aria-label={`Promoción ${i + 1}`}
                 className={cn(
-                  "h-2 rounded-full transition-all duration-300",
+                  "h-2 rounded-full transition-all duration-[var(--dur-base)]",
                   i === safeIdx
                     ? "w-10 bg-[var(--color-primary)]"
                     : "w-2 bg-[var(--rule-base)] hover:bg-[var(--color-primary)]/40"
@@ -307,7 +307,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
               />
             ))}
           </div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums">
             {safeIdx + 1} / {PROMOS.length}
           </p>
         </div>

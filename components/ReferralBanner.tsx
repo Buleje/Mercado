@@ -108,7 +108,7 @@ export default function ReferralBanner() {
               <div className="flex flex-col gap-4">
                 {STEPS.map((s, i) => (
                   <div key={s.n} className="flex items-center gap-4">
-                    <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black"
+                    <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-extrabold"
                       style={{ background: i === 2 ? "var(--color-secondary)" : "rgba(255,255,255,0.15)", color: "#fff" }}>
                       {s.n}
                     </div>

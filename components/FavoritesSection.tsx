@@ -124,7 +124,7 @@ export default function FavoritesSection() {
           {favProducts.map((product) => (
             <div
               key={product.id}
-              className="group relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden border border-[var(--rule-base)] hover:shadow-[var(--shadow-lg)] transition-all duration-300 flex flex-col"
+              className="group relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden border border-[var(--rule-base)] hover:shadow-[var(--shadow-lg)] transition-all duration-[var(--dur-base)] flex flex-col"
             >
               <button
                 onClick={() => toggle(String(product.id))}

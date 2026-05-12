@@ -134,7 +134,7 @@ export function OrdersList({
             <article
               key={o.id}
               className={cn(
-                "rounded-xl border bg-[var(--surface-raised)] overflow-hidden transition-all duration-200",
+                "rounded-xl border bg-[var(--surface-raised)] overflow-hidden transition-all duration-[var(--dur-fast)]",
                 urgencyBorderClass,
                 isSelected
                   ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/30"

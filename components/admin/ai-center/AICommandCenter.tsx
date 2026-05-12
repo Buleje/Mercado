@@ -370,7 +370,7 @@ export default function AICommandCenter() {
       {autoplay && maximized && (
         <div className="h-1 bg-gray-100 shrink-0 overflow-hidden" data-export-hide="true">
           <div
-            className="h-full bg-[var(--data-success-500)] transition-[width] duration-75 ease-linear"
+            className="h-full bg-[var(--data-success-500)] transition-[width] duration-[var(--dur-micro)] ease-linear"
             style={{ width: `${autoplayProgress}%` }}
             role="progressbar"
             aria-valuenow={Math.round(autoplayProgress)}

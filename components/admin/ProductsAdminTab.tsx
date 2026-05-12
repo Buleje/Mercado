@@ -892,7 +892,7 @@ function FormSection({
       >
         <span>{title}</span>
         <ChevronDown
-          className={cn("h-4 w-4 text-[var(--text-tertiary)] transition-transform duration-200", open && "rotate-180")}
+          className={cn("h-4 w-4 text-[var(--text-tertiary)] transition-transform duration-[var(--dur-fast)]", open && "rotate-180")}
         />
       </button>
       {open && <div className="p-4 space-y-4">{children}</div>}
@@ -1307,7 +1307,7 @@ export default function ProductsAdminTab() {
                       src={p.image}
                       alt={p.name}
                       fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="object-cover transition-transform duration-[var(--dur-base)] group-hover:scale-105"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
                       unoptimized
                     />

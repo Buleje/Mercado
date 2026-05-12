@@ -968,7 +968,7 @@ export function AdminSidebar({
                       const tipText = MODULE_INFO[tipTabId as Tab]?.tip;
                       if (!tipText) return null;
                       return (
-                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity duration-100 delay-[60ms] z-50">
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity duration-[var(--dur-micro)] delay-[60ms] z-50">
                           <div className="relative bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 max-w-[220px] leading-relaxed shadow-lg border border-[var(--rule-base)] dark:border-white/10">
                             <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-white dark:border-r-[var(--surface-raised)]" />
                             {tipText}

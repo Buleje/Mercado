@@ -53,7 +53,7 @@ export default function SectionPlaceholder({
         {Array.from({ length: cols }).map((_, i) => (
           <div
             key={i}
-            className="group relative rounded-2xl bg-[var(--surface-raised)] border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-[var(--shadow-md)]"
+            className="group relative rounded-2xl bg-[var(--surface-raised)] border border-border/50 overflow-hidden transition-all duration-[var(--dur-base)] hover:shadow-[var(--shadow-md)]"
           >
             {/* Image placeholder */}
             <div className="relative aspect-square bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 flex items-center justify-center">

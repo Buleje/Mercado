@@ -378,7 +378,7 @@ export function AuditLogTab() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] text-left text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
                     <th className="px-5 py-3 font-extrabold">Fecha</th>
                     <th className="px-3 py-3 font-extrabold">Acción</th>
                     <th className="px-3 py-3 font-extrabold">Detalle</th>
@@ -399,7 +399,7 @@ export function AuditLogTab() {
                         </td>
                         <td className="px-3 py-3">
                           <span
-                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold ${meta.cls}`}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold ${meta.cls}`}
                           >
                             <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
                             {meta.label}
@@ -500,7 +500,7 @@ function MiniStat({
         <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>
           <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
         </span>
-        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
           {label}
         </p>
       </div>

@@ -523,7 +523,7 @@ export default function DocumentosModule() {
                             <span className="font-bold text-[var(--text-primary)] truncate max-w-[280px]">{doc.name}</span>
                             {doc.favorite && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />}
                             {doc.versionCount && doc.versionCount > 0 && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold">v{doc.versionCount + 1}</span>
+                              <span className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold">v{doc.versionCount + 1}</span>
                             )}
                           </button>
                         </td>

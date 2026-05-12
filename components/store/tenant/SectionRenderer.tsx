@@ -134,7 +134,7 @@ function HoursBlock({ section, primary }: { section: HoursSection; primary: stri
             >
               <span className={`text-sm font-black ${isToday ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}>
                 {DAY_LABELS[row.day]}
-                {isToday && <span className="ml-2 text-[10px] font-black uppercase tracking-wider opacity-70">Hoy</span>}
+                {isToday && <span className="ml-2 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider opacity-70">Hoy</span>}
               </span>
               <span className={`text-sm font-bold tabular-nums ${row.open ? "text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]"}`}>
                 {row.open && row.from && row.to
@@ -286,7 +286,7 @@ function FaqBlock({ section, primary }: { section: FaqSection; primary: string }
             <summary className="flex items-start justify-between gap-3 cursor-pointer list-none font-bold text-[var(--text-primary)]">
               <span>{item.question}</span>
               <ChevronRight
-                className="h-4 w-4 mt-0.5 shrink-0 text-[var(--text-tertiary)] transition-transform duration-300"
+                className="h-4 w-4 mt-0.5 shrink-0 text-[var(--text-tertiary)] transition-transform duration-[var(--dur-base)]"
                 strokeWidth={2}
               />
             </summary>
@@ -350,7 +350,7 @@ function GalleryBlock({ section, primary }: { section: GallerySection; primary: 
             <img
               src={img.url}
               alt={img.alt ?? ""}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
               loading="lazy"
             />
             {img.caption && (
@@ -383,7 +383,7 @@ function ImageTextBlock({ section, primary }: { section: ImageTextSection; prima
           <img
             src={imageUrl}
             alt={imageAlt ?? ""}
-            className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-700"
+            className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-[var(--dur-slower)]"
           />
         </div>
         {/* Texto */}

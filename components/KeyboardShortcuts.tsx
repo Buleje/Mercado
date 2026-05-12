@@ -222,7 +222,7 @@ export function KeyboardShortcutHint() {
           "rounded-full shadow-[var(--shadow-lg)]",
           "text-xs text-gray-600 dark:text-muted",
           "hover:shadow-[var(--shadow-xl)] hover:scale-105",
-          "transition-all duration-200",
+          "transition-all duration-[var(--dur-fast)]",
           "group"
         )}
         aria-label="Ver atajos de teclado"

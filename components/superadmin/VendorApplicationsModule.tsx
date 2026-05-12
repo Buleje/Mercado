@@ -457,7 +457,7 @@ export default function VendorApplicationsModule() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-left text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-left text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
                     <th className="px-5 py-3 font-extrabold">Negocio</th>
                     <th className="px-3 py-3 font-extrabold hidden sm:table-cell">RUC</th>
                     <th className="px-3 py-3 font-extrabold hidden md:table-cell">Distrito</th>
@@ -498,7 +498,7 @@ export default function VendorApplicationsModule() {
                       <td className="px-3 py-3 text-center">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider",
+                            "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
                             STATUS_STYLES[a.status],
                           )}
                         >

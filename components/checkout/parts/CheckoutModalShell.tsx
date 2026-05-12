@@ -76,7 +76,7 @@ export function CheckoutModalShell({
               aria-modal="true"
               aria-label="Completar pedido"
               data-testid="checkout-modal"
-              className={`relative bg-white dark:bg-background rounded-t-3xl sm:rounded-[28px] w-full max-h-[95svh] flex flex-col overflow-hidden transition-all duration-300 ${
+              className={`relative bg-white dark:bg-background rounded-t-3xl sm:rounded-[28px] w-full max-h-[95svh] flex flex-col overflow-hidden transition-all duration-[var(--dur-base)] ${
                 step === "pago"
                   ? "sm:max-w-5xl"
                   : step === "confirmar"

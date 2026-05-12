@@ -401,7 +401,7 @@ function FilterTab({
       {label}
       {typeof count === "number" && (
         <span
-          className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold tabular-nums ${
+          className={`inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${
             active
               ? "bg-[var(--accent)]/15 text-[var(--accent)]"
               : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
@@ -411,7 +411,7 @@ function FilterTab({
         </span>
       )}
       {hint && !count && (
-        <span className="text-[10px] font-semibold text-[var(--text-tertiary)]">
+        <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
           · {hint}
         </span>
       )}
@@ -435,7 +435,7 @@ function ProofCard({ proof, onClick }: { proof: PaymentProof; onClick: () => voi
           alt={`Comprobante de ${proof.storeName}`}
           fill
           sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          className="object-cover transition-transform duration-[var(--dur-base)] group-hover:scale-[1.02]"
           unoptimized
         />
         {/* Bottom gradient overlay */}
@@ -446,12 +446,12 @@ function ProofCard({ proof, onClick }: { proof: PaymentProof; onClick: () => voi
         {/* Top badges */}
         <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${status.pill}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${status.pill}`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
             {status.label}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
+          <span className="inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
             <Banknote className="h-3 w-3" strokeWidth={2.5} aria-hidden />
             {METHOD_LABEL[proof.method] ?? proof.method}
           </span>
@@ -459,7 +459,7 @@ function ProofCard({ proof, onClick }: { proof: PaymentProof; onClick: () => voi
         {/* Amount overlay bottom */}
         <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-2 text-white">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider opacity-80">
               {PLAN_LABEL[proof.planTier] ?? proof.planTier} ·{" "}
               {proof.billingCycle === "anual" ? "Anual" : "Mensual"}
             </p>
@@ -467,7 +467,7 @@ function ProofCard({ proof, onClick }: { proof: PaymentProof; onClick: () => voi
               {fmt(proof.amountPEN)}
             </p>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-[10px] font-bold backdrop-blur-sm transition group-hover:bg-white/25">
+          <span className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-[length:var(--ts-2xs)] font-bold backdrop-blur-sm transition group-hover:bg-white/25">
             <Eye className="h-3 w-3" strokeWidth={2.5} aria-hidden />
             Revisar
           </span>
@@ -480,7 +480,7 @@ function ProofCard({ proof, onClick }: { proof: PaymentProof; onClick: () => voi
           {proof.storeName}
         </h3>
         <p className="mt-1 truncate text-xs text-[var(--text-secondary)]">{proof.ownerName}</p>
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--rule-soft)] pt-2.5 text-[11px] text-[var(--text-tertiary)]">
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--rule-soft)] pt-2.5 text-xs text-[var(--text-tertiary)]">
           <span className="inline-flex items-center gap-1">
             <Phone className="h-3 w-3" strokeWidth={2.25} aria-hidden />
             {proof.ownerPhone}
@@ -535,13 +535,13 @@ function ProofModal({
         <div className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
           <div className="flex items-center gap-3 min-w-0">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider ${status.pill}`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${status.pill}`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
               {status.label}
             </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
                 {PLAN_LABEL[proof.planTier] ?? proof.planTier} ·{" "}
                 {proof.billingCycle === "anual" ? "Anual" : "Mensual"}
               </p>
@@ -575,7 +575,7 @@ function ProofModal({
               href={proof.proofUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/70 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-black/85"
+              className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/70 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-black/85"
             >
               <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Abrir original
@@ -594,7 +594,7 @@ function ProofModal({
             </div>
 
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3.5">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Ubicación
               </p>
               <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
@@ -660,7 +660,7 @@ function ProofModal({
               </div>
               {rejectOpen && (
                 <div className="rounded-xl border-2 border-rose-300/60 bg-rose-50/60 p-3 dark:border-rose-700/40 dark:bg-rose-950/30">
-                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-300">
+                  <label className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-300">
                     Motivo del rechazo (lo recibe por WhatsApp)
                   </label>
                   <textarea
@@ -728,7 +728,7 @@ function Field({
           : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]"
       }`}
     >
-      <p className="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+      <p className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
         <Icon className="h-3 w-3" strokeWidth={2.25} aria-hidden />
         {label}
       </p>

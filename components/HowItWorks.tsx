@@ -159,7 +159,7 @@ export default function HowItWorks() {
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className={`text-center mb-16 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mb-16 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Así de fácil
           </span>
@@ -213,10 +213,10 @@ export default function HowItWorks() {
         </div>
 
         {/* CTA */}
-        <div className={`text-center mt-14 transition-all duration-700 delay-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mt-14 transition-all duration-[var(--dur-slower)] delay-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <Link
             href="/tienda"
-            className="group relative inline-flex items-center gap-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-sm rounded-xl px-7 py-3.5 shadow-[var(--shadow-lg)] shadow-primary/20 hover:shadow-[var(--shadow-xl)] transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
+            className="group relative inline-flex items-center gap-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-sm rounded-xl px-7 py-3.5 shadow-[var(--shadow-lg)] shadow-primary/20 hover:shadow-[var(--shadow-xl)] transition-all duration-[var(--dur-base)] hover:-translate-y-0.5 overflow-hidden"
           >
             <span className="relative z-10 flex items-center gap-2.5">
               Empezar a comprar

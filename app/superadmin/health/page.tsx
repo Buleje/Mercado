@@ -94,7 +94,7 @@ function StatusBadge({ status }: { status: HealthCheck["status"] }) {
   const meta = STATUS_META[status];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${meta.cls}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}
     >
       <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
       {meta.label}
@@ -480,7 +480,7 @@ export default function SystemHealthPage() {
                   >
                     <XCircle className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
                     <span className="font-semibold flex-1">{inc.message}</span>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600/80 dark:text-rose-400/80 shrink-0">
+                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-rose-600/80 dark:text-rose-400/80 shrink-0">
                       desde {new Date(inc.since).toLocaleTimeString("es-PE")}
                     </span>
                   </li>

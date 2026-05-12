@@ -76,7 +76,7 @@ export default function MarketplaceBrandsStrip() {
                 <p className="font-display text-base font-black tracking-[-0.015em] text-[var(--text-primary)] truncate">
                   {b.label}
                 </p>
-                <p className="text-[10px] font-black text-[var(--text-tertiary)] truncate uppercase tracking-wider">
+                <p className="text-[length:var(--ts-2xs)] font-black text-[var(--text-tertiary)] truncate uppercase tracking-wider">
                   {b.tagline}
                 </p>
               </div>

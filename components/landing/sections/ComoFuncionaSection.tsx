@@ -79,7 +79,7 @@ export default function ComoFuncionaSection() {
             {PASOS.map(({ num, icon: Icon, keyTitle, keyDesc, keyTag, time }) => (
               <article
                 key={num}
-                className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 lg:p-7 transition-all duration-300 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
+                className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 lg:p-7 transition-all duration-[var(--dur-base)] hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
               >
                 {/* Número grande en esquina top-right como elemento de jerarquía. */}
                 <span
@@ -93,7 +93,7 @@ export default function ComoFuncionaSection() {
                 <div className="relative mb-5">
                   <span
                     aria-hidden
-                    className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] transition-all duration-300 group-hover:bg-[var(--accent)] group-hover:text-white group-hover:scale-105 shadow-sm"
+                    className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] transition-all duration-[var(--dur-base)] group-hover:bg-[var(--accent)] group-hover:text-white group-hover:scale-105 shadow-sm"
                   >
                     <Icon className="h-6 w-6" strokeWidth={2} />
                   </span>

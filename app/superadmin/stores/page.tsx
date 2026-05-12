@@ -159,7 +159,7 @@ export default function StoresPage() {
                 {t.label}
                 {typeof count === "number" && count > 0 && (
                   <span
-                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold tabular-nums ${
+                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${
                       isActive
                         ? "bg-[var(--accent)]/15 text-[var(--accent)]"
                         : t.key === "health"

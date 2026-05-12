@@ -118,7 +118,7 @@ export default function SocialProofToast() {
       aria-atomic="true"
       aria-label="Actividad reciente de clientes"
       className={cn(
-        "fixed bottom-54 sm:bottom-6 left-4 z-20 max-w-xs transition-all duration-500 pointer-events-auto",
+        "fixed bottom-54 sm:bottom-6 left-4 z-20 max-w-xs transition-all duration-[var(--dur-slow)] pointer-events-auto",
         visible
           ? "opacity-100 translate-y-0 translate-x-0"
           : "opacity-0 translate-y-4 -translate-x-4"

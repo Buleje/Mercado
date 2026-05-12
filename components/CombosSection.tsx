@@ -131,7 +131,7 @@ function ComboCard({ combo }: { combo: Combo; categories: Category[] }) {
   };
 
   return (
-    <div className="group relative bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col">
+    <div className="group relative bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] shadow-sm hover:shadow-xl transition-all duration-[var(--dur-base)] overflow-hidden flex flex-col">
       {/* Discount badge — accent-soft sin rojo decorativo (DS rule) */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/20 rounded-full px-2.5 py-1 text-xs font-bold shadow-sm">
         <Tag className="h-3 w-3" />
@@ -151,7 +151,7 @@ function ComboCard({ combo }: { combo: Combo; categories: Category[] }) {
                   src={product.image}
                   alt={product.name}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
                   sizes="120px"
                   placeholder="blur"
                   blurDataURL={BLUR_DATA_URL}

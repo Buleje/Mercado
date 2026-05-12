@@ -131,7 +131,7 @@ export default function Contact() {
                     href={item.href}
                     target={item.href.startsWith("http") ? "_blank" : undefined}
                     rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="block bg-[var(--surface-raised)] rounded-xl p-6 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] hover:border-primary/20 transition-all duration-300 group"
+                    className="block bg-[var(--surface-raised)] rounded-xl p-6 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] hover:border-primary/20 transition-all duration-[var(--dur-base)] group"
                   >
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
@@ -214,7 +214,7 @@ export default function Contact() {
 
             <a
               href="#productos"
-              className="inline-flex items-center justify-center gap-2 mt-8 rounded-xl bg-white px-8 py-4 text-base font-bold text-primary shadow-[var(--shadow-lg)] hover:bg-gray-50 active:scale-[0.98] transition-all duration-200"
+              className="inline-flex items-center justify-center gap-2 mt-8 rounded-xl bg-white px-8 py-4 text-base font-bold text-primary shadow-[var(--shadow-lg)] hover:bg-gray-50 active:scale-[0.98] transition-all duration-[var(--dur-fast)]"
             >
               <ShoppingCart className="h-5 w-5" aria-hidden /> Empezar a Comprar
             </a>

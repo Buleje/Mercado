@@ -479,7 +479,7 @@ export function CategoriesTab() {
                 className="flex items-center gap-2 rounded-lg border border-amber-300/40 bg-[var(--surface-raised)] px-2.5 py-1.5 text-xs dark:border-amber-700/30"
               >
                 <span
-                  className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                  className={`inline-flex items-center rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
                     it.kind === "category"
                       ? "bg-amber-200/70 text-amber-800 dark:bg-amber-800/40 dark:text-amber-200"
                       : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
@@ -491,7 +491,7 @@ export function CategoriesTab() {
                   {it.kind === "category" ? it.catLabel : it.subLabel}
                 </span>
                 {it.kind === "subcategory" && (
-                  <span className="text-[var(--text-tertiary)] text-[10px] truncate">
+                  <span className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)] truncate">
                     en {it.catLabel}
                   </span>
                 )}
@@ -721,17 +721,17 @@ function CategoryRow({
               <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)] truncate">
                 {cat.label}
               </h3>
-              <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[10px] font-mono text-[var(--text-tertiary)]">
+              <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)]">
                 {cat.id}
               </span>
               {dirty && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
                   <span className="h-1 w-1 rounded-full bg-amber-500" />
                   Sin guardar
                 </span>
               )}
               {isHidden && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                   <EyeOff className="h-2.5 w-2.5" />
                   Oculta
                 </span>
@@ -740,7 +740,7 @@ function CategoryRow({
             <p className="mt-1 text-xs text-[var(--text-tertiary)] truncate">
               {cat.description || cat.defaultDescription || "Sin descripción"}
             </p>
-            <div className="mt-1.5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <div className="mt-1.5 flex items-center gap-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               <span className="inline-flex items-center gap-1">
                 <StoreIcon className="h-3 w-3" strokeWidth={2.25} />
                 {linkedCount} tienda{linkedCount === 1 ? "" : "s"}
@@ -788,7 +788,7 @@ function CategoryRow({
               </div>
               <div className="space-y-2">
                 <label className="block">
-                  <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                  <span className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
                     Nombre
                   </span>
                   <input
@@ -800,7 +800,7 @@ function CategoryRow({
                   />
                 </label>
                 <label className="block">
-                  <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                  <span className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
                     Descripción
                   </span>
                   <textarea
@@ -1102,7 +1102,7 @@ function SubCategoryCard({
             <StoreIcon className="h-3 w-3" strokeWidth={2.25} />
             Tiendas
           </span>
-          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold tabular-nums">
+          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
             <span
               className={
                 linkedSet.size > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
@@ -1144,7 +1144,7 @@ function SubCategoryCard({
                     />
                     <span className="truncate flex-1">{s.name}</span>
                     {ownZone && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-[var(--data-success-500)]">
+                      <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] text-[var(--data-success-500)]">
                         <MapPin className="h-2.5 w-2.5" />
                         {ownZone}
                       </span>
@@ -1158,7 +1158,7 @@ function SubCategoryCard({
 
         {linkedStores.length > 0 && (
           <div className="rounded-lg border border-dashed border-[var(--accent)]/30 bg-[var(--accent)]/5 p-2 space-y-1">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)] flex items-center gap-1">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] flex items-center gap-1">
               <MapPin className="h-2.5 w-2.5" />
               Ubicación
             </p>
@@ -1174,7 +1174,7 @@ function SubCategoryCard({
                   </span>
                   {hasOwnZone ? (
                     <span
-                      className="inline-flex items-center gap-0.5 text-[var(--data-success-500)] font-bold text-[10px]"
+                      className="inline-flex items-center gap-0.5 text-[var(--data-success-500)] font-bold text-[length:var(--ts-2xs)]"
                       title="Zona declarada por la tienda"
                     >
                       <MapPin className="h-2.5 w-2.5" />
@@ -1187,7 +1187,7 @@ function SubCategoryCard({
                       onChange={(e) => onZoneDraftChange(s.slug, e.target.value)}
                       placeholder="Zona…"
                       aria-label={`Zona para ${s.name}`}
-                      className="w-[100px] rounded border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-1.5 py-0.5 text-[10px] focus:border-[var(--accent)] outline-none"
+                      className="w-[100px] rounded border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] focus:border-[var(--accent)] outline-none"
                     />
                   )}
                 </div>
@@ -1273,7 +1273,7 @@ function PrimaryStoreLinker({
                   <p className="text-sm font-bold text-[var(--text-primary)] truncate leading-tight">
                     {s.name}
                   </p>
-                  <p className="text-[10px] font-mono text-[var(--text-tertiary)] truncate leading-tight">
+                  <p className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate leading-tight">
                     /{s.slug}
                   </p>
                 </div>
@@ -1353,12 +1353,12 @@ function PrimaryStoreLinker({
                   />
                   <span className="truncate flex-1">{s.name}</span>
                   {ownZone && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[var(--data-success-500)]">
+                    <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">
                       <MapPin className="h-2.5 w-2.5" />
                       {ownZone}
                     </span>
                   )}
-                  <span className="text-[10px] font-mono text-[var(--text-tertiary)] truncate max-w-[100px]">
+                  <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate max-w-[100px]">
                     /{s.slug}
                   </span>
                 </label>

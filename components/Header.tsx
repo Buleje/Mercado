@@ -843,7 +843,7 @@ export default function Header() {
               className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[var(--text-primary)] font-medium hover:bg-primary/5 hover:text-primary transition-colors"
             >
               <span>Inicio</span>
-              <span className={cn("transition-transform duration-200 inline-block", mobileInicioOpen && "rotate-180")}>
+              <span className={cn("transition-transform duration-[var(--dur-fast)] inline-block", mobileInicioOpen && "rotate-180")}>
                 <ChevronDown className="h-4 w-4 text-muted" />
               </span>
             </button>
@@ -1218,7 +1218,7 @@ export default function Header() {
               <button
                 onClick={() => setUserMenuOpen((o) => !o)}
                 className={cn(
-                  "flex items-center gap-2 rounded-full text-sm font-semibold transition-all duration-200 px-3 py-2 ml-1",
+                  "flex items-center gap-2 rounded-full text-sm font-semibold transition-all duration-[var(--dur-fast)] px-3 py-2 ml-1",
                   scrolled
                     ? customer
                       ? "bg-primary/10 text-primary hover:bg-primary/20"
@@ -1246,7 +1246,7 @@ export default function Header() {
                       <User className="h-4 w-4" />
                       <span className="flex-1">Mi panel</span>
                       <span
-                        className="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
+                        className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded text-white"
                         style={{
                           background:
                             "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
@@ -1335,7 +1335,7 @@ export default function Header() {
             <button
               onClick={() => setSearchOpen(true)}
               className={cn(
-                "lg:hidden flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200",
+                "lg:hidden flex h-11 w-11 items-center justify-center rounded-full transition-all duration-[var(--dur-fast)]",
                 scrolled
                   ? "text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary"
                   : "text-white/70 hover:text-white hover:bg-white/15"
@@ -1354,7 +1354,7 @@ export default function Header() {
                 <button
                   onClick={() => setNotifOpen((p) => !p)}
                   className={cn(
-                    "relative flex items-center justify-center h-11 w-11 rounded-full transition-all duration-200",
+                    "relative flex items-center justify-center h-11 w-11 rounded-full transition-all duration-[var(--dur-fast)]",
                     scrolled
                       ? "text-[var(--text-primary)] hover:bg-muted"
                       : "text-white/70 hover:text-white hover:bg-white/15"
@@ -1603,7 +1603,7 @@ export default function Header() {
             <button
               onClick={toggle}
               className={cn(
-                "relative flex items-center justify-center h-12 w-12 rounded-full transition-all duration-200",
+                "relative flex items-center justify-center h-12 w-12 rounded-full transition-all duration-[var(--dur-fast)]",
                 scrolled
                   ? "bg-primary text-white shadow-[var(--shadow-lg)] hover:bg-primary-dark"
                   : "bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
@@ -1633,7 +1633,7 @@ export default function Header() {
               id="order-status-nav-btn-mobile"
               onClick={() => { setOrderStatusChanged(false); openOrderStatusModal(); }}
               className={cn(
-                "lg:hidden relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200",
+                "lg:hidden relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-[var(--dur-fast)]",
                 scrolled
                   ? hasActiveOrder
                     ? "text-[var(--data-warning-600)] hover:bg-amber-50 dark:hover:bg-amber-900/20"

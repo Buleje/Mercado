@@ -161,7 +161,7 @@ export function LocationConfirmModal({
                   {/* Info de coordenadas */}
                   <div className="px-6 py-4 space-y-3 border-t border-[var(--rule-soft)]">
                     <div>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary,#00B4A6)] mb-1.5">
+                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.18em] text-[var(--color-primary,#00B4A6)] mb-1.5">
                         Dirección detectada
                       </p>
                       <p className="text-sm font-bold text-[var(--text-primary)] leading-snug">
@@ -171,11 +171,11 @@ export function LocationConfirmModal({
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Latitud</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">Latitud</p>
                         <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{lat.toFixed(6)}</p>
                       </div>
                       <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Longitud</p>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">Longitud</p>
                         <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{lon.toFixed(6)}</p>
                       </div>
                     </div>

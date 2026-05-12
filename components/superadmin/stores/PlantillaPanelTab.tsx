@@ -328,7 +328,7 @@ export function PlantillaPanelTab() {
       {toast && (
         <div
           key={toast.nonce}
-          className="fixed bottom-6 right-6 z-50 max-w-sm rounded-2xl border bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] animate-in fade-in slide-in-from-bottom-4 duration-200"
+          className="fixed bottom-6 right-6 z-50 max-w-sm rounded-2xl border bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-fast)]"
           style={{
             borderColor:
               toast.tone === "success" ? "var(--data-success)" :

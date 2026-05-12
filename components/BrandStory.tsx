@@ -41,7 +41,7 @@ export default function BrandStory() {
     <section ref={ref} className="py-14 sm:py-20 bg-background overflow-hidden">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className={`text-center mb-12 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mb-12 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="text-sm font-bold text-primary uppercase tracking-wider">Nuestra historia</span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] mt-2">
             De la esquina del barrio a tu puerta

@@ -87,7 +87,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
       <button
         onClick={handleClick}
         className={cn(
-          "w-full text-left px-4 py-3 border-l-4 transition-colors duration-150 hover:bg-gray-50 dark:hover:bg-accent/50 flex items-start gap-3 group",
+          "w-full text-left px-4 py-3 border-l-4 transition-colors duration-[var(--dur-fast)] hover:bg-gray-50 dark:hover:bg-accent/50 flex items-start gap-3 group",
           borderColor,
           isUnread ? "bg-emerald-50/50 dark:bg-emerald-950/10" : "bg-transparent"
         )}

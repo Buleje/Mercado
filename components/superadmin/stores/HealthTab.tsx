@@ -270,7 +270,7 @@ export function HealthTab() {
 
           {/* Distribution bar */}
           <div className="flex flex-col justify-center gap-2 md:px-2">
-            <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <div className="flex items-center justify-between text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
               <span>Distribución</span>
               <span>{stats?.total ?? 0} tiendas</span>
             </div>
@@ -405,7 +405,7 @@ export function HealthTab() {
                 {opt.label}
                 {opt.count > 0 && (
                   <span
-                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold tabular-nums ${
+                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${
                       isActive
                         ? "bg-[var(--accent)]/15 text-[var(--accent)]"
                         : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
@@ -427,7 +427,7 @@ export function HealthTab() {
           />
           Ocultar atendidos
           {attended.size > 0 && (
-            <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-[var(--accent)]/10 px-1.5 text-[10px] font-extrabold tabular-nums text-[var(--accent)]">
+            <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-[var(--accent)]/10 px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--accent)]">
               {attended.size}
             </span>
           )}
@@ -549,7 +549,7 @@ export function HealthTab() {
                           {item.tenantName}
                         </span>
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${sc.band} ${sc.text}`}
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${sc.band} ${sc.text}`}
                         >
                           <span
                             className={`h-1 w-1 rounded-full`}
@@ -557,21 +557,21 @@ export function HealthTab() {
                           />
                           {sc.label}
                         </span>
-                        <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[10px] font-bold text-[var(--text-tertiary)]">
+                        <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
                           {item.plan}
                         </span>
                         {!item.active && (
-                          <span className="rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
+                          <span className="rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300">
                             Inactiva
                           </span>
                         )}
                         {item.store && !item.store.isPublished && (
-                          <span className="rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                          <span className="rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
                             No publicada
                           </span>
                         )}
                         {isAttended && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-500)]">
                             <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={3} />
                             Atendido
                           </span>
@@ -607,7 +607,7 @@ export function HealthTab() {
                             className={`h-1.5 w-3 rounded-sm ${CHECK_STATUS_META[c.status].dot}`}
                           />
                         ))}
-                        <span className="ml-1 text-[10px] font-bold text-[var(--text-tertiary)]">
+                        <span className="ml-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
                           {item.checks.filter((c) => c.status === "done").length}/
                           {item.checks.length}
                         </span>
@@ -706,17 +706,17 @@ export function HealthTab() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-sm font-bold">{c.label}</span>
                                   {c.required === false && (
-                                    <span className="rounded-full bg-black/5 px-1.5 py-0 text-[10px] font-extrabold uppercase tracking-wider dark:bg-white/10">
+                                    <span className="rounded-full bg-black/5 px-1.5 py-0 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider dark:bg-white/10">
                                       Opcional
                                     </span>
                                   )}
-                                  <span className="ml-auto text-[10px] font-extrabold uppercase tracking-wider opacity-80">
+                                  <span className="ml-auto text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider opacity-80">
                                     {meta.label}
                                   </span>
                                 </div>
                                 <p className="mt-1 text-xs opacity-90 leading-snug">{c.help}</p>
                                 {c.status !== "done" && (
-                                  <p className="mt-1.5 text-[10px] font-extrabold uppercase tracking-wider opacity-80">
+                                  <p className="mt-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider opacity-80">
                                     Click para arreglar →
                                   </p>
                                 )}
@@ -798,7 +798,7 @@ function HealthRing({
           strokeDasharray={circ}
           strokeDashoffset={offset}
           fill="none"
-          className="transition-all duration-500 ease-out"
+          className="transition-all duration-[var(--dur-slow)] ease-out"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">

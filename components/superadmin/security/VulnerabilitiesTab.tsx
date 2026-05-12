@@ -177,7 +177,7 @@ function MitigationCard({
       </h4>
       <p className="text-xs leading-relaxed text-[var(--text-secondary)]">{detail}</p>
       {code && (
-        <code className="block rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1.5 font-mono text-[11px] text-[var(--text-primary)]">
+        <code className="block rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1.5 font-mono text-xs text-[var(--text-primary)]">
           {code}
         </code>
       )}

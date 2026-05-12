@@ -382,7 +382,7 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
             <Store className="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
             {order.tenant.name}
           </p>
-          <p className="text-[11px] text-[var(--text-tertiary)] tabular-nums">
+          <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
             #{order.id.slice(-8)} · {timeAgo(order.createdAt)}
           </p>
         </div>
@@ -437,7 +437,7 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
               </div>
             ))}
             {order.items.length > 3 && (
-              <div className="w-9 h-9 rounded-lg border-2 border-[var(--surface-canvas)] bg-[var(--surface-sunken)] flex items-center justify-center text-[10px] font-bold text-[var(--text-secondary)]">
+              <div className="w-9 h-9 rounded-lg border-2 border-[var(--surface-canvas)] bg-[var(--surface-sunken)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
                 +{order.items.length - 3}
               </div>
             )}
@@ -452,7 +452,7 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
       {/* Footer: total */}
       <div className="px-4 py-3 border-t border-[var(--rule-base)] flex items-center justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
+          <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
           <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">
             S/{Number(order.total).toFixed(2)}
           </p>
@@ -471,7 +471,7 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
   return (
     <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
-      <aside className="absolute right-0 top-0 h-full w-full sm:w-[480px] bg-[var(--surface-canvas)] border-l border-[var(--rule-base)] shadow-[var(--shadow-2xl)] flex flex-col animate-in slide-in-from-right duration-200">
+      <aside className="absolute right-0 top-0 h-full w-full sm:w-[480px] bg-[var(--surface-canvas)] border-l border-[var(--rule-base)] shadow-[var(--shadow-2xl)] flex flex-col animate-in slide-in-from-right duration-[var(--dur-fast)]">
         {/* Header */}
         <header className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center gap-3 shrink-0 bg-[var(--surface-sunken)]">
           {order.tenant.logoUrl ? (

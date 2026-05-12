@@ -24,7 +24,7 @@ export default function PopularCategories() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className={`text-center mb-10 sm:mb-14 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mb-10 sm:mb-14 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Categorías
           </span>
@@ -50,20 +50,20 @@ export default function PopularCategories() {
               <Link
                 key={cat.id}
                 href={`/tienda?categoria=${cat.id}`}
-                className={`group relative flex flex-col items-center gap-3 sm:gap-4 p-5 sm:p-7 rounded-2xl bg-linear-to-b ${cat.gradient} bg-[var(--surface-raised)] border ${cat.border} ${cat.hoverBg} hover:shadow-[var(--shadow-xl)] hover:shadow-primary/8 hover:-translate-y-1.5 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden ${
+                className={`group relative flex flex-col items-center gap-3 sm:gap-4 p-5 sm:p-7 rounded-2xl bg-linear-to-b ${cat.gradient} bg-[var(--surface-raised)] border ${cat.border} ${cat.hoverBg} hover:shadow-[var(--shadow-xl)] hover:shadow-primary/8 hover:-translate-y-1.5 active:scale-[0.98] transition-all duration-[var(--dur-base)] cursor-pointer overflow-hidden ${
                   inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
                 }`}
                 style={inView ? { animationDelay: `${100 + i * 70}ms` } : undefined}
               >
                 {/* Decorative circle */}
-                <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-primary/[0.03] group-hover:bg-primary/[0.06] transition-colors duration-500" aria-hidden="true" />
+                <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-primary/[0.03] group-hover:bg-primary/[0.06] transition-colors duration-[var(--dur-slow)]" aria-hidden="true" />
 
                 <Icon
                   size={64}
-                  className="text-[var(--text-secondary)] group-hover:scale-115 group-hover:text-[var(--accent)] transition-all duration-300 relative z-10 sm:h-20 sm:w-20"
+                  className="text-[var(--text-secondary)] group-hover:scale-115 group-hover:text-[var(--accent)] transition-all duration-[var(--dur-base)] relative z-10 sm:h-20 sm:w-20"
                 />
                 <div className="text-center relative z-10">
-                  <p className="text-xs sm:text-sm font-bold text-[var(--text-primary)] leading-tight group-hover:text-primary transition-colors duration-300">
+                  <p className="text-xs sm:text-sm font-bold text-[var(--text-primary)] leading-tight group-hover:text-primary transition-colors duration-[var(--dur-base)]">
                     {cat.name}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] sm:text-xs text-muted mt-1 font-medium">
@@ -76,7 +76,7 @@ export default function PopularCategories() {
         </div>
 
         {/* CTA */}
-        <div className={`text-center mt-10 transition-all duration-700 delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div className={`text-center mt-10 transition-all duration-[var(--dur-slower)] delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <Link
             href="/tienda"
             className="group inline-flex items-center gap-2 text-primary hover:text-primary-dark font-bold text-sm transition-colors"

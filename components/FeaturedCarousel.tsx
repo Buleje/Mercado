@@ -70,13 +70,13 @@ export default function FeaturedCarousel({ serverProducts, showEmpty = false, em
         {/* MK-10: carousel horizontal con scroll-snap */}
         <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-2 -mx-1 px-1">
           {featured.map(product => (
-            <div key={product.id} className="group bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-200 shrink-0 snap-start w-[160px] sm:w-[200px]">
+            <div key={product.id} className="group bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-[var(--dur-fast)] shrink-0 snap-start w-[160px] sm:w-[200px]">
               <div className="relative aspect-square bg-[var(--surface-sunken)] overflow-hidden">
                 <SmartProductImage
                   src={product.image}
                   alt={product.name}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
                   sizes="(max-width:640px) 50vw, (max-width:1024px) 25vw, 16vw"
                   placeholderSize={28}
                   showPlaceholderLabel={false}

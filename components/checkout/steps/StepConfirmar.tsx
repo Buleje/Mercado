@@ -361,7 +361,7 @@ export function StepConfirmar({
                       </div>
                     )}
                     <span
-                      className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] font-extrabold tabular-nums text-white"
+                      className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-white"
                       style={{
                         background:
                           "linear-gradient(135deg, var(--color-primary, #00B4A6) 0%, var(--color-primary-dark, #009690) 100%)",
@@ -627,7 +627,7 @@ export function StepConfirmarFooter({
         </button>
       </div>
 
-      <div className="flex items-center justify-center gap-5 mt-4 text-[11px] font-bold uppercase tracking-wider text-muted">
+      <div className="flex items-center justify-center gap-5 mt-4 text-xs font-bold uppercase tracking-wider text-muted">
         <span className="flex items-center gap-1.5">
           <Shield
             className="h-3.5 w-3.5"

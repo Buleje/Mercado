@@ -115,7 +115,7 @@ subtitle,
                   href={item.href}
                   target={item.href.startsWith("http") ? "_blank" : undefined}
                   rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="block bg-[var(--surface-raised)] rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all duration-300 group"
+                  className="block bg-[var(--surface-raised)] rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all duration-[var(--dur-base)] group"
                 >
                   {content}
                 </a>

@@ -160,7 +160,7 @@ export default function DeliveryEstimation({
                     <Icon className="h-3 w-3" />
                   </div>
                   <span className={cn(
-                    "text-[8px] mt-0.5 font-medium text-center leading-tight",
+                    "text-[length:var(--ts-2xs)] mt-0.5 font-medium text-center leading-tight",
                     isFirst ? "text-primary" : "text-gray-400"
                   )}>
                     {step.label}

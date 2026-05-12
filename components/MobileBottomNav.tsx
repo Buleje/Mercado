@@ -50,7 +50,7 @@ export default function MobileBottomNav() {
         "bg-white/97 dark:bg-[var(--surface-raised)]/97 backdrop-blur-xl",
         "border-t border-[var(--rule-base)]",
         "shadow-[0_-4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.3)]",
-        "animate-in slide-in-from-bottom-4 duration-300",
+        "animate-in slide-in-from-bottom-4 duration-[var(--dur-base)]",
       )}
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       aria-label="Navegación principal"
@@ -66,7 +66,7 @@ export default function MobileBottomNav() {
               onClick={() => handleTap(item.action)}
               className={cn(
                 "relative flex flex-col items-center justify-center gap-1 flex-1 h-full",
-                "transition-all duration-200 touch-manipulation",
+                "transition-all duration-[var(--dur-fast)] touch-manipulation",
                 isActive
                   ? "text-primary"
                   : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 active:scale-90"
@@ -83,14 +83,14 @@ export default function MobileBottomNav() {
 
               {/* Icon wrapper — cart has pill background when items > 0 */}
               <span className={cn(
-                "relative flex items-center justify-center transition-all duration-200",
+                "relative flex items-center justify-center transition-all duration-[var(--dur-fast)]",
                 isCart && totalQty > 0 && !isActive
                   ? "w-10 h-7 rounded-full bg-primary/10"
                   : "w-7 h-7",
                 isActive && isCart ? "w-10 h-7 rounded-full bg-primary/15" : "",
               )}>
                 <Icon
-                  className={cn("transition-transform duration-200", isActive ? "scale-110" : "scale-100")}
+                  className={cn("transition-transform duration-[var(--dur-fast)]", isActive ? "scale-110" : "scale-100")}
                   style={{ width: "22px", height: "22px" }}
                   strokeWidth={isActive ? 2.5 : 2}
                 />

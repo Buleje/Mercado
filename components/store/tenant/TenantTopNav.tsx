@@ -49,7 +49,7 @@ export default function TenantTopNav({
   return (
     <nav
       aria-label="Navegación de la tienda"
-      className={`sticky top-0 z-40 transition-all duration-200 ${
+      className={`sticky top-0 z-40 transition-all duration-[var(--dur-fast)] ${
         scrolled
           ? "bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-base)] shadow-sm"
           : "bg-transparent"

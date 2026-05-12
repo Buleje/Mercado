@@ -58,7 +58,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
       className={cn(
         "snap-start shrink-0 w-[140px] rounded-xl bg-[var(--surface-raised)]",
         "border border-gray-100 dark:border-white/5",
-        "shadow-sm hover:shadow-md transition-all duration-200",
+        "shadow-sm hover:shadow-md transition-all duration-[var(--dur-fast)]",
         "overflow-hidden group",
       )}
     >
@@ -71,7 +71,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
             alt={product.name}
             loading="lazy"
             onError={() => setImgError(true)}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[var(--dur-base)]"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -87,7 +87,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
 
       {/* Info */}
       <div className="p-2.5 space-y-1.5">
-        <p className="text-[12px] font-semibold text-gray-900 dark:text-[var(--text-primary)] line-clamp-2 leading-tight">
+        <p className="text-xs font-semibold text-gray-900 dark:text-[var(--text-primary)] line-clamp-2 leading-tight">
           {product.name}
         </p>
 
@@ -109,7 +109,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
             className={cn(
               "min-h-[44px] min-w-[44px] -mr-1 -mb-1 flex items-center justify-center gap-0.5",
               "rounded-xl text-white text-[length:var(--ts-2xs)] font-bold",
-              "transition-all duration-200 active:scale-90",
+              "transition-all duration-[var(--dur-fast)] active:scale-90",
               justAdded
                 ? "bg-[var(--data-success-500)] dark:bg-[var(--data-success-600)]"
                 : "bg-primary hover:bg-primary-dark dark:bg-primary dark:hover:bg-primary-dark",

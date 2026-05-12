@@ -503,7 +503,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       <div key={step.key} className="flex items-center flex-1">
                         <div className="flex flex-col items-center gap-1 shrink-0">
                           <div className={cn(
-                            "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border-2",
+                            "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-[var(--dur-base)] border-2",
                             done ? "bg-white/20 border-white/50" : "bg-white/5 border-white/15",
                             active && "ring-2 ring-white/40 scale-110 shadow-[var(--shadow-lg)]"
                           )}>
@@ -512,7 +512,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           <span className={cn("text-[length:var(--ts-2xs)] font-bold leading-tight text-center whitespace-nowrap", done ? "text-white" : "text-white/35")}>{step.label}</span>
                         </div>
                         {i < STATUS_STEPS.length - 1 && (
-                          <div className={cn("flex-1 h-0.5 mx-1 rounded-full transition-all duration-500", done && i < currentIdx ? "bg-white/60" : "bg-white/15")} />
+                          <div className={cn("flex-1 h-0.5 mx-1 rounded-full transition-all duration-[var(--dur-slow)]", done && i < currentIdx ? "bg-white/60" : "bg-white/15")} />
                         )}
                       </div>
                     );

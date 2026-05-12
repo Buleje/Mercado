@@ -118,7 +118,7 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
             return (
               <div
                 key={product.id}
-                className="group bg-[var(--surface-raised)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5"
+                className="group bg-[var(--surface-raised)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-[var(--dur-base)] hover:-translate-y-1.5"
               >
                 {/* Image */}
                 <div className="relative overflow-hidden aspect-4/3">
@@ -127,7 +127,7 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
                     alt={product.name}
                     fill
                     sizes={`(max-width: 640px) 50vw, (max-width: 1024px) ${gridCols === "2" ? "50vw" : "33vw"}, ${100 / parseInt(gridCols)}vw`}
-                    className="object-cover group-hover:scale-108 transition-transform duration-500"
+                    className="object-cover group-hover:scale-108 transition-transform duration-[var(--dur-slow)]"
                     loading="lazy"
                   />
                   
@@ -148,7 +148,7 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
                         category: product.category,
                         badge: product.badge,
                       })}
-                      className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-white shadow-md flex items-center justify-center hover:bg-primary hover:text-white"
+                      className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--dur-fast)] h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-white shadow-md flex items-center justify-center hover:bg-primary hover:text-white"
                       aria-label={`Agregar ${product.name} al carrito`}
                     >
                       <ShoppingCart className="h-5 w-5" />

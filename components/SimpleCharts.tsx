@@ -53,7 +53,7 @@ export function SimpleBarChart({
                   )}
                   <div
                     className={cn(
-                      "w-full rounded-t-lg transition-all duration-500 ease-out hover:opacity-80",
+                      "w-full rounded-t-lg transition-all duration-[var(--dur-slow)] ease-out hover:opacity-80",
                       color
                     )}
                     style={{

@@ -77,7 +77,7 @@ function PromoCardItem({
       href={href}
       className={[
         "group relative overflow-hidden rounded-2xl p-5 sm:p-7 min-h-[160px] sm:min-h-[200px]",
-        "transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]",
+        "transition-all duration-[var(--dur-base)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]",
         mobileHidden ? "hidden sm:block" : "block",
         isAccent
           ? "bg-[var(--accent-600,var(--accent))] text-white"

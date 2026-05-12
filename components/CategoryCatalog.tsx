@@ -119,7 +119,7 @@ function ListProductRow({
           </div>
         )}
         {product.badge && (
-          <span className="absolute top-0.5 left-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase text-white bg-primary shadow-[var(--shadow-sm)] leading-none">
+          <span className="absolute top-0.5 left-0.5 rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-white bg-primary shadow-[var(--shadow-sm)] leading-none">
             {product.badge}
           </span>
         )}
@@ -518,7 +518,7 @@ export default function CategoryCatalog({
               <Link
                 key={cat.id}
                 href={`/tienda/categoria/${cat.id}`}
-                className="shrink-0 flex items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-primary)] text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-200 whitespace-nowrap shadow-[var(--shadow-sm)]"
+                className="shrink-0 flex items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-primary)] text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-[var(--dur-fast)] whitespace-nowrap shadow-[var(--shadow-sm)]"
               >
                 <Icon size={18} className="text-[var(--text-secondary)] hover:text-[var(--accent)]" />
                 {cat.label}

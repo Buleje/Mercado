@@ -71,7 +71,7 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
             alt={`${alt} - imagen ${selected + 1}`}
             fill
             className={cn(
-              "object-cover transition-transform duration-300",
+              "object-cover transition-transform duration-[var(--dur-base)]",
               zoom && "scale-150",
             )}
             style={zoom ? { transformOrigin: `${zoomPos.x}% ${zoomPos.y}%` } : undefined}

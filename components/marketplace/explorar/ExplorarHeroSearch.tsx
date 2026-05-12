@@ -116,7 +116,7 @@ export default function ExplorarHeroSearch() {
 
         <p className="mt-5 sm:mt-7 text-lg sm:text-xl lg:text-2xl text-[var(--text-secondary)] leading-snug max-w-2xl font-semibold">
           El menú visual de tu marketplace. Acá no comprás —{" "}
-          <strong className="text-[var(--text-primary)] font-black">descubrís</strong> qué
+          <strong className="text-[var(--text-primary)] font-extrabold">descubrís</strong> qué
           tiene Buleje y elegís dónde entrar a comprar.
         </p>
 
@@ -124,7 +124,7 @@ export default function ExplorarHeroSearch() {
         <form
           onSubmit={submit}
           className={cn(
-            "mt-8 sm:mt-10 flex items-stretch gap-2 rounded-2xl border-2 transition-all duration-200 max-w-3xl",
+            "mt-8 sm:mt-10 flex items-stretch gap-2 rounded-2xl border-2 transition-all duration-[var(--dur-fast)] max-w-3xl",
             "bg-[var(--surface-raised)]",
             focused
               ? "border-[var(--accent)] shadow-[0_0_0_4px_rgba(0,180,166,0.10)]"
@@ -164,13 +164,13 @@ export default function ExplorarHeroSearch() {
         <div className="mt-4 max-w-3xl">
           <p className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
             Tip: presioná{" "}
-            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-sunken)] font-mono text-[10px] font-bold text-[var(--text-secondary)]">
+            <kbd className="inline-flex items-center justify-center h-5 px-1.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
               /
             </kbd>{" "}
             para buscar desde cualquier parte
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mr-1">
+            <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mr-1">
               Popular:
             </span>
             {POPULAR_CHIPS.map((chip) => (
@@ -197,7 +197,7 @@ export default function ExplorarHeroSearch() {
                 <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-black tabular-nums tracking-[-0.025em] text-[var(--text-primary)] leading-none transition-colors group-hover:text-[var(--accent)]">
                   {s.value}
                 </p>
-                <p className="mt-1.5 text-[10px] sm:text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <p className="mt-1.5 text-[length:var(--ts-2xs)] sm:text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   {s.label}
                 </p>
               </div>
@@ -206,7 +206,7 @@ export default function ExplorarHeroSearch() {
 
           {/* Quick destinations */}
           <div className="flex flex-wrap gap-1.5 lg:justify-end">
-            <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mr-1">
+            <span className="inline-flex items-center text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mr-1">
               Ir directo:
             </span>
             {QUICK_DESTINATIONS.map((q) => {
@@ -236,7 +236,7 @@ export default function ExplorarHeroSearch() {
 
         {/* ── Scroll cue ────────────────────────────────────── */}
         <div className="mt-12 sm:mt-16 flex flex-col items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          <div className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             <Sparkles className="h-3 w-3 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
             8 destinos · una pantalla
           </div>

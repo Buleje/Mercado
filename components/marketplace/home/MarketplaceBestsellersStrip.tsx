@@ -67,7 +67,7 @@ export default function MarketplaceBestsellersStrip() {
               <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
                 Más vendidos
               </h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-md shadow-rose-500/30">
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md shadow-rose-500/30">
                 <TrendingUp className="h-2.5 w-2.5" strokeWidth={3} />
                 Esta semana
               </span>
@@ -148,14 +148,14 @@ function BestsellerCard({
         )}
 
         {hasDiscount && (
-          <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white shadow-md shadow-rose-500/30">
+          <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-0.5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-rose-500/30">
             <Flame className="h-3 w-3" strokeWidth={2.75} />
             -{Math.round(((item.oldPrice! - item.price) / item.oldPrice!) * 100)}%
           </span>
         )}
 
         {isTopThree && (
-          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/30">
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/30">
             TOP {rank}
           </span>
         )}
@@ -166,7 +166,7 @@ function BestsellerCard({
         <h3 className="font-display text-base font-black text-[var(--text-primary)] line-clamp-2 leading-tight tracking-[-0.01em]">
           {item.name}
         </h3>
-        <p className="text-[10px] font-black text-[var(--text-tertiary)] truncate uppercase tracking-wider">
+        <p className="text-[length:var(--ts-2xs)] font-black text-[var(--text-tertiary)] truncate uppercase tracking-wider">
           {item.storeName}
         </p>
         <div className="flex items-baseline justify-between gap-2 pt-1">
@@ -175,12 +175,12 @@ function BestsellerCard({
               {fmtPrice(item.price)}
             </p>
             {hasDiscount && (
-              <p className="text-[10px] font-black tabular-nums text-[var(--text-tertiary)] line-through leading-none">
+              <p className="text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--text-tertiary)] line-through leading-none">
                 {fmtPrice(item.oldPrice!)}
               </p>
             )}
           </div>
-          <span className="inline-flex items-center gap-0.5 text-[11px] font-black text-[var(--text-tertiary)] tabular-nums whitespace-nowrap">
+          <span className="inline-flex items-center gap-0.5 text-xs font-black text-[var(--text-tertiary)] tabular-nums whitespace-nowrap">
             <Flame className="h-3 w-3 text-rose-500" strokeWidth={2.75} />
             {item.unitsSold}
           </span>

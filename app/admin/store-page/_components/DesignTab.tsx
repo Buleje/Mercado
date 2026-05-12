@@ -169,7 +169,7 @@ export default function DesignTab() {
                       {active && <Check className="w-4 h-4 text-[var(--accent)]" strokeWidth={3} />}
                     </div>
                     <p className="text-sm font-black text-[var(--text-primary)] leading-tight">{preset.label}</p>
-                    <p className="mt-1 text-[10px] text-[var(--text-tertiary)] leading-snug line-clamp-2">{preset.description}</p>
+                    <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug line-clamp-2">{preset.description}</p>
                   </button>
                 );
               })}
@@ -191,10 +191,10 @@ export default function DesignTab() {
                       active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--rule-mid)]"
                     }`}
                   >
-                    <p className="text-base font-black" style={{ fontFamily: meta.stack }}>
+                    <p className="text-base font-extrabold" style={{ fontFamily: meta.stack }}>
                       {meta.label}
                     </p>
-                    <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5 truncate">{meta.vibe}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 truncate">{meta.vibe}</p>
                   </button>
                 );
               })}
@@ -263,7 +263,7 @@ export default function DesignTab() {
               onChange={(v) => update("buttonStyle", v)}
             />
             <div className="mt-3 p-4 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center">
-              <button type="button" className="tenant-button inline-flex items-center gap-2 px-5 h-11 text-sm font-black" style={tokensToCssVars(tokens) as React.CSSProperties}>
+              <button type="button" className="tenant-button inline-flex items-center gap-2 px-5 h-11 text-sm font-extrabold" style={tokensToCssVars(tokens) as React.CSSProperties}>
                 Botón ejemplo
               </button>
             </div>
@@ -350,7 +350,7 @@ function ColorPicker({ label, value, onChange, hint }: { label: string; value: s
           className="flex-1 h-11 px-3 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-mono text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
         />
       </div>
-      {hint && <p className="text-[10px] text-[var(--text-tertiary)] mt-1">{hint}</p>}
+      {hint && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">{hint}</p>}
     </label>
   );
 }
@@ -403,12 +403,12 @@ function DesignPreview({ tokens }: { tokens: DesignTokens }) {
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shadow-lg">
       <div className="px-4 py-2.5 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] flex items-center gap-2">
         <Eye className="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
-        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--text-tertiary)]">Vista previa en vivo</span>
+        <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)]">Vista previa en vivo</span>
       </div>
       <div className="p-5 tenant-theme" style={{ ...style, fontFamily: font.stack, color: tokens.textColor, background: tokens.backgroundColor }}>
         {/* Mini hero */}
         <div className="mb-4">
-          <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: tokens.primaryColor }}>
+          <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider mb-1.5" style={{ color: tokens.primaryColor }}>
             Tu negocio
           </p>
           <h1 className="font-black leading-tight tracking-tight" style={{ fontSize: "1.5rem", color: tokens.textColor }}>
@@ -427,8 +427,8 @@ function DesignPreview({ tokens }: { tokens: DesignTokens }) {
             boxShadow: tokens.shadowStyle === "none" ? "none" : tokens.shadowStyle === "soft" ? "0 1px 3px rgba(0,0,0,0.06)" : tokens.shadowStyle === "medium" ? "0 4px 12px rgba(0,0,0,0.10)" : "0 10px 24px rgba(0,0,0,0.18)",
           }}
         >
-          <p className="text-xs font-black" style={{ color: tokens.textColor }}>Producto destacado</p>
-          <p className="text-[10px] mt-0.5" style={{ color: `${tokens.textColor}99` }}>S/ 24.50</p>
+          <p className="text-xs font-extrabold" style={{ color: tokens.textColor }}>Producto destacado</p>
+          <p className="text-[length:var(--ts-2xs)] mt-0.5" style={{ color: `${tokens.textColor}99` }}>S/ 24.50</p>
         </div>
         {/* Button mocks (3 estilos) */}
         <div className="flex flex-col gap-2">
@@ -540,7 +540,7 @@ function AISuggestions({
 
       {hasSearched && suggestions.length > 0 && (
         <div className="space-y-2 pt-2">
-          <p className="text-[10px] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+          <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
             Top 3 estilos para vos
           </p>
           <div className="grid grid-cols-1 gap-2">
@@ -558,7 +558,7 @@ function AISuggestions({
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="text-sm font-black text-[var(--text-primary)] truncate">{preset.label}</p>
                     {idx === 0 && (
-                      <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white">Top</span>
+                      <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white">Top</span>
                     )}
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] truncate">{preset.description}</p>

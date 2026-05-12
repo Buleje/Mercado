@@ -149,13 +149,13 @@ export function AddressInput({
             onClick={handleRequestGeoFromButton}
             disabled={ui.loadingGeo}
             data-testid="request-geo"
-            className="group relative mt-2 w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl border-2 border-primary bg-linear-to-r from-primary to-primary-dark text-white text-sm font-bold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.97] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+            className="group relative mt-2 w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl border-2 border-primary bg-linear-to-r from-primary to-primary-dark text-white text-sm font-bold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.97] transition-all duration-[var(--dur-base)] disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
           >
             {!ui.loadingGeo && (
               <span className="absolute inset-0 bg-white/20 animate-[pulse_2s_ease-in-out_infinite]" />
             )}
             {!ui.loadingGeo && (
-              <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent group-hover:translate-x-full transition-transform duration-700" />
+              <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent group-hover:translate-x-full transition-transform duration-[var(--dur-slower)]" />
             )}
             <span className={cn("relative z-10", !ui.loadingGeo && "animate-bounce")}>
               {ui.loadingGeo ? (

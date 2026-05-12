@@ -135,7 +135,7 @@ export function OrderItemsDetailModal({
                         {item.name}
                       </p>
                       {item.unit && (
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-muted mt-1">
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted mt-1">
                           Por {item.unit}
                         </p>
                       )}

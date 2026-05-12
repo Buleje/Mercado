@@ -138,11 +138,11 @@ function YapeMockup() {
   return (
     <div className="relative mx-auto w-full max-w-xs aspect-[9/16] rounded-3xl bg-white shadow-2xl shadow-black/30 overflow-hidden border-[10px] border-[var(--text-primary)]">
       {/* Status bar mockup */}
-      <div className="absolute inset-x-0 top-0 h-6 flex items-center justify-center text-[10px] font-bold text-[var(--text-primary)] bg-white">
+      <div className="absolute inset-x-0 top-0 h-6 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] bg-white">
         9:41
       </div>
       <div className="absolute inset-x-0 top-6 bottom-0 bg-linear-to-b from-violet-600 to-violet-700 px-5 pt-8 pb-6 flex flex-col">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">
+        <p className="text-xs font-bold uppercase tracking-wider text-white/70">
           Buleje · Bodega Yarinacocha
         </p>
         <p className="mt-2 text-3xl font-black text-white tabular-nums leading-tight">
@@ -168,7 +168,7 @@ function YapeMockup() {
         </div>
 
         <div className="mt-auto rounded-2xl bg-white/15 backdrop-blur-sm py-3 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">
+          <p className="text-xs font-bold uppercase tracking-wider text-white/80">
             Confirma con tu huella
           </p>
           <p className="mt-0.5 text-sm font-black text-white">
@@ -512,7 +512,7 @@ export default function ComoPagarClient() {
                 tu DNI y un numero de celular activo. Funciona con cualquier
                 banco peruano.
               </p>
-              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 py-1.5 text-xs font-black">
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 py-1.5 text-xs font-extrabold">
                 <Clock className="h-3.5 w-3.5" strokeWidth={2} />
                 5 minutos
               </div>
@@ -615,7 +615,7 @@ export default function ComoPagarClient() {
                 <summary className="flex items-start justify-between gap-4 cursor-pointer list-none font-bold text-[var(--text-primary)]">
                   <span>{f.q}</span>
                   <ArrowRight
-                    className="h-4 w-4 mt-0.5 shrink-0 text-[var(--text-tertiary)] transition-transform duration-300"
+                    className="h-4 w-4 mt-0.5 shrink-0 text-[var(--text-tertiary)] transition-transform duration-[var(--dur-base)]"
                     strokeWidth={2}
                   />
                 </summary>

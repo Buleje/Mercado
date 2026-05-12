@@ -214,7 +214,7 @@ const OrderCard = memo(function OrderCard({
   return (
     <article
       className={cn(
-        "group rounded-2xl border bg-[var(--surface-raised)] overflow-hidden transition-all duration-150",
+        "group rounded-2xl border bg-[var(--surface-raised)] overflow-hidden transition-all duration-[var(--dur-fast)]",
         selected
           ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/30"
           : "border-[var(--rule-soft)] hover:border-[var(--accent)]/50 hover:-translate-y-0.5",

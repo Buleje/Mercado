@@ -472,7 +472,7 @@ function RewardCard({
         <div className="mb-3">
           <div className="relative h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
             <div
-              className="absolute top-0 left-0 h-full transition-all duration-700"
+              className="absolute top-0 left-0 h-full transition-all duration-[var(--dur-slower)]"
               style={{
                 width: `${progress}%`,
                 background:
@@ -1065,7 +1065,7 @@ export default function PuntosPage() {
                     </p>
                     <div className="relative h-3 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                       <div
-                        className="absolute top-0 left-0 h-full transition-all duration-700"
+                        className="absolute top-0 left-0 h-full transition-all duration-[var(--dur-slower)]"
                         style={{
                           width: `${Math.min(100, (totalSpent / nextTier.minSpent) * 100)}%`,
                           background:

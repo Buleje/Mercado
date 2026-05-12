@@ -677,7 +677,7 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
                         <p className="font-display text-base font-extrabold tabular-nums text-[var(--text-primary)]">
                           {fmt(pm.total)}
                         </p>
-                        <p className="text-[10px] text-[var(--text-tertiary)]">
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           {pm.count} pedidos · {fmtPct(pct, 1)}
                         </p>
                       </div>
@@ -887,7 +887,7 @@ function RankedList({
                 {item.label}
               </p>
               {item.sub && (
-                <p className="text-[10px] text-[var(--text-tertiary)] truncate">{item.sub}</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{item.sub}</p>
               )}
             </div>
             <p className="font-display text-sm font-extrabold tabular-nums text-[var(--text-primary)] shrink-0">
@@ -966,7 +966,7 @@ function StatusFunnel({
               <span className="font-display text-xs font-extrabold tabular-nums text-[var(--text-primary)]">
                 {count}
               </span>
-              <span className="text-[10px] text-[var(--text-tertiary)]">{fmtPct(pct, 0)}</span>
+              <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtPct(pct, 0)}</span>
             </div>
           );
         })}
@@ -985,7 +985,7 @@ function HourHeatmap({ grid, max }: { grid: number[][]; max: number }) {
           {Array.from({ length: 24 }, (_, h) => (
             <div
               key={h}
-              className="text-center text-[9px] font-bold text-[var(--text-tertiary)] tabular-nums"
+              className="text-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums"
             >
               {h % 3 === 0 ? h : ""}
             </div>
@@ -993,7 +993,7 @@ function HourHeatmap({ grid, max }: { grid: number[][]; max: number }) {
           {/* Rows */}
           {grid.map((row, d) => (
             <div key={d} className="contents">
-              <div className="pr-2 text-[10px] font-bold text-[var(--text-tertiary)] flex items-center">
+              <div className="pr-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] flex items-center">
                 {DOW_LABELS[d]}
               </div>
               {row.map((v, h) => {
@@ -1014,7 +1014,7 @@ function HourHeatmap({ grid, max }: { grid: number[][]; max: number }) {
             </div>
           ))}
         </div>
-        <div className="mt-3 flex items-center gap-2 justify-end text-[10px] text-[var(--text-tertiary)]">
+        <div className="mt-3 flex items-center gap-2 justify-end text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
           <span>Menos</span>
           <div className="flex gap-0.5">
             {[0.1, 0.3, 0.5, 0.7, 1].map((i) => (

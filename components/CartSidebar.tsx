@@ -344,7 +344,7 @@ export default function CartSidebar() {
                         </span>
                       )}
                     </div>
-                    <span className="inline-flex items-center gap-1.5 mt-1 text-[10px] font-extrabold uppercase tracking-[0.15em] text-white/85">
+                    <span className="inline-flex items-center gap-1.5 mt-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[0.15em] text-white/85">
                       <span className={`h-1.5 w-1.5 rounded-full ${mode === "checkout" ? "bg-white" : "bg-emerald-300"}`} />
                       {mode === "checkout" ? "Pedido en línea" : "Pedido por WhatsApp"}
                     </span>
@@ -618,7 +618,7 @@ export default function CartSidebar() {
                         </span>
                       </div>
                       <div className="h-1.5 rounded-full bg-amber-200/60 dark:bg-[var(--data-warning-500)]/20 overflow-hidden">
-                        <div className="h-full rounded-full bg-amber-400 transition-all duration-500" style={{ width: `${pct}%` }} />
+                        <div className="h-full rounded-full bg-amber-400 transition-all duration-[var(--dur-slow)]" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
@@ -646,7 +646,7 @@ export default function CartSidebar() {
                       </div>
                       <div className="h-1.5 rounded-full bg-primary/15 overflow-hidden">
                         <div
-                          className="h-full rounded-full transition-all duration-500"
+                          className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                           style={{ width: `${pct}%`, background: remaining <= 0 ? "#25D366" : "var(--color-primary)" }}
                         />
                       </div>
@@ -798,7 +798,7 @@ export default function CartSidebar() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     data-testid="checkout-button"
-                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-primary px-6 py-3 text-base font-bold text-white shadow-[var(--shadow-lg)] shadow-primary/25 hover:bg-primary-dark transition-all duration-200"
+                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-primary px-6 py-3 text-base font-bold text-white shadow-[var(--shadow-lg)] shadow-primary/25 hover:bg-primary-dark transition-all duration-[var(--dur-fast)]"
                   >
                     <Package className="h-5 w-5" />
                     Completar pedido
@@ -810,7 +810,7 @@ export default function CartSidebar() {
                     disabled={sending}
                     whileHover={{ scale: sending ? 1 : 1.02 }}
                     whileTap={{ scale: sending ? 1 : 0.97 }}
-                    className="w-full flex items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-6 py-4 text-base font-extrabold text-white shadow-[var(--shadow-xl)] shadow-[#25D366]/30 hover:bg-[#20BD5A] transition-all duration-200 disabled:opacity-70 disabled:cursor-wait"
+                    className="w-full flex items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-6 py-4 text-base font-extrabold text-white shadow-[var(--shadow-xl)] shadow-[#25D366]/30 hover:bg-[#20BD5A] transition-all duration-[var(--dur-fast)] disabled:opacity-70 disabled:cursor-wait"
                   >
                     {sending ? (
                       <>
