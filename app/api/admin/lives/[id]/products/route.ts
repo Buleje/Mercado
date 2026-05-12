@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const AddProductBody = z.object({
   productId: z.number().int().min(1),
@@ -22,6 +23,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-lives-X-products"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, [
     "admin",
     "tienda_owner",
@@ -68,6 +71,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-lives-X-products"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, [
     "admin",
     "tienda_owner",

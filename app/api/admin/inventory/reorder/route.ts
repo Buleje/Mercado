@@ -5,6 +5,7 @@ import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const bodySchema = z.object({
   supplierId: z.string().optional(),
@@ -33,6 +34,8 @@ const bodySchema = z.object({
  */
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-inventory-reorder"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   try {
     const admin = await requireAdmin(req, ["owner", "admin", "manager"]);
     if (admin instanceof NextResponse) return admin;
