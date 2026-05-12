@@ -131,8 +131,8 @@ async function main() {
     primaryColor: "#D62828",
     secondaryColor: "#F4A261",
     accentColor: "#FFB703",
-    phone: "+51 916 409 675",
-    whatsapp: "https://wa.me/51916409675",
+    phone: "+51 929 340 532",
+    whatsapp: "https://wa.me/51929340532",
     address: "Pucallpa, Ucayali",
     socialLinks: {},
   };

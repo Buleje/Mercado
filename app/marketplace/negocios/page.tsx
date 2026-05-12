@@ -95,7 +95,7 @@ const PLANS = [
       "SLA 99.9% uptime",
     ],
     cta: "Contactar ventas",
-    href: "https://wa.me/51916409675?text=Hola%2C%20quiero%20información%20del%20plan%20Business",
+    href: "https://wa.me/51929340532?text=Hola%2C%20quiero%20información%20del%20plan%20Business",
   },
 ];
 
@@ -130,7 +130,7 @@ export default function NegociosPage() {
               <ArrowRight className="h-5 w-5" />
             </Link>
             <Link
-              href="https://wa.me/51916409675?text=Hola%2C%20quiero%20una%20demo%20de%20Buleje"
+              href="https://wa.me/51929340532?text=Hola%2C%20quiero%20una%20demo%20de%20Buleje"
               className="inline-flex items-center gap-2 border border-gray-300 dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] font-semibold text-base px-8 py-4 rounded-xl hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-all"
             >
               <MessageCircle className="h-5 w-5" />
@@ -341,7 +341,7 @@ export default function NegociosPage() {
               <ArrowRight className="h-5 w-5" />
             </Link>
             <Link
-              href="https://wa.me/51916409675?text=Hola%2C%20quiero%20información%20sobre%20Buleje%20para%20mi%20negocio"
+              href="https://wa.me/51929340532?text=Hola%2C%20quiero%20información%20sobre%20Buleje%20para%20mi%20negocio"
               className="inline-flex items-center gap-2 border border-gray-300 dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] font-semibold text-base px-8 py-4 rounded-xl hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800 transition-all"
             >
               <MessageCircle className="h-5 w-5" />

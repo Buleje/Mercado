@@ -260,7 +260,7 @@ export default function CheckoutDatosPage() {
                   value={customer.phone}
                   onChange={(e) => setCustomer({ phone: e.target.value })}
                   onBlur={() => setTouched((p) => ({ ...p, phone: true }))}
-                  placeholder="916 409 675"
+                  placeholder="929 340 532"
                   maxLength={20}
                   autoComplete="tel"
                   required

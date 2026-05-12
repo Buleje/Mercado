@@ -556,7 +556,7 @@ function PayInstructions({
             <p className="mt-4 text-sm font-bold text-[var(--text-primary)]">
               o pagá al número{" "}
               <span className="rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[var(--accent)] font-black">
-                916 409 675
+                929 340 532
               </span>
             </p>
             <p className="mt-1 text-xs text-[var(--text-secondary)]">

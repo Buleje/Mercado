@@ -122,8 +122,8 @@ export default function DeliveryZoneMap() {
             {/* Phone CTA */}
             <p className="text-center text-xs text-muted mt-4">
               No estas en la zona? Llamanos al{" "}
-              <a href="tel:+51916409675" className="font-bold text-primary hover:underline">
-                916 409 675
+              <a href="tel:+51929340532" className="font-bold text-primary hover:underline">
+                929 340 532
               </a>
             </p>
           </div>

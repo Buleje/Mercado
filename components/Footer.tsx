@@ -24,6 +24,7 @@ import {
 import { useSettings } from "@/contexts/settings-context";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
+import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 
 
 // ── Columna 1: Marketplace ──────────────────────────────────────────────
@@ -85,7 +86,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "51916409675";
+const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "51929340532";
 
 function getPageContextMessage(pathname: string): string {
   // Marketplace y rutas corporativas — antes el fallback decía
@@ -253,6 +254,23 @@ const storeModeLinks = [
   { href: "/marketplace/registrar", label: "Crear tienda" },
 ];
 
+// Footer simplificado para /tiendas en modo "Solo Tiendas" (NavegacionTab
+// preset por defecto). Brandon mayo 2026: cuando el superadmin tiene el
+// modo "Solo Tiendas" activo, el footer NO debe mostrar el ecosistema
+// completo de marketplace (Explorar, Recetas, Comparar, Gift Cards, etc.).
+// Al volver al modo "Marketplace completo" se renderea el mega footer.
+const tiendasOnlyLinks = [
+  { href: "/", label: "Inicio" },
+  { href: "/tiendas", label: "Tiendas" },
+  { href: "/marketplace/ofertas", label: "Ofertas" },
+  { href: "/marketplace/como-pagar", label: "Cómo pagar" },
+  { href: "/abrir-tienda", label: "Abre tu tienda" },
+  { href: "/cuenta/pedidos", label: "Mis pedidos" },
+  { href: "/ayuda", label: "Ayuda" },
+  { href: "/terminos", label: "Términos" },
+  { href: "/privacidad", label: "Privacidad" },
+];
+
 export default function Footer() {
   const { t } = useLocale();
   // SSR-safe (Next 16 prerender-current-time): hidratación en cliente.
@@ -275,6 +293,14 @@ export default function Footer() {
     pathname.startsWith("/repartidores") ||
     pathname.startsWith("/abrir-tienda") ||
     pathname.startsWith("/vender");
+
+  // Brandon mayo 2026: si el superadmin tiene activo el modo "Solo Tiendas"
+  // (NavegacionTab) y el visitante está en /tiendas, mostramos un footer
+  // compacto sin links del ecosistema marketplace. Cuando vuelva al modo
+  // "Marketplace completo" se renderea el mega-footer normalmente.
+  const navMode = useMarketplaceNavMode();
+  const isTiendasOnlyMode =
+    pathname.startsWith("/tiendas") && navMode === "tiendas-only";
   // Marca de la plataforma (gestionada en /superadmin/marca).
   // Cuando storeTheme está vacío, la marca de la plataforma se usa como fallback.
   const { brand } = usePlatformBrand();
@@ -447,8 +473,34 @@ export default function Footer() {
         </div>
       )}
 
+      {/* Footer compacto para /tiendas en modo "Solo Tiendas" — pedido
+          Brandon mayo 2026: ocultar el ecosistema marketplace cuando el
+          superadmin tiene activa la presentación "tiendas only". */}
+      {isTiendasOnlyMode && (
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
+            <nav aria-label="Enlaces de tiendas" className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              {tiendasOnlyLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-sm font-bold text-white/85 transition-colors hover:text-white"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/70">
+                Modo Solo Tiendas
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Footer — Mega footer rediseñado (5 columnas ricas) — solo fuera de landing */}
-      {!isStoreMode && !isLandingMode && (
+      {!isStoreMode && !isLandingMode && !isTiendasOnlyMode && (
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10">
           {/* ── Columna 1: Marketplace ── */}
@@ -634,10 +686,10 @@ export default function Footer() {
               <div className="flex items-center gap-2.5 text-xs text-white/55">
                 <Phone className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
                 <a
-                  href={`tel:${storeTheme?.phone || platformPhone || "+51916409675"}`}
+                  href={`tel:${storeTheme?.phone || platformPhone || "+51929340532"}`}
                   className="tabular-nums hover:text-white/80"
                 >
-                  {storeTheme?.phone || platformPhone || "916 409 675"}
+                  {storeTheme?.phone || platformPhone || "929 340 532"}
                 </a>
               </div>
               <div className="flex items-center gap-2.5 text-xs text-white/55">

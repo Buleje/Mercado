@@ -306,7 +306,7 @@ export default function SettingsModule({
 
   // Business info
   const [businessName, setBusinessName] = useState("Buleje");
-  const [businessPhone, setBusinessPhone] = useState("51916409675");
+  const [businessPhone, setBusinessPhone] = useState("51929340532");
   const [businessAddress, setBusinessAddress] = useState("Pucallpa, Ucayali");
   const [logoUrl, setLogoUrl] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
@@ -834,7 +834,7 @@ export default function SettingsModule({
           <div><FieldLabel icon={<Store className="h-3.5 w-3.5" />}>Nombre comercial</FieldLabel><TextInput value={businessName} onChange={setBusinessName} /></div>
           <div><FieldLabel icon={<FileText className="h-3.5 w-3.5" />}>Razón social</FieldLabel><TextInput value={razonSocial} onChange={setRazonSocial} placeholder="Inversiones San Martín S.A.C." /></div>
           <div><FieldLabel icon={<Hash className="h-3.5 w-3.5" />}>RUC</FieldLabel><TextInput value={ruc} onChange={setRuc} placeholder="20123456789" mono /></div>
-          <div><FieldLabel icon={<Phone className="h-3.5 w-3.5" />}>WhatsApp</FieldLabel><TextInput value={businessPhone} onChange={setBusinessPhone} placeholder="51916409675" mono /></div>
+          <div><FieldLabel icon={<Phone className="h-3.5 w-3.5" />}>WhatsApp</FieldLabel><TextInput value={businessPhone} onChange={setBusinessPhone} placeholder="51929340532" mono /></div>
           <div><FieldLabel icon={<Mail className="h-3.5 w-3.5" />}>Correo del negocio</FieldLabel><TextInput value={businessEmail} onChange={setBusinessEmail} placeholder="ventas@bodega.pe" type="email" /></div>
           <div>
             <FieldLabel icon={<Store className="h-3.5 w-3.5" />}>Tipo de negocio</FieldLabel>
@@ -1440,7 +1440,7 @@ export default function SettingsModule({
 
       <SectionCard title="WhatsApp Business API" desc="Para enviar mensajes automáticos a clientes">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div><FieldLabel icon={<MessageCircle className="h-3.5 w-3.5" />}>Número de negocio</FieldLabel><TextInput value={whatsappBusinessNum} onChange={setWhatsappBusinessNum} placeholder="51916409675" mono /></div>
+          <div><FieldLabel icon={<MessageCircle className="h-3.5 w-3.5" />}>Número de negocio</FieldLabel><TextInput value={whatsappBusinessNum} onChange={setWhatsappBusinessNum} placeholder="51929340532" mono /></div>
           <div><FieldLabel icon={<Key className="h-3.5 w-3.5" />}>Token de API</FieldLabel><TextInput value={whatsappApiToken} onChange={setWhatsappApiToken} type="password" placeholder="EAAx..." /></div>
           <div className="sm:col-span-2"><FieldLabel icon={<Globe className="h-3.5 w-3.5" />}>Webhook URL</FieldLabel><TextInput value={whatsappWebhookUrl} onChange={setWhatsappWebhookUrl} placeholder="https://tu-bodega.com/api/whatsapp/webhook" /></div>
         </div>

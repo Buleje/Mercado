@@ -39,7 +39,7 @@ const faqs = [
   {
     question: "¿Cómo hago mi pedido online?",
     answer:
-      "Es muy fácil: navega por nuestro catálogo de productos en buleje.pe, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp al 916 409 675. Aceptamos pagos por Yape o efectivo contra entrega.",
+      "Es muy fácil: navega por nuestro catálogo de productos en buleje.pe, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp al 929 340 532. Aceptamos pagos por Yape o efectivo contra entrega.",
   },
   {
     question: "¿Cuánto demora el delivery?",

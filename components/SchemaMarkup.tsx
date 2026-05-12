@@ -19,7 +19,7 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     description:
       "Marketplace de bodegas, minimarkets y tiendas de barrio en todo el Perú. Compra online con delivery rápido en tu ciudad. Paga con Yape, Plin o efectivo. Originado en Pucallpa, operando a nivel nacional.",
     url: "https://www.buleje.pe",
-    telephone: "+51916409675",
+    telephone: "+51929340532",
     email: "contacto@buleje.pe",
     foundingDate: "2011",
     foundingLocation: {
@@ -147,7 +147,7 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     },
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+51916409675",
+      telephone: "+51929340532",
       contactType: "customer service",
       areaServed: "PE",
       availableLanguage: "Spanish",
@@ -163,7 +163,7 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     logo: "https://www.buleje.pe/og-image.jpg",
     description:
       "Tienda virtual de abarrotes con delivery rápido. Bebidas, golosinas, carne, pollo, limpieza y más. Pago con Yape o efectivo.",
-    telephone: "+51916409675",
+    telephone: "+51929340532",
     address: {
       "@type": "PostalAddress",
       streetAddress: "Jr. Ucayali 450",
@@ -178,7 +178,7 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     ],
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+51916409675",
+      telephone: "+51929340532",
       contactType: "customer service",
       areaServed: "PE",
       availableLanguage: "Spanish",

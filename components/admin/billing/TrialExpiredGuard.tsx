@@ -123,7 +123,7 @@ function TrialExpiredScreen() {
             <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
           </Link>
           <a
-            href="https://wa.me/51916409675?text=Hola+Buleje%2C+mi+trial+termin%C3%B3+y+quiero+activar+un+plan"
+            href="https://wa.me/51929340532?text=Hola+Buleje%2C+mi+trial+termin%C3%B3+y+quiero+activar+un+plan"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-strong)] bg-[var(--surface-raised)] px-6 py-3 text-sm font-bold text-[var(--text-primary)] transition-all hover:bg-[var(--surface-sunken)]"

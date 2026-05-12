@@ -29,7 +29,7 @@ export const CTABlockSchema = z.object({
     show: z.boolean(),
   }).default({
     text: "Contactar por WhatsApp",
-    link: "https://wa.me/51916409675",
+    link: "https://wa.me/51929340532",
     show: true,
   }),
   backgroundColor: z.string().default("#007A72"),
@@ -47,7 +47,7 @@ export default function CTABlock(props: Partial<CTABlockProps>) {
     title = "¿Listo para hacer tu pedido?",
     subtitle,
     primaryCTA = { text: "Ver Productos", link: "/tienda", icon: "arrow" },
-    secondaryCTA = { text: "Contactar por WhatsApp", link: "https://wa.me/51916409675", show: true },
+    secondaryCTA = { text: "Contactar por WhatsApp", link: "https://wa.me/51929340532", show: true },
     backgroundColor = "#007A72",
     textColor = "#ffffff",
     primaryButtonColor = "var(--accent)",
@@ -213,6 +213,6 @@ export const CTABlockMetadata = {
   description: "Sección de CTA con botones y diseño flexible",
   category: "marketing" as const,
   icon: "Megaphone",
-  defaultProps: (() => { const parsed = CTABlockSchema.safeParse({}); return parsed.success ? parsed.data : { layout: "centered" as const, title: "¿Listo para hacer tu pedido?", subtitle: "", primaryCTA: { text: "Ver Productos", link: "/tienda", icon: "arrow" as const }, secondaryCTA: { text: "Contactar por WhatsApp", link: "https://wa.me/51916409675", show: true }, backgroundColor: "#007A72", textColor: "#ffffff", primaryButtonColor: "var(--accent)", showPattern: true }; })(),
+  defaultProps: (() => { const parsed = CTABlockSchema.safeParse({}); return parsed.success ? parsed.data : { layout: "centered" as const, title: "¿Listo para hacer tu pedido?", subtitle: "", primaryCTA: { text: "Ver Productos", link: "/tienda", icon: "arrow" as const }, secondaryCTA: { text: "Contactar por WhatsApp", link: "https://wa.me/51929340532", show: true }, backgroundColor: "#007A72", textColor: "#ffffff", primaryButtonColor: "var(--accent)", showPattern: true }; })(),
   propsSchema: CTABlockSchema,
 };

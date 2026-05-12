@@ -79,7 +79,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-const WHATSAPP_FALLBACK = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "51916409675";
+const WHATSAPP_FALLBACK = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "51929340532";
 
 function getPageContextMessage(pathname: string, storeName: string): string {
   if (pathname.includes("/producto/")) return `Hola ${storeName}, quiero consultar sobre un producto.`;

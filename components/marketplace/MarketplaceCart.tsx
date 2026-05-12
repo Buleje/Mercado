@@ -723,7 +723,7 @@ export default function MarketplaceCart({
                         type="tel"
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
-                        placeholder="Ej: 916409675"
+                        placeholder="Ej: 929340532"
                         className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--data-success-500)] focus:ring-1 focus:ring-[var(--data-success-500)] dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-[var(--text-secondary)]"
                         maxLength={20}
                       />

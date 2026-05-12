@@ -57,7 +57,7 @@ describe("WhatsAppOrderButton", () => {
       <WhatsAppOrderButton
         storeSlug="bodega-el-sol"
         storeName="Bodega El Sol"
-        storePhone="916409675"
+        storePhone="929340532"
         items={ITEMS}
       />,
     );
@@ -70,7 +70,7 @@ describe("WhatsAppOrderButton", () => {
       <WhatsAppOrderButton
         storeSlug="bodega-el-sol"
         storeName="Bodega El Sol"
-        storePhone="916409675"
+        storePhone="929340532"
         items={ITEMS}
       />,
     );
@@ -78,7 +78,7 @@ describe("WhatsAppOrderButton", () => {
 
     expect(mockWindowOpen).toHaveBeenCalledOnce();
     const [url, target, features] = mockWindowOpen.mock.calls[0] as [string, string, string];
-    expect(url).toMatch(/^https:\/\/wa\.me\/51916409675\?text=/);
+    expect(url).toMatch(/^https:\/\/wa\.me\/51929340532\?text=/);
     expect(target).toBe("_blank");
     expect(features).toBe("noopener");
   });
@@ -95,10 +95,10 @@ describe("WhatsAppOrderButton", () => {
   });
 
   it("normalizePhone agrega prefijo 51 si falta", () => {
-    expect(normalizePhone("916409675")).toBe("51916409675");
-    expect(normalizePhone("51916409675")).toBe("51916409675");
-    expect(normalizePhone("+51 916 409 675")).toBe("51916409675");
-    // "00 51 916409675" → digits = "0051916409675" → starts with "00" not "51" → agrega prefijo
-    expect(normalizePhone("00 51 916409675")).toBe("510051916409675");
+    expect(normalizePhone("929340532")).toBe("51929340532");
+    expect(normalizePhone("51929340532")).toBe("51929340532");
+    expect(normalizePhone("+51 929 340 532")).toBe("51929340532");
+    // "00 51 929340532" → digits = "0051929340532" → starts with "00" not "51" → agrega prefijo
+    expect(normalizePhone("00 51 929340532")).toBe("510051929340532");
   });
 });

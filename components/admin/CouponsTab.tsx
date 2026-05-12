@@ -532,7 +532,7 @@ export default function CouponsTab() {
                     type="tel"
                     value={whatsappPhone}
                     onChange={e => setWhatsappPhone(e.target.value)}
-                    placeholder="Ej: 916409675"
+                    placeholder="Ej: 929340532"
                     className="flex-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-white dark:bg-surface"
                   />
                   <button

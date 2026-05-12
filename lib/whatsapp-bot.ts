@@ -54,5 +54,5 @@ export function formatWelcome(): string {
 }
 
 export function formatPaymentInstructions(): string {
-  return `🏪 *Buleje — Métodos de Pago*\n━━━━━━━━━━━━━━━━━━━\n\n📱 *Yape:* 916 409 675\n   Nombre: Buleje\n\n💵 *Efectivo:* Pagas al recibir tu pedido\n\n🏦 *Transferencia:*\n   BCP / Interbank\n   Consultar número de cuenta\n\n━━━━━━━━━━━━━━━━━━━\n✅ Después de pagar por Yape, envía captura aquí\n📝 O escribe CONFIRMO para confirmar tu pedido`;
+  return `🏪 *Buleje — Métodos de Pago*\n━━━━━━━━━━━━━━━━━━━\n\n📱 *Yape:* 929 340 532\n   Nombre: Buleje\n\n💵 *Efectivo:* Pagas al recibir tu pedido\n\n🏦 *Transferencia:*\n   BCP / Interbank\n   Consultar número de cuenta\n\n━━━━━━━━━━━━━━━━━━━\n✅ Después de pagar por Yape, envía captura aquí\n📝 O escribe CONFIRMO para confirmar tu pedido`;
 }

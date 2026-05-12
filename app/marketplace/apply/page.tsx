@@ -218,7 +218,7 @@ export default function MarketplaceApplyPage() {
           </div>
           <div className="flex flex-col gap-2 pt-2">
             <a
-              href={`https://wa.me/51916409675?text=${encodeURIComponent(
+              href={`https://wa.me/51929340532?text=${encodeURIComponent(
                 `Hola! Acabo de registrar mi tienda "${form.storeName}" en Buleje. Mi teléfono es ${form.ownerPhone}.`,
               )}`}
               target="_blank"
@@ -333,7 +333,7 @@ export default function MarketplaceApplyPage() {
                         onChange={(e) =>
                           update("ownerPhone", e.target.value.replace(/[^\d+]/g, ""))
                         }
-                        placeholder="Ej: 916409675"
+                        placeholder="Ej: 929340532"
                         className="w-full px-4 py-3.5 rounded-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] border-2 border-transparent text-lg font-semibold text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-primary/60 transition-all tabular-nums"
                       />
                     </div>

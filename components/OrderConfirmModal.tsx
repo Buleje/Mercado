@@ -9,7 +9,7 @@ import { useCustomer } from "@/contexts/customer-context";
 import { useSettings } from "@/contexts/settings-context";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 
-const DEFAULT_WA = "51916409675";
+const DEFAULT_WA = "51929340532";
 
 function extractWaNumber(url?: string): string {
   if (!url) return DEFAULT_WA;

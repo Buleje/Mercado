@@ -311,7 +311,7 @@ export async function sendOrder(
   total: number
 ): Promise<SendResult> {
   const plainText = formatWhatsAppMessage(customer, items, total);
-  const waUrl = `https://wa.me/51916409675?text=${encodeURIComponent(plainText)}`;
+  const waUrl = `https://wa.me/51929340532?text=${encodeURIComponent(plainText)}`;
   const safeName = customer.name.replace(/\s+/g, "-");
   const filename = `Pedido-Buleje-${safeName}.png`;
 

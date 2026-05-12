@@ -860,7 +860,7 @@ export default function StoreRegistrationForm() {
 
               {/* Soporte */}
               <a
-                href="https://wa.me/51916409675?text=Hola%2C%20tengo%20una%20duda%20sobre%20cómo%20abrir%20mi%20tienda"
+                href="https://wa.me/51929340532?text=Hola%2C%20tengo%20una%20duda%20sobre%20cómo%20abrir%20mi%20tienda"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 shadow-sm transition-all hover:border-[var(--accent)] hover:shadow-md"

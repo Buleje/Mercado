@@ -258,13 +258,13 @@ export default function AdminLoginPage() {
 
         {/* MIDDLE — copy + features */}
         <div className="relative z-10 max-w-md">
-          <h1 className="text-4xl xl:text-5xl font-black tracking-[-0.03em] text-balance leading-[1.05]">
+          <h1 className="text-4xl xl:text-5xl font-black tracking-tight text-balance leading-[1.05]">
             Tu bodega,{" "}
             <span className="italic font-serif text-[var(--accent)]">
               en un solo lugar.
             </span>
           </h1>
-          <p className="mt-5 text-[15px] text-white/70 leading-relaxed max-w-sm">
+          <p className="mt-5 text-sm text-white/70 leading-relaxed max-w-sm">
             Inventario, ventas, fiados, delivery y reportes — todo lo que
             necesitas para vender más sin perder el control.
           </p>
@@ -282,8 +282,8 @@ export default function AdminLoginPage() {
                   <f.icon className="h-4.5 w-4.5 text-[var(--accent)]" strokeWidth={2} />
                 </span>
                 <div>
-                  <p className="text-[15px] font-bold text-white">{f.label}</p>
-                  <p className="text-[13px] text-white/55 mt-0.5 leading-relaxed">{f.desc}</p>
+                  <p className="text-sm font-bold text-white">{f.label}</p>
+                  <p className="text-xs text-white/55 mt-0.5 leading-relaxed">{f.desc}</p>
                 </div>
               </li>
             ))}
@@ -394,7 +394,7 @@ export default function AdminLoginPage() {
                 <span className="text-[var(--text-secondary)] font-medium">Recordarme</span>
               </label>
               <a
-                href="https://wa.me/51916409675?text=Olvid%C3%A9%20mi%20contrase%C3%B1a%20de%20Buleje"
+                href="https://wa.me/51929340532?text=Olvid%C3%A9%20mi%20contrase%C3%B1a%20de%20Buleje"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs font-bold text-[var(--accent)] hover:underline"

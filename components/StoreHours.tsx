@@ -154,13 +154,13 @@ export default function StoreHours() {
               <p className="text-sm text-muted">Jr. Ucayali 450, Ucayali — Perú</p>
             </div>
             <a
-              href="tel:+51916409675"
+              href="tel:+51929340532"
               className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline transition-colors"
             >
               <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/15">
                 <Phone className="w-4 h-4 text-primary" />
               </div>
-              916 409 675
+              929 340 532
             </a>
           </div>
         </div>

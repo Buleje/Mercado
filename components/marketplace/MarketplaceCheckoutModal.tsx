@@ -757,7 +757,7 @@ export default function MarketplaceCheckoutModal({
                           type="tel"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          placeholder="Ej: 916409675"
+                          placeholder="Ej: 929340532"
                           className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                           maxLength={20}
                         />

@@ -1182,7 +1182,12 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
       {/* ── Sumate a Buleje — slim banner (v3, mayo 2026).
           v2 tenia 2 cards XL con stats que duplicaban /abrir-tienda y
           /marketplace/repartidor. Comprimido a 1 banner horizontal con 2
-          CTAs lado a lado. La info detallada vive en sus paginas dedicadas. */}
+          CTAs lado a lado. La info detallada vive en sus paginas dedicadas.
+
+          Brandon mayo 2026: solo aparece cuando el superadmin selecciona
+          "Marketplace completo" en /superadmin/stores tab Navegación. En
+          modo "Solo Tiendas" (default) se oculta por completo. */}
+      {!isTiendasOnly && (
       <section
         aria-label="Sumate a Buleje"
         className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]"
@@ -1229,6 +1234,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           </div>
         </div>
       </section>
+      )}
 
       {/* Footer vive en el layout `/tiendas/layout.tsx` (persistente). */}
     </div>

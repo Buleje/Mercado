@@ -16,7 +16,7 @@ import { IconBadge } from "@buleje/design-system";
  *   etaMinutes={18}
  *   orderId="BUL-1234"
  *   driverName="Carlos M."
- *   driverPhone="916409675"
+ *   driverPhone="929340532"
  *   events={[
  *     { status: "confirmado", at: "14:05" },
  *     { status: "preparando", at: "14:08" },

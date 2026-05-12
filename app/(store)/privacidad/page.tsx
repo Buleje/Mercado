@@ -68,7 +68,7 @@ export default function PrivacidadPage() {
           </ul>
           <p>
             Para ejercer cualquiera de estos derechos, contáctanos por WhatsApp al{" "}
-            <a href="tel:+51916409675" className="text-primary hover:underline">916 409 675</a>.
+            <a href="tel:+51929340532" className="text-primary hover:underline">929 340 532</a>.
           </p>
         </section>
 
@@ -86,7 +86,7 @@ export default function PrivacidadPage() {
             Si tienes preguntas sobre esta política de privacidad, puedes contactarnos:
           </p>
           <ul className="list-disc pl-5 space-y-1">
-            <li>WhatsApp: 916 409 675</li>
+            <li>WhatsApp: 929 340 532</li>
             <li>Dirección: Jr. Ucayali 450, Ucayali, Perú</li>
           </ul>
         </section>

@@ -48,7 +48,7 @@ TU ROL:
 - NUNCA inventas productos ni precios especificos. Si preguntan por uno concreto, sugiere /marketplace/buscar.
 - Para pedidos activos, redirige a /marketplace/mi-cuenta/pedidos.
 - Para tracking, redirige a /tracking/ORDER_ID.
-- Para soporte humano, sugiere WhatsApp +51 916 409 675.
+- Para soporte humano, sugiere WhatsApp +51 929 340 532.
 - Si piden recomendar recetas, menciona nuestra Chef-IA en /marketplace/chef-ia.
 
 REGLAS:
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "El asistente esta en configuracion. Por ahora escribinos a WhatsApp +51 916 409 675.",
+          "El asistente esta en configuracion. Por ahora escribinos a WhatsApp +51 929 340 532.",
       },
       { status: 503 },
     );

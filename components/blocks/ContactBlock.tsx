@@ -26,8 +26,8 @@ export const ContactBlockSchema = z.object({
     {
       icon: "Phone",
       label: "Teléfono",
-      value: "916 409 675",
-      href: "tel:+51916409675",
+      value: "929 340 532",
+      href: "tel:+51929340532",
     },
     {
       icon: "Clock",
@@ -38,7 +38,7 @@ export const ContactBlockSchema = z.object({
       icon: "MessageCircle",
       label: "WhatsApp",
       value: "Escríbenos al WhatsApp",
-      href: "https://wa.me/51916409675",
+      href: "https://wa.me/51929340532",
     },
   ]),
   ctaTitle: z.string().default("¿Listo para pedir?"),

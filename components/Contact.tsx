@@ -79,8 +79,8 @@ export default function Contact() {
     {
       icon: Phone,
       label: "Teléfono",
-      value: "916 409 675",
-      href: "tel:+51916409675",
+      value: "929 340 532",
+      href: "tel:+51929340532",
     },
     {
       icon: Clock,
@@ -92,7 +92,7 @@ export default function Contact() {
       icon: MessageCircle,
       label: "WhatsApp",
       value: "Escríbenos al WhatsApp",
-      href: "https://wa.me/51916409675?text=Hola%2C%20necesito%20información",
+      href: "https://wa.me/51929340532?text=Hola%2C%20necesito%20información",
     },
   ];
 

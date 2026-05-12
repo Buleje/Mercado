@@ -28,7 +28,7 @@ import { PrimaryButton, IconBadge } from "@buleje/design-system";
  *   amount={47.5}
  *   qrImageUrl="data:image/png..."
  *   recipientName="Buleje San Martín"
- *   recipientPhone="916409675"
+ *   recipientPhone="929340532"
  *   onVerified={() => {...}}
  * />
  */
