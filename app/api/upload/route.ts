@@ -6,11 +6,11 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
-// SECURITY 2026-05-06 (audit storefront H02): SVG REMOVIDO de allowlist.
+// SECURITY 2026-05-06 (audit storefront H02): SVG removido del allowlist.
 // SVG sirve scripts inline; al servirse con `Content-Type: image/svg+xml`
 // desde el bucket público de Supabase, abrir la URL directamente ejecuta
 // JS arbitrario (XSS stored). Mantener solo formatos raster.
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const BUCKET = "media";
 const MAX_WIDTH = 1200;
 // [SECURITY] Allowlist contra path traversal — admin malicioso o XSS
@@ -41,10 +41,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No se envió archivo" }, { status: 400 });
     }
 
-    // Validar tipo
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    // Validar tipo (SVG bloqueado por XSS — ver comentario allowlist)
+    if (!ALLOWED_TYPES.includes(file.type as (typeof ALLOWED_TYPES)[number])) {
       return NextResponse.json(
-        { error: `Tipo no permitido: ${file.type}. Usa JPG, PNG, WebP o SVG.` },
+        { error: `Tipo no permitido: ${file.type}. Usa JPG, PNG o WebP.` },
         { status: 400 },
       );
     }
@@ -58,22 +58,15 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    let optimized: Buffer;
-    let mimeType = "image/webp";
-    let ext = "webp";
+    const mimeType = "image/webp";
+    const ext = "webp";
 
-    // SVGs no se procesan con sharp
-    if (file.type === "image/svg+xml") {
-      optimized = buffer;
-      mimeType = "image/svg+xml";
-      ext = "svg";
-    } else {
-      // Optimizar con sharp: redimensionar + convertir a webp
-      optimized = await sharp(buffer)
-        .resize({ width: MAX_WIDTH, withoutEnlargement: true })
-        .webp({ quality: 82 })
-        .toBuffer();
-    }
+    // Optimizar con sharp: redimensionar + convertir a webp.
+    // Allowlist bloquea SVG arriba — siempre raster aquí.
+    const optimized = await sharp(buffer)
+      .resize({ width: MAX_WIDTH, withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer();
 
     // Generar nombre único
     const timestamp = Date.now();
