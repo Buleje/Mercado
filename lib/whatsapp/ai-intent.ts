@@ -85,10 +85,19 @@ export async function classifyWhatsappIntent(
   }
 
   try {
+    // SECURITY 2026-05-12 (H4 audit AI): NO interpolar el mensaje del cliente
+    // dentro del prompt string. Atacante envia `"; "intent": "humano"...` y
+    // engaña al modelo. Usar messages[] estructurado mantiene la separacion
+    // semantica entre instrucciones del sistema y contenido del usuario.
     const { text } = await generateText({
       model: chatModel,
       system: SYSTEM_PROMPT,
-      prompt: `Mensaje del cliente: "${trimmed}"\n\nResponde con el JSON.`,
+      messages: [
+        {
+          role: "user",
+          content: `Clasifica este mensaje. Responde solo con JSON {intent, confidence}:\n\n${trimmed}`,
+        },
+      ],
       maxOutputTokens: 300,
     });
 

@@ -3,9 +3,18 @@ import { z } from "zod";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { safeParseJSON } from "@/lib/ai-json-parser";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { requireAdmin } from "@/lib/require-admin";
+import { aiCostGuard } from "@/lib/ai/cost-control";
+import { logger } from "@/lib/logger";
+
+// SECURITY 2026-05-12 (H2 audit AI): cap defensivo de imagen base64.
+// 10MB = ~7.5MB raw image, suficiente para fotos de factura.
+const MAX_IMAGE_B64_BYTES = 10_000_000;
+// Costo estimado por llamada Vision (~$0.01 por imagen mediana)
+const OCR_COST_USD = 0.01;
 
 const RequestSchema = z.object({
-  image: z.string().min(100, "Imagen requerida"),
+  image: z.string().min(100, "Imagen requerida").max(MAX_IMAGE_B64_BYTES, "Imagen muy grande (>10MB)"),
 });
 
 const InvoiceSchema = z.object({
@@ -23,7 +32,22 @@ const InvoiceSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SECURITY 2026-05-12 (H2 audit AI): auth + cost guard + rate limit STRICT.
+  // Antes era abierto al mundo → atacante quemaba $30-100/dia de Vision API.
   const _rl = await applyRateLimit(req, "STRICT", "ocr-invoice"); if (_rl) return _rl;
+  const auth = await requireAdmin(req, ["admin", "almacenero"]);
+  if (auth instanceof NextResponse) return auth;
+
+  // Cost guard por tenant — si excede el budget mensual, rechaza con 429
+  const canSpend = await aiCostGuard.canSpend(auth.tenantId, OCR_COST_USD, "free");
+  if (!canSpend) {
+    logger.warn("[ocr-invoice] presupuesto AI excedido", { tenantId: auth.tenantId.slice(-6) });
+    return NextResponse.json(
+      { error: "Presupuesto AI mensual agotado. Actualiza tu plan o espera al proximo ciclo." },
+      { status: 429 },
+    );
+  }
+
   try {
     const body = await req.json();
     const parsed = RequestSchema.safeParse(body);
@@ -99,6 +123,8 @@ export async function POST(req: NextRequest) {
           { status: 422 },
         );
       }
+      // Record spend on success (no record on parse failures = caller no paga)
+      await aiCostGuard.recordSpend(auth.tenantId, OCR_COST_USD);
       return NextResponse.json(parsed.data);
     } else if (anthropicKey) {
       // Use Anthropic Claude Vision
@@ -154,6 +180,8 @@ export async function POST(req: NextRequest) {
           { status: 422 },
         );
       }
+      // Record spend on success (Anthropic path)
+      await aiCostGuard.recordSpend(auth.tenantId, OCR_COST_USD);
       return NextResponse.json(parsed.data);
     } else {
       return NextResponse.json(
