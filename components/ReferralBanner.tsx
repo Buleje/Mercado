@@ -94,12 +94,12 @@ export default function ReferralBanner() {
               {/* Points stats */}
               <div className="flex items-stretch gap-0 mb-8">
                 <div className="flex flex-col pr-8">
-                  <span className="text-4xl font-black text-white leading-none">{referralCount}</span>
+                  <span className="text-4xl font-extrabold text-white leading-none">{referralCount}</span>
                   <span className="text-xs text-white/45 uppercase tracking-widest font-semibold mt-2">Referidos</span>
                 </div>
                 <div style={{ width: 1, background: "rgba(255,255,255,0.15)", alignSelf: "stretch" }} />
                 <div className="flex flex-col pl-8">
-                  <span className="text-4xl font-black leading-none" style={{ color: "var(--color-secondary)" }}>{referralCount * 50}</span>
+                  <span className="text-4xl font-extrabold leading-none" style={{ color: "var(--color-secondary)" }}>{referralCount * 50}</span>
                   <span className="text-xs text-white/45 uppercase tracking-widest font-semibold mt-2">Puntos ganados</span>
                 </div>
               </div>
@@ -135,7 +135,7 @@ export default function ReferralBanner() {
                 padding: "1.5rem 2rem",
                 textAlign: "center",
               }}>
-                <p className="text-4xl sm:text-5xl font-black text-white tracking-[var(--ls-wider)] font-mono select-all">
+                <p className="text-4xl sm:text-5xl font-extrabold text-white tracking-[var(--ls-wider)] font-mono select-all">
                   {code}
                 </p>
               </div>

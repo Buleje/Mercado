@@ -109,7 +109,7 @@ export default function AbrirTiendaPage() {
                 </p>
                 {/* H1 reducido: antes clamp(2.75,7.5vw,5.5rem) aplastaba la
                     jerarquía y dejaba el subtítulo sin aire. Bajo a 4rem max. */}
-                <h1 className="text-[clamp(2.25rem,5vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+                <h1 className="text-[clamp(2.25rem,5vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
                   Activa tu tienda
                   <br />
                   <span className="text-[var(--accent)]">
@@ -178,7 +178,7 @@ export default function AbrirTiendaPage() {
                 />
                 Preguntas
               </p>
-              <h2 className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+              <h2 className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
                 Resuelve tus dudas
                 <br />
                 <span className="text-[var(--accent)]">
@@ -237,7 +237,7 @@ export default function AbrirTiendaPage() {
             </p>
             {/* Heading reducido: antes 5rem en 3 líneas competía con el CTA.
                 Ahora clamp 4rem max + 2 líneas exactas. */}
-            <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95] max-w-3xl mx-auto">
+            <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95] max-w-3xl mx-auto">
               Tu negocio merece <span className="text-[var(--accent)]">vender más</span>.
             </h2>
             <p className="mt-6 text-lg sm:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">

@@ -51,12 +51,12 @@ export default function MarketplaceCategoriesNav() {
     <section className="border-y border-[var(--rule-soft)] bg-[var(--surface-raised)]">
       <div className="mx-auto max-w-[1600px] px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <p className="text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Categorías rápidas
           </p>
           <Link
             href="/tiendas"
-            className="group inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+            className="group inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
           >
             Ver todas
             <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.75} />
@@ -75,14 +75,14 @@ export default function MarketplaceCategoriesNav() {
                   className="group relative flex flex-col items-center justify-center gap-1.5 shrink-0 w-[78px] sm:w-[90px] rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-2 sm:p-2.5 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-raised)] hover:shadow-md"
                 >
                   {cat.badge && (
-                    <span className="absolute -top-1.5 -right-1.5 inline-flex items-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md shadow-md/40">
+                    <span className="absolute -top-1.5 -right-1.5 inline-flex items-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white shadow-md shadow-md/40">
                       {cat.badge}
                     </span>
                   )}
                   <span className="inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-primary)] transition-all group-hover:bg-[var(--accent)] group-hover:text-white group-hover:scale-110">
                     <Icon className="h-5 w-5 sm:h-5 sm:w-5" strokeWidth={2} aria-hidden />
                   </span>
-                  <span className="text-xs sm:text-xs font-black text-[var(--text-primary)] text-center leading-tight">
+                  <span className="text-xs sm:text-xs font-extrabold text-[var(--text-primary)] text-center leading-tight">
                     {cat.label}
                   </span>
                 </Link>

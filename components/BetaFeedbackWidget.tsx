@@ -67,7 +67,7 @@ export default function BetaFeedbackWidget() {
       {open && (
         <div
           ref={panelRef}
-          className="w-[min(18rem,calc(100vw-1rem))] rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl overflow-hidden animate-[fadeDown_0.2s_ease-out] sm:w-72"
+          className="w-[min(18rem,calc(100vw-1rem))] rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden animate-[fadeDown_0.2s_ease-out] sm:w-72"
           role="dialog"
           aria-modal="true"
           aria-label="Widget de feedback beta"

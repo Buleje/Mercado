@@ -129,7 +129,7 @@ export default function StatsCounter() {
                 >
                   <stat.icon className="h-5.5 w-5.5" />
                 </div>
-                <div className="text-4xl sm:text-5xl font-black text-[var(--text-primary)] mb-1.5 font-mono tabular-nums tracking-tighter">
+                <div className="text-4xl sm:text-5xl font-extrabold text-[var(--text-primary)] mb-1.5 font-mono tabular-nums tracking-tighter">
                   <AnimatedNumber target={stat.value} decimals={stat.decimals} started={started} />
                   <span style={{ color: stat.accent }}>{stat.suffix}</span>
                 </div>

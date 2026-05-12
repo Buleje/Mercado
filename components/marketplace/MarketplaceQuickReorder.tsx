@@ -133,7 +133,7 @@ export default function MarketplaceQuickReorder() {
             Recompra en 1 toque
           </div>
 
-          <h2 className="mt-3 text-lg font-black text-gray-900 dark:text-[var(--text-primary)] sm:text-xl">
+          <h2 className="mt-3 text-lg font-extrabold text-gray-900 dark:text-[var(--text-primary)] sm:text-xl">
             Vuelve a llenar tu canasta sin buscar todo de nuevo
           </h2>
           <p className="mt-1 text-sm text-gray-600 dark:text-muted">

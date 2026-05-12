@@ -115,7 +115,7 @@ export default function CierrePaso1Caja({
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-[var(--surface-raised)] rounded-2xl shadow-2xl border border-[var(--rule-base)] p-6 w-80"
+            className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] p-6 w-80"
           >
             <p className="text-sm font-semibold text-gray-700 dark:text-[var(--text-primary)] mb-3">
               Cantidad de {formatDenom(editingDenom)}

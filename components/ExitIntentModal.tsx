@@ -135,7 +135,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
         <div className="p-8 text-center">
           {hasCartItems ? (
             <>
-              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] mb-3">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] mb-3">
                 ¡No olvides tu carrito!
               </h2>
               <p className="text-muted text-base mb-2">
@@ -170,7 +170,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
             </>
           ) : (
             <>
-              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] mb-3 inline-flex items-center gap-2">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] mb-3 inline-flex items-center gap-2">
                 ¡Espera! <Gift className="h-7 w-7 text-primary" aria-hidden />
               </h2>
               <p className="text-muted text-base mb-6">
@@ -178,7 +178,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
               </p>
               <div className="bg-linear-to-r from-secondary/10 to-primary/10 rounded-2xl p-5 mb-6 border-2 border-dashed border-primary/20">
                 <p className="text-sm font-semibold text-muted mb-2">Código de descuento</p>
-                <p className="text-3xl font-black text-primary tracking-wider">{promoCode}</p>
+                <p className="text-3xl font-extrabold text-primary tracking-wider">{promoCode}</p>
                 <p className="text-xs text-muted mt-2">Válido en compras mayores a S/{promoMin}</p>
               </div>
               <div className="flex flex-col gap-3">

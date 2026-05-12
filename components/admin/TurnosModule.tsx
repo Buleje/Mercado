@@ -1208,7 +1208,7 @@ export default function TurnosModule() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden"
+              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden"
             >
               {/* Header — icono + titulo + X */}
               <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
@@ -1352,7 +1352,7 @@ export default function TurnosModule() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
+              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
             >
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">

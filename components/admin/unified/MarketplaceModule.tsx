@@ -1568,7 +1568,7 @@ function NewCouponModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border border-[var(--rule-base)]"
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
         role="dialog"
         aria-modal="true"
         aria-label="Crear nuevo cupón"

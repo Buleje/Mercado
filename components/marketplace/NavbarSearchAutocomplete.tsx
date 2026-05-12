@@ -361,7 +361,7 @@ export default function NavbarSearchAutocomplete({
           id="navbar-search-listbox"
           role="listbox"
           aria-label="Sugerencias"
-          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-2xl shadow-black/10"
+          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] shadow-black/10"
         >
           {loading && (
             <div className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-tertiary)]">

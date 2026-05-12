@@ -519,7 +519,7 @@ function SectionEditorModal({
   return (
     <div className="modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col shadow-2xl"
+        className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header con kicker descriptivo + counter */}

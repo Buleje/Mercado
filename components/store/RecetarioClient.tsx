@@ -271,7 +271,7 @@ function RecetaCard({
               <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
                 Costo aprox.
               </p>
-              <p className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tabular-nums leading-none">
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
                 S/ {Number(receta.totalIngredientes).toFixed(2)}
               </p>
             </div>
@@ -475,10 +475,10 @@ export default function RecetarioClient() {
             <ChefHat className="h-7 w-7" strokeWidth={1.75} aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               Recetario peruano
             </p>
-            <h1 className="mt-1 font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+            <h1 className="mt-1 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
               Cocina rico con lo que hay en tu bodega
             </h1>
             <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] max-w-2xl">

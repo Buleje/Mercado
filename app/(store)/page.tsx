@@ -236,7 +236,7 @@ function EarlyAdopterPlaceholder() {
               </span>
               Pre-launch · Pucallpa
             </p>
-            <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
+            <h2 className="text-[clamp(2.25rem,5.5vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
               Sé de los primeros{" "}
               <span className="text-[var(--accent)]">{CUPOS_TOTAL} negocios.</span>
             </h2>
@@ -289,7 +289,7 @@ function EarlyAdopterPlaceholder() {
                   Limitado
                 </span>
               </div>
-              <p className="text-5xl sm:text-6xl font-black tracking-[-0.04em] tabular-nums leading-none mt-2">
+              <p className="text-5xl sm:text-6xl font-extrabold tracking-[-0.04em] tabular-nums leading-none mt-2">
                 <span className="text-[var(--accent)]">{cuposDisponibles}</span>
                 <span className="text-[var(--text-tertiary)] text-2xl sm:text-3xl font-extrabold ml-2">
                   / {CUPOS_TOTAL}
@@ -331,7 +331,7 @@ function EarlyAdopterPlaceholder() {
                     ].map(({ l, c }) => (
                       <span
                         key={l}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-black text-sm ring-3 ring-[var(--surface-raised)]"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white font-extrabold text-sm ring-3 ring-[var(--surface-raised)]"
                         style={{ background: c }}
                         aria-hidden
                       >
@@ -383,7 +383,7 @@ function PromoBanners() {
                 </p>
               </div>
 
-              <h3 className="text-[clamp(1.75rem,4vw,2.75rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.04]">
+              <h3 className="text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.04]">
                 <T k="landing.promo.business.title1" fallback="Vendé sin comisión" />
                 <br />
                 <span className="text-[var(--accent)]">
@@ -452,7 +452,7 @@ function PromoBanners() {
                     En vivo
                   </span>
                 </div>
-                <p className="text-4xl sm:text-5xl font-black tracking-[-0.04em] tabular-nums leading-none">
+                <p className="text-4xl sm:text-5xl font-extrabold tracking-[-0.04em] tabular-nums leading-none">
                   S/ 2,887
                 </p>
                 <p className="mt-1 text-sm text-white/60">
@@ -467,7 +467,7 @@ function PromoBanners() {
                     { v: "24/7",  l: "soporte" },
                   ].map(({ v, l }) => (
                     <div key={l} className="rounded-xl bg-white/[0.06] backdrop-blur px-3 py-3">
-                      <p className="text-lg sm:text-xl font-black tabular-nums leading-none tracking-tight">
+                      <p className="text-lg sm:text-xl font-extrabold tabular-nums leading-none tracking-tight">
                         {v === "0%" ? (
                           <>
                             <span className="text-[var(--accent)]">0</span>
@@ -529,7 +529,7 @@ function AboutAndPricingSnapshot() {
               <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
               <T k="landing.plans.kicker" fallback="Planes" />
             </p>
-            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               <T k="landing.plans.title" fallback="Prueba un mes," />{" "}
               <br />
               <span className="italic font-serif text-[var(--accent)]">
@@ -616,7 +616,7 @@ function PaymentMethods() {
             <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
             <T k="landing.payment.kicker" fallback="Formas de pago" />
           </p>
-          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
+          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
             Tus clientes pagan{" "}
             <span className="italic font-serif text-[var(--accent)]">como ya saben pagar</span>.
           </h2>
@@ -636,7 +636,7 @@ function PaymentMethods() {
                 {m.type === "digital" ? (
                   <span
                     aria-hidden
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-white font-black text-lg shadow-sm"
+                    className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-white font-extrabold text-lg shadow-sm"
                     style={{ background: m.brandHex }}
                   >
                     {m.mark}
@@ -659,7 +659,7 @@ function PaymentMethods() {
                   {m.type === "digital" ? "Digital" : "Físico"}
                 </span>
               </div>
-              <p className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+              <p className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
                 {m.name}
               </p>
               <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-snug">
@@ -672,7 +672,7 @@ function PaymentMethods() {
         {/* Callout 0% comisión + Cobras como ya cobras */}
         <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6">
           <div className="flex items-center gap-5 flex-1 min-w-0">
-            <p className="text-5xl sm:text-6xl font-black tracking-[-0.04em] tabular-nums leading-none shrink-0">
+            <p className="text-5xl sm:text-6xl font-extrabold tracking-[-0.04em] tabular-nums leading-none shrink-0">
               <span className="text-[var(--accent)]">0</span>
               <span className="text-[var(--text-secondary)]">%</span>
             </p>
@@ -710,7 +710,7 @@ function FinalCTA() {
           />
           <T k="landing.finalCta.kicker" fallback="Empieza hoy" />
         </p>
-        <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
+        <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-extrabold tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
           <T k="landing.finalCta.title1" fallback="Tu negocio merece" />{" "}
           <br />
           <span className="italic font-serif text-[var(--accent)]">

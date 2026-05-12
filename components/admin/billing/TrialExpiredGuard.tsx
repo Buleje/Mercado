@@ -163,7 +163,7 @@ function PlanCard({
       <CardTitle>{name}</CardTitle>
       <p className="mt-1 text-xs font-semibold text-[var(--text-tertiary)]">{tagline}</p>
       <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-3xl font-black text-[var(--text-primary)]">{price}</span>
+        <span className="text-3xl font-extrabold text-[var(--text-primary)]">{price}</span>
         <span className="text-sm font-semibold text-[var(--text-tertiary)]">{period}</span>
       </div>
       <ul className="mt-4 space-y-2">

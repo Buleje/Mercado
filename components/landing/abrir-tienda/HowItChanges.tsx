@@ -78,7 +78,7 @@ export default function HowItChanges() {
             <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
             Tu día a día
           </p>
-          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
+          <h2 className="text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.98]">
             Lo mismo que ya hacés,
             <br />
             <span className="text-[var(--accent)]">

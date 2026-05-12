@@ -218,7 +218,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
       className="fixed inset-0 z-[8200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && onOpenChange(false)}
     >
-      <div className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+      <div className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-[var(--shadow-xl)]">
         {/* Header */}
         <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
           <div className="h-11 w-11 rounded-xl bg-linear-to-br from-primary to-[var(--data-success-500)] text-white flex items-center justify-center shrink-0">

@@ -83,7 +83,7 @@ export default function AdminModal({
         <Dialog.Content
           aria-describedby={description ? undefined : undefined}
           className={cn(
-            "fixed z-50 bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-2xl outline-none",
+            "fixed z-50 bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-[var(--shadow-xl)] outline-none",
             VARIANT_POSITION[variant],
             VARIANT_CLASSES[variant],
             "data-[state=open]:animate-modal-in",

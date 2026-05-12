@@ -179,7 +179,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
           className={cn(
             "fixed left-1/2 top-1/2 z-[61] -translate-x-1/2 -translate-y-1/2",
             "w-[calc(100vw-1.5rem)] sm:w-full max-w-5xl max-h-[92vh] flex flex-col",
-            "rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-2xl overflow-hidden",
+            "rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-[var(--shadow-xl)] overflow-hidden",
             "data-[state=open]:animate-in data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:zoom-out-95",
           )}
           aria-describedby={undefined}
@@ -218,7 +218,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
             <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6">
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 {recipe.categoria && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/95 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/95 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
                     {recipe.categoria}
                   </span>
                 )}
@@ -238,7 +238,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                   </span>
                 )}
               </div>
-              <Dialog.Title className="font-display text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight drop-shadow-md">
+              <Dialog.Title className="font-display text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight drop-shadow-md">
                 {recipe.nombre}
               </Dialog.Title>
             </div>
@@ -293,7 +293,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                       >
                         <Minus className="h-4 w-4" strokeWidth={2.25} />
                       </button>
-                      <span className="min-w-[2.5rem] text-center text-base font-black tabular-nums text-[var(--text-primary)]">
+                      <span className="min-w-[2.5rem] text-center text-base font-extrabold tabular-nums text-[var(--text-primary)]">
                         {servings}
                       </span>
                       <button
@@ -314,7 +314,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
 
                 {/* Header lista */}
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
                     Ingredientes ({ingredientesView.length})
                   </h3>
                   <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider">
@@ -392,7 +392,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                               <p className="text-sm font-bold text-[var(--text-primary)] truncate">
                                 {ing.nombre}
                               </p>
-                              <span className="text-sm font-black tabular-nums text-[var(--text-primary)] shrink-0">
+                              <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)] shrink-0">
                                 {fmt(v.precio)}
                               </span>
                             </div>
@@ -417,7 +417,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
               <div className="md:col-span-3 p-5 sm:p-6 space-y-6">
                 {recipe.descripcion && (
                   <div>
-                    <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)] mb-2">
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-2">
                       Sobre este plato
                     </h3>
                     <p className="text-base text-[var(--text-secondary)] leading-relaxed">
@@ -428,14 +428,14 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
 
                 {recipe.pasos && recipe.pasos.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] mb-3 flex items-center gap-2">
                       <ChefHat className="h-4 w-4" strokeWidth={2} />
                       Preparacion · {recipe.pasos.length} pasos
                     </h3>
                     <ol className="space-y-3">
                       {recipe.pasos.map((paso, idx) => (
                         <li key={idx} className="flex gap-3">
-                          <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-white text-sm font-black tabular-nums">
+                          <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-white text-sm font-extrabold tabular-nums">
                             {idx + 1}
                           </span>
                           <p className="pt-0.5 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-relaxed">
@@ -467,7 +467,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
               <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
                 Total seleccionado
               </p>
-              <p className="font-display text-2xl font-black text-[var(--text-primary)] tabular-nums leading-none mt-0.5">
+              <p className="font-display text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none mt-0.5">
                 {fmt(totalSeleccionado)}
                 <span className="ml-2 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">
                   {countSeleccionado} de {countDisponibles}
@@ -491,7 +491,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                 disabled={countSeleccionado === 0}
                 className={cn(
                   "flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-6 h-12",
-                  "text-sm font-black uppercase tracking-wider transition-all",
+                  "text-sm font-extrabold uppercase tracking-wider transition-all",
                   "bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 hover:shadow-lg active:scale-[0.98]",
                   "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[var(--accent)]",
                 )}

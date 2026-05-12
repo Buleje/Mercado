@@ -99,7 +99,7 @@ export default function AboutBlock(props: Partial<AboutBlockProps>) {
             {/* Store Photo */}
             {image && (
               <div className="relative mb-10">
-                <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-2xl">
+                <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-[var(--shadow-xl)]">
                   <Image
                     src={image}
                     alt={imageAlt}

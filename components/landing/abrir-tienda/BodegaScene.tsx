@@ -115,7 +115,7 @@ export default function BodegaScene() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
                 Bodega
               </p>
-              <p className="text-sm font-black tracking-tight text-[var(--text-primary)] leading-tight truncate">
+              <p className="text-sm font-extrabold tracking-tight text-[var(--text-primary)] leading-tight truncate">
                 Don Lucho · Pucallpa
               </p>
             </div>
@@ -182,7 +182,7 @@ export default function BodegaScene() {
             </p>
           </div>
           <div className="flex items-baseline gap-3">
-            <p className="text-3xl font-black tracking-[-0.03em] tabular-nums leading-none">
+            <p className="text-3xl font-extrabold tracking-[-0.03em] tabular-nums leading-none">
               S/ <m.span
                 key={sales}
                 initial={reducedMotion ? false : { y: -4, opacity: 0 }}
@@ -240,7 +240,7 @@ export default function BodegaScene() {
             transition={{ delay: 0.55 + i * 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className={`absolute ${positions[i]} z-10 inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-lg)]`}
           >
-            <span className="text-base sm:text-lg font-black tabular-nums tracking-tight text-[var(--accent)] leading-none whitespace-nowrap">
+            <span className="text-base sm:text-lg font-extrabold tabular-nums tracking-tight text-[var(--accent)] leading-none whitespace-nowrap">
               {p.value}
             </span>
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-secondary)] leading-tight max-w-[10ch]">

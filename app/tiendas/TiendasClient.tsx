@@ -504,7 +504,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   ? `Directorio · ${customerCity ?? customerRegion}`
                   : "Directorio de tiendas"}
               </p>
-              <h1 className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-black leading-[0.98] tracking-[-0.035em] text-[var(--text-primary)]">
+              <h1 className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold leading-[0.98] tracking-[-0.035em] text-[var(--text-primary)]">
                 Las mejores tiendas
                 <br />
                 <span className="italic font-serif text-[var(--accent)]">de tu barrio.</span>
@@ -530,7 +530,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                         Tu ubicación
                       </p>
-                      <p className="text-sm font-black text-[var(--text-primary)]">
+                      <p className="text-sm font-extrabold text-[var(--text-primary)]">
                         {[customerCity, customerRegion].filter(Boolean).join(" · ")}
                       </p>
                     </div>
@@ -603,7 +603,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                           className="rounded-2xl bg-[var(--surface-sunken)]/60 border border-[var(--rule-soft)] px-3.5 py-3"
                         >
                           <div className="flex items-baseline justify-between gap-1.5 mb-1.5">
-                            <p className="text-2xl sm:text-[1.65rem] font-black tabular-nums tracking-tight text-[var(--text-primary)] leading-none truncate">
+                            <p className="text-2xl sm:text-[1.65rem] font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none truncate">
                               {value}
                               {suffix && <span className="ml-0.5 text-base text-[var(--accent)]">{suffix}</span>}
                             </p>
@@ -656,7 +656,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Resultados para tu búsqueda
                 </p>
-                <h2 className="text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+                <h2 className="text-xl sm:text-2xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   &quot;{search.trim()}&quot;{" "}
                   <span className="text-[var(--text-tertiary)] font-bold text-base">
                     · {stores.length} {stores.length === 1 ? "tienda" : "tiendas"}
@@ -923,7 +923,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   >
                     <span
                       className={cn(
-                        "h-9 w-9 rounded-lg flex items-center justify-center text-[length:var(--ts-2xs)] font-black tracking-tight",
+                        "h-9 w-9 rounded-lg flex items-center justify-center text-[length:var(--ts-2xs)] font-extrabold tracking-tight",
                         active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                       )}
                     >
@@ -1072,7 +1072,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
               Si nunca pediste aqui
             </p>
-            <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
+            <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
               De la tienda a tu puerta,{" "}
               <span className="italic font-serif text-[var(--accent)]">en 3 pasos.</span>
             </h2>
@@ -1123,7 +1123,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     >
                       {/* Numero grande arriba */}
                       <div className="flex items-start justify-between gap-3 mb-4">
-                        <p className="font-display text-[2.5rem] sm:text-[3rem] font-black leading-[0.85] tracking-[-0.04em] text-[var(--rule-base)] tabular-nums group-hover:text-[var(--accent)]/30 transition-colors">
+                        <p className="font-display text-[2.5rem] sm:text-[3rem] font-extrabold leading-[0.85] tracking-[-0.04em] text-[var(--rule-base)] tabular-nums group-hover:text-[var(--accent)]/30 transition-colors">
                           {step.n}
                         </p>
                         <span
@@ -1134,7 +1134,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                         </span>
                       </div>
 
-                      <h3 className="text-lg sm:text-xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+                      <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
                         {step.title}
                       </h3>
                       <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
@@ -1195,11 +1195,11 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
             />
             <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-10 items-center">
               <div className="min-w-0">
-                <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
+                <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
                   <span aria-hidden className="inline-flex h-[3px] w-8 rounded-full bg-[var(--accent)]" />
                   Sumate a Buleje
                 </p>
-                <h2 className="font-display text-2xl sm:text-3xl lg:text-[2.25rem] font-black leading-tight tracking-tight">
+                <h2 className="font-display text-2xl sm:text-3xl lg:text-[2.25rem] font-extrabold leading-tight tracking-tight">
                   ¿Tenes una tienda o moto?{" "}
                   <span className="text-[var(--accent)]">Trabaja con nosotros.</span>
                 </h2>
@@ -1211,7 +1211,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                 <Link
                   href="/abrir-tienda"
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 h-12 text-sm font-black hover:bg-[var(--accent)]/90 transition-colors shadow-lg shadow-[var(--accent)]/30"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 h-12 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-lg shadow-[var(--accent)]/30"
                 >
                   <Store className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                   Abrir mi tienda
@@ -1219,7 +1219,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 </Link>
                 <Link
                   href="/marketplace/repartidor"
-                  className="inline-flex items-center gap-2 rounded-full border-2 border-white/25 px-5 h-12 text-sm font-black text-white hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-white/25 px-5 h-12 text-sm font-extrabold text-white hover:bg-white/10 transition-colors"
                 >
                   <Bike className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                   Ser repartidor

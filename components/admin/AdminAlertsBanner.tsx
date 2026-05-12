@@ -315,7 +315,7 @@ function AlertCard({
           <span
             aria-hidden
             className={cn(
-              "inline-flex h-10 min-w-10 px-2 items-center justify-center rounded-xl text-xl font-black tabular-nums leading-none",
+              "inline-flex h-10 min-w-10 px-2 items-center justify-center rounded-xl text-xl font-extrabold tabular-nums leading-none",
               iconBg,
             )}
           >

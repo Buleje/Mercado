@@ -276,7 +276,7 @@ export default function DocumentosModule() {
       {/* Drag overlay */}
       {dragOver && (
         <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
-          <div className="bg-white border-4 border-dashed border-primary rounded-3xl p-8 shadow-2xl">
+          <div className="bg-white border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
             <Upload className="h-12 w-12 mx-auto text-primary mb-3" />
             <p className="text-xl font-extrabold text-[var(--text-primary)]">Soltá los archivos para subir</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">PDF, imágenes, docs, hojas de cálculo</p>
@@ -645,7 +645,7 @@ function PreviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-white rounded-3xl shadow-2xl flex flex-col"
+        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-white rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
       >
         {/* Header */}
         <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">

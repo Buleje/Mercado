@@ -55,11 +55,11 @@ export default function ExplorarHowItWorks() {
   return (
     <section className="relative mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
       <header className="max-w-2xl mb-10 sm:mb-14">
-        <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
+        <p className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
           <span className="h-[3px] w-8 rounded-full bg-[var(--accent)]" aria-hidden />
           Cómo funciona
         </p>
-        <h2 className="font-display text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+        <h2 className="font-display text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
           De buscar a recibir{" "}
           <span className="text-[var(--accent)]">en 3 pasos.</span>
         </h2>
@@ -96,16 +96,16 @@ export default function ExplorarHowItWorks() {
                   <Icon className="h-6 w-6" strokeWidth={2} aria-hidden />
                 </span>
 
-                <p className="mt-5 text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                <p className="mt-5 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                   Paso {s.num}
                 </p>
-                <h3 className="mt-1.5 font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-[1.05]">
+                <h3 className="mt-1.5 font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-[1.05]">
                   {s.title}
                 </h3>
                 <p className="mt-3 text-sm sm:text-base text-[var(--text-secondary)] leading-snug font-semibold">
                   {s.description}
                 </p>
-                <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1.5 text-xs font-black uppercase tracking-wider text-[var(--text-secondary)]">
+                <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
                   <span
                     className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]"
                     aria-hidden
@@ -129,7 +129,7 @@ export default function ExplorarHowItWorks() {
       <div className="mt-10 sm:mt-12 flex justify-center">
         <Link
           href="/marketplace"
-          className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base sm:text-lg font-black uppercase tracking-wider shadow-xl hover:bg-[var(--accent)] hover:gap-3 transition-all"
+          className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base sm:text-lg font-extrabold uppercase tracking-wider shadow-xl hover:bg-[var(--accent)] hover:gap-3 transition-all"
         >
           Empezar a comprar
           <ArrowUpRight

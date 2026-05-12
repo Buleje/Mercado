@@ -69,18 +69,18 @@ function PreviewSectionBox({
     <section className="rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden shadow-sm">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-soft)] bg-linear-to-r from-[var(--accent)]/5 via-[var(--surface-canvas)] to-[var(--surface-canvas)] px-5 sm:px-6 py-4 sm:py-5">
         <div className="min-w-0">
-          <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+          <p className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
             <span className="h-[3px] w-8 rounded-full bg-[var(--accent)]" aria-hidden />
             {eyebrow}
           </p>
-          <h3 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] mt-2 leading-tight">
+          <h3 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] mt-2 leading-tight">
             {title}
           </h3>
           <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5 font-semibold">{subtitle}</p>
         </div>
         <Link
           href={ctaHref}
-          className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm sm:text-base font-black uppercase tracking-wider text-white shadow-lg shadow-[var(--accent)]/30 transition-all hover:brightness-110 hover:gap-3 hover:shadow-xl shrink-0"
+          className="group inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm sm:text-base font-extrabold uppercase tracking-wider text-white shadow-lg shadow-[var(--accent)]/30 transition-all hover:brightness-110 hover:gap-3 hover:shadow-xl shrink-0"
         >
           {ctaLabel}
           <ArrowUpRight
@@ -118,11 +118,11 @@ function FinalCTA() {
 
           <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 lg:gap-12 items-center">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-3.5 py-1.5 text-xs font-black uppercase tracking-[var(--ls-wider)] text-white mb-6">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white mb-6">
                 <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.75} aria-hidden />
                 Para bodegueros · Gratis siempre
               </span>
-              <h2 className="font-display text-[clamp(2.25rem,6vw,4.5rem)] font-black tracking-[-0.035em] text-white leading-[0.95]">
+              <h2 className="font-display text-[clamp(2.25rem,6vw,4.5rem)] font-extrabold tracking-[-0.035em] text-white leading-[0.95]">
                 Tu bodega online
                 <br />
                 <span className="text-[var(--accent)]">en 5 minutos.</span>
@@ -140,7 +140,7 @@ function FinalCTA() {
                 ].map((b) => (
                   <span
                     key={b.text}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-black uppercase tracking-wider text-white border border-white/15"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider text-white border border-white/15"
                   >
                     <b.icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                     {b.text}
@@ -152,7 +152,7 @@ function FinalCTA() {
             <div className="flex flex-col gap-2.5 shrink-0">
               <Link
                 href="/abrir-tienda"
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base sm:text-lg font-black uppercase tracking-wider shadow-xl shadow-[var(--accent)]/40 hover:brightness-110 hover:gap-3 transition-all"
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-white px-8 py-4 text-base sm:text-lg font-extrabold uppercase tracking-wider shadow-xl shadow-[var(--accent)]/40 hover:brightness-110 hover:gap-3 transition-all"
               >
                 <Store className="h-5 w-5" strokeWidth={2.25} />
                 Abrir mi tienda
@@ -164,11 +164,11 @@ function FinalCTA() {
               </Link>
               <Link
                 href="/abrir-tienda#planes"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-8 py-4 text-sm sm:text-base font-black uppercase tracking-wider text-white hover:bg-white/10 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-8 py-4 text-sm sm:text-base font-extrabold uppercase tracking-wider text-white hover:bg-white/10 transition-colors"
               >
                 Ver planes
               </Link>
-              <p className="mt-2 text-xs font-black uppercase tracking-wider text-white/70 text-center">
+              <p className="mt-2 text-xs font-extrabold uppercase tracking-wider text-white/70 text-center">
                 ✓ 200+ bodegueros ya venden
               </p>
             </div>

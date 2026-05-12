@@ -17,6 +17,25 @@ import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
 const projectRoot = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
+// SAFETY 2026-05-12 (post-incidente "wip-sprint-files"): detecta si hay
+// stashes "On prod:" creados manualmente (NO los "lint-staged automatic
+// backup" que son inocuos). Si los hay, alerta al usuario al inicio de
+// sesion para que no crea que perdio trabajo.
+function checkSuspiciousStashes() {
+  try {
+    const r = spawnSync("git", ["stash", "list"], {
+      cwd: projectRoot, encoding: "utf8", timeout: 2000,
+    });
+    if (r.status !== 0) return null;
+    const lines = (r.stdout || "").trim().split("\n").filter(Boolean);
+    const suspicious = lines.filter(
+      (l) => /On prod:/.test(l) && !/lint-staged automatic backup/.test(l),
+    );
+    if (suspicious.length === 0) return null;
+    return suspicious.slice(0, 3);
+  } catch { return null; }
+}
 const BASE = "http://localhost:3000";
 const TENANT = "main";
 const HOME = process.env.HOME ?? "";
@@ -169,6 +188,14 @@ async function main() {
   }
 
   log(`Chromium: ${chromiumStatus()}`);
+
+  // Alerta sobre stashes sospechosos (post-incidente 2026-05-12)
+  const susStashes = checkSuspiciousStashes();
+  if (susStashes && susStashes.length > 0) {
+    log(`⚠️  Stash(es) "On prod:" detectado(s) — trabajo posiblemente oculto:`);
+    for (const s of susStashes) log(`     ${s.slice(0, 120)}`);
+    log(`     Revisar con: git stash show stash@{0} --stat`);
+  }
 
   const dt = ((Date.now() - t0) / 1000).toFixed(1);
   log(`(autonomy boot: ${dt}s)`);

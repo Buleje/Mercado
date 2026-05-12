@@ -124,7 +124,7 @@ export default function SocialProofToast() {
           : "opacity-0 translate-y-4 -translate-x-4"
       )}
     >
-      <div className="bg-[var(--surface-raised)] rounded-2xl shadow-2xl border border-[var(--rule-base)] overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] overflow-hidden">
         <div className="flex items-start gap-3 p-3">
           {/* Product image */}
           <div className="relative h-14 w-14 rounded-xl overflow-hidden bg-gray-50 shrink-0 border border-gray-100">

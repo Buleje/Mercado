@@ -439,7 +439,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.55 }}
-          className="mt-14 overflow-hidden rounded-2xl border border-border/60 bg-[var(--surface-raised)] shadow-2xl shadow-primary/10 dark:shadow-primary/5"
+          className="mt-14 overflow-hidden rounded-2xl border border-border/60 bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] shadow-primary/10 dark:shadow-primary/5"
           aria-label="Vista previa del sistema POS"
         >
           {/* Barra de navegacion falsa */}

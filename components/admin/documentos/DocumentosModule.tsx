@@ -239,7 +239,7 @@ export default function DocumentosModule() {
       {/* Drag overlay */}
       {dragOver && (
         <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
-          <div className="bg-white border-4 border-dashed border-primary rounded-3xl p-8 shadow-2xl">
+          <div className="bg-white border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
             <Upload className="h-12 w-12 mx-auto text-primary mb-3" />
             <p className="text-xl font-extrabold text-[var(--text-primary)]">Soltá los archivos para subir</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">PDF, imágenes, docs, planillas</p>

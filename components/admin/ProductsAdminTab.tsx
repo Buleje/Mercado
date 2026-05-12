@@ -1389,7 +1389,7 @@ export default function ProductsAdminTab() {
                     {p.name}
                   </h3>
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-2xl font-black text-primary leading-none">
+                    <span className="text-2xl font-extrabold text-primary leading-none">
                       S/<span className="text-2xl">{Number(p.price).toFixed(2)}</span>
                     </span>
                     <span className="text-xs font-medium text-[var(--text-tertiary)]">

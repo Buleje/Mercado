@@ -432,7 +432,7 @@ export default function NotificationHub({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-full sm:w-[420px] bg-[var(--surface-raised)] border-l border-[var(--rule-base)] shadow-2xl flex flex-col"
+            className="fixed right-0 top-0 bottom-0 w-full sm:w-[420px] bg-[var(--surface-raised)] border-l border-[var(--rule-base)] shadow-[var(--shadow-xl)] flex flex-col"
             style={{ zIndex: 61 }}
           >
             {/* Header */}

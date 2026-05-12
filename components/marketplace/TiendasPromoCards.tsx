@@ -120,7 +120,7 @@ function PromoCardItem({
           </div>
           {/* Stat pill — solo desktop, número grande con label */}
           <div className="hidden sm:flex flex-col items-end shrink-0">
-            <span className="text-2xl sm:text-3xl font-black tabular-nums tracking-[-0.03em] leading-none">
+            <span className="text-2xl sm:text-3xl font-extrabold tabular-nums tracking-[-0.03em] leading-none">
               {stat}
             </span>
             <span className="mt-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider opacity-70">
@@ -131,7 +131,7 @@ function PromoCardItem({
 
         {/* Title + subtitle */}
         <div>
-          <h3 className="text-xl sm:text-3xl font-black tracking-tight leading-[1.05]">
+          <h3 className="text-xl sm:text-3xl font-extrabold tracking-tight leading-[1.05]">
             {title}
           </h3>
           <p className="hidden sm:block mt-2 text-sm sm:text-base opacity-85 max-w-[28ch] leading-snug">

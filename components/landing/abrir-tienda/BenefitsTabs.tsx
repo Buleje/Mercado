@@ -172,7 +172,7 @@ function CategoryMockup({ category }: { category: Category }) {
       <div className="relative space-y-4">
         {/* Pago entrante */}
         <div className="rounded-2xl bg-white/12 backdrop-blur border border-white/20 px-4 py-3 flex items-center gap-3">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#722EAB] font-black text-base shadow-sm">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#722EAB] font-extrabold text-base shadow-sm">
             Y
           </span>
           <div className="flex-1 min-w-0">
@@ -181,7 +181,7 @@ function CategoryMockup({ category }: { category: Category }) {
               Confirmado · hace 2 seg
             </p>
           </div>
-          <p className="text-xl font-black tabular-nums text-white shrink-0">S/ 28.50</p>
+          <p className="text-xl font-extrabold tabular-nums text-white shrink-0">S/ 28.50</p>
         </div>
         {/* Grid de métodos */}
         <div className="grid grid-cols-2 gap-2">
@@ -193,7 +193,7 @@ function CategoryMockup({ category }: { category: Category }) {
           ].map((p) => (
             <div key={p.name} className="rounded-xl bg-white/8 border border-white/15 px-3 py-2.5 flex items-center gap-2.5">
               <span
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white font-black text-sm"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white font-extrabold text-sm"
                 style={{ background: p.color }}
               >
                 {p.mark}
@@ -271,7 +271,7 @@ function CategoryMockup({ category }: { category: Category }) {
       {/* Customer card */}
       <div className="rounded-2xl bg-white text-[var(--text-primary)] p-4 shadow-xl">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-white font-black text-base">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-white font-extrabold text-base">
             M
           </span>
           <div className="flex-1 min-w-0">
@@ -291,7 +291,7 @@ function CategoryMockup({ category }: { category: Category }) {
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
             Cashback acumulado
           </p>
-          <p className="text-2xl font-black tabular-nums tracking-tight text-[var(--accent)]">
+          <p className="text-2xl font-extrabold tabular-nums tracking-tight text-[var(--accent)]">
             S/ 24.30
           </p>
         </div>
@@ -330,7 +330,7 @@ export default function BenefitsTabs() {
               <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
               Qué obtienes
             </p>
-            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+            <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               Cuatro músculos
               <br />
               <span className="text-[var(--accent)]">
@@ -384,7 +384,7 @@ export default function BenefitsTabs() {
               <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br ${cat.bg} text-white shadow-md mb-6`}>
                 <Icon className="h-6 w-6" strokeWidth={2.25} />
               </span>
-              <h3 className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
+              <h3 className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
                 {headlineParts[0]}
                 <span className="text-[var(--accent)]">
                   {cat.highlight}
@@ -422,7 +422,7 @@ export default function BenefitsTabs() {
                   <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] opacity-80">
                     {cat.metric.label}
                   </p>
-                  <p className="mt-1 text-[clamp(2rem,5vw,3rem)] font-black tabular-nums tracking-[-0.035em] leading-[0.95]">
+                  <p className="mt-1 text-[clamp(2rem,5vw,3rem)] font-extrabold tabular-nums tracking-[-0.035em] leading-[0.95]">
                     {cat.metric.value}
                   </p>
                 </div>

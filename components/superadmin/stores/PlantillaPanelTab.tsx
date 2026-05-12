@@ -415,7 +415,7 @@ export function PlantillaPanelTab() {
                 <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
                 Configuración global · Plantilla
               </p>
-              <h2 className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tracking-tight text-[var(--text-primary)] leading-[1.05]">
+              <h2 className="text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-[1.05]">
                 Plantilla del{" "}
                 <span className="italic font-serif text-[var(--accent)]">Panel Admin.</span>
               </h2>
@@ -456,7 +456,7 @@ export function PlantillaPanelTab() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
                 {s.label}
               </p>
-              <p className="text-2xl font-black tabular-nums tracking-tight leading-none">
+              <p className="text-2xl font-extrabold tabular-nums tracking-tight leading-none">
                 <span
                   className={
                     s.accent ? "text-[var(--accent)]" :
@@ -485,7 +485,7 @@ export function PlantillaPanelTab() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
               Apariencia · Sidebar
             </p>
-            <h3 className="text-lg sm:text-xl font-black text-[var(--text-primary)] tracking-tight">
+            <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
               Estilo por defecto del sidebar
             </h3>
             <p className="text-sm text-[var(--text-secondary)] mt-1.5 leading-relaxed max-w-2xl">
@@ -513,7 +513,7 @@ export function PlantillaPanelTab() {
               >
                 {/* Badge "Por defecto" cuando está activo */}
                 {isActive && (
-                  <span className="absolute -top-2 -right-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-black px-2 py-0.5 shadow-md uppercase tracking-wider">
+                  <span className="absolute -top-2 -right-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-extrabold px-2 py-0.5 shadow-md uppercase tracking-wider">
                     <CheckCircle2 className="h-3 w-3" strokeWidth={3} />
                     Default
                   </span>
@@ -597,7 +597,7 @@ export function PlantillaPanelTab() {
                       "--tw-ring-color": "var(--surface-raised)",
                     }}
                   />
-                  <p className="text-sm font-black text-[var(--text-primary)] truncate">{opt.label}</p>
+                  <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">{opt.label}</p>
                   {opt.requiresCustom && (
                     <span className="inline-flex items-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       · custom
@@ -621,7 +621,7 @@ export function PlantillaPanelTab() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
               Atajos · deshabilitados
             </p>
-            <h3 className="text-lg sm:text-xl font-black text-[var(--text-tertiary)] tracking-tight">
+            <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-tertiary)] tracking-tight">
               Presets rápidos
             </h3>
           </div>
@@ -639,7 +639,7 @@ export function PlantillaPanelTab() {
             <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-black text-[var(--text-primary)] leading-tight">
+            <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">
               Sin atajos manuales · habilitado por plan del negocio
             </p>
             <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-relaxed">
@@ -670,7 +670,7 @@ export function PlantillaPanelTab() {
                     {preset.icon}
                   </span>
                   <span className="inline-flex items-baseline gap-1 rounded-full bg-[var(--surface-canvas)] border border-[var(--rule-soft)] px-2.5 py-1">
-                    <span className="text-base font-black tabular-nums text-[var(--text-tertiary)] leading-none">
+                    <span className="text-base font-extrabold tabular-nums text-[var(--text-tertiary)] leading-none">
                       {moduleCount}
                     </span>
                     <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
@@ -678,7 +678,7 @@ export function PlantillaPanelTab() {
                     </span>
                   </span>
                 </div>
-                <p className="text-base font-black tracking-tight text-[var(--text-tertiary)] leading-tight line-through decoration-1">
+                <p className="text-base font-extrabold tracking-tight text-[var(--text-tertiary)] leading-tight line-through decoration-1">
                   {preset.label}
                 </p>
                 <p className="mt-1.5 text-sm text-[var(--text-tertiary)] leading-relaxed">
@@ -702,7 +702,7 @@ export function PlantillaPanelTab() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
               Catálogo
             </p>
-            <h3 className="text-lg sm:text-xl font-black text-[var(--text-primary)] tracking-tight">
+            <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
               Módulos del panel
             </h3>
           </div>
@@ -741,7 +741,7 @@ export function PlantillaPanelTab() {
                     >
                       {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </span>
-                    <span className="text-sm sm:text-base font-black text-[var(--text-primary)] tracking-tight">{cat}</span>
+                    <span className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] tracking-tight">{cat}</span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     {/* Progress bar mini */}

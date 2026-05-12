@@ -178,17 +178,17 @@ export default function SectionsTab() {
       {/* Header con acciones */}
       <section className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1.5 font-black tabular-nums">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1.5 font-extrabold tabular-nums">
             {sections.length} {sections.length === 1 ? "sección" : "secciones"}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1.5 font-black tabular-nums">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1.5 font-extrabold tabular-nums">
             {sections.filter((s) => s.visible).length} visibles
           </span>
         </div>
         <button
           type="button"
           onClick={() => setShowTemplates(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-4 h-10 text-sm font-black hover:bg-[var(--accent)]/90 transition-colors shadow-md"
+          className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-4 h-10 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-md"
         >
           <Plus className="w-4 h-4" strokeWidth={2.5} />
           Añadir sección
@@ -201,7 +201,7 @@ export default function SectionsTab() {
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
             <Layers className="h-7 w-7" strokeWidth={1.75} />
           </span>
-          <h3 className="text-lg font-black text-[var(--text-primary)] mb-1">
+          <h3 className="text-lg font-extrabold text-[var(--text-primary)] mb-1">
             Tu página pública aún no tiene secciones
           </h3>
           <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto mb-5">
@@ -210,7 +210,7 @@ export default function SectionsTab() {
           <button
             type="button"
             onClick={() => setShowTemplates(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 h-11 text-sm font-black hover:bg-[var(--accent)]/90 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 h-11 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors"
           >
             <Sparkles className="w-4 h-4" strokeWidth={2.5} />
             Empezar con una plantilla
@@ -236,7 +236,7 @@ export default function SectionsTab() {
                     {TYPE_EMOJI[section.type]}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-black text-[var(--text-primary)] truncate">
+                    <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">
                       {TYPE_LABEL[section.type]}
                     </p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">
@@ -354,15 +354,15 @@ function TemplatesModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl overflow-hidden"
+        className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)]">
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)]">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
               Galería de plantillas
             </p>
-            <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight">
+            <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
               Elegí una sección para agregar
             </h2>
           </div>
@@ -385,17 +385,17 @@ function TemplatesModal({
             >
               <div className="flex items-start justify-between gap-2 mb-3">
                 <span className="text-2xl">{tpl.emoji}</span>
-                <span className={`text-[length:var(--ts-2xs)] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${SECTION_TAG_STYLES[tpl.tag]}`}>
+                <span className={`text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${SECTION_TAG_STYLES[tpl.tag]}`}>
                   {tpl.tag}
                 </span>
               </div>
-              <p className="font-black text-base text-[var(--text-primary)] leading-tight">
+              <p className="font-extrabold text-base text-[var(--text-primary)] leading-tight">
                 {tpl.label}
               </p>
               <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-snug">
                 {tpl.description}
               </p>
-              <p className="mt-3 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
+              <p className="mt-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
                 Agregar →
               </p>
             </button>
@@ -448,7 +448,7 @@ function SectionEditor({
           <p className="text-xs font-bold text-[var(--text-secondary)] mb-1.5">Horarios por día</p>
           {data.schedule.map((row, i) => (
             <div key={row.day} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-sunken)]/50">
-              <span className="text-xs font-black uppercase w-10 shrink-0">{row.day}</span>
+              <span className="text-xs font-extrabold uppercase w-10 shrink-0">{row.day}</span>
               <label className="inline-flex items-center gap-1 text-xs">
                 <input
                   type="checkbox"
@@ -536,7 +536,7 @@ function SectionEditor({
           <p className="text-xs font-bold text-[var(--text-secondary)]">Pasos</p>
           {data.steps.map((step, i) => (
             <div key={i} className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 p-3 space-y-2">
-              <p className="text-xs font-black text-[var(--accent)]">Paso {i + 1}</p>
+              <p className="text-xs font-extrabold text-[var(--accent)]">Paso {i + 1}</p>
               <input
                 value={step.title}
                 placeholder="Título del paso"
@@ -578,7 +578,7 @@ function SectionEditor({
             <button
               type="button"
               onClick={() => onChange({ items: [...data.items, { question: "", answer: "" }] })}
-              className="text-xs font-black text-[var(--accent)] hover:underline"
+              className="text-xs font-extrabold text-[var(--accent)] hover:underline"
             >
               + Agregar pregunta
             </button>
@@ -586,7 +586,7 @@ function SectionEditor({
           {data.items.map((item, i) => (
             <div key={i} className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 p-3 space-y-2">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-xs font-black text-[var(--accent)]">Pregunta {i + 1}</p>
+                <p className="text-xs font-extrabold text-[var(--accent)]">Pregunta {i + 1}</p>
                 <button
                   type="button"
                   onClick={() => onChange({ items: data.items.filter((_, k) => k !== i) })}
@@ -638,7 +638,7 @@ function SectionEditor({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-[var(--text-secondary)]">Imágenes (URL · sube a Imgur, Vercel Blob o S3)</p>
-            <button type="button" onClick={addImage} className="text-xs font-black text-[var(--accent)] hover:underline">
+            <button type="button" onClick={addImage} className="text-xs font-extrabold text-[var(--accent)] hover:underline">
               + Agregar foto
             </button>
           </div>
@@ -733,7 +733,7 @@ function SectionEditor({
             <button
               type="button"
               onClick={() => onChange({ imagePosition: "left" })}
-              className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-black transition-all ${
+              className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                 data.imagePosition === "left"
                   ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"
@@ -744,7 +744,7 @@ function SectionEditor({
             <button
               type="button"
               onClick={() => onChange({ imagePosition: "right" })}
-              className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-black transition-all ${
+              className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                 data.imagePosition === "right"
                   ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"

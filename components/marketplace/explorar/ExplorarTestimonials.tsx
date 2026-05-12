@@ -46,11 +46,11 @@ export default function ExplorarTestimonials() {
     <section className="bg-[var(--surface-canvas)] py-12 sm:py-20">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
         <header className="max-w-3xl mx-auto text-center mb-10 sm:mb-14">
-          <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
+          <p className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
             <span className="h-[3px] w-8 rounded-full bg-[var(--accent)]" aria-hidden />
             Vecinos contentos
           </p>
-          <h2 className="font-display text-[clamp(2.25rem,6vw,4rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+          <h2 className="font-display text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
             <span className="text-[var(--accent)]">5.4k</span> vecinos
             ya confían en Buleje
           </h2>
@@ -84,17 +84,17 @@ export default function ExplorarTestimonials() {
               </div>
 
               {/* Quote */}
-              <p className="font-display text-lg sm:text-xl font-black text-[var(--text-primary)] leading-snug tracking-tight">
+              <p className="font-display text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-snug tracking-tight">
                 &ldquo;{r.text}&rdquo;
               </p>
 
               {/* Author */}
               <div className="mt-6 flex items-center gap-3 pt-5 border-t border-[var(--rule-soft)]">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent)] text-white font-display text-lg font-black shadow-md shadow-[var(--accent)]/25">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent)] text-white font-display text-lg font-extrabold shadow-md shadow-[var(--accent)]/25">
                   {r.initial}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm sm:text-base font-black text-[var(--text-primary)] leading-tight">
+                  <p className="text-sm sm:text-base font-extrabold text-[var(--text-primary)] leading-tight">
                     {r.name}
                   </p>
                   <p className="text-xs font-semibold text-[var(--text-tertiary)]">{r.zone}, Pucallpa</p>

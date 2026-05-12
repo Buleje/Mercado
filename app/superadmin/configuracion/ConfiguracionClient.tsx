@@ -376,7 +376,7 @@ export default function ConfiguracionClient() {
         <button
           onClick={save}
           disabled={saving}
-          className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-sm shadow-2xl shadow-[var(--accent)]/40 hover:gap-2.5 hover:shadow-2xl hover:opacity-95 disabled:opacity-60 transition-all"
+          className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-sm shadow-[var(--shadow-xl)] shadow-[var(--accent)]/40 hover:gap-2.5 hover:shadow-2xl hover:opacity-95 disabled:opacity-60 transition-all"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedAt ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" strokeWidth={2.5} />}
           {savedAt ? "Guardado" : "Guardar todos los cambios"}
@@ -404,7 +404,7 @@ function Section({
           {icon}
         </span>
         <div className="min-w-0">
-          <h2 className="text-base sm:text-lg font-black text-[var(--text-primary)] leading-tight tracking-tight">
+          <h2 className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] leading-tight tracking-tight">
             {title}
           </h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)] leading-snug">{subtitle}</p>

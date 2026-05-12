@@ -123,7 +123,7 @@ export default function DesignTab() {
         <button
           type="button"
           onClick={() => setShowAI((s) => !s)}
-          className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-violet-600 to-fuchsia-600 text-white px-4 h-10 text-sm font-black hover:opacity-90 transition-all shadow-md"
+          className="inline-flex items-center gap-2 rounded-full bg-linear-to-r from-violet-600 to-fuchsia-600 text-white px-4 h-10 text-sm font-extrabold hover:opacity-90 transition-all shadow-md"
         >
           <Sparkles className="w-4 h-4" strokeWidth={2.5} />
           Sugerencias con IA
@@ -168,7 +168,7 @@ export default function DesignTab() {
                       <span className="text-base">{preset.emoji}</span>
                       {active && <Check className="w-4 h-4 text-[var(--accent)]" strokeWidth={3} />}
                     </div>
-                    <p className="text-sm font-black text-[var(--text-primary)] leading-tight">{preset.label}</p>
+                    <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{preset.label}</p>
                     <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug line-clamp-2">{preset.description}</p>
                   </button>
                 );
@@ -316,7 +316,7 @@ function Section({ title, icon, description, children }: { title: string; icon: 
           {icon}
         </span>
         <div className="min-w-0">
-          <h3 className="text-base font-black text-[var(--text-primary)] leading-tight">{title}</h3>
+          <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">{title}</h3>
           {description && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{description}</p>}
         </div>
       </div>
@@ -378,7 +378,7 @@ function PillGroup<T extends string>({
               key={opt.id}
               type="button"
               onClick={() => onChange(opt.id)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 h-9 text-xs font-black border-2 transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 h-9 text-xs font-extrabold border-2 transition-all ${
                 active
                   ? "border-[var(--accent)] bg-[var(--accent)] text-white"
                   : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
@@ -403,15 +403,15 @@ function DesignPreview({ tokens }: { tokens: DesignTokens }) {
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden shadow-lg">
       <div className="px-4 py-2.5 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] flex items-center gap-2">
         <Eye className="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
-        <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)]">Vista previa en vivo</span>
+        <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Vista previa en vivo</span>
       </div>
       <div className="p-5 tenant-theme" style={{ ...style, fontFamily: font.stack, color: tokens.textColor, background: tokens.backgroundColor }}>
         {/* Mini hero */}
         <div className="mb-4">
-          <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider mb-1.5" style={{ color: tokens.primaryColor }}>
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider mb-1.5" style={{ color: tokens.primaryColor }}>
             Tu negocio
           </p>
-          <h1 className="font-black leading-tight tracking-tight" style={{ fontSize: "1.5rem", color: tokens.textColor }}>
+          <h1 className="font-extrabold leading-tight tracking-tight" style={{ fontSize: "1.5rem", color: tokens.textColor }}>
             Mi tienda pública
           </h1>
           <p className="text-xs mt-1" style={{ color: `${tokens.textColor}aa` }}>
@@ -434,7 +434,7 @@ function DesignPreview({ tokens }: { tokens: DesignTokens }) {
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            className="px-4 h-10 text-xs font-black inline-flex items-center justify-center"
+            className="px-4 h-10 text-xs font-extrabold inline-flex items-center justify-center"
             style={{
               borderRadius: tokens.borderRadius === "square" ? "0" : tokens.borderRadius === "soft" ? "6px" : tokens.borderRadius === "rounded" ? "14px" : "9999px",
               background: tokens.buttonStyle === "solid" ? tokens.primaryColor : tokens.buttonStyle === "gradient" ? `linear-gradient(135deg, ${tokens.primaryColor}, ${tokens.accentColor})` : "transparent",
@@ -498,7 +498,7 @@ function AISuggestions({
           <Wand2 className="w-5 h-5" strokeWidth={2.25} />
         </span>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-black text-[var(--text-primary)]">Sugerencias con IA</h3>
+          <h3 className="text-base font-extrabold text-[var(--text-primary)]">Sugerencias con IA</h3>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             Contanos qué vendés y armamos 3 estilos que matchean con tu marca.
           </p>
@@ -532,7 +532,7 @@ function AISuggestions({
         type="button"
         onClick={generate}
         disabled={!businessName.trim()}
-        className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-linear-to-r from-violet-600 to-fuchsia-600 text-white h-11 text-sm font-black shadow-md disabled:opacity-40 hover:opacity-90 transition-all"
+        className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-linear-to-r from-violet-600 to-fuchsia-600 text-white h-11 text-sm font-extrabold shadow-md disabled:opacity-40 hover:opacity-90 transition-all"
       >
         <Sparkles className="w-4 h-4" strokeWidth={2.5} />
         Generar 3 sugerencias
@@ -540,7 +540,7 @@ function AISuggestions({
 
       {hasSearched && suggestions.length > 0 && (
         <div className="space-y-2 pt-2">
-          <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
             Top 3 estilos para vos
           </p>
           <div className="grid grid-cols-1 gap-2">
@@ -556,9 +556,9 @@ function AISuggestions({
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-sm font-black text-[var(--text-primary)] truncate">{preset.label}</p>
+                    <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">{preset.label}</p>
                     {idx === 0 && (
-                      <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-linear-to-r from-violet-600 to-fuchsia-600 text-white">Top</span>
+                      <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-linear-to-r from-violet-600 to-fuchsia-600 text-white">Top</span>
                     )}
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] truncate">{preset.description}</p>

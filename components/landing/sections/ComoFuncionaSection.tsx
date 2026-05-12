@@ -51,7 +51,7 @@ export default function ComoFuncionaSection() {
               />
               <T k="landing.how.kicker" fallback="Cómo funciona" />
             </p>
-            <h2 className="text-[clamp(2.5rem,6.5vw,4.5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+            <h2 className="text-[clamp(2.5rem,6.5vw,4.5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               <T k="landing.how.title" fallback="Cuatro pasos." />{" "}
               <br />
               <span className="text-[var(--accent)]">
@@ -84,7 +84,7 @@ export default function ComoFuncionaSection() {
                 {/* Número grande en esquina top-right como elemento de jerarquía. */}
                 <span
                   aria-hidden
-                  className="absolute top-5 right-5 text-3xl font-black tabular-nums tracking-[-0.04em] text-[var(--rule-base)] leading-none select-none transition-colors group-hover:text-[var(--accent)]/30"
+                  className="absolute top-5 right-5 text-3xl font-extrabold tabular-nums tracking-[-0.04em] text-[var(--rule-base)] leading-none select-none transition-colors group-hover:text-[var(--accent)]/30"
                 >
                   {num}
                 </span>
@@ -109,7 +109,7 @@ export default function ComoFuncionaSection() {
                   </span>
                 </div>
 
-                <h3 className="text-xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+                <h3 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
                   <T k={keyTitle} />
                 </h3>
                 <p className="mt-2.5 text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -137,7 +137,7 @@ export default function ComoFuncionaSection() {
                 key={keyLab}
                 className="border-l-2 border-[var(--accent)] pl-4"
               >
-                <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tabular-nums tracking-[-0.03em] text-[var(--text-primary)] leading-none">
+                <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold tabular-nums tracking-[-0.03em] text-[var(--text-primary)] leading-none">
                   <T k={keyVal} />
                 </p>
                 <p className="mt-2 text-xs font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">

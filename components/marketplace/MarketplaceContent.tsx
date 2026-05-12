@@ -273,7 +273,7 @@ export default function MarketplaceContent(_props: MarketplaceContentProps = {})
             />
             Para bodegueros
           </p>
-          <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
+          <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-extrabold tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
             ¿Tienes una tienda?{" "}
             <br />
             <span className="italic font-serif text-[var(--accent)]">

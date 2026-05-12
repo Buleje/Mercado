@@ -53,10 +53,10 @@ export default function MarketplacePriceRangesStrip() {
   return (
     <section>
       <header className="px-1 mb-4 sm:mb-5">
-        <p className="text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+        <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
           Compra por presupuesto
         </p>
-        <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           ¿Cuánto querés gastar hoy?
         </h2>
       </header>
@@ -77,26 +77,26 @@ export default function MarketplacePriceRangesStrip() {
             </span>
 
             <div className="relative">
-              <p className="text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 {r.label}
               </p>
-              <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-black tracking-[-0.035em] text-[var(--text-primary)] mt-1 leading-none">
+              <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.035em] text-[var(--text-primary)] mt-1 leading-none">
                 {r.big}
               </p>
-              <p className="mt-2.5 text-sm sm:text-base font-black text-[var(--text-secondary)]">
+              <p className="mt-2.5 text-sm sm:text-base font-extrabold text-[var(--text-secondary)]">
                 {r.description}
               </p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {r.examples.map((e) => (
                   <span
                     key={e}
-                    className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black text-[var(--text-tertiary)]"
+                    className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-tertiary)]"
                   >
                     {e}
                   </span>
                 ))}
               </div>
-              <div className="mt-4 inline-flex items-center gap-1 text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--text-primary)] transition-all group-hover:gap-1.5 group-hover:text-[var(--accent)]">
+              <div className="mt-4 inline-flex items-center gap-1 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] transition-all group-hover:gap-1.5 group-hover:text-[var(--accent)]">
                 Ver productos
                 <ArrowUpRight
                   className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"

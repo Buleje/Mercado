@@ -10,7 +10,7 @@
  *   - Mis presets   → library de presets guardados.
  *
  * IMPORTANTE: Este page vive dentro del SUPERADMIN, así que usa la paleta
- * de plataforma (--accent, --ls-wider, font-black) y NO los tokens
+ * de plataforma (--accent, --ls-wider, font-extrabold) y NO los tokens
  * de negocio que se editan acá. Los tokens del negocio aparecen solo en
  * el `<PreviewPane>` (sandbox visual) y se aplican al admin del negocio
  * vía `<DesignTokensProvider>` envolviendo `app/admin/layout.tsx`.
@@ -482,7 +482,7 @@ function PresetCard({
           {preset.meta.author === "buleje" ? "Oficial" : "Custom"}
         </span>
         <h3
-          className="mt-1.5 text-xl font-black leading-tight tracking-tight"
+          className="mt-1.5 text-xl font-extrabold leading-tight tracking-tight"
           style={{ color: preset.colors.textPrimary }}
         >
           {preset.meta.name}

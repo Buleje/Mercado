@@ -136,7 +136,7 @@ const MATRIX: Array<{ id: string; name: string } & Record<Feature["key"], boolea
 function YapeMockup() {
   // Mockup visual de un pago Yape — no es un QR real, es decorativo.
   return (
-    <div className="relative mx-auto w-full max-w-xs aspect-[9/16] rounded-3xl bg-white shadow-2xl shadow-black/30 overflow-hidden border-[10px] border-[var(--text-primary)]">
+    <div className="relative mx-auto w-full max-w-xs aspect-[9/16] rounded-3xl bg-white shadow-[var(--shadow-xl)] shadow-black/30 overflow-hidden border-[10px] border-[var(--text-primary)]">
       {/* Status bar mockup */}
       <div className="absolute inset-x-0 top-0 h-6 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] bg-white">
         9:41
@@ -145,7 +145,7 @@ function YapeMockup() {
         <p className="text-xs font-bold uppercase tracking-wider text-white/70">
           Buleje · Bodega Yarinacocha
         </p>
-        <p className="mt-2 text-3xl font-black text-white tabular-nums leading-tight">
+        <p className="mt-2 text-3xl font-extrabold text-white tabular-nums leading-tight">
           S/ 24<span className="text-white/60">.50</span>
         </p>
         <p className="mt-1 text-xs text-white/80">
@@ -171,7 +171,7 @@ function YapeMockup() {
           <p className="text-xs font-bold uppercase tracking-wider text-white/80">
             Confirma con tu huella
           </p>
-          <p className="mt-0.5 text-sm font-black text-white">
+          <p className="mt-0.5 text-sm font-extrabold text-white">
             Yapear S/ 24.50
           </p>
         </div>
@@ -208,13 +208,13 @@ function MethodCard({ method }: { method: Method }) {
         <div className="flex-1 min-w-0">
           <p
             className={[
-              "text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] mb-1",
+              "text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-1",
               isInk ? "opacity-80" : "text-[var(--text-tertiary)]",
             ].join(" ")}
           >
             {method.eyebrow}
           </p>
-          <h3 className="font-display text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] leading-tight">
+          <h3 className="font-display text-xl sm:text-2xl font-extrabold tracking-[var(--ls-tight)] leading-tight">
             {method.title}
           </h3>
         </div>
@@ -235,7 +235,7 @@ function MethodCard({ method }: { method: Method }) {
             <span
               aria-hidden
               className={[
-                "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums",
+                "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-extrabold tabular-nums",
                 isInk
                   ? "bg-white/20 text-white"
                   : "bg-[var(--accent-soft)] text-[var(--accent)]",
@@ -260,11 +260,11 @@ export default function ComoPagarClient() {
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       {/* ════════════════════════ HERO ════════════════════════ */}
       <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-8 sm:pb-10">
-        <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
+        <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
           <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           Pagas como prefieras
         </p>
-        <h1 className="font-display text-[clamp(2.25rem,5.5vw,3.75rem)] font-black tracking-[-0.03em] leading-[0.95] text-[var(--text-primary)] max-w-3xl">
+        <h1 className="font-display text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold tracking-[-0.03em] leading-[0.95] text-[var(--text-primary)] max-w-3xl">
           5 maneras reales de pagar.<br className="hidden sm:block" /> Vos eliges cual.
         </h1>
         <p className="mt-5 text-lg sm:text-xl text-[var(--text-secondary)] leading-[1.4] max-w-2xl">
@@ -275,7 +275,7 @@ export default function ComoPagarClient() {
         {/* Social proof stats */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl">
           <div className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-4 py-3.5">
-            <p className="font-display text-2xl font-black text-[var(--accent)] tabular-nums leading-none">
+            <p className="font-display text-2xl font-extrabold text-[var(--accent)] tabular-nums leading-none">
               87%
             </p>
             <p className="mt-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]">
@@ -283,7 +283,7 @@ export default function ComoPagarClient() {
             </p>
           </div>
           <div className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-4 py-3.5">
-            <p className="font-display text-2xl font-black text-[var(--text-primary)] tabular-nums leading-none flex items-baseline gap-0.5">
+            <p className="font-display text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none flex items-baseline gap-0.5">
               &lt;30<span className="text-base text-[var(--text-tertiary)]">s</span>
             </p>
             <p className="mt-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]">
@@ -291,7 +291,7 @@ export default function ComoPagarClient() {
             </p>
           </div>
           <div className="col-span-2 sm:col-span-1 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-4 py-3.5">
-            <p className="font-display text-2xl font-black text-[var(--text-primary)] tabular-nums leading-none">
+            <p className="font-display text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
               0
             </p>
             <p className="mt-1 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)]">
@@ -324,11 +324,11 @@ export default function ComoPagarClient() {
             <div className="md:col-span-3 order-2 md:order-1">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3 py-1 mb-4">
                 <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
-                <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)]">
+                <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)]">
                   El mas usado en Pucallpa
                 </span>
               </div>
-              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black leading-[0.95] tracking-tight">
+              <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[0.95] tracking-tight">
                 Yape. Instantaneo, sin comision, desde tu celular.
               </h2>
               <p className="mt-4 text-base sm:text-lg text-white/85 leading-relaxed max-w-xl">
@@ -352,12 +352,12 @@ export default function ComoPagarClient() {
                       className="rounded-2xl bg-white/10 backdrop-blur p-4 border border-white/15"
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-[length:var(--ts-xs)] font-black tabular-nums">
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-[length:var(--ts-xs)] font-extrabold tabular-nums">
                           {step.n}
                         </span>
                         <Icon className="h-4 w-4 text-white/70" strokeWidth={1.75} />
                       </div>
-                      <p className="text-sm font-black leading-tight">{step.t}</p>
+                      <p className="text-sm font-extrabold leading-tight">{step.t}</p>
                       <p className="mt-0.5 text-[length:var(--ts-xs)] text-white/70 leading-snug">
                         {step.d}
                       </p>
@@ -378,7 +378,7 @@ export default function ComoPagarClient() {
                 </span>
                 <Link
                   href="/tiendas"
-                  className="ml-auto inline-flex items-center gap-2 rounded-full bg-white text-[var(--accent)] px-5 py-2.5 text-sm font-black hover:bg-white/95 transition-colors"
+                  className="ml-auto inline-flex items-center gap-2 rounded-full bg-white text-[var(--accent)] px-5 py-2.5 text-sm font-extrabold hover:bg-white/95 transition-colors"
                 >
                   Probar ahora
                   <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
@@ -397,10 +397,10 @@ export default function ComoPagarClient() {
       {/* ════════════════════════ TABLA COMPARATIVA ════════════════════════ */}
       <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
         <div className="mb-6 sm:mb-8 max-w-2xl">
-          <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             En 1 vistazo
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             ¿Cual te conviene?
           </h2>
           <p className="mt-2 text-base text-[var(--text-secondary)]">
@@ -412,13 +412,13 @@ export default function ComoPagarClient() {
           <table className="w-full text-left min-w-[640px]">
             <thead>
               <tr className="border-b border-[var(--rule-soft)]">
-                <th className="sticky left-0 bg-[var(--surface-raised)] px-4 sm:px-5 py-4 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <th className="sticky left-0 bg-[var(--surface-raised)] px-4 sm:px-5 py-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   Metodo
                 </th>
                 {FEATURES.map((f) => (
                   <th
                     key={f.key}
-                    className="px-3 py-4 text-center text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
+                    className="px-3 py-4 text-center text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
                   >
                     {f.label}
                   </th>
@@ -437,7 +437,7 @@ export default function ComoPagarClient() {
                 >
                   <th
                     scope="row"
-                    className="sticky left-0 bg-inherit px-4 sm:px-5 py-4 font-black text-[var(--text-primary)] whitespace-nowrap"
+                    className="sticky left-0 bg-inherit px-4 sm:px-5 py-4 font-extrabold text-[var(--text-primary)] whitespace-nowrap"
                   >
                     {row.id === "yape" && (
                       <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent)] mr-2" aria-hidden />
@@ -481,10 +481,10 @@ export default function ComoPagarClient() {
       {/* ════════════════════════ OTROS METODOS ════════════════════════ */}
       <section id="metodos" className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 scroll-mt-24">
         <div className="mb-6 sm:mb-8 max-w-2xl">
-          <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Otros metodos
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
             Si Yape no te queda, hay 4 maneras mas.
           </h2>
         </div>
@@ -501,10 +501,10 @@ export default function ComoPagarClient() {
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             <div className="md:col-span-1">
-              <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
                 ¿Es tu primera vez?
               </p>
-              <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                 No tienes Yape todavia?
               </h2>
               <p className="mt-3 text-base text-[var(--text-secondary)] leading-relaxed">
@@ -546,11 +546,11 @@ export default function ComoPagarClient() {
                   className="rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-white text-sm font-black tabular-nums">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-white text-sm font-extrabold tabular-nums">
                       {step.n}
                     </span>
                   </div>
-                  <p className="font-black text-base text-[var(--text-primary)] leading-tight">
+                  <p className="font-extrabold text-base text-[var(--text-primary)] leading-tight">
                     {step.t}
                   </p>
                   <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -566,10 +566,10 @@ export default function ComoPagarClient() {
       {/* ════════════════════════ FAQ AMPLIADO ════════════════════════ */}
       <section className="py-14 sm:py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Te aclaramos todas las dudas
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] mb-8">
+          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] mb-8">
             Preguntas frecuentes
           </h2>
 
@@ -631,11 +631,11 @@ export default function ComoPagarClient() {
       {/* ════════════════════════ CTA BOTTOM ════════════════════════ */}
       <section className="bg-[var(--text-primary)] text-[var(--surface-canvas)]">
         <div className="max-w-3xl mx-auto px-4 py-16 sm:py-20 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white/90 mb-5">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/90 mb-5">
             <Users className="h-3.5 w-3.5" strokeWidth={2} />
             Bodegas activas en Pucallpa
           </span>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
             Ya sabes como pagar. Falta solo el pedido.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/70 max-w-xl mx-auto">
@@ -645,14 +645,14 @@ export default function ComoPagarClient() {
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/tiendas"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-black text-white hover:bg-[var(--accent)]/90 transition-colors shadow-lg shadow-[var(--accent)]/30"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-extrabold text-white hover:bg-[var(--accent)]/90 transition-colors shadow-lg shadow-[var(--accent)]/30"
             >
               Ver bodegas activas
               <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
             </Link>
             <Link
               href="/marketplace/ofertas"
-              className="inline-flex items-center gap-2 rounded-full border-2 border-white/30 px-6 py-3.5 text-sm font-black text-white hover:bg-white/10 transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-white/30 px-6 py-3.5 text-sm font-extrabold text-white hover:bg-white/10 transition-colors"
             >
               Ver ofertas del dia
             </Link>

@@ -150,7 +150,7 @@ export default function HorariosModal({
                   Hasta abrir
                 </p>
                 <p
-                  className="font-mono tabular-nums text-3xl sm:text-4xl font-black leading-none"
+                  className="font-mono tabular-nums text-3xl sm:text-4xl font-extrabold leading-none"
                   aria-live="polite"
                   aria-label={`Faltan ${countdown.h} horas ${countdown.m} minutos`}
                 >
@@ -166,7 +166,7 @@ export default function HorariosModal({
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] opacity-60">
                   Estado
                 </p>
-                <p className="text-2xl sm:text-3xl font-black leading-tight">
+                <p className="text-2xl sm:text-3xl font-extrabold leading-tight">
                   {isOpenNow ? "Abierta ahora" : "Cerrada"}
                 </p>
               </>
@@ -179,7 +179,7 @@ export default function HorariosModal({
       <div className="px-6 pt-5 pb-4 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)]">
         <h2
           id="modal-title"
-          className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text-primary)] leading-tight truncate"
+          className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight truncate"
         >
           {storeName}
         </h2>
@@ -233,7 +233,7 @@ export default function HorariosModal({
               >
                 <span
                   className={cn(
-                    "text-[length:var(--ts-xs)] font-black uppercase tracking-wider",
+                    "text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider",
                     isToday
                       ? "text-[var(--accent)]"
                       : closed
@@ -289,7 +289,7 @@ export default function HorariosModal({
               </p>
               <p
                 className={cn(
-                  "mt-1 text-2xl sm:text-3xl font-black tracking-tight leading-tight",
+                  "mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight",
                   todayClosed ? "text-[var(--data-warning-700)]" : "text-[var(--accent)]",
                 )}
               >

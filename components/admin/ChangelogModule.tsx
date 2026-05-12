@@ -81,10 +81,10 @@ const RELEASES: Release[] = [
     version: "v2.0.0",
     date: "2026 Q3 (futuro)",
     status: "planned",
-    summary: "Arquitectura multi-tienda, app nativa y IA.",
+    summary: "Arquitectura multi-tienda + IA + PWA instalable.",
     changes: [
       { type: "feat", text: "Multi-sede: gestionar múltiples bodegas desde un solo panel" },
-      { type: "feat", text: "App móvil nativa con Capacitor (iOS + Android)" },
+      { type: "feat", text: "PWA instalable (home screen Android/iOS + push notifications)" },
       { type: "feat", text: "Motor de recomendaciones con IA (collaborative filtering)" },
       { type: "feat", text: "Facturación electrónica SUNAT integrada" },
     ],

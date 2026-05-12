@@ -109,7 +109,7 @@ export default function ExplorarHeroSearch() {
         </p>
 
         {/* ── Title + sub ───────────────────────────────────── */}
-        <h1 className="font-display font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.9] text-[clamp(3rem,9vw,6.5rem)] max-w-4xl">
+        <h1 className="font-display font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.9] text-[clamp(3rem,9vw,6.5rem)] max-w-4xl">
           Todo Pucallpa,{" "}
           <span className="text-[var(--accent)]">en un toque.</span>
         </h1>
@@ -154,7 +154,7 @@ export default function ExplorarHeroSearch() {
           </button>
           <button
             type="submit"
-            className="rounded-xl m-1.5 px-6 sm:px-8 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base sm:text-lg font-black uppercase tracking-wider hover:bg-[var(--accent)] transition-colors"
+            className="rounded-xl m-1.5 px-6 sm:px-8 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base sm:text-lg font-extrabold uppercase tracking-wider hover:bg-[var(--accent)] transition-colors"
           >
             Buscar
           </button>
@@ -194,10 +194,10 @@ export default function ExplorarHeroSearch() {
           <div className="grid grid-cols-4 gap-3 sm:gap-6">
             {STATS.map((s) => (
               <div key={s.label} className="text-center sm:text-left group cursor-default">
-                <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-black tabular-nums tracking-tight text-[var(--text-primary)] leading-none transition-colors group-hover:text-[var(--accent)]">
+                <p className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)] leading-none transition-colors group-hover:text-[var(--accent)]">
                   {s.value}
                 </p>
-                <p className="mt-1.5 text-[length:var(--ts-2xs)] sm:text-xs font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <p className="mt-1.5 text-[length:var(--ts-2xs)] sm:text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   {s.label}
                 </p>
               </div>

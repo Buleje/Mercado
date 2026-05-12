@@ -529,7 +529,7 @@ function ProofModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-4xl max-h-[92vh] flex-col overflow-hidden rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-2xl"
+        className="flex w-full max-w-4xl max-h-[92vh] flex-col overflow-hidden rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">

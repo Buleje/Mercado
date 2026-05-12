@@ -81,7 +81,7 @@ function StepCard({ step, cardRef }: { step: typeof STEPS[0]; cardRef: React.Ref
             style={{ color: step.color, filter: `drop-shadow(0 4px 8px ${step.shadow})` }}
           />
           <span
-            className="absolute -top-2 -right-2 flex items-center justify-center h-7 w-7 rounded-full text-xs font-black text-white"
+            className="absolute -top-2 -right-2 flex items-center justify-center h-7 w-7 rounded-full text-xs font-extrabold text-white"
             style={{
               background: `linear-gradient(135deg, ${step.color}, ${step.color}bb)`,
               boxShadow: `0 4px 12px ${step.shadow}`,

@@ -159,7 +159,7 @@ export function OrdersList({
                 {/* Avatar inicial */}
                 <span
                   aria-hidden
-                  className="hidden sm:inline-flex h-12 w-12 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-lg font-black tracking-tight self-start"
+                  className="hidden sm:inline-flex h-12 w-12 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-lg font-extrabold tracking-tight self-start"
                 >
                   {initial}
                 </span>
@@ -270,7 +270,7 @@ export function OrdersList({
                       <Package className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
                       {o.items.length} {o.items.length === 1 ? "producto" : "productos"}
                     </span>
-                    <span className="inline-flex items-center gap-1 ml-auto sm:ml-0 font-black tabular-nums text-[var(--text-primary)] text-base">
+                    <span className="inline-flex items-center gap-1 ml-auto sm:ml-0 font-extrabold tabular-nums text-[var(--text-primary)] text-base">
                       S/{Number(o.total).toFixed(2)}
                     </span>
                   </div>

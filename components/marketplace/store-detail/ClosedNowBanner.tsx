@@ -69,7 +69,7 @@ export default function ClosedNowBanner({ hours, nextOpeningAt, storeName }: Clo
             {countdown && !countdown.expired ? (
               <>
                 <p
-                  className="font-mono tabular-nums text-base sm:text-lg font-black leading-none whitespace-nowrap"
+                  className="font-mono tabular-nums text-base sm:text-lg font-extrabold leading-none whitespace-nowrap"
                   aria-label={`Faltan ${countdown.h} horas ${countdown.m} minutos para abrir`}
                 >
                   {pad(countdown.h)}

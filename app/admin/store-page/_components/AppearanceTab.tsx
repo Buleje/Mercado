@@ -489,7 +489,7 @@ function HeroEditor({
             <Type className="h-5 w-5" strokeWidth={2} />
           </span>
           <div className="min-w-0">
-            <h3 className="text-lg font-black text-[var(--text-primary)] tracking-tight leading-tight">
+            <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
               Hero · lo primero que ve el cliente
             </h3>
             <p className="text-xs text-[var(--text-secondary)] leading-snug">
@@ -500,7 +500,7 @@ function HeroEditor({
         <button
           type="button"
           onClick={() => setShowTemplates((s) => !s)}
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-3.5 h-9 text-xs font-black hover:bg-[var(--accent)]/90 transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] text-white px-3.5 h-9 text-xs font-extrabold hover:bg-[var(--accent)]/90 transition-colors"
         >
           <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
           {showTemplates ? "Ocultar plantillas" : "Usar plantilla"}
@@ -510,7 +510,7 @@ function HeroEditor({
       {/* Plantillas — desplegable */}
       {showTemplates && (
         <div className="px-5 py-4 bg-[var(--surface-sunken)]/40 border-b border-[var(--rule-soft)]">
-          <p className="text-xs font-black uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
             Elegí una plantilla · sobrescribe título, subtítulo y botón
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -523,7 +523,7 @@ function HeroEditor({
               >
                 <div className="flex items-center gap-2 mb-1.5">
                   <span aria-hidden className="text-lg">{tpl.emoji}</span>
-                  <span className="text-sm font-black text-[var(--text-primary)]">{tpl.label}</span>
+                  <span className="text-sm font-extrabold text-[var(--text-primary)]">{tpl.label}</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] leading-snug">
                   {tpl.description}
@@ -544,10 +544,10 @@ function HeroEditor({
           {/* Completeness bar */}
           <div className="rounded-lg bg-[var(--surface-sunken)]/60 border border-[var(--rule-soft)] px-3.5 py-2.5">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Completitud del hero
               </span>
-              <span className="text-xs font-black tabular-nums text-[var(--text-primary)]">
+              <span className="text-xs font-extrabold tabular-nums text-[var(--text-primary)]">
                 {completeness}%
               </span>
             </div>
@@ -652,7 +652,7 @@ function HeroEditor({
         {/* ── Preview en vivo ── */}
         <div className="p-5 bg-[var(--surface-sunken)]/30 flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
               Vista previa en vivo
             </p>
             <div role="group" aria-label="Modo de vista previa" className="inline-flex items-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] p-0.5">
@@ -725,7 +725,7 @@ function HeroPreviewDesktop({ title, subtitle, imageUrl, ctaLabel, primaryColor,
         }}
       />
       <div className="absolute inset-0 flex flex-col justify-center px-5 py-4">
-        <p className="text-white text-base font-black leading-tight tracking-tight drop-shadow-md line-clamp-2">
+        <p className="text-white text-base font-extrabold leading-tight tracking-tight drop-shadow-md line-clamp-2">
           {title || "Tu título aparece aquí"}
         </p>
         <p className="mt-1.5 text-white/85 text-[length:var(--ts-2xs)] leading-snug drop-shadow-md line-clamp-2">
@@ -769,7 +769,7 @@ function HeroPreviewMobile({ title, subtitle, imageUrl, ctaLabel, primaryColor, 
         }}
       />
       <div className="absolute inset-x-0 bottom-0 top-4 flex flex-col justify-end px-4 pb-5">
-        <p className="text-white text-sm font-black leading-tight tracking-tight drop-shadow-md line-clamp-3">
+        <p className="text-white text-sm font-extrabold leading-tight tracking-tight drop-shadow-md line-clamp-3">
           {title || "Tu título"}
         </p>
         <p className="mt-1.5 text-white/85 text-[length:var(--ts-2xs)] leading-snug drop-shadow-md line-clamp-3">
@@ -777,7 +777,7 @@ function HeroPreviewMobile({ title, subtitle, imageUrl, ctaLabel, primaryColor, 
         </p>
         {ctaLabel && (
           <span
-            className="mt-2.5 inline-flex items-center justify-center gap-1 rounded-full bg-white py-1.5 text-[length:var(--ts-2xs)] font-black self-stretch"
+            className="mt-2.5 inline-flex items-center justify-center gap-1 rounded-full bg-white py-1.5 text-[length:var(--ts-2xs)] font-extrabold self-stretch"
             style={{ color: primaryColor }}
           >
             {ctaLabel}

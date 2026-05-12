@@ -56,7 +56,7 @@ export default function NosotrosSection() {
             />
             <T k="about.kicker" fallback="Nosotros" />
           </p>
-          <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+          <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-extrabold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
             <T k="about.headline1" fallback="El sistema que pone" />{" "}
             <br />
             <span className="text-[var(--accent)]">
@@ -83,7 +83,7 @@ export default function NosotrosSection() {
           <figcaption className="mt-5 inline-flex items-center gap-3">
             <span
               aria-hidden
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] font-black text-sm"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] font-extrabold text-sm"
             >
               B
             </span>
@@ -108,7 +108,7 @@ export default function NosotrosSection() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 {label}
               </p>
-              <p className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-[-0.03em] tabular-nums text-[var(--text-primary)] leading-none">
+              <p className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.03em] tabular-nums text-[var(--text-primary)] leading-none">
                 {value === "0%" ? (
                   <>
                     <span className="text-[var(--accent)]">0</span>
@@ -139,7 +139,7 @@ export default function NosotrosSection() {
                 >
                   <Icon className="h-5 w-5" strokeWidth={2} />
                 </span>
-                <h3 className="text-lg font-black tracking-tight text-[var(--text-primary)] leading-tight">
+                <h3 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
                   <T k={keyTitle} />
                 </h3>
                 <p className="mt-2.5 text-sm text-[var(--text-secondary)] leading-relaxed">

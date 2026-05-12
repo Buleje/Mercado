@@ -684,7 +684,7 @@ export function NavegacionTab() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-6 right-6 z-50 flex items-start gap-3 rounded-2xl border border-[var(--data-success-500)]/30 bg-[var(--surface-raised)] px-5 py-3.5 shadow-2xl animate-[fadeUp_0.3s_ease-out]"
+          className="fixed bottom-6 right-6 z-50 flex items-start gap-3 rounded-2xl border border-[var(--data-success-500)]/30 bg-[var(--surface-raised)] px-5 py-3.5 shadow-[var(--shadow-xl)] animate-[fadeUp_0.3s_ease-out]"
         >
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]">
             <CheckCircle2 className="h-5 w-5" strokeWidth={2} />

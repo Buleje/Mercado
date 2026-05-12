@@ -278,7 +278,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             {/* Columna izq: contenido principal */}
             <div className="text-left">
               {/* Eyebrow con estado live */}
-              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-white/85 mb-5">
+              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/85 mb-5">
                 <span aria-hidden className="relative inline-flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-60 animate-ping" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -292,7 +292,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 )}
               </p>
 
-              <h1 className="font-display text-[clamp(2.5rem,7vw,4.5rem)] font-black text-white tracking-[var(--ls-tight)] leading-[0.95] mb-5">
+              <h1 className="font-display text-[clamp(2.5rem,7vw,4.5rem)] font-extrabold text-white tracking-[var(--ls-tight)] leading-[0.95] mb-5">
                 {heroTitle}
               </h1>
 
@@ -304,7 +304,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
               {/* Exclusive prices badge */}
               {exclusiveCount > 0 && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-black text-sm mb-5">
+                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-extrabold text-sm mb-5">
                   <Sparkles className="w-4 h-4" strokeWidth={2.5} aria-hidden />
                   {exclusiveCount} {exclusiveCount === 1 ? "precio exclusivo hoy" : "precios exclusivos hoy"}
                 </div>
@@ -317,7 +317,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     href={`https://wa.me/${(customization.whatsappPhone ?? tenant.ownerPhone ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${displayName}, quiero hacer un pedido.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex items-center gap-2 px-6 h-12 rounded-full bg-white font-black text-sm hover:gap-2.5 transition-all shadow-xl"
+                    className="group inline-flex items-center gap-2 px-6 h-12 rounded-full bg-white font-extrabold text-sm hover:gap-2.5 transition-all shadow-xl"
                     style={{ color: primary }}
                   >
                     <MessageCircle className="w-4 h-4" strokeWidth={2.75} />
@@ -327,7 +327,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 )}
                 <Link
                   href={`/t/${tenant.slug}/tienda`}
-                  className="inline-flex items-center gap-2 px-6 h-12 rounded-full border-2 border-white/40 text-white font-black text-sm hover:bg-white/15 backdrop-blur transition-all"
+                  className="inline-flex items-center gap-2 px-6 h-12 rounded-full border-2 border-white/40 text-white font-extrabold text-sm hover:bg-white/15 backdrop-blur transition-all"
                 >
                   <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
                   Ver catálogo
@@ -363,7 +363,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 />
                 <div
                   aria-hidden
-                  className="relative w-48 h-48 rounded-full bg-white/10 backdrop-blur-md border-2 border-white/20 flex items-center justify-center shadow-2xl"
+                  className="relative w-48 h-48 rounded-full bg-white/10 backdrop-blur-md border-2 border-white/20 flex items-center justify-center shadow-[var(--shadow-xl)]"
                 >
                   {tenant.logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -373,7 +373,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                       className="w-32 h-32 rounded-full object-cover"
                     />
                   ) : (
-                    <span className="text-7xl font-black text-white tracking-[var(--ls-tight)]">
+                    <span className="text-7xl font-extrabold text-white tracking-[var(--ls-tight)]">
                       {logoText}
                     </span>
                   )}
@@ -384,7 +384,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             {/* Logo compacto solo en mobile */}
             <div className="lg:hidden order-first flex items-center gap-3">
               <span
-                className="inline-flex w-16 h-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border-2 border-white/25 text-white text-xl font-black shadow-lg overflow-hidden"
+                className="inline-flex w-16 h-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border-2 border-white/25 text-white text-xl font-extrabold shadow-lg overflow-hidden"
               >
                 {tenant.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -553,7 +553,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             <div className="mt-6 text-center">
               <Link
                 href={`/t/${tenant.slug}/tienda`}
-                className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 h-11 text-sm font-black text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 h-11 text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
               >
                 Ver catalogo completo
                 <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
@@ -567,10 +567,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {featured.length === 0 && !isPreview && (
         <section className="max-w-5xl mx-auto px-4 py-12">
           <div className="mb-8 text-center max-w-2xl mx-auto">
-            <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
               Cómo pedir
             </p>
-            <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+            <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
               Hacé tu pedido en 3 pasos
             </h2>
           </div>
@@ -603,7 +603,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <p
-                      className="font-display text-[2rem] font-black leading-none text-[var(--rule-base)] tabular-nums"
+                      className="font-display text-[2rem] font-extrabold leading-none text-[var(--rule-base)] tabular-nums"
                     >
                       {step.n}
                     </p>
@@ -614,7 +614,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                       <FIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
                     </span>
                   </div>
-                  <h3 className="text-base font-black text-[var(--text-primary)] leading-tight">
+                  <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                     {step.title}
                   </h3>
                   <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -627,7 +627,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           <div className="mt-8 text-center">
             <Link
               href={`/t/${tenant.slug}/tienda`}
-              className="inline-flex items-center gap-2 rounded-full text-white px-6 h-12 text-sm font-black shadow-lg transition-all hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-full text-white px-6 h-12 text-sm font-extrabold shadow-lg transition-all hover:opacity-90"
               style={{ background: primary }}
             >
               <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
@@ -644,10 +644,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           quiere saber antes de comprar. */}
       <section id="info" className="max-w-5xl mx-auto px-4 py-10 scroll-mt-20">
         <div className="mb-6">
-          <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
             Información del negocio
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
             Lo que tenés que saber de {displayName}
           </h2>
         </div>
@@ -934,10 +934,10 @@ function InfoCard({
           {icon}
         </span>
       </div>
-      <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
         {label}
       </p>
-      <p className="text-base font-black text-[var(--text-primary)] leading-tight">
+      <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
         {value}
       </p>
       {hint && (

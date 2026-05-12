@@ -163,7 +163,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
         <Dialog.Overlay className="fixed inset-0 z-[8000] bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[8001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[92vh] flex flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-2xl overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-[8001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[92vh] flex flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] overflow-hidden"
         >
           {/* Header */}
           <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] flex items-center gap-3">

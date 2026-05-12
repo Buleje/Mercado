@@ -494,7 +494,7 @@ export function AuthSessionsTab() {
       <AlertDialog.Root open={revokeOpen} onOpenChange={setRevokeOpen}>
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="fixed inset-0 z-[60] bg-black/65 backdrop-blur-sm" />
-          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-2xl p-6">
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-[var(--shadow-xl)] p-6">
             <div className="flex items-start gap-3">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]">
                 <AlertTriangle className="h-5 w-5" strokeWidth={1.75} aria-hidden />

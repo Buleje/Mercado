@@ -64,10 +64,10 @@ export default function MarketplaceBestsellersStrip() {
           </span>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+              <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
                 Más vendidos
               </h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-1 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-white shadow-md shadow-md/30">
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white shadow-md shadow-md/30">
                 <TrendingUp className="h-2.5 w-2.5" strokeWidth={3} />
                 Esta semana
               </span>
@@ -79,7 +79,7 @@ export default function MarketplaceBestsellersStrip() {
         </div>
         <Link
           href="/marketplace?sort=bestsellers"
-          className="group inline-flex items-center gap-1 text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors shrink-0"
+          className="group inline-flex items-center gap-1 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors shrink-0"
         >
           Ver todos
           <ChevronRight
@@ -148,14 +148,14 @@ function BestsellerCard({
         )}
 
         {hasDiscount && (
-          <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-0.5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-md/30">
+          <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md shadow-md/30">
             <Flame className="h-3 w-3" strokeWidth={2.75} />
             -{Math.round(((item.oldPrice! - item.price) / item.oldPrice!) * 100)}%
           </span>
         )}
 
         {isTopThree && (
-          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/30">
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/30">
             TOP {rank}
           </span>
         )}
@@ -163,24 +163,24 @@ function BestsellerCard({
 
       {/* Body */}
       <div className="relative p-3.5 space-y-1.5">
-        <h3 className="font-display text-base font-black text-[var(--text-primary)] line-clamp-2 leading-tight tracking-tight">
+        <h3 className="font-display text-base font-extrabold text-[var(--text-primary)] line-clamp-2 leading-tight tracking-tight">
           {item.name}
         </h3>
-        <p className="text-[length:var(--ts-2xs)] font-black text-[var(--text-tertiary)] truncate uppercase tracking-wider">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-tertiary)] truncate uppercase tracking-wider">
           {item.storeName}
         </p>
         <div className="flex items-baseline justify-between gap-2 pt-1">
           <div className="flex items-baseline gap-1.5 min-w-0">
-            <p className="font-display text-lg sm:text-xl font-black tabular-nums text-[var(--text-primary)] leading-none tracking-tight">
+            <p className="font-display text-lg sm:text-xl font-extrabold tabular-nums text-[var(--text-primary)] leading-none tracking-tight">
               {fmtPrice(item.price)}
             </p>
             {hasDiscount && (
-              <p className="text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--text-tertiary)] line-through leading-none">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--text-tertiary)] line-through leading-none">
                 {fmtPrice(item.oldPrice!)}
               </p>
             )}
           </div>
-          <span className="inline-flex items-center gap-0.5 text-xs font-black text-[var(--text-tertiary)] tabular-nums whitespace-nowrap">
+          <span className="inline-flex items-center gap-0.5 text-xs font-extrabold text-[var(--text-tertiary)] tabular-nums whitespace-nowrap">
             <Flame className="h-3 w-3 text-[var(--accent)]" strokeWidth={2.75} />
             {item.unitsSold}
           </span>

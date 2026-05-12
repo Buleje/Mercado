@@ -1226,7 +1226,7 @@ export function AdminSidebar({
       {configMode && !effectiveCompact && !presentationMode && (
         <aside
           className={cn(
-            "hidden md:flex fixed top-0 bottom-0 z-50 flex-col overflow-hidden border-r shadow-2xl",
+            "hidden md:flex fixed top-0 bottom-0 z-50 flex-col overflow-hidden border-r shadow-[var(--shadow-xl)]",
             themeClasses.border,
           )}
           style={{ left: 0, width: 400 }}
@@ -1345,7 +1345,7 @@ export function AdminSidebar({
           onClick={() => setShowIndustryModal(false)}
         >
           <div
-            className="bg-[var(--surface-raised)] rounded-2xl shadow-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-sm mx-4 p-6"
+            className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-sm mx-4 p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-base font-bold text-[var(--text-primary)] mb-1">

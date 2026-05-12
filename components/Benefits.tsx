@@ -175,7 +175,7 @@ export default function Benefits() {
                   <benefit.icon className="h-8 w-8 text-white mb-3" />
                   {benefit.stat > 0 && (
                     <div className="mb-3">
-                      <div className="text-4xl font-black text-white leading-none">
+                      <div className="text-4xl font-extrabold text-white leading-none">
                         <AnimatedCounter end={benefit.stat} suffix={benefit.statSuffix} duration={1.6} />
                       </div>
                       <div className="text-xs text-white/70 font-medium mt-1">{benefit.statLabel}</div>
@@ -183,7 +183,7 @@ export default function Benefits() {
                   )}
                   {benefit.stat === 0 && (
                     <div className="mb-3">
-                      <div className="text-3xl font-black text-white">S/ 0</div>
+                      <div className="text-3xl font-extrabold text-white">S/ 0</div>
                       <div className="text-xs text-white/70 font-medium mt-1">{benefit.statLabel}</div>
                     </div>
                   )}

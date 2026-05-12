@@ -721,7 +721,7 @@ export default function CatalogoTiendaTab() {
 
       {/* ── 4. STICKY BULK BAR — flota cuando hay selección ────────── */}
       {selected.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[min(640px,calc(100vw-2rem))] flex items-center gap-3 px-4 py-3 rounded-2xl bg-foreground text-background shadow-2xl border-2 border-foreground/20 animate-[fadeUp_0.2s_ease-out_both]">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[min(640px,calc(100vw-2rem))] flex items-center gap-3 px-4 py-3 rounded-2xl bg-foreground text-background shadow-[var(--shadow-xl)] border-2 border-foreground/20 animate-[fadeUp_0.2s_ease-out_both]">
           <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg bg-primary text-white text-xs font-bold tabular-nums">
             {selected.size}
           </span>

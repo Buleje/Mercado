@@ -50,12 +50,12 @@ function AboutBlock({ section, primary }: { section: AboutSection; primary: stri
       <div className={`grid gap-6 ${imageUrl ? "md:grid-cols-2 items-center" : ""}`}>
         <div>
           <p
-            className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] mb-2"
+            className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-2"
             style={{ color: primary }}
           >
             Conocenos
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight mb-4">
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight mb-4">
             {title}
           </h2>
           <p className="text-base text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
@@ -98,17 +98,17 @@ function HoursBlock({ section, primary }: { section: HoursSection; primary: stri
       <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
         <div>
           <p
-            className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] mb-2"
+            className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-2"
             style={{ color: primary }}
           >
             Horarios
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
             {title}
           </h2>
         </div>
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black ${
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold ${
             isOpenNow
               ? "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)]"
               : "bg-[var(--data-error-50,#fef2f2)] text-[var(--data-error-700,#b91c1c)]"
@@ -132,9 +132,9 @@ function HoursBlock({ section, primary }: { section: HoursSection; primary: stri
                 isToday ? "bg-[var(--accent-soft)]/40" : ""
               }`}
             >
-              <span className={`text-sm font-black ${isToday ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}>
+              <span className={`text-sm font-extrabold ${isToday ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}>
                 {DAY_LABELS[row.day]}
-                {isToday && <span className="ml-2 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider opacity-70">Hoy</span>}
+                {isToday && <span className="ml-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider opacity-70">Hoy</span>}
               </span>
               <span className={`text-sm font-bold tabular-nums ${row.open ? "text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]"}`}>
                 {row.open && row.from && row.to
@@ -174,12 +174,12 @@ function PaymentBlock({ section, primary, accent: _accent }: { section: PaymentS
     <section className="max-w-5xl mx-auto px-4 py-10 sm:py-12">
       <div className="mb-6">
         <p
-          className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] mb-2"
+          className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-2"
           style={{ color: primary }}
         >
           Métodos de pago
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
         {subtitle && (
@@ -202,7 +202,7 @@ function PaymentBlock({ section, primary, accent: _accent }: { section: PaymentS
               >
                 <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
               </span>
-              <p className="text-sm font-black text-[var(--text-primary)] leading-tight">{m.label}</p>
+              <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{m.label}</p>
             </div>
           );
         })}
@@ -218,12 +218,12 @@ function HowToOrderBlock({ section, primary }: { section: HowToOrderSection; pri
     <section className="max-w-5xl mx-auto px-4 py-10 sm:py-12">
       <div className="mb-8 text-center max-w-2xl mx-auto">
         <p
-          className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] mb-2"
+          className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-2"
           style={{ color: primary }}
         >
           Cómo pedir
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
         {subtitle && (
@@ -237,7 +237,7 @@ function HowToOrderBlock({ section, primary }: { section: HowToOrderSection; pri
             className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 relative"
           >
             <p
-              className="font-display text-[2.5rem] font-black leading-[0.85] tabular-nums absolute -top-2 right-4"
+              className="font-display text-[2.5rem] font-extrabold leading-[0.85] tabular-nums absolute -top-2 right-4"
               style={{ color: `${primary}25` }}
             >
               {String(i + 1).padStart(2, "0")}
@@ -248,7 +248,7 @@ function HowToOrderBlock({ section, primary }: { section: HowToOrderSection; pri
             >
               <ChevronRight className="h-5 w-5" strokeWidth={2.25} aria-hidden />
             </span>
-            <h3 className="text-base font-black text-[var(--text-primary)] leading-tight">
+            <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
               {step.title}
             </h3>
             <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -268,12 +268,12 @@ function FaqBlock({ section, primary }: { section: FaqSection; primary: string }
     <section className="max-w-3xl mx-auto px-4 py-10 sm:py-12">
       <div className="mb-6">
         <p
-          className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] mb-2"
+          className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-2"
           style={{ color: primary }}
         >
           Preguntas frecuentes
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
       </div>
@@ -320,12 +320,12 @@ function GalleryBlock({ section, primary }: { section: GallerySection; primary: 
     <section className="max-w-6xl mx-auto px-4 py-12 sm:py-16">
       <div className="mb-8 text-center max-w-2xl mx-auto">
         <p
-          className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] mb-2"
+          className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-2"
           style={{ color: primary }}
         >
           Galería
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
         {subtitle && (
@@ -389,12 +389,12 @@ function ImageTextBlock({ section, primary }: { section: ImageTextSection; prima
         {/* Texto */}
         <div>
           <p
-            className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] mb-3"
+            className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-3"
             style={{ color: primary }}
           >
             Historia
           </p>
-          <h2 className="font-display text-3xl sm:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-tight mb-4">
+          <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight mb-4">
             {title}
           </h2>
           <p className="text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap mb-6">
@@ -403,7 +403,7 @@ function ImageTextBlock({ section, primary }: { section: ImageTextSection; prima
           {ctaLabel && ctaUrl && (
             <a
               href={ctaUrl}
-              className="inline-flex items-center gap-2 rounded-full px-5 h-11 text-sm font-black text-white shadow-md hover:opacity-90 transition-all"
+              className="inline-flex items-center gap-2 rounded-full px-5 h-11 text-sm font-extrabold text-white shadow-md hover:opacity-90 transition-all"
               style={{ background: primary }}
             >
               {ctaLabel}
@@ -422,12 +422,12 @@ function BenefitsBlock({ section, primary }: { section: BenefitsSection; primary
     <section className="max-w-5xl mx-auto px-4 py-10 sm:py-12">
       <div className="mb-6">
         <p
-          className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] mb-2"
+          className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-2"
           style={{ color: primary }}
         >
           Por qué elegirnos
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
       </div>
@@ -445,7 +445,7 @@ function BenefitsBlock({ section, primary }: { section: BenefitsSection; primary
               >
                 <Icon className="h-6 w-6" strokeWidth={2} aria-hidden />
               </span>
-              <h3 className="text-base font-black text-[var(--text-primary)] leading-tight">
+              <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                 {item.title}
               </h3>
               <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-relaxed">

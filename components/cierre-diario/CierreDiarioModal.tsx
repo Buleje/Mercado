@@ -75,7 +75,7 @@ export default function CierreDiarioModal({ open, onClose }: Props) {
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="fixed right-0 top-0 bottom-0 w-full sm:w-[500px] md:w-[560px] bg-gray-50 dark:bg-background shadow-2xl flex flex-col print:static print:w-full print:shadow-none"
+        className="fixed right-0 top-0 bottom-0 w-full sm:w-[500px] md:w-[560px] bg-gray-50 dark:bg-background shadow-[var(--shadow-xl)] flex flex-col print:static print:w-full print:shadow-none"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] print:hidden">
@@ -188,7 +188,7 @@ export default function CierreDiarioModal({ open, onClose }: Props) {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative bg-[var(--surface-raised)] rounded-2xl shadow-2xl border border-[var(--rule-base)] p-6 w-80 z-10"
+            className="relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] p-6 w-80 z-10"
           >
             <h3 className="text-base font-bold text-gray-900 dark:text-[var(--text-primary)]">
               ¿Cerrar sin guardar?

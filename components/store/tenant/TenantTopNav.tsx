@@ -59,7 +59,7 @@ export default function TenantTopNav({
         {/* Logo + nombre (link a landing) */}
         <Link href={`/t/${slug}`} className="flex items-center gap-2.5 min-w-0">
           <span
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white text-xs font-black shrink-0 overflow-hidden shadow-sm"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white text-xs font-extrabold shrink-0 overflow-hidden shadow-sm"
             style={{ background: primaryColor }}
           >
             {logoUrl ? (
@@ -70,7 +70,7 @@ export default function TenantTopNav({
             )}
           </span>
           <span
-            className={`text-base font-black truncate max-w-[200px] transition-colors ${
+            className={`text-base font-extrabold truncate max-w-[200px] transition-colors ${
               scrolled ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]"
             }`}
           >
@@ -81,7 +81,7 @@ export default function TenantTopNav({
         {/* CTA contextual a la derecha */}
         <Link
           href={ctaHref}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full px-4 h-10 text-sm font-black transition-all hover:gap-2"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full px-4 h-10 text-sm font-extrabold transition-all hover:gap-2"
           style={{
             background: primaryColor,
             color: "#fff",

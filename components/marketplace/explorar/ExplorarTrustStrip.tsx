@@ -39,10 +39,10 @@ export default function ExplorarTrustStrip() {
                   <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                 </span>
                 <div className="min-w-0">
-                  <p className="font-display text-3xl sm:text-4xl font-black tracking-tight leading-none text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent)]">
+                  <p className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight leading-none text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent)]">
                     {it.big}
                   </p>
-                  <p className="mt-2 text-sm sm:text-base font-black text-[var(--text-primary)] leading-tight">
+                  <p className="mt-2 text-sm sm:text-base font-extrabold text-[var(--text-primary)] leading-tight">
                     {it.label}
                   </p>
                   <p className="text-xs font-semibold text-[var(--text-tertiary)] leading-tight">{it.sub}</p>

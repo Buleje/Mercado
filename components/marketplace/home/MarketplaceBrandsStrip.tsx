@@ -40,7 +40,7 @@ export default function MarketplaceBrandsStrip() {
             <Award className="h-5 w-5" strokeWidth={2.25} aria-hidden />
           </span>
           <div className="min-w-0">
-            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
               Marcas que ya conoces
             </h2>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-semibold mt-0.5">
@@ -50,7 +50,7 @@ export default function MarketplaceBrandsStrip() {
         </div>
         <Link
           href="/marketplace?vista=catalogo"
-          className="group inline-flex items-center gap-1 text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors shrink-0"
+          className="group inline-flex items-center gap-1 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors shrink-0"
         >
           Ver todo
           <ChevronRight
@@ -69,14 +69,14 @@ export default function MarketplaceBrandsStrip() {
               href={`/marketplace?vista=catalogo&q=${encodeURIComponent(b.q)}`}
               className="group shrink-0 inline-flex items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 py-3 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)]/40 hover:shadow-md min-w-[180px]"
             >
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-sunken)] font-display text-xl font-black text-[var(--text-primary)] transition-all group-hover:bg-[var(--accent)] group-hover:text-white">
+              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-sunken)] font-display text-xl font-extrabold text-[var(--text-primary)] transition-all group-hover:bg-[var(--accent)] group-hover:text-white">
                 {b.initial}
               </span>
               <div className="min-w-0">
-                <p className="font-display text-base font-black tracking-tight text-[var(--text-primary)] truncate">
+                <p className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)] truncate">
                   {b.label}
                 </p>
-                <p className="text-[length:var(--ts-2xs)] font-black text-[var(--text-tertiary)] truncate uppercase tracking-wider">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-tertiary)] truncate uppercase tracking-wider">
                   {b.tagline}
                 </p>
               </div>

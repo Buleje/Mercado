@@ -178,7 +178,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
         <Dialog.Overlay className="fixed inset-0 z-[8500] bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[8501] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-[8501] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
         >
           {/* Header */}
           <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] flex items-center gap-3 bg-[var(--surface-raised)]">

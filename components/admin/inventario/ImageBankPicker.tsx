@@ -75,7 +75,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
         <Dialog.Overlay className="fixed inset-0 z-[8500] bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-[8501] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-[8501] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
         >
           {/* Header */}
           <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
@@ -167,7 +167,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
 
             {!loading && visibleCategories.map((cat) => (
               <section key={cat.id} className="mb-6 last:mb-0">
-                <h3 className="text-xs font-black uppercase tracking-wider text-[var(--text-tertiary)] mb-2 px-1">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 px-1">
                   {cat.name} <span className="text-[var(--text-tertiary)] font-medium">· {cat.items.length}</span>
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
@@ -185,7 +185,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
                           className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform"
                         />
                         <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/15 transition-colors flex items-center justify-center">
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] font-black uppercase tracking-wider">
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
                             <Check className="h-3 w-3" /> Usar
                           </span>
                         </div>

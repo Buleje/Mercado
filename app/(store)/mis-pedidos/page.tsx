@@ -567,7 +567,7 @@ function OrderDetailModal({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full sm:max-w-2xl bg-[var(--surface-raised)] rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto shadow-2xl">
+      <div className="relative z-10 w-full sm:max-w-2xl bg-[var(--surface-raised)] rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto shadow-[var(--shadow-xl)]">
         {/* Hero gradiente con status */}
         <div
           className="relative px-6 pt-6 pb-5 text-white overflow-hidden"

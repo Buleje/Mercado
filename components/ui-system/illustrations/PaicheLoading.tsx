@@ -98,7 +98,7 @@ export function PaicheLoading({
         </div>
         {/* Texto */}
         <div className="relative mt-8 text-center px-4">
-          <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-black tracking-tight text-[var(--text-primary)] leading-tight">
+          <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
             {label ?? defaultLabel}
           </p>
           <p className="mt-2 text-[length:var(--ts-base)] font-semibold text-[var(--text-secondary)]">
