@@ -11,7 +11,7 @@ export async function GET(
   if (auth instanceof NextResponse) return auth;
 
   const { phone } = await params;
-  const tenantId = auth.tenantId ?? "main";
+  const tenantId = auth.tenantId;
 
   try {
     // Aggregate active fiados

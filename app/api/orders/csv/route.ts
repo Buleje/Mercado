@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const adminCheck = await requireAdmin(req);
   if (adminCheck instanceof NextResponse) return adminCheck;
 
-  const tenantId = adminCheck.tenantId ?? "main";
+  const tenantId = adminCheck.tenantId;
 
   const url = req.nextUrl;
   const status = url.searchParams.get("status") || undefined;

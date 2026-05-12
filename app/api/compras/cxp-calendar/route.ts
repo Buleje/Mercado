@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenantId = auth.tenantId ?? "main";
+  const tenantId = auth.tenantId;
   const monthParam = req.nextUrl.searchParams.get("month");
 
   // Parse month (default: current month)

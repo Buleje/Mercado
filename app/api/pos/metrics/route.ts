@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenantId = auth.tenantId ?? "main";
+  const tenantId = auth.tenantId;
 
   try {
     const adminUserId = await AdminUsersDB.resolveIdByUsername(tenantId, auth.username);

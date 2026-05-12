@@ -11,7 +11,7 @@ export async function GET(
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenantId = auth.tenantId ?? "main";
+  const tenantId = auth.tenantId;
   const { id } = await params;
 
   try {

@@ -30,7 +30,8 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const tenantId = auth.tenantId ?? "main";
+  // tenantId garantizado por requireAdmin (canonical CUID del JWT).
+  const tenantId = auth.tenantId;
 
   try {
     const raw = await req.json();

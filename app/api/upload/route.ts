@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       .replace(/\.[^.]+$/, "")
       .replace(/[^a-zA-Z0-9_-]/g, "_")
       .slice(0, 50);
-    const tenantId = auth.tenantId ?? "main";
+    const tenantId = auth.tenantId;
     const path = `${tenantId}/${folder}/${timestamp}-${safeName}.${ext}`;
 
     // Subir a Supabase Storage con service_role (bypasea RLS — la auth
