@@ -142,10 +142,10 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ ok: true, deleted: 0 });
     }
 
-    /* eslint-disable no-restricted-properties -- $transaction cascada de borrado para FK-dependientes. productIds pre-filtrados al tenantId. */
+    /* eslint-disable no-restricted-properties, no-restricted-syntax -- $transaction cascada de borrado para FK-dependientes (ADR-101 modelos indirectos). productIds pre-filtrados al tenantId arriba; los modelos sin tenantId propio se borran solo para los IDs del tenant del autorizador. */
     await prisma.$transaction([
       // BundleItem / SaleItem / PurchaseItem / OrderItem: no tienen tenantId
-      // directo, pero los productIds vienen pre-filtrados al tenant.
+      // directo (ADR-101), pero los productIds vienen pre-filtrados al tenant.
       prisma.bundleItem.deleteMany({ where: { productId: { in: ownedIds } } }),
       prisma.priceHistory.deleteMany({ where: { productId: { in: ownedIds }, tenantId: auth.tenantId } }),
       prisma.inventoryMovement.deleteMany({ where: { productId: { in: ownedIds }, tenantId: auth.tenantId } }),
@@ -156,7 +156,7 @@ export async function DELETE(req: NextRequest) {
     const { count } = await prisma.product.deleteMany({
       where: { id: { in: ownedIds }, tenantId: auth.tenantId },
     });
-    /* eslint-enable no-restricted-properties */
+    /* eslint-enable no-restricted-properties, no-restricted-syntax */
     return NextResponse.json({ ok: true, deleted: count });
   } catch (e) {
     logger.error("[demo-products] DELETE error", { error: (e as Error).message, tenantId: auth.tenantId });

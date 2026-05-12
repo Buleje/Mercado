@@ -174,6 +174,50 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // ────────────────────────────────────────────────────────────────────────────
+  // SECURITY (audit 2026-05-11 P2-2): no deleteMany/updateMany sin tenantId
+  // literal en el WHERE.
+  //
+  // CRIT-1 del audit (demo-products wipe global) explotó este gap: el
+  // handler hacía `prisma.X.deleteMany({ where: { productId: { in: IDS } } })`
+  // sin tenantId, borrando rows en TODOS los tenants.
+  //
+  // Regla: cualquier deleteMany/updateMany debe tener una Property con
+  // key.name === "tenantId" en el ObjectExpression del where. Si la query
+  // es legítimamente cross-tenant (cron global, superadmin platform), el
+  // path debe estar en `ignores`.
+  // ────────────────────────────────────────────────────────────────────────────
+  {
+    files: ["app/**/*.ts", "app/**/*.tsx", "lib/**/*.ts", "components/**/*.ts"],
+    ignores: [
+      "app/api/superadmin/**",
+      "app/api/cron/**",
+      "app/api/webhooks/**",
+      "app/api/billing/webhook/**",
+      "app/api/marketplace/payment/**",
+      "lib/cron/**",
+      "lib/db/marketplace-public.db.ts", // cross-tenant cleanups documentados
+      "lib/audit/**",
+      "lib/queue/**",
+      "scripts/**",
+      "**/__tests__/**",
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      "prisma/**",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          // Match: prisma.X.deleteMany({ where: { ... } }) donde el where no tiene tenantId
+          selector:
+            "CallExpression[callee.object.object.name='prisma'][callee.property.name=/^(deleteMany|updateMany)$/] > ObjectExpression > Property[key.name='where'] > ObjectExpression:not(:has(> Property[key.name='tenantId']))",
+          message:
+            "MULTI-TENANT (CRIT-1 zone): deleteMany/updateMany debe incluir `tenantId` literal en el WHERE. Sin ese guard, una sola query puede borrar rows de TODOS los tenants. Si la query ES legítimamente cross-tenant (cron platform, webhook), añadir el archivo a `ignores` en eslint.config.mjs con justificación.",
+        },
+      ],
+    },
+  },
   // Prettier compat — must be LAST to disable formatting rules that conflict with Prettier
   prettierConfig,
 ]);
