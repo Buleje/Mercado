@@ -308,11 +308,11 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
 
       {/* ── Retention summary bar ── */}
       {data.clientesActivos > 0 && (
-        <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
+        <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl px-5 py-3">
           <TrendingUp className="h-4 w-4 text-[var(--text-tertiary)]" />
           <div className="flex-1 flex items-center gap-4 text-sm">
             <span className="text-[var(--text-secondary)] dark:text-muted">Retención:</span>
-            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
+            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               {data.clientesActivos > 0 ? Math.round((data.recurrentes / data.clientesActivos) * 100) : 0}%
             </span>
             <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">|</span>

@@ -27,6 +27,7 @@
  */
 
 import * as Dialog from "@radix-ui/react-dialog";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -89,6 +90,15 @@ export default function AdminModal({
             className,
           )}
         >
+          {/* a11y fix 2026-05-09: Radix exige Dialog.Title presente. Cuando no
+              hay title visible, lo renderizamos dentro de VisuallyHidden para
+              que screen readers lo lean sin pintarlo. */}
+          {!title && (
+            <VisuallyHidden.Root asChild>
+              <Dialog.Title>Modal</Dialog.Title>
+            </VisuallyHidden.Root>
+          )}
+
           {/* Header */}
           {(title || !hideCloseButton) && (
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0 gap-3">

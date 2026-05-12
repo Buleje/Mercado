@@ -122,7 +122,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
             onChange={e => handlePhoneChange(e.target.value)}
             className={cn(
               "flex-1 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
-              "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border",
+              "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]",
               "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
               "focus:outline-none focus:ring-2 focus:ring-primary/40",
             )}
@@ -139,8 +139,8 @@ export default function DailyReportWhatsApp({ className }: Props) {
           disabled={loading}
           className={cn(
             "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
-            "border border-[var(--rule-base)] dark:border-card-border",
-            "bg-white dark:bg-card text-[var(--text-primary)]",
+            "border border-[var(--rule-base)] dark:border-[var(--rule-base)]",
+            "bg-[var(--surface-raised)] text-[var(--text-primary)]",
             "hover:bg-[var(--surface-sunken)]",
             "disabled:opacity-60",
           )}
@@ -181,7 +181,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
 
       {/* Vista previa del mensaje */}
       {showPreview && previewText && (
-        <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface p-4 space-y-2">
+        <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface p-4 space-y-2">
           <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">Vista previa del mensaje</p>
           <textarea
             readOnly
@@ -217,7 +217,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
               onChange={e => handleScheduleHourChange(e.target.value)}
               className={cn(
                 "px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
-                "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border",
+                "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]",
                 "text-[var(--text-primary)]",
                 "focus:outline-none focus:ring-2 focus:ring-primary/40",
               )}

@@ -183,11 +183,11 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
   }, [registerSale]);
 
   return (
-    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-canvas)]/50">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)]/50">
         <Users className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Multi-Cajero</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Multi-Cajero</span>
         <div className="ml-auto flex items-center gap-2">
           {openSessions.length > 0 && (
             <span className="text-xs font-medium text-[var(--text-secondary)] dark:text-muted">{openSessions.length} activo{openSessions.length !== 1 ? "s" : ""}</span>
@@ -246,13 +246,13 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                       key={session.id}
                       type="button"
                       onClick={() => selectCashier(session)}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl border border-[var(--rule-soft)] dark:border-card-border hover:border-primary bg-white dark:bg-card transition-all group"
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-primary bg-[var(--surface-raised)] transition-all group"
                     >
                       <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                         <User className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{session.name}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{session.name}</p>
                         <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                           Desde {fmtTime(session.startedAt)} · {count} venta{count !== 1 ? "s" : ""} · {fmt(total)}
                         </p>
@@ -274,14 +274,14 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                   onKeyDown={(e) => { if (e.key === "Enter") addCashier(); if (e.key === "Escape") setShowAddForm(false); }}
                   placeholder="Nombre del cajero"
                   autoFocus
-                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary"
+                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary"
                 />
                 <button type="button" onClick={addCashier}
                   className="px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90">
                   <Plus className="h-4 w-4" />
                 </button>
                 <button type="button" onClick={() => setShowAddForm(false)}
-                  className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                  className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -289,7 +289,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
               <button
                 type="button"
                 onClick={() => setShowAddForm(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-secondary)] dark:text-muted hover:border-primary hover:text-primary transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-secondary)] dark:text-muted hover:border-primary hover:text-primary transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Agregar cajero
@@ -306,7 +306,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                 <User className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{activeSession.name}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{activeSession.name}</p>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                   <Clock className="h-3 w-3 inline mr-1" />
                   Turno desde {fmtTime(activeSession.startedAt)}
@@ -315,7 +315,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
               <button
                 type="button"
                 onClick={() => { setView("selector"); setActiveCashierIdState(null); setActiveCashierId(null); onCashierChange?.(null, null); }}
-                className="ml-auto text-xs px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 flex items-center gap-1"
+                className="ml-auto text-xs px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 flex items-center gap-1"
               >
                 <RefreshCw className="h-3 w-3" />
                 Cambiar
@@ -339,7 +339,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Ultimas ventas</p>
                 {[...activeSession.sales].reverse().slice(0, 5).map((sale) => (
-                  <div key={sale.id} className="flex items-center gap-2 text-xs py-1.5 border-b border-gray-50 dark:border-card-border last:border-0">
+                  <div key={sale.id} className="flex items-center gap-2 text-xs py-1.5 border-b border-[var(--rule-base)] last:border-0">
                     <ShoppingBasket className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
                     <span className="text-[var(--text-secondary)] dark:text-muted">{fmtTime(sale.createdAt)}</span>
                     <span className="text-[var(--text-secondary)] dark:text-muted flex-1">{sale.items} item{sale.items !== 1 ? "s" : ""}</span>
@@ -365,7 +365,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
         {view === "admin" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Sesiones de hoy</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Sesiones de hoy</p>
               <button type="button" onClick={() => setView(activeCashierId ? "active" : "selector")}
                 className="text-xs text-primary hover:underline">
                 Volver
@@ -382,10 +382,10 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
                 {sessions.map((session) => {
                   const { total, count, avg } = sessionStats(session);
                   return (
-                    <div key={session.id} className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-3 space-y-2">
+                    <div key={session.id} className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3 space-y-2">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground flex-1">{session.name}</span>
+                        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex-1">{session.name}</span>
                         {session.closedAt ? (
                           <span className="text-xs px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted">Cerrado</span>
                         ) : (
@@ -422,7 +422,7 @@ export default function MultiCashierMode({ onCashierChange, className }: MultiCa
               const grandCount = sessions.reduce((s, sess) => s + sessionStats(sess).count, 0);
               return (
                 <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20">
-                  <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Total del dia</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total del dia</span>
                   <div className="text-right">
                     <p className="text-base font-extrabold text-primary">{fmt(grandTotal)}</p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{grandCount} ventas</p>

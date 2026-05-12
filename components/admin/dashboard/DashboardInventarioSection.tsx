@@ -17,15 +17,15 @@ function fmt(n: number) { return `S/${n.toFixed(2)}`; }
 const CAT_LABELS: Record<string,string> = { "frutas-verduras":"Frutas y Verduras", abarrotes:"Abarrotes", carnes:"Carnes", lacteos:"Lácteos", bebidas:"Bebidas", limpieza:"Limpieza" };
 
 function Kpi({ label, value, icon: Icon, accent }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string }) {
-  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
+  return (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
     <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
-      <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none">{value}</p>
+      <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-none">{value}</p>
     </div><Icon className={cn("h-4 w-4 shrink-0 mb-0.5", accent)} /></div>
   </div>);
 }
 function Card({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{className?:string}>; children: React.ReactNode; action?: React.ReactNode }) {
-  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4"><div className="flex items-center justify-between mb-4"><CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />{title.toUpperCase()}</CardTitle>{action}</div>{children}</div>);
+  return (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4"><div className="flex items-center justify-between mb-4"><CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />{title.toUpperCase()}</CardTitle>{action}</div>{children}</div>);
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">{text}</div>; }
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
@@ -37,13 +37,13 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
   const [showCrossSell, setShowCrossSell] = useState(false);
   const [selectedProductForCrossSell, setSelectedProductForCrossSell] = useState<string | null>(null);
   return (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4")}>
           {expandAll && (
-            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="w-7 h-7 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/30 flex items-center justify-center">
                 <Package className="h-3.5 w-3.5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
               </div>
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Inventario</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario</CardTitle>
             </div>
           )}
           {/* ── Widgets de lotes (BatchStats + Expiring) ── */}
@@ -67,7 +67,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                 {st.agotados.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-[var(--data-error-50)] dark:bg-red-950/30 rounded-lg">
                     <div>
-                      <span className="text-xs font-medium text-[var(--text-primary)] dark:text-foreground">{p.name}</span>
+                      <span className="text-xs font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</span>
                       <span className="text-xs text-[var(--text-tertiary)] ml-2">{CAT_LABELS[p.category]??p.category}</span>
                     </div>
                     <DBadge color="red">Agotado</DBadge>
@@ -76,7 +76,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                 {st.stockCritico.filter((p: any)=>(p.stock??0)>0).map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-[var(--data-warning-50)] dark:bg-amber-950/30 rounded-lg">
                     <div>
-                      <span className="text-xs font-medium text-[var(--text-primary)] dark:text-foreground">{p.name}</span>
+                      <span className="text-xs font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</span>
                       <span className="text-xs text-[var(--text-tertiary)] ml-2">{CAT_LABELS[p.category]??p.category}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -145,7 +145,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                       if (!product) return null;
                       const isExpanded = selectedProductForCrossSell === productId;
                       return (
-                        <div key={productId} className="border border-[var(--rule-base)] dark:border-card-border rounded-lg overflow-hidden">
+                        <div key={productId} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg overflow-hidden">
                           <button
                             onClick={() => setSelectedProductForCrossSell(isExpanded ? null : productId)}
                             className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-accent/50 transition-colors text-left"
@@ -153,23 +153,23 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                             <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
                               <div className="w-2 h-2 rounded-full bg-[var(--text-primary)] shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-sm text-[var(--text-primary)] dark:text-foreground truncate">{product.name}</div>
+                                <div className="font-semibold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{product.name}</div>
                                 <div className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">{recommendations.length} productos relacionados</div>
                               </div>
                             </div>
                             <ChevronRight className={cn("h-4 w-4 text-[var(--text-tertiary)] transition-transform", isExpanded && "rotate-90")} />
                           </button>
                           {isExpanded && (
-                            <div className="border-t border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface p-3 space-y-2">
+                            <div className="border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface p-3 space-y-2">
                               <div className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] mb-2">Frecuentemente comprado junto con:</div>
                               {(recommendations as any[]).map((rec: any) => {
                                 const relatedProduct = (products ?? []).find((p: any) => p.id === rec.productId);
                                 if (!relatedProduct) return null;
                                 return (
-                                  <div key={rec.productId} className="flex items-center justify-between py-2 px-3 bg-white dark:bg-card rounded-lg">
+                                  <div key={rec.productId} className="flex items-center justify-between py-2 px-3 bg-[var(--surface-raised)] rounded-lg">
                                     <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                                       <Gift className="h-3.5 w-3.5 text-[var(--text-secondary)] shrink-0" />
-                                      <span className="text-xs text-[var(--text-primary)] dark:text-foreground truncate">{relatedProduct.name}</span>
+                                      <span className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{relatedProduct.name}</span>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2 shrink-0">
                                       <div className="flex items-center gap-1">
@@ -232,7 +232,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                       {st.criticalStock.map((p: any) => (
                         <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-[var(--data-error-50)] dark:bg-red-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</div>
+                            <div className="text-xs font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</div>
                             <div className="flex flex-wrap items-center gap-2 mt-0.5">
                               <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
                                 {p.daysRemaining < 1 ? 'Se agota HOY' : `${Math.floor(p.daysRemaining)} días restantes`}
@@ -274,7 +274,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
                       {st.needsReorderSoon.slice(0, 10).map((p: any) => (
                         <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-[var(--data-warning-50)] dark:bg-amber-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</div>
+                            <div className="text-xs font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</div>
                             <div className="flex flex-wrap items-center gap-2 mt-0.5">
                               <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
                                 ~{Math.floor(p.daysRemaining)} días restantes
@@ -320,7 +320,7 @@ export default function DashboardInventarioSection({ st, expandAll, products }: 
 
                 {/* Sprint 3: Bulk reorder button */}
                 {(st.criticalStock.length + st.needsReorderSoon.length) > 0 && (
-                  <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3">
+                  <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-3">
                     <button
                       onClick={() => {
                         const allReorder = [...st.criticalStock, ...st.needsReorderSoon];

@@ -135,7 +135,7 @@ export default function AutoAlertEngineTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Bell className="h-6 w-6 text-primary" /> Alertas Automáticas</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Bell className="h-6 w-6 text-primary" /> Alertas Automáticas</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Configura umbrales y recibe alertas cuando se disparan</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -156,7 +156,7 @@ export default function AutoAlertEngineTab() {
           { label: "Sin reconocer", value: logs.filter(l => !l.acknowledged).length, color: "text-[var(--data-error-500)]" },
           { label: "Total disparos", value: rules.reduce((s, r) => s + r.triggered, 0), color: "text-[var(--data-success-500)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}{k.total !== undefined && <span className="text-sm text-[var(--text-tertiary)]">/{k.total}</span>}</p>
           </div>
@@ -164,7 +164,7 @@ export default function AutoAlertEngineTab() {
       </div>
 
       {view === "rules" ? (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead><tr className="bg-[var(--surface-alt)] dark:bg-surface text-left">
@@ -177,16 +177,16 @@ export default function AutoAlertEngineTab() {
               </tr></thead>
               <tbody>
                 {rules.map(r => (
-                  <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50">
+                  <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50">
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={cn("h-2 w-2 rounded-full", r.severity === "critical" ? "bg-[var(--data-error-500)]" : r.severity === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} />
-                        <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{r.name}</span>
+                        <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.name}</span>
                       </div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><code className="text-xs bg-[var(--surface-sunken)] dark:bg-surface px-1.5 py-0.5 rounded">{r.condition} {r.operator} {r.threshold}</code></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.triggered}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.triggered}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <button onClick={() => setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: !x.enabled } : x))} className={cn("flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold", r.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>
                         {r.enabled ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
@@ -224,10 +224,10 @@ export default function AutoAlertEngineTab() {
                 <p className="text-xs text-[var(--text-tertiary)] mt-1">Todas las reglas están dentro de sus umbrales</p>
               </div>
             ) : filteredLogs.map(l => (
-              <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3", l.severity === "critical" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30" : l.severity === "warning" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30" : "border-[var(--rule-base)] dark:border-card-border")}>
+              <div key={l.id} className={cn("bg-[var(--surface-raised)] rounded-xl border p-4 flex items-start gap-3", l.severity === "critical" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30" : l.severity === "warning" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
                 <AlertTriangle className={cn("h-4 w-4 shrink-0 mt-0.5", l.severity === "critical" ? "text-[var(--data-error-500)]" : l.severity === "warning" ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{l.ruleName}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.ruleName}</p>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{l.message}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mt-1">{fmtDate(l.timestamp)}</p>
                 </div>
@@ -243,20 +243,20 @@ export default function AutoAlertEngineTab() {
       {/* Modal */}
       {showModal && (
         <div className="modal-backdrop p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-[var(--rule-base)] dark:border-card-border" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">{editRule ? "Editar regla" : "Nueva regla"}</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl p-3 sm:p-6 max-w-md w-full mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)]" onClick={e => e.stopPropagation()}>
+            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editRule ? "Editar regla" : "Nueva regla"}</CardTitle>
             <div className="space-y-3">
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Nombre de la regla" /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="Nombre de la regla" /></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Módulo</label><select value={formModule} onChange={e => setFormModule(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">{MODULES.map(m => <option key={m}>{m}</option>)}</select></div>
-                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Severidad</label><select value={formSeverity} onChange={e => setFormSeverity(e.target.value as AlertRule["severity"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Crítico</option></select></div>
+                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Módulo</label><select value={formModule} onChange={e => setFormModule(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm">{MODULES.map(m => <option key={m}>{m}</option>)}</select></div>
+                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Severidad</label><select value={formSeverity} onChange={e => setFormSeverity(e.target.value as AlertRule["severity"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Crítico</option></select></div>
               </div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Campo/condición</label><input value={formCondition} onChange={e => setFormCondition(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual" /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Campo/condición</label><input value={formCondition} onChange={e => setFormCondition(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual" /></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Operador</label><select value={formOperator} onChange={e => setFormOperator(e.target.value as AlertRule["operator"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">{OPERATORS.map(o => <option key={o}>{o}</option>)}</select></div>
-                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Umbral</label><input type="number" value={formThreshold} onChange={e => setFormThreshold(+e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
+                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Operador</label><select value={formOperator} onChange={e => setFormOperator(e.target.value as AlertRule["operator"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm">{OPERATORS.map(o => <option key={o}>{o}</option>)}</select></div>
+                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Umbral</label><input type="number" value={formThreshold} onChange={e => setFormThreshold(+e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></div>
               </div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acción</label><select value={formAction} onChange={e => setFormAction(e.target.value as AlertRule["action"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(ACTIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acción</label><select value={formAction} onChange={e => setFormAction(e.target.value as AlertRule["action"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm">{Object.entries(ACTIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-4 w-4 inline mr-1" />Cancelar</button>

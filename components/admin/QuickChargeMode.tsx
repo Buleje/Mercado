@@ -158,11 +158,11 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
   const dailyCount = history.length;
 
   return (
-    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-canvas)]/50">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)]/50">
         <Zap className="h-4 w-4 text-secondary" />
-        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Cobro Rápido</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cobro Rápido</span>
         <span className="ml-auto text-xs text-[var(--text-tertiary)] dark:text-muted">Para ventas rapidas sin producto</span>
       </div>
 
@@ -184,9 +184,9 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
 
         {/* History panel */}
         {showHistory && history.length > 0 && (
-          <div className="rounded-xl border border-[var(--rule-soft)] dark:border-card-border divide-y divide-gray-50 dark:divide-card-border overflow-hidden">
+          <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] divide-y divide-gray-50 dark:divide-card-border overflow-hidden">
             {history.slice(0, 10).map((charge) => (
-              <div key={charge.id} className="flex items-center gap-2 px-3 py-2 text-xs bg-white dark:bg-card">
+              <div key={charge.id} className="flex items-center gap-2 px-3 py-2 text-xs bg-[var(--surface-raised)]">
                 <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
                 <span className="text-[var(--text-secondary)] dark:text-muted">{fmtTime(charge.createdAt)}</span>
                 <span className="flex-1 text-[var(--text-secondary)] dark:text-muted truncate">{charge.note ?? "Venta rápida"}</span>
@@ -211,7 +211,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
               onChange={(e) => { setAmount(e.target.value); setError(""); }}
               onKeyDown={handleKeyDown}
               placeholder="0.00"
-              className="w-full pl-12 pr-4 py-4 text-3xl font-extrabold rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary transition-colors text-center"
+              className="w-full pl-12 pr-4 py-4 text-3xl font-extrabold rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary transition-colors text-center"
             />
           </div>
 
@@ -226,7 +226,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
                   "px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors",
                   parsed === v
                     ? "bg-primary text-white border-primary"
-                    : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-primary"
+                    : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary"
                 )}
               >
                 S/{v}
@@ -245,7 +245,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
             onKeyDown={handleKeyDown}
             placeholder="Ej: agua, pan, cargador..."
             maxLength={80}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary"
+            className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary"
           />
         </div>
 
@@ -262,7 +262,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
                   "flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all",
                   payment === key
                     ? "border-primary bg-primary/5 text-primary"
-                    : "border-[var(--rule-soft)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
+                    : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300"
                 )}
               >
                 <Icon className="h-4 w-4" />

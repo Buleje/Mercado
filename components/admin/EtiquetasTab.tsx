@@ -178,7 +178,7 @@ export default function EtiquetasTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Tag className="h-6 w-6 text-primary" /> Impresión de Etiquetas
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Selecciona productos y genera etiquetas de precio para imprimir</p>
@@ -196,17 +196,17 @@ export default function EtiquetasTab() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left: Config panel */}
         <div className="xl:col-span-1 space-y-4">
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
-            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 text-sm">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
+            <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 text-sm">
               <Tag className="h-4 w-4 text-primary" /> Configuración
             </CardTitle>
 
             {/* Size */}
             <div>
-              <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-foreground mb-2">Tamaño de etiqueta</label>
+              <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2">Tamaño de etiqueta</label>
               <div className="space-y-2">
                 {(["pequena", "mediana", "grande"] as LabelSize[]).map(s => (
-                  <button key={s} onClick={() => setConfig(c => ({ ...c, size: s }))} className={cn("w-full px-3 py-2 rounded-lg text-xs font-bold border-2 text-left transition-all", config.size === s ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-400")}>
+                  <button key={s} onClick={() => setConfig(c => ({ ...c, size: s }))} className={cn("w-full px-3 py-2 rounded-lg text-xs font-bold border-2 text-left transition-all", config.size === s ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-400")}>
                     {SIZE_LABELS[s]}
                   </button>
                 ))}
@@ -215,17 +215,17 @@ export default function EtiquetasTab() {
 
             {/* Copies */}
             <div>
-              <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-foreground mb-2">Copias por producto</label>
+              <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2">Copias por producto</label>
               <div className="flex flex-wrap items-center gap-3">
-                <button onClick={() => setConfig(c => ({ ...c, copies: Math.max(1, c.copies - 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground font-bold flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-accent">−</button>
-                <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground w-6 text-center">{config.copies}</span>
-                <button onClick={() => setConfig(c => ({ ...c, copies: Math.min(10, c.copies + 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground font-bold flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-accent">+</button>
+                <button onClick={() => setConfig(c => ({ ...c, copies: Math.max(1, c.copies - 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] font-bold flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-accent">−</button>
+                <span className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] w-6 text-center">{config.copies}</span>
+                <button onClick={() => setConfig(c => ({ ...c, copies: Math.min(10, c.copies + 1) }))} className="w-8 h-8 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] font-bold flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-accent">+</button>
               </div>
             </div>
 
             {/* Toggles */}
             <div>
-              <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-foreground mb-2">Mostrar en etiqueta</label>
+              <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2">Mostrar en etiqueta</label>
               <div className="space-y-2">
                 {([
                   { key: "showBarcode", label: "Código de barras" },
@@ -237,7 +237,7 @@ export default function EtiquetasTab() {
                     <button onClick={() => setConfig(c => ({ ...c, [opt.key]: !c[opt.key] }))} className={cn("w-9 h-5 rounded-full transition-colors flex items-center", config[opt.key] ? "bg-primary" : "bg-gray-300 dark:bg-gray-600")}>
                       <span className={cn("block w-4 h-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform mx-0.5", config[opt.key] ? "translate-x-4" : "translate-x-0")} />
                     </button>
-                    <span className="text-xs text-[var(--text-primary)] dark:text-foreground">{opt.label}</span>
+                    <span className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]">{opt.label}</span>
                   </label>
                 ))}
               </div>
@@ -246,18 +246,18 @@ export default function EtiquetasTab() {
 
           {/* Preview */}
           {selected.size > 0 && (
-            <div className="bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+            <div className="bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
               <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2">Vista previa (#1)</p>
               {(() => {
                 const p = products.find(pr => pr.id === Array.from(selected)[0]);
                 if (!p) return null;
                 const sizeClass: Record<LabelSize, string> = { pequena: "w-24 h-16", mediana: "w-36 h-20", grande: "w-48 h-28" };
                 return (
-                  <div className={cn("border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-card flex flex-col justify-between", sizeClass[config.size])}>
+                  <div className={cn("border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-lg p-2 bg-[var(--surface-raised)] flex flex-col justify-between", sizeClass[config.size])}>
                     {config.showCategory && <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] uppercase">{p.category}</span>}
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-foreground leading-tight">{p.name}</span>
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-tight">{p.name}</span>
                     <div className="flex items-end justify-between">
-                      <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">S/ {Number(p.price).toFixed(2)}</span>
+                      <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {Number(p.price).toFixed(2)}</span>
                       {config.showUnit && <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">/{p.unit}</span>}
                     </div>
                     {config.showBarcode && p.barcode && <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-secondary)] truncate">{p.barcode}</span>}
@@ -274,24 +274,24 @@ export default function EtiquetasTab() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-4 py-2.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-4 py-2.5 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
-            <select value={category} onChange={e => setCategory(e.target.value)} className="border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+            <select value={category} onChange={e => setCategory(e.target.value)} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               {CATEGORIES.map(c => <option key={c}>{c}</option>)}
             </select>
-            <div className="flex flex-wrap gap-1 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-1">
-              <button onClick={() => setViewMode("grid")} className={cn("p-1.5 rounded-lg", viewMode === "grid" ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-foreground")}><LayoutGrid className="h-4 w-4" /></button>
-              <button onClick={() => setViewMode("list")} className={cn("p-1.5 rounded-lg", viewMode === "list" ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-foreground")}><List className="h-4 w-4" /></button>
+            <div className="flex flex-wrap gap-1 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-1">
+              <button onClick={() => setViewMode("grid")} className={cn("p-1.5 rounded-lg", viewMode === "grid" ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)]")}><LayoutGrid className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("list")} className={cn("p-1.5 rounded-lg", viewMode === "list" ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)]")}><List className="h-4 w-4" /></button>
             </div>
           </div>
 
           {/* Select all bar */}
           <div className="flex items-center justify-between bg-[var(--surface-alt)] dark:bg-surface rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5">
             <label className="flex flex-wrap items-center gap-2.5 cursor-pointer">
-              <button onClick={toggleAll} className="text-[var(--text-secondary)] dark:text-foreground">
+              <button onClick={toggleAll} className="text-[var(--text-secondary)] dark:text-[var(--text-primary)]">
                 {allFiltered ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
               </button>
-              <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
+              <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {allFiltered ? "Deseleccionar todos" : "Seleccionar todos"} <span className="text-[var(--text-tertiary)]">({filtered.length})</span>
               </span>
             </label>
@@ -315,12 +315,12 @@ export default function EtiquetasTab() {
               {filtered.map(p => {
                 const sel = selected.has(p.id);
                 return (
-                  <button key={p.id} onClick={() => toggleSelect(p.id)} className={cn("text-left p-3 rounded-lg border-2 transition-all", sel ? "border-primary bg-primary/5 dark:bg-primary/10" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:border-gray-400 dark:hover:border-gray-500")}>
+                  <button key={p.id} onClick={() => toggleSelect(p.id)} className={cn("text-left p-3 rounded-lg border-2 transition-all", sel ? "border-primary bg-primary/5 dark:bg-primary/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-gray-400 dark:hover:border-gray-500")}>
                     <div className="flex flex-wrap items-start justify-between gap-1 mb-2">
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted uppercase font-bold">{p.category}</span>
                       {sel ? <CheckSquare className="h-4 w-4 text-primary shrink-0" /> : <Square className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] shrink-0" />}
                     </div>
-                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground leading-tight mb-1 line-clamp-2">{p.name}</p>
+                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-tight mb-1 line-clamp-2">{p.name}</p>
                     <p className="text-base font-extrabold text-primary">S/ {Number(p.price).toFixed(2)}</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">{p.unit} {p.stock != null ? `· Stock: ${p.stock}` : ""}</p>
                     {p.barcode && <p className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate mt-0.5">{p.barcode}</p>}
@@ -332,7 +332,7 @@ export default function EtiquetasTab() {
 
           {/* List view */}
           {!loading && viewMode === "list" && (
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-card-border">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden divide-y divide-gray-100 dark:divide-card-border">
               {filtered.map(p => {
                 const sel = selected.has(p.id);
                 return (
@@ -341,7 +341,7 @@ export default function EtiquetasTab() {
                       {sel ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]" />}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{p.category} · {p.unit}</p>
                     </div>
                     <div className="text-right shrink-0">

@@ -52,7 +52,7 @@ export default function BCGMatrixTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Star className="h-6 w-6 text-[var(--data-warning-500)]" /> Matriz BCG
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
@@ -73,7 +73,7 @@ export default function BCGMatrixTab() {
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
               </div>
-              <p className="text-2xl sm:text-3xl font-mono font-extrabold text-[var(--text-primary)] dark:text-foreground">{items.length}</p>
+              <p className="text-2xl sm:text-3xl font-mono font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{items.length}</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">{fmt(rev)} ({totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(0) : 0}%)</p>
             </button>
           );
@@ -81,18 +81,18 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Visual Matrix */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6">
-        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">Mapa Visual BCG</CardTitle>
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-6">
+        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Mapa Visual BCG</CardTitle>
         <div className="relative w-full aspect-square max-w-[500px] mx-auto" style={{ minHeight: 400 }}>
           {/* Axes */}
           <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
-            <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
+            <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]/40">Estrellas</span>
             </div>
-            <div className="border-b-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
+            <div className="border-b-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]/40">Interrogantes</span>
             </div>
-            <div className="border-r-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
+            <div className="border-r-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
               <span className="text-sm font-semibold text-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]/40">Vacas Lecheras</span>
             </div>
             <div className="bg-[var(--data-error-50)]/50 dark:bg-red-950/10 flex items-center justify-center p-2">
@@ -118,9 +118,9 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Product Table */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-          <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Detalle de Productos ({filtered.length})</CardTitle>
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+          <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de Productos ({filtered.length})</CardTitle>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
@@ -138,7 +138,7 @@ export default function BCGMatrixTab() {
                 const c = Q_CONFIG[p.quadrant];
                 return (
                   <tr key={p.id} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface">
-                    <td className="px-5 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{p.name}</td>
+                    <td className="px-5 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
                     <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
                     <td className="px-5 py-3 text-right font-bold">{fmt(p.revenue)}</td>
                     <td className={cn("px-5 py-3 text-right font-bold", p.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{p.growth > 0 && "+"}{p.growth}%</td>
@@ -176,9 +176,9 @@ export default function BCGMatrixTab() {
       {/* Detail modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.name}</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
               <button onClick={() => setDetail(null)} className="text-base sm:text-xl font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">

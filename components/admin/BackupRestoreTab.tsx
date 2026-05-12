@@ -90,7 +90,7 @@ export default function BackupRestoreTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Shield className="h-6 w-6 text-primary" /> Backup & Restaurar
             {isDemo && <span className="text-xs font-normal text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
@@ -133,7 +133,7 @@ export default function BackupRestoreTab() {
           { label: "Último exitoso",    value: lastSuccessful ? fmtDate(lastSuccessful.createdAt) : "—", color: "text-[var(--data-success)]", icon: CheckCircle },
           { label: "Fallidos",          value: failedCount,                 color: failedCount > 0 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]", icon: AlertTriangle },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <div className="flex items-center gap-1.5 mb-1">
               <k.icon className={cn("h-3.5 w-3.5 shrink-0", k.color)} />
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
@@ -160,11 +160,11 @@ export default function BackupRestoreTab() {
           {loading ? (
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-20 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border animate-pulse" />
+                <div key={i} className="h-20 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] animate-pulse" />
               ))}
             </div>
           ) : backups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)] bg-white dark:bg-card rounded-xl border border-dashed border-[var(--rule-base)] dark:border-card-border">
+            <div className="flex flex-col items-center justify-center py-12 text-[var(--text-tertiary)] bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <Database className="h-12 w-12 mb-3 text-[var(--text-tertiary)]" />
               <p className="font-bold text-[var(--text-secondary)] dark:text-muted">Sin backups registrados</p>
               <p className="text-sm mt-1">Crea el primer backup manual</p>
@@ -178,13 +178,13 @@ export default function BackupRestoreTab() {
               {backups.map(b => {
                 const S = STATUS_CONFIG[b.status];
                 return (
-                  <div key={b.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", b.status === "fallido" ? "border-[var(--data-error)] dark:border-[var(--data-error)]/30" : "border-[var(--rule-base)] dark:border-card-border")}>
+                  <div key={b.id} className={cn("bg-[var(--surface-raised)] rounded-xl border p-4", b.status === "fallido" ? "border-[var(--data-error)] dark:border-[var(--data-error)]/30" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
                         <S.icon className={cn("h-5 w-5 shrink-0", S.color)} />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{b.name}</h4>
+                            <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{b.name}</h4>
                             <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                               b.type === "auto" ? "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]")}>
                               {b.type === "auto" ? "Automático" : "Manual"}
@@ -224,12 +224,12 @@ export default function BackupRestoreTab() {
           )}
         </>
       ) : (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-6 space-y-5">
-          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Configuración de backup automático</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 sm:p-6 space-y-5">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Configuración de backup automático</CardTitle>
 
-          <div className="flex items-center justify-between py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <div className="flex items-center justify-between py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <div>
-              <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Backup automático</p>
+              <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Backup automático</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Activar copias automáticas programadas</p>
             </div>
             <button onClick={() => setAutoEnabled(!autoEnabled)}
@@ -242,7 +242,7 @@ export default function BackupRestoreTab() {
             <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Programación</p>
             {Object.entries(SCHEDULE).map(([k, v]) => (
               <div key={k} className="flex items-center justify-between py-2 px-3 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface">
-                <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{k}</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{k}</span>
                 <span className="text-xs text-[var(--text-secondary)] dark:text-muted font-mono">{v}</span>
               </div>
             ))}
@@ -251,7 +251,7 @@ export default function BackupRestoreTab() {
           <div>
             <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Retención de backups diarios (días)</label>
             <input type="number" value={retentionDays} onChange={e => setRetentionDays(Number(e.target.value))} min={7} max={365}
-              className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+              className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Backups más antiguos se eliminarán automáticamente</p>
           </div>
 

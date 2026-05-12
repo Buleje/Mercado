@@ -56,7 +56,7 @@ export default function LiveSalesWidget() {
 
   return (
     <div className={cn(
-      "bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4 transition-all",
+      "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4 transition-all",
       flash && "ring-2 ring-[var(--data-success-500)]/40 ring-offset-2"
     )}>
       <div className="flex items-center gap-4">
@@ -85,7 +85,7 @@ export default function LiveSalesWidget() {
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5">
             <span className={cn(
-              "text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground transition-colors",
+              "text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] transition-colors",
               flash && "text-[var(--data-success-500)]"
             )}>
               {fmt(data.revenue)}
@@ -102,14 +102,14 @@ export default function LiveSalesWidget() {
           <div className="text-center">
             <div className="flex items-center justify-center gap-1">
               <ShoppingCart className="h-3 w-3 text-[var(--data-success-500)]" />
-              <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{data.orders}</span>
+              <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{data.orders}</span>
             </div>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">pedidos</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1">
               <Users className="h-3 w-3 text-[var(--text-secondary)]" />
-              <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{data.customers}</span>
+              <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{data.customers}</span>
             </div>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">clientes</p>
           </div>

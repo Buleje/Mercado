@@ -134,7 +134,7 @@ export default function AssetManagerTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Boxes className="h-6 w-6 text-primary" /> Gestión de Activos Fijos
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Equipos, mobiliario, depreciación y mantenimiento</p>
@@ -143,7 +143,7 @@ export default function AssetManagerTab() {
           <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Registrar activo
           </button>
-          <button onClick={() => exportToCSV(filtered.map(a => ({ codigo: a.code, nombre: a.name, categoria: CATEGORY_META[a.category].label, estado: STATUS_META[a.status].label, fecha_adq: a.acquisitionDate, costo: a.acquisitionCost, vida_util: a.usefulLifeYears, dep_acum: Number(a.dep.accumulated).toFixed(2), valor_libros: Number(a.dep.bookValue).toFixed(2), ubicacion: a.location, responsable: a.responsible })), "activos-fijos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(a => ({ codigo: a.code, nombre: a.name, categoria: CATEGORY_META[a.category].label, estado: STATUS_META[a.status].label, fecha_adq: a.acquisitionDate, costo: a.acquisitionCost, vida_util: a.usefulLifeYears, dep_acum: Number(a.dep.accumulated).toFixed(2), valor_libros: Number(a.dep.bookValue).toFixed(2), ubicacion: a.location, responsable: a.responsible })), "activos-fijos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -179,19 +179,19 @@ export default function AssetManagerTab() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Nuevo activo fijo</CardTitle>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-3">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nuevo activo fijo</CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Nombre del activo *" className="col-span-full sm:col-span-2 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
-            <input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} placeholder="Código *" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
-            <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as AssetCategory }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Nombre del activo *" className="col-span-full sm:col-span-2 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} placeholder="Código *" className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as AssetCategory }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               {(Object.keys(CATEGORY_META) as AssetCategory[]).map(c => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
             </select>
-            <input type="date" value={form.acquisitionDate} onChange={e => setForm(p => ({ ...p, acquisitionDate: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" title="Fecha adquisición" />
-            <input type="number" value={form.acquisitionCost} onChange={e => setForm(p => ({ ...p, acquisitionCost: e.target.value }))} placeholder="Costo (S/)" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
-            <input type="number" value={form.usefulLifeYears} onChange={e => setForm(p => ({ ...p, usefulLifeYears: e.target.value }))} placeholder="Vida útil (años)" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
-            <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="Ubicación" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
-            <input value={form.responsible} onChange={e => setForm(p => ({ ...p, responsible: e.target.value }))} placeholder="Responsable" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+            <input type="date" value={form.acquisitionDate} onChange={e => setForm(p => ({ ...p, acquisitionDate: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" title="Fecha adquisición" />
+            <input type="number" value={form.acquisitionCost} onChange={e => setForm(p => ({ ...p, acquisitionCost: e.target.value }))} placeholder="Costo (S/)" className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <input type="number" value={form.usefulLifeYears} onChange={e => setForm(p => ({ ...p, usefulLifeYears: e.target.value }))} placeholder="Vida útil (años)" className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="Ubicación" className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <input value={form.responsible} onChange={e => setForm(p => ({ ...p, responsible: e.target.value }))} placeholder="Responsable" className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">Cancelar</button>
@@ -204,23 +204,23 @@ export default function AssetManagerTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, código, ubicación..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, código, ubicación..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as AssetStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as AssetStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as AssetStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value as AssetCategory | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value as AssetCategory | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las categorías</option>
           {(Object.keys(CATEGORY_META) as AssetCategory[]).map(c => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Código</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Activo</th>
@@ -240,10 +240,10 @@ export default function AssetManagerTab() {
                 return (
                   <tr key={a.id} className="hover:bg-[var(--surface-alt)]/50 dark:hover:bg-surface/30 transition-colors">
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono font-bold text-[var(--text-secondary)]">{a.code}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{a.name}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.name}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{CATEGORY_META[a.category].label}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(a.acquisitionCost)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(a.acquisitionCost)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--data-info-500)]">{fmt(a.dep.bookValue)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <div className="flex items-center gap-1.5 justify-center">
@@ -261,10 +261,10 @@ export default function AssetManagerTab() {
                 );
               })}
             </tbody>
-            <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface/50">
+            <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface/50">
               <tr className="font-extrabold">
                 <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-[var(--text-secondary)]">Totales</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(stats.totalCost)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(stats.totalCost)}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-info-500)]">{fmt(stats.totalBook)}</td>
                 <td colSpan={3} />
               </tr>
@@ -278,9 +278,9 @@ export default function AssetManagerTab() {
         const dep = calcDepreciation(detail.acquisitionCost, detail.usefulLifeYears, detail.acquisitionDate);
         return (
           <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">Detalle del activo</CardTitle>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle del activo</CardTitle>
                 <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
               </div>
               <div className="space-y-2 text-sm">
@@ -297,7 +297,7 @@ export default function AssetManagerTab() {
                 ].map(([k, v]) => (
                   <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                     <span className="text-[var(--text-secondary)] dark:text-muted shrink-0">{k}</span>
-                    <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
+                    <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{v}</span>
                   </div>
                 ))}
               </div>

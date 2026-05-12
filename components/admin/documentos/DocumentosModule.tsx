@@ -369,11 +369,11 @@ export default function DocumentosModule() {
             {folders.map((f) => {
               const active = filterMode === "folder" && activeFolderId === f.id;
               return (
-                <li key={f.id} className="group">
+                <li key={f.id} className="group relative">
                   <button
                     onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
                     className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition-colors",
+                      "w-full flex items-center gap-2 px-3 py-2 pr-9 rounded-lg text-sm font-bold transition-colors",
                       active ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                     )}
                   >
@@ -387,13 +387,14 @@ export default function DocumentosModule() {
                         {f.documentCount}
                       </span>
                     )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f); }}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 hover:text-red-500 text-[var(--text-tertiary)] transition-all"
-                      aria-label={`Eliminar carpeta ${f.name}`}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f); }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 hover:text-red-500 text-[var(--text-tertiary)] transition-all"
+                    aria-label={`Eliminar carpeta ${f.name}`}
+                  >
+                    <Trash2 className="h-3 w-3" />
                   </button>
                 </li>
               );

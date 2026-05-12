@@ -173,7 +173,7 @@ export default function ShipmentTrackingTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Eye className="h-6 w-6 text-primary" /> Seguimiento de Envíos
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
@@ -187,7 +187,7 @@ export default function ShipmentTrackingTab() {
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border",
               autoRefresh
                 ? "bg-primary/10 text-primary border-primary/20"
-                : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] border-[var(--rule-base)] dark:border-card-border"
+                : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] border-[var(--rule-base)] dark:border-[var(--rule-base)]"
             )}
           >
             <RefreshCw className={cn("h-3.5 w-3.5", autoRefresh && "animate-spin")} style={autoRefresh ? { animationDuration: "3s" } : {}} />
@@ -195,7 +195,7 @@ export default function ShipmentTrackingTab() {
           </button>
           <button
             onClick={fetchOrders}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface border border-[var(--rule-base)] dark:border-card-border"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
           >
             <RefreshCw className="h-3.5 w-3.5" /> Actualizar
           </button>
@@ -222,7 +222,7 @@ export default function ShipmentTrackingTab() {
             icon: Clock,
           },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 text-center">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 text-center">
             <k.icon className={cn("h-4 w-4 mx-auto mb-1", k.color)} />
             <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
@@ -238,7 +238,7 @@ export default function ShipmentTrackingTab() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"
             placeholder="Buscar pedido, cliente, dirección…"
           />
         </div>
@@ -274,7 +274,7 @@ export default function ShipmentTrackingTab() {
           <select
             value={filterRider}
             onChange={e => setFilterRider(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs font-semibold text-[var(--text-primary)] dark:text-foreground"
+            className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           >
             <option value="all">Todos los repartidores</option>
             {riders.map(r => (

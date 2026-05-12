@@ -217,7 +217,7 @@ export default function ExecutiveDashboardTab() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Gauge className="h-6 w-6 text-primary" /> Dashboard Ejecutivo
           </SectionTitle>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">
@@ -265,14 +265,14 @@ export default function ExecutiveDashboardTab() {
             { label: "Clientes",      value: String(kpis.clients),    delta: kpis.cliDelta,  icon: Users,       color: "text-[var(--text-secondary)]", bgColor: "bg-[var(--surface-sunken)]",    spark: kpis.clientSpark, sparkColor: "#8b5cf6" },
             { label: "Utilidad",      value: fmtShort(kpis.utilidad), delta: kpis.utilDelta, icon: TrendingUp,  color: "text-[var(--data-warning-500)]",  bgColor: "bg-amber-50 dark:bg-amber-900/20",      spark: kpis.utilSpark,   sparkColor: "#f59e0b" },
           ].map(kpi => (
-            <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+            <div key={kpi.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0", kpi.bgColor)}>
                   <kpi.icon className={cn("h-4.5 w-4.5", kpi.color)} />
                 </div>
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted leading-tight">{kpi.label}</span>
               </div>
-              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground leading-none">{kpi.value}</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-none">{kpi.value}</p>
               <div className="flex items-center justify-between mt-2">
                 <div className={cn("flex items-center gap-1 text-xs font-bold", kpi.delta >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                   {kpi.delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
@@ -286,9 +286,9 @@ export default function ExecutiveDashboardTab() {
       )}
 
       {/* ── Revenue bar chart ── */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
-          <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" /> Ingresos — {PERIOD_LABELS[period]}
           </CardTitle>
           <button
@@ -323,7 +323,7 @@ export default function ExecutiveDashboardTab() {
 
       {/* ── Module health grid ── */}
       <div>
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex flex-wrap items-center gap-2">
           <Eye className="h-4 w-4 text-primary" /> Salud por módulo
         </CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 items-start">
@@ -334,20 +334,20 @@ export default function ExecutiveDashboardTab() {
                 key={h.module}
                 onClick={() => setExpanded(expandedModule === h.module ? null : h.module)}
                 className={cn(
-                  "bg-white dark:bg-card rounded-xl border p-4 text-left transition-all duration-[var(--dur-base)] hover:shadow-[var(--shadow-sm)]",
-                  h.status === "critical" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : h.status === "warning" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border",
+                  "bg-[var(--surface-raised)] rounded-xl border p-4 text-left transition-all duration-[var(--dur-base)] hover:shadow-[var(--shadow-sm)]",
+                  h.status === "critical" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : h.status === "warning" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]",
                   expandedModule === h.module && "sm:col-span-2 ring-1 ring-primary/20"
                 )}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{h.module}</span>
+                  <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{h.module}</span>
                   <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase px-2 py-0.5 rounded-full", h.status === "ok" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : h.status === "warning" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                     {h.status === "ok" ? "OK" : h.status === "warning" ? "Alerta" : "Crítico"}
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1.5">{h.metric}</p>
                 <div className="flex items-end justify-between">
-                  <span className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground leading-none">
+                  <span className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-none">
                     {h.isCurrency ? fmtShort(h.value) : h.isDecimal ? Number(h.value).toFixed(1) : h.value}
                     {h.isDecimal && <Star className="h-3 w-3 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] inline ml-1 mb-1" />}
                   </span>
@@ -357,13 +357,13 @@ export default function ExecutiveDashboardTab() {
                   </span>
                 </div>
                 {expandedModule === h.module && (
-                  <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border space-y-2">
+                  <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-2">
                     {h.detail && <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{h.detail}</p>}
                     {h.target > 0 && (
                       <>
                         <div className="flex justify-between text-xs mb-1">
                           <span className="text-[var(--text-tertiary)] dark:text-muted">Meta: {h.target}</span>
-                          <span className="font-bold text-[var(--text-secondary)] dark:text-foreground">{pct.toFixed(0)}%</span>
+                          <span className="font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{pct.toFixed(0)}%</span>
                         </div>
                         <div className="w-full h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full transition-all", h.status === "ok" ? "bg-[var(--accent-soft)]" : h.status === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]")} style={{ width: `${pct}%` }} />
@@ -379,8 +379,8 @@ export default function ExecutiveDashboardTab() {
       </div>
 
       {/* ── Recommendations ── */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Acciones recomendadas
         </CardTitle>
         <div className="space-y-2">

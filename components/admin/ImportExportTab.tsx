@@ -169,7 +169,7 @@ export default function ImportExportTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Subir / Descargar Datos</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Subir / Descargar Datos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Descarga tus datos a Excel o sube archivos para cargar productos de golpe</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -188,11 +188,11 @@ export default function ImportExportTab() {
             const isExportingCSV = exporting === `${mod.id}-csv`;
             const isExportingXLS = exporting === `${mod.id}-excel`;
             return (
-              <div key={mod.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
+              <div key={mod.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
                 <div className="flex flex-wrap items-center gap-3 mb-4">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Icon className="h-5 w-5 text-primary" /></div>
                   <div>
-                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{mod.label}</CardTitle>
+                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{mod.label}</CardTitle>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Datos reales desde la base de datos</p>
                   </div>
                 </div>
@@ -223,11 +223,11 @@ export default function ImportExportTab() {
       {view === "import" && (
         <div className="space-y-6">
           {/* Module selector */}
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-3">1. Elige a dónde van los datos</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">1. Elige a dónde van los datos</CardTitle>
             <div className="flex flex-wrap gap-2">
               {EXPORT_MODULES.map(m => (
-                <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-lg text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-primary")}>
+                <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-lg text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary")}>
                   {m.label}
                 </button>
               ))}
@@ -235,13 +235,13 @@ export default function ImportExportTab() {
           </div>
 
           {/* Upload zone */}
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-3">2. Sube tu archivo</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">2. Sube tu archivo</CardTitle>
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
-              className={cn("border-2 border-dashed rounded-xl p-8 text-center transition-colors", dragOver ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-card-border")}
+              className={cn("border-2 border-dashed rounded-xl p-8 text-center transition-colors", dragOver ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}
             >
               {importing ? (
                 <LoadingState message="Procesando archivo..." />
@@ -285,7 +285,7 @@ export default function ImportExportTab() {
       )}
 
       {view === "history" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-y-hidden overflow-x-auto">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-y-hidden overflow-x-auto">
           <table className="w-full min-w-150 text-sm">
             <thead><tr className="bg-[var(--surface-alt)] dark:bg-surface text-left">
               <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Archivo</th>
@@ -296,10 +296,10 @@ export default function ImportExportTab() {
             </tr></thead>
             <tbody>
               {IMPORT_HISTORY.map(r => (
-                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" /><span className="font-semibold text-[var(--text-primary)] dark:text-foreground truncate max-w-48">{r.filename}</span></td>
+                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" /><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-48">{r.filename}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.records}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.records}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
                     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                       {r.status === "success" ? "Exitoso" : r.status === "partial" ? `${r.errors} errores` : "Error"}

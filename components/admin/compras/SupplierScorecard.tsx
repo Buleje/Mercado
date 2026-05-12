@@ -38,7 +38,7 @@ function MetricBar({ label, value, icon: Icon }: { label: string; value: number;
         <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted font-medium">
           <Icon className="h-3 w-3" /> {label}
         </span>
-        <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{value}%</span>
+        <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{value}%</span>
       </div>
       <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
@@ -52,7 +52,7 @@ function MetricBar({ label, value, icon: Icon }: { label: string; value: number;
 
 function SkeletonCard() {
   return (
-    <div className="animate-pulse bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+    <div className="animate-pulse bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-3">
         <div className="h-16 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
         <div className="space-y-2 flex-1">
@@ -91,7 +91,7 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
 
   if (data.insufficient) {
     return (
-      <div className="bg-gray-50 dark:bg-accent/50 border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+      <div className="bg-gray-50 dark:bg-accent/50 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
         <AlertTriangle className="h-6 w-6 text-[var(--text-tertiary)] mx-auto mb-2" />
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
           Sin historial suficiente para evaluar (min. 3 OC)
@@ -108,7 +108,7 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
   const ringColor = score > 70 ? "stroke-[var(--data-success-500)]" : score > 55 ? "stroke-[var(--data-warning-500)]" : "stroke-[var(--data-error-500)]";
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-4">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-4">
       {/* Score + Grade */}
       <div className="flex items-center gap-4">
         {/* Circular score */}

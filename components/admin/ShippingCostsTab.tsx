@@ -122,7 +122,7 @@ export default function ShippingCostsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <DollarSign className="h-6 w-6 text-primary" />
             Costos de Envío
           </SectionTitle>
@@ -153,7 +153,7 @@ export default function ShippingCostsTab() {
           { label: "Envíos gratis",            value: kpis.totalFree,         color: "text-[var(--text-secondary)]",  icon: TrendingDown },
           { label: "Costo prom. pagado",       value: fmt(kpis.avgCost),      color: "text-[var(--data-warning-500)]",   icon: DollarSign },
         ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex items-start gap-3">
+          <div key={label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 flex items-start gap-3">
             <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
               <Icon className="h-4 w-4" />
             </div>
@@ -169,18 +169,18 @@ export default function ShippingCostsTab() {
       {view === "rules" && (
         <div className="space-y-3">
           {!loading && rules.length === 0 && (
-            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl">
+            <div className="text-center py-12 bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
               <MapPin className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-2" />
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Sin tarifas configuradas. Crea la primera zona.</p>
             </div>
           )}
           {rules.map(r => (
-            <div key={r.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-5 transition-all", !r.active && "opacity-60")}>
+            <div key={r.id} className={cn("bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 sm:p-5 transition-all", !r.active && "opacity-60")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <MapPin className="h-4 w-4 text-primary shrink-0" />
-                    <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{r.zone}</h4>
+                    <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.zone}</h4>
                     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                       r.active
                         ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
@@ -196,7 +196,7 @@ export default function ShippingCostsTab() {
                     </div>
                     <div>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Pedido mínimo</p>
-                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{r.minOrder > 0 ? fmt(r.minOrder) : "—"}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.minOrder > 0 ? fmt(r.minOrder) : "—"}</p>
                     </div>
                     <div>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Gratis desde</p>
@@ -206,7 +206,7 @@ export default function ShippingCostsTab() {
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted flex items-center gap-1">
                         <Clock className="h-3 w-3" /> Tiempo est.
                       </p>
-                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{r.estimatedMin}–{r.estimatedMax} min</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.estimatedMin}–{r.estimatedMax} min</p>
                     </div>
                   </div>
                 </div>
@@ -233,9 +233,9 @@ export default function ShippingCostsTab() {
 
       {/* View: Zone stats */}
       {view === "stats" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
-            <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Estadísticas por zona — este mes</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Estadísticas por zona — este mes</CardTitle>
             <button
               onClick={() => exportToCSV(zoneStats.map(s => ({ zona: s.zone, pedidos: s.orders, ingreso: s.revenue, costo_prom: s.avgFee, gratis: s.freeCount, pagados: s.paidCount })), "costos-envio-zonas")}
               className="text-xs text-primary font-semibold flex items-center gap-1"
@@ -257,13 +257,13 @@ export default function ShippingCostsTab() {
               </thead>
               <tbody>
                 {zoneStats.map(s => (
-                  <tr key={s.zone} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/10">
-                    <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-foreground flex items-center gap-1.5">
+                  <tr key={s.zone} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent/10">
+                    <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
                       <MapPin className="h-3.5 w-3.5 text-primary shrink-0" /> {s.zone}
                     </td>
-                    <td className="px-4 py-3 text-right text-[var(--text-primary)] dark:text-foreground">{s.orders}</td>
+                    <td className="px-4 py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.orders}</td>
                     <td className="px-4 py-3 text-right font-bold text-[var(--data-success-500)]">{fmt(s.revenue)}</td>
-                    <td className="px-4 py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(s.avgFee)}</td>
+                    <td className="px-4 py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(s.avgFee)}</td>
                     <td className="px-4 py-3 text-right text-[var(--text-secondary)] font-semibold">{s.freeCount}</td>
                     <td className="px-4 py-3 text-right text-[var(--text-secondary)] dark:text-muted text-xs">{pct(s.freeCount, s.orders)}</td>
                   </tr>
@@ -279,9 +279,9 @@ export default function ShippingCostsTab() {
 
       {/* View: History */}
       {view === "history" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-card-border">
-            <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Histórico mensual de costos</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Histórico mensual de costos</CardTitle>
             <button
               onClick={() => exportToCSV(costHistory.map(h => ({ mes: h.month, total: h.totalCost, prom: h.avgCost, pedidos: h.orders })), "historial-costos-envio")}
               className="text-xs text-primary font-semibold flex items-center gap-1"
@@ -301,10 +301,10 @@ export default function ShippingCostsTab() {
               </thead>
               <tbody>
                 {costHistory.map(h => (
-                  <tr key={h.month} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/10">
-                    <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-foreground capitalize">{h.month}</td>
+                  <tr key={h.month} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent/10">
+                    <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] capitalize">{h.month}</td>
                     <td className="px-4 py-3 text-right text-[var(--text-secondary)] dark:text-muted">{h.orders}</td>
-                    <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(h.totalCost)}</td>
+                    <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(h.totalCost)}</td>
                     <td className="px-4 py-3 text-right text-primary font-semibold">{fmt(h.avgCost)}</td>
                   </tr>
                 ))}
@@ -321,11 +321,11 @@ export default function ShippingCostsTab() {
       {showModal && (
         <div className="modal-backdrop p-4" onClick={() => setShowModal(false)}>
           <div
-            className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 max-w-md w-full border border-[var(--rule-base)] dark:border-card-border"
+            className="bg-[var(--surface-raised)] rounded-xl p-4 sm:p-6 max-w-md w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
+              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {editRule ? "Editar tarifa" : "Nueva tarifa de envío"}
               </CardTitle>
               <button onClick={() => setShowModal(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface">
@@ -339,33 +339,33 @@ export default function ShippingCostsTab() {
                   value={form.zone}
                   onChange={e => setForm({ ...form, zone: e.target.value })}
                   placeholder="Ej: Yarinacocha, Callería..."
-                  className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tarifa (S/)</label>
                   <input type="number" step="0.5" min="0" value={form.fee} onChange={e => setForm({ ...form, fee: +e.target.value })}
-                    className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                    className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Pedido mínimo (S/)</label>
                   <input type="number" min="0" value={form.minOrder} onChange={e => setForm({ ...form, minOrder: +e.target.value })}
-                    className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                    className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
                 </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Gratis desde (S/) <span className="font-normal text-[var(--text-tertiary)]">— 0 = no aplica</span></label>
                 <input type="number" min="0" value={form.freeAbove} onChange={e => setForm({ ...form, freeAbove: +e.target.value })}
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tiempo estimado (minutos)</label>
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   <input type="number" min="0" value={form.estimatedMin} onChange={e => setForm({ ...form, estimatedMin: +e.target.value })}
-                    placeholder="Mín" className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                    placeholder="Mín" className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
                   <input type="number" min="0" value={form.estimatedMax} onChange={e => setForm({ ...form, estimatedMax: +e.target.value })}
-                    placeholder="Máx" className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                    placeholder="Máx" className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
                 </div>
               </div>
             </div>

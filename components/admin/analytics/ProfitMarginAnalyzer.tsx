@@ -155,7 +155,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
         </div>
         <div className="flex-1 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] p-2 text-center">
           <p className="text-xs text-[var(--text-tertiary)]">Productos analizados</p>
-          <p className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">{items.length}</p>
+          <p className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{items.length}</p>
         </div>
       </div>
 
@@ -236,7 +236,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
             >
               <span className="w-4 text-xs font-bold text-[var(--text-tertiary)]">{i + 1}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-[var(--text-primary)] dark:text-foreground truncate">{p.name}</p>
+                <p className="text-xs font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{p.category}</p>
               </div>
               <div className="text-right shrink-0">

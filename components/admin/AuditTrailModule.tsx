@@ -80,13 +80,13 @@ export default function AuditTrailModule() {
             placeholder="Buscar por usuario..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
-            className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
+            className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
           />
         </div>
         <select
           value={entityFilter}
           onChange={e => { setEntityFilter(e.target.value); setPage(0); }}
-          className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
+          className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
         >
           <option value="">Todas las entidades</option>
           <option value="Sale">Ventas</option>
@@ -124,7 +124,7 @@ export default function AuditTrailModule() {
       )}
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 text-center">
             <div className="h-6 w-6 border-2 border-[#9b5de5] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -150,7 +150,7 @@ export default function AuditTrailModule() {
                 {logs.map(log => (
                   <tr
                     key={log.id}
-                    className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
+                    className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
                   >
                     <td className="p-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
@@ -196,7 +196,7 @@ export default function AuditTrailModule() {
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-alt)]/50 dark:bg-gray-800/30">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)]/50 dark:bg-gray-800/30">
             <span className="text-xs text-[var(--text-secondary)]">{total} registros</span>
             <div className="flex items-center gap-2">
               <button

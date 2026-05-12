@@ -70,8 +70,8 @@ export function SidebarFlyout({
       inactiveIcon: "text-zinc-500",
     },
     light: {
-      bg: "bg-white dark:bg-card",
-      arrow: "bg-white dark:bg-card border-[var(--rule-soft)]",
+      bg: "bg-[var(--surface-raised)]",
+      arrow: "bg-[var(--surface-raised)] border-[var(--rule-soft)]",
       border: "border-[var(--rule-soft)] shadow-lg",
       activeBg: "bg-[var(--accent-soft)] text-primary font-semibold",
       inactiveText: "text-[var(--text-secondary)]",

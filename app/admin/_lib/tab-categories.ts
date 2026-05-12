@@ -217,8 +217,8 @@ export const MODULE_INFO: Partial<
     icon: Store,
     iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     priority: "medium",
-    desc: "Configura la página pública de tu tienda y cómo se presenta afuera.",
-    tip: "Piensa en esto como la vidriera digital de tu negocio.",
+    desc: "El contenido público de tu storefront: hero, branding marketplace y promociones del home.",
+    tip: "Para colores, logo y tema general, usá 'Identidad y tema'. Para productos/combos/descuentos, usá los módulos dedicados.",
   },
   // ── ENRICH-5: bridges admin para marketplace features ──
   subscriptions: {
@@ -303,6 +303,7 @@ export const BASIC_MODULES: TabCategory[] = [
       "ventas-caja",
       "pedidos",
       "facturacion",
+      "documentos",
       "cotizaciones",
       "guias-remision",
       "notas-credito",

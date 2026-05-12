@@ -101,7 +101,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
     return (
       <button
         onClick={() => setCollapsed(false)}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/80 dark:bg-card/80 border border-[var(--rule-base)] dark:border-card-border backdrop-blur-sm text-sm hover:bg-gray-50 dark:hover:bg-card transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/80 dark:bg-[var(--surface-raised)]/80 border border-[var(--rule-base)] dark:border-[var(--rule-base)] backdrop-blur-sm text-sm hover:bg-gray-50 dark:hover:bg-[var(--surface-raised)] transition-colors"
       >
         <Star className="h-4 w-4 text-primary" />
         <span className="font-semibold text-[var(--text-primary)]">Hoy:</span>
@@ -158,7 +158,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {/* Card 1: Ventas del día */}
         <button
           onClick={() => onNavigate?.("analytics-pro")}
-          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
+          className="group relative overflow-hidden rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
@@ -204,7 +204,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {/* Card 2: Pedidos */}
         <button
           onClick={() => onNavigate?.("pedidos")}
-          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
+          className="group relative overflow-hidden rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
@@ -233,7 +233,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         {/* Card 3: Alertas */}
         <button
           onClick={() => onNavigate?.("inventario")}
-          className="group relative overflow-hidden rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4 text-left hover:border-primary/30 transition-colors"
+          className="group relative overflow-hidden rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 text-left hover:border-primary/30 transition-colors"
         >
           <div className="flex items-center justify-between mb-2">
             <div
@@ -273,7 +273,7 @@ export default function MiNegocioHoyCard({ onNavigate }: MiNegocioHoyCardProps) 
         </button>
 
         {/* Card 4: Top producto */}
-        <div className="relative overflow-hidden rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4">
+        <div className="relative overflow-hidden rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
           <div className="flex items-center mb-2">
             <div className="w-9 h-9 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center">
               <Star className="h-5 w-5 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />

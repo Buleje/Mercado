@@ -773,9 +773,9 @@ export default function InventarioAlmacenesModule() {
       {/* ── Modal: Conteo Físico ── */}
       {showConteoModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowConteoModal(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-4xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Conteo Físico</CardTitle>
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-4xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] sticky top-0 bg-[var(--surface-raised)] z-10">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Conteo Físico</CardTitle>
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
                   <button onClick={() => setConteoMode("wizard")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "wizard" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Guiado</button>
@@ -799,9 +799,9 @@ export default function InventarioAlmacenesModule() {
       {/* ── Modal: Declaración de Inventario ── */}
       {showDeclaracionModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowDeclaracionModal(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-5xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-card-border sticky top-0 bg-white dark:bg-card z-10">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Declaración de Inventario</CardTitle>
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] sticky top-0 bg-[var(--surface-raised)] z-10">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Declaración de Inventario</CardTitle>
               <button onClick={() => setShowDeclaracionModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
                 <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>

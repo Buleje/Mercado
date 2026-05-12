@@ -156,7 +156,21 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
       });
   }, []);
 
-  const data = useMemo<MarketplaceDashboardData>(() => apiData ?? buildMockData(kpis), [apiData, kpis]);
+  // Solo usar apiData si tiene los arrays criticos. Si la API devolvio shape
+  // parcial (ej: 503 + body partial), caer al mock para no crashear con
+  // `undefined.length`. Defensivo tras incidente 503 dashboard 2026-05-09.
+  const data = useMemo<MarketplaceDashboardData>(() => {
+    const isComplete =
+      apiData &&
+      Array.isArray(apiData.sparkOrders) &&
+      Array.isArray(apiData.sparkGmv) &&
+      Array.isArray(apiData.gmvDaily) &&
+      Array.isArray(apiData.storeGrowth) &&
+      Array.isArray(apiData.channelData) &&
+      Array.isArray(apiData.categoryData) &&
+      Array.isArray(apiData.topStores);
+    return isComplete ? (apiData as MarketplaceDashboardData) : buildMockData(kpis);
+  }, [apiData, kpis]);
 
   if (loading) return <DashboardSkeleton />;
   if (error) {

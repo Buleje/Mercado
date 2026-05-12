@@ -89,12 +89,12 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border z-50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 w-80 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] z-50 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+            <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex flex-wrap items-center gap-2">
                 <Bell className="h-4 w-4 text-primary" />
-                <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Alertas</span>
+                <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Alertas</span>
                 {unread > 0 && <span className="px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold bg-primary text-white">{unread}</span>}
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +125,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
                       key={alert.id}
                       onClick={() => handleClick(alert)}
                       className={cn(
-                        "w-full flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0",
+                        "w-full flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors text-left border-b border-[var(--rule-base)] last:border-0",
                         !alert.read && "bg-primary/[0.03]"
                       )}
                     >
@@ -134,7 +134,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className={cn("text-xs font-bold text-[var(--text-primary)] dark:text-foreground leading-tight", !alert.read && "font-extrabold")}>{alert.title}</p>
+                          <p className={cn("text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-tight", !alert.read && "font-extrabold")}>{alert.title}</p>
                           {alert.urgent && <span className="px-1 py-0.5 rounded text-[length:var(--ts-2xs)] font-extrabold bg-[var(--data-error-500)] text-white shrink-0">URGENTE</span>}
                         </div>
                         <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted mt-0.5 line-clamp-2">{alert.body}</p>
@@ -147,7 +147,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
             </div>
 
             {/* Footer */}
-            <div className="px-2 sm:px-4 py-1.5 sm:py-2.5 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border">
+            <div className="px-2 sm:px-4 py-1.5 sm:py-2.5 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <button
                 onClick={() => { onNavigate("actividad"); setOpen(false); }}
                 className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"

@@ -158,7 +158,7 @@ export default function CheckManagementTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Wallet className="h-6 w-6 text-primary" /> Gestión de Cheques
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
@@ -182,7 +182,7 @@ export default function CheckManagementTab() {
               "cheques"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -246,8 +246,8 @@ export default function CheckManagementTab() {
       )}
 
       {/* Distribución visual por estado */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-3">Distribución por estado</CardTitle>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">Distribución por estado</CardTitle>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(STATUS_MAP) as CheckStatus[]).map((s) => {
             const count = checks.filter((c) => c.status === s).length;
@@ -281,13 +281,13 @@ export default function CheckManagementTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por entidad, número, banco..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           />
         </div>
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
         >
           <option value="todos">Todos</option>
           <option value="recibido">Recibidos</option>
@@ -296,7 +296,7 @@ export default function CheckManagementTab() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
         >
           <option value="todos">Todos los estados</option>
           {(Object.entries(STATUS_MAP) as [CheckStatus, typeof STATUS_MAP[CheckStatus]][]).map(([k, v]) => (
@@ -308,7 +308,7 @@ export default function CheckManagementTab() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -331,12 +331,12 @@ export default function CheckManagementTab() {
                   <tr
                     key={c.id}
                     className={cn(
-                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20",
+                      "border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20",
                       c.status === "rebotado" && "bg-[var(--data-error-50)]/50 dark:bg-red-950/10",
                       isOverdue && "bg-[var(--data-warning-50)]/30 dark:bg-amber-950/5"
                     )}
                   >
-                    <td className="px-4 py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
+                    <td className="px-4 py-3 font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                       {c.number}
                     </td>
                     <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{c.bank}</td>
@@ -352,8 +352,8 @@ export default function CheckManagementTab() {
                         {c.type === "recibido" ? "Recibido" : "Emitido"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{c.party}</td>
-                    <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.amount)}</td>
+                    <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.party}</td>
+                    <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.amount)}</td>
                     <td
                       className={cn(
                         "px-4 py-3 text-[var(--text-secondary)] flex items-center gap-1",
@@ -407,11 +407,11 @@ export default function CheckManagementTab() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 w-full max-w-md space-y-4"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 w-full max-w-md space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 Cheque #{detail.number}
               </CardTitle>
               <button onClick={() => setDetail(null)}>
@@ -431,12 +431,12 @@ export default function CheckManagementTab() {
               ].map(([k, v]) => (
                 <div key={k as string}>
                   <p className="text-xs text-[var(--text-tertiary)]">{k}</p>
-                  <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{v}</p>
+                  <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{v}</p>
                 </div>
               ))}
             </div>
             {detail.notes && (
-              <p className="text-xs text-[var(--text-tertiary)] italic border-t border-[var(--rule-soft)] dark:border-card-border pt-2">
+              <p className="text-xs text-[var(--text-tertiary)] italic border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-2">
                 {detail.notes}
               </p>
             )}

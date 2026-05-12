@@ -92,12 +92,12 @@ export default function RFQTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <FileText className="h-6 w-6 text-primary" /> Cotizaciones Comparativas (RFQ)
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Solicita y compara cotizaciones de múltiples proveedores</p>
         </div>
-        <button onClick={() => exportToCSV(RFQS.map(r => ({ ref: r.ref, producto: r.product, cantidad: r.quantity, unidad: r.unit, creado: r.createdAt, limite: r.deadline, estado: STATUS_MAP[r.status].label, cotizaciones: r.quotes.length, ganador: r.winner || "-" })), "cotizaciones-rfq")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(RFQS.map(r => ({ ref: r.ref, producto: r.product, cantidad: r.quantity, unidad: r.unit, creado: r.createdAt, limite: r.deadline, estado: STATUS_MAP[r.status].label, cotizaciones: r.quotes.length, ganador: r.winner || "-" })), "cotizaciones-rfq")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -124,9 +124,9 @@ export default function RFQTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto o referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto o referencia..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as RFQStatus | "todos")} className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as RFQStatus | "todos")} className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los estados</option>
           {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
@@ -155,10 +155,10 @@ export default function RFQTab() {
       {/* Detail Modal — Comparison Matrix */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.ref} — {detail.product}</CardTitle>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref} — {detail.product}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">{detail.quantity} {detail.unit} · Límite: {detail.deadline}</p>
               </div>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>

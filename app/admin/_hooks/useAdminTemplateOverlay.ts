@@ -80,7 +80,7 @@ export function useAdminTemplateOverlay(): AdminTemplateOverlay {
   const getRequiredPlan = useCallback(
     (tabId: string): AdminPlan => {
       const entry = ADMIN_MODULE_CATALOG.find((m) => m.id === tabId);
-      if (!entry) return "free";
+      if (!entry) return "basico";
       const ov = template.overrides[tabId];
       return ov?.plan ?? entry.defaultPlan;
     },

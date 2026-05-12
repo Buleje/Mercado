@@ -215,7 +215,7 @@ export default function AdminUsersTab() {
       {/* Header */}
       <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Usuarios del Panel</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Usuarios del Panel</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Gestiona accesos, roles y contraseñas</p>
         </div>
         <button
@@ -241,7 +241,7 @@ export default function AdminUsersTab() {
       )}
 
       {/* Users list */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl  overflow-y-hidden overflow-x-auto">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  overflow-y-hidden overflow-x-auto">
         {loading ? (
           <div className="h-40 flex flex-wrap items-center justify-center text-[var(--text-tertiary)] dark:text-muted gap-2">
             <Loader2 className="h-5 w-5 animate-spin" /> Cargando…
@@ -255,7 +255,7 @@ export default function AdminUsersTab() {
           <div className="overflow-x-auto -mx-2 px-2">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface">
+              <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface">
                 <th className="text-left px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Usuario</th>
                 <th className="text-left px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Rol</th>
                 <th className="text-left px-5 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">Estado</th>
@@ -274,7 +274,7 @@ export default function AdminUsersTab() {
                           <span className="text-primary font-extrabold text-sm">{u.name.charAt(0).toUpperCase()}</span>
                         </div>
                         <div>
-                          <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{u.name}</p>
+                          <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{u.name}</p>
                           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">@{u.username}</p>
                         </div>
                       </div>
@@ -290,7 +290,7 @@ export default function AdminUsersTab() {
                         <button
                           onClick={() => openEditInfo(u)}
                           title="Editar usuario"
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent hover:text-[var(--text-primary)] dark:hover:text-foreground transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] transition-colors"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -423,13 +423,13 @@ export default function AdminUsersTab() {
       {/* ── Delete confirmation ────────────────────────────────────────────── */}
       {confirmDeleteId && (
         <div className="modal-backdrop p-4" onClick={() => setConfirmDeleteId(null)}>
-          <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 flex items-center justify-center shrink-0">
                 <Trash2 className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div>
-                <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Eliminar usuario</p>
+                <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Eliminar usuario</p>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer</p>
               </div>
             </div>
@@ -458,7 +458,7 @@ export default function AdminUsersTab() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-const inputCls = "w-full px-3 py-2.5 text-sm bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] dark:border-card-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted";
+const inputCls = "w-full px-3 py-2.5 text-sm bg-[var(--surface-alt)] dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -510,9 +510,9 @@ function FormFooter({ onCancel, saving, label }: { onCancel: () => void; saving:
 function ModalWrapper({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="modal-backdrop p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-card rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <UserCog className="h-5 w-5 text-primary" />
             {title}
           </CardTitle>

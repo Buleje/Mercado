@@ -140,13 +140,13 @@ export default function QuickNotesTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Notas Rápidas</SectionTitle>
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Notas Rápidas</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Apuntes, recordatorios y pendientes del día a día</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar notas..." className="pl-9 pr-4 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:border-primary w-48" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar notas..." className="pl-9 pr-4 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary w-48" />
           </div>
           <button onClick={() => setShowNew(true)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Nueva nota
@@ -164,7 +164,7 @@ export default function QuickNotesTab() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse">
+            <div key={i} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 animate-pulse">
               <div className="h-4 bg-gray-200 dark:bg-surface rounded-full w-3/4 mb-3" />
               <div className="space-y-2 mb-4">
                 <div className="h-3 bg-gray-100 dark:bg-surface/60 rounded-full w-full" />
@@ -180,9 +180,9 @@ export default function QuickNotesTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
             {/* New note card */}
             {showNew && (
-              <div className="bg-white dark:bg-card rounded-xl border-2 border-primary/50 p-4">
-                <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Título de la nota..." className="w-full text-sm font-bold text-[var(--text-primary)] dark:text-foreground bg-transparent outline-none mb-2 placeholder:text-[var(--text-tertiary)]" autoFocus />
-                <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Contenido..." rows={3} className="w-full text-sm text-[var(--text-primary)] dark:text-foreground bg-transparent outline-none resize-none mb-3 placeholder:text-[var(--text-tertiary)]" />
+              <div className="bg-[var(--surface-raised)] rounded-xl border-2 border-primary/50 p-4">
+                <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Título de la nota..." className="w-full text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-transparent outline-none mb-2 placeholder:text-[var(--text-tertiary)]" autoFocus />
+                <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Contenido..." rows={3} className="w-full text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-transparent outline-none resize-none mb-3 placeholder:text-[var(--text-tertiary)]" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     {(Object.keys(COLOR_DOTS) as NoteColor[]).map(c => (
@@ -205,8 +205,8 @@ export default function QuickNotesTab() {
                 <div key={note.id} className={cn("rounded-xl border p-4 transition-shadow hover:shadow-[var(--shadow-sm)]", colors.bg, colors.border, colors.darkBg, colors.darkBorder)}>
                   {isEditing ? (
                     <>
-                      <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full text-sm font-bold text-[var(--text-primary)] dark:text-foreground bg-transparent outline-none mb-2" />
-                      <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={3} className="w-full text-sm text-[var(--text-primary)] dark:text-foreground bg-transparent outline-none resize-none mb-3" />
+                      <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-transparent outline-none mb-2" />
+                      <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={3} className="w-full text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-transparent outline-none resize-none mb-3" />
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           {(Object.keys(COLOR_DOTS) as NoteColor[]).map(c => (
@@ -222,7 +222,7 @@ export default function QuickNotesTab() {
                   ) : (
                     <>
                       <div className="flex items-start justify-between mb-2">
-                        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm leading-snug pr-2">{note.title}</CardTitle>
+                        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm leading-snug pr-2">{note.title}</CardTitle>
                         <button onClick={() => handlePin(note.id)} className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)] transition-colors shrink-0">
                           {note.pinned ? <Pin className="h-3.5 w-3.5 text-[var(--data-warning-500)]" /> : <PinOff className="h-3.5 w-3.5" />}
                         </button>

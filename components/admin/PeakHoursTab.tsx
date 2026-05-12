@@ -80,7 +80,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
         <AlertCircle className="h-8 w-8 text-[var(--data-error-500)]" />
-        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Error al cargar datos</p>
+        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Error al cargar datos</p>
         <button onClick={load} className="text-xs text-primary font-bold hover:underline">Reintentar</button>
       </div>
     );
@@ -100,7 +100,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" /> Horas Pico de Venta
         </CardTitle>
         <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5">
@@ -109,7 +109,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
               viewTab === "horas"
-                ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+                ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] "
                 : "text-[var(--text-secondary)] dark:text-muted"
             )}
           >
@@ -120,7 +120,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-bold transition-all",
               viewTab === "dias"
-                ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+                ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] "
                 : "text-[var(--text-secondary)] dark:text-muted"
             )}
           >
@@ -145,7 +145,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
 
       {/* By Hour Chart */}
       {viewTab === "horas" && !isEmpty && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
           <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted mb-4">
             Ventas por hora del dia (0-23h)
           </p>
@@ -206,7 +206,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
 
       {/* By Day Chart */}
       {viewTab === "dias" && !isEmpty && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
           <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted mb-4">
             Ventas por dia de la semana
           </p>

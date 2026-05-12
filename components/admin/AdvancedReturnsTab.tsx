@@ -101,12 +101,12 @@ export default function AdvancedReturnsTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <RotateCcw className="h-6 w-6 text-primary" /> Devoluciones Avanzadas
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">RMA, inspección, decisiones y estadísticas por motivo</p>
         </div>
-        <button onClick={() => exportToCSV(records.map(r => ({ fecha: r.date, pedido: r.orderRef, cliente: r.clientName, producto: r.product, cantidad: r.quantity, valor: r.totalValue, motivo: REASON_META[r.reason].label, decision: DECISION_META[r.decision].label, inspeccion: INSPECTION_META[r.inspection].label, restock: r.restocked ? "Sí" : "No" })), "devoluciones")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(records.map(r => ({ fecha: r.date, pedido: r.orderRef, cliente: r.clientName, producto: r.product, cantidad: r.quantity, valor: r.totalValue, motivo: REASON_META[r.reason].label, decision: DECISION_META[r.decision].label, inspeccion: INSPECTION_META[r.inspection].label, restock: r.restocked ? "Sí" : "No" })), "devoluciones")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -126,8 +126,8 @@ export default function AdvancedReturnsTab() {
       </div>
 
       {/* Reason distribution */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Motivos de devolución</CardTitle>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
+        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Motivos de devolución</CardTitle>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {(Object.keys(REASON_META) as ReturnReason[]).map(reason => {
             const count = records.filter(r => r.reason === reason).length;
@@ -146,28 +146,28 @@ export default function AdvancedReturnsTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cliente, producto, pedido..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cliente, producto, pedido..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterReason} onChange={e => setFilterReason(e.target.value as ReturnReason | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterReason} onChange={e => setFilterReason(e.target.value as ReturnReason | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los motivos</option>
           {(Object.keys(REASON_META) as ReturnReason[]).map(r => <option key={r} value={r}>{REASON_META[r].label}</option>)}
         </select>
-        <select value={filterDecision} onChange={e => setFilterDecision(e.target.value as ReturnDecision | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterDecision} onChange={e => setFilterDecision(e.target.value as ReturnDecision | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las decisiones</option>
           {(Object.keys(DECISION_META) as ReturnDecision[]).map(d => <option key={d} value={d}>{DECISION_META[d].label}</option>)}
         </select>
       </div>
 
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Pedido</th><th className="px-2 sm:px-4 py-2 sm:py-3">Producto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Valor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Motivo</th><th className="px-2 sm:px-4 py-2 sm:py-3">Decisión</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(r => (
-                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20 transition-colors">
+                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20 transition-colors">
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)]">{r.date}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs text-[var(--text-primary)] dark:text-foreground">{r.orderRef}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.product}<br/><span className="text-xs text-[var(--text-tertiary)]">{r.clientName}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.orderRef}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.product}<br/><span className="text-xs text-[var(--text-tertiary)]">{r.clientName}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--data-error-500)]">{fmt(r.totalValue)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><StatusBadge variant={REASON_META[r.reason].variant} label={REASON_META[r.reason].label} /></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold", DECISION_META[r.decision].color)}>{DECISION_META[r.decision].label}</span></td>
@@ -181,18 +181,18 @@ export default function AdvancedReturnsTab() {
 
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.product}</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.product}</CardTitle>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[["Pedido", detail.orderRef], ["Fecha", detail.date], ["Cliente", detail.clientName], ["Cantidad", String(detail.quantity)], ["Precio unitario", fmt(detail.unitPrice)], ["Valor total", fmt(detail.totalValue)], ["Motivo", REASON_META[detail.reason].label], ["Decisión", DECISION_META[detail.decision].label], ["Inspección", INSPECTION_META[detail.inspection].label], ["Restockeado", detail.restocked ? "Sí" : "No"], ["Procesado por", detail.processedBy]].map(([k, v]) => (
-                <div key={k}><p className="text-xs text-[var(--text-tertiary)]">{k}</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{v}</p></div>
+                <div key={k}><p className="text-xs text-[var(--text-tertiary)]">{k}</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{v}</p></div>
               ))}
             </div>
             {detail.notes && (
-              <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Notas</p><p className="text-sm text-[var(--text-primary)] dark:text-foreground bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">{detail.notes}</p></div>
+              <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Notas</p><p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">{detail.notes}</p></div>
             )}
           </div>
         </div>

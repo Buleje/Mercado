@@ -266,10 +266,10 @@ export default function CategoriesEditorTab() {
             <div
               key={cat.id}
               className={cn(
-                "bg-white dark:bg-card border rounded-xl transition-all",
+                "bg-[var(--surface-raised)] border rounded-xl transition-all",
                 cat.visible
-                  ? "border-[var(--rule-base)] dark:border-card-border"
-                  : "border-[var(--rule-soft)] dark:border-card-border/50 opacity-50"
+                  ? "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+                  : "border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 opacity-50"
               )}
             >
               {/* Main Category Row — sin emojis decorativos.
@@ -281,7 +281,7 @@ export default function CategoriesEditorTab() {
                 <input
                   value={cat.label}
                   onChange={(e) => updateField(i, "label", e.target.value)}
-                  className="flex-1 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-1.5 text-sm font-medium"
+                  className="flex-1 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3 py-1.5 text-sm font-medium"
                 />
                 <span className="text-xs text-muted font-mono">{cat.id}</span>
                 
@@ -315,9 +315,9 @@ export default function CategoriesEditorTab() {
 
               {/* SEO Expanded Section */}
               {isSeoExpanded && (
-                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-4 py-4 space-y-4 bg-[var(--surface-alt)]/50 dark:bg-background/50">
+                <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-4 py-4 space-y-4 bg-[var(--surface-alt)]/50 dark:bg-background/50">
                   <div className="flex items-center justify-between mb-2">
-                    <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+                    <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                       <Globe className="h-4 w-4 text-primary" />
                       SEO Metadata
                     </CardTitle>
@@ -348,7 +348,7 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.metaTitle || ""}
                       onChange={(e) => updateSeoField(i, "metaTitle", e.target.value)}
                       placeholder={`${cat.label} - Buleje`}
-                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                       maxLength={70}
                     />
                   </div>
@@ -371,7 +371,7 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.metaDescription || ""}
                       onChange={(e) => updateSeoField(i, "metaDescription", e.target.value)}
                       placeholder={`Compra ${cat.label.toLowerCase()} frescos en línea...`}
-                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm resize-none"
+                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm resize-none"
                       rows={3}
                       maxLength={170}
                     />
@@ -395,7 +395,7 @@ export default function CategoriesEditorTab() {
                         updateSeoField(i, "keywords", keywords);
                       }}
                       placeholder="delivery, san martín, compra online..."
-                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                     />
                   </div>
 
@@ -410,7 +410,7 @@ export default function CategoriesEditorTab() {
                         value={cat.seo?.slug || cat.id}
                         onChange={(e) => updateSeoField(i, "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
                         placeholder={cat.id}
-                        className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm font-mono"
+                        className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-mono"
                       />
                     </div>
 
@@ -424,7 +424,7 @@ export default function CategoriesEditorTab() {
                         value={cat.seo?.ogImage || ""}
                         onChange={(e) => updateSeoField(i, "ogImage", e.target.value)}
                         placeholder="https://..."
-                        className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
+                        className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                       />
                     </div>
                   </div>
@@ -439,12 +439,12 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.canonical || ""}
                       onChange={(e) => updateSeoField(i, "canonical", e.target.value)}
                       placeholder="https://buleje.pe/categoria/..."
-                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                     />
                   </div>
 
                   {/* SEO Preview Card */}
-                  <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+                  <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
                     <div className="text-xs font-semibold text-[var(--text-secondary)] mb-3 flex items-center gap-1.5">
                       <Search className="h-3.5 w-3.5" />
                       Vista previa en Google

@@ -220,8 +220,8 @@ export default function ComparativeReportsTab() {
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                   comparison === opt
-                    ? "bg-white dark:bg-card text-primary "
-                    : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground",
+                    ? "bg-[var(--surface-raised)] text-primary "
+                    : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)]",
                 )}
               >
                 {opt === "mes_pasado" ? "vs. Mes pasado" : "vs. Mismo mes año anterior"}
@@ -241,11 +241,11 @@ export default function ComparativeReportsTab() {
       {dataA && dataB && (
         <>
           {/* Table */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-[var(--surface-alt)] dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-card-border">
+                  <tr className="bg-[var(--surface-alt)] dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     <th className="px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Métrica</th>
                     <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-primary">{periods.labelA}</th>
                     <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">{periods.labelB}</th>
@@ -289,7 +289,7 @@ export default function ComparativeReportsTab() {
           </div>
 
           {/* Chart */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
             <p className="text-sm font-bold text-[var(--text-secondary)] mb-4">Top 5 métricas — comparación</p>
             <div className="h-64">
               <ResponsiveContainer minWidth={0} width="100%" height="100%">

@@ -144,20 +144,20 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div>
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Flujos de Trabajo</SectionTitle>
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Flujos de Trabajo</SectionTitle>
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Procesos paso a paso para las tareas más comunes de la tienda</p>
       </div>
 
       {/* Active flow */}
       {running && (
-        <div className="bg-white dark:bg-card border-2 border-primary/30 rounded-xl overflow-hidden ">
-          <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-[var(--surface-raised)] border-2 border-primary/30 rounded-xl overflow-hidden ">
+          <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-3">
               <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", running.template.bg)}>
                 <running.template.icon className={cn("h-5 w-5", running.template.color)} />
               </div>
               <div>
-                <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground">{running.template.name}</p>
+                <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{running.template.name}</p>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{doneCount} de {totalSteps} pasos completados</p>
               </div>
             </div>
@@ -178,10 +178,10 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
                   "flex items-start gap-3 p-4 rounded-xl border transition-all",
                   step.done
                     ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
-                    : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-card-border"
+                    : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                 )}
               >
-                <button onClick={() => toggleStep(step.id)} className={cn("mt-0.5 w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-all", step.done ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] dark:border-card-border hover:border-[var(--data-success-500)]/30")}>
+                <button onClick={() => toggleStep(step.id)} className={cn("mt-0.5 w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-all", step.done ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-[var(--data-success-500)]/30")}>
                   {step.done && <CheckCircle2 className="h-4 w-4 text-white" />}
                 </button>
                 <div className="flex-1 min-w-0">
@@ -189,7 +189,7 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
                     <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Paso {i + 1}</span>
                     {step.done && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">✓ Listo</span>}
                   </div>
-                  <p className={cn("font-semibold text-sm mt-0.5", step.done ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] line-through" : "text-[var(--text-primary)] dark:text-foreground")}>{step.title}</p>
+                  <p className={cn("font-semibold text-sm mt-0.5", step.done ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] line-through" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{step.title}</p>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 leading-relaxed">{step.description}</p>
                   {step.module && onNavigate && !step.done && (
                     <button onClick={() => { onNavigate(step.module!); toggleStep(step.id); }} className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
@@ -217,13 +217,13 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
       {/* Templates grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         {TEMPLATES.map(t => (
-          <div key={t.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3 hover:shadow-sm transition-shadow flex flex-col">
+          <div key={t.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-3 hover:shadow-sm transition-shadow flex flex-col">
             <div className="flex flex-wrap items-start gap-3">
               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", t.bg)}>
                 <t.icon className={cn("h-5 w-5", t.color)} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground leading-tight">{t.name}</p>
+                <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-tight">{t.name}</p>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5 line-clamp-2">{t.description}</p>
               </div>
             </div>

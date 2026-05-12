@@ -123,7 +123,7 @@ const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>
     header: "Usuario",
     render: (e: AuditEntry) => (
       <div>
-        <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">{e.user}</p>
+        <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs">{e.user}</p>
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{e.role}</p>
       </div>
     ),
@@ -146,7 +146,7 @@ const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>
   {
     key: "description",
     header: "Descripción",
-    render: (e: AuditEntry) => <span className="text-xs text-[var(--text-primary)] dark:text-foreground max-w-60 truncate block">{e.description}</span>,
+    render: (e: AuditEntry) => <span className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] max-w-60 truncate block">{e.description}</span>,
   },
   {
     key: "detail",
@@ -253,12 +253,12 @@ export default function AuditLogTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <ScrollText className="h-6 w-6 text-primary" /> Auditoría Avanzada
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Registro de actividad detallado con trazabilidad completa</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(e => ({ fecha: e.timestamp, usuario: e.user, rol: e.role, accion: ACTION_META[e.action].label, modulo: e.module, descripcion: e.description, detalles: e.details, severidad: e.severity, ip: e.ip })), "auditoria")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -300,21 +300,21 @@ export default function AuditLogTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, usuario..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Descripción, usuario..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value as AuditSeverity | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las severidades</option>
           {(Object.keys(SEVERITY_META) as AuditSeverity[]).map(s => <option key={s} value={s}>{SEVERITY_META[s].label}</option>)}
         </select>
-        <select value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterAction} onChange={e => setFilterAction(e.target.value as AuditAction | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las acciones</option>
           {(Object.keys(ACTION_META) as AuditAction[]).map(a => <option key={a} value={a}>{ACTION_META[a].label}</option>)}
         </select>
-        <select value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterModule} onChange={e => setFilterModule(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los módulos</option>
           {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
-        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los usuarios</option>
           {users.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
@@ -339,7 +339,7 @@ export default function AuditLogTab() {
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
+            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
           >
             {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
             {loadingMore ? "Cargando…" : "Cargar más eventos"}
@@ -350,9 +350,9 @@ export default function AuditLogTab() {
       {/* Detail modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">Detalle del evento</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle del evento</CardTitle>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2 text-sm">
@@ -364,7 +364,7 @@ export default function AuditLogTab() {
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-[var(--text-secondary)] dark:text-muted shrink-0">{k}</span>
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{v}</span>
                 </div>
               ))}
             </div>

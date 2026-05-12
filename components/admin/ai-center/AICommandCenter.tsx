@@ -258,7 +258,7 @@ export default function AICommandCenter() {
   return (
     <div
       className={cn(
-        "flex flex-col bg-white dark:bg-card overflow-hidden",
+        "flex flex-col bg-[var(--surface-raised)] overflow-hidden",
         maximized
           ? "fixed inset-0 z-[9999]"
           : "rounded-xl border border-[var(--rule-base)] min-h-[600px]",

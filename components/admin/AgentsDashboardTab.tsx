@@ -296,7 +296,7 @@ export default function AgentsDashboardTab() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Activity className="h-6 w-6 text-primary" />
             Dashboard de Agentes
           </PageTitle>
@@ -312,7 +312,7 @@ export default function AgentsDashboardTab() {
             fetchRecentTasks();
             fetchHistory(historyPage, historyDomain);
           }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -390,12 +390,12 @@ export default function AgentsDashboardTab() {
                 return (
                   <div
                     key={agent.domain}
-                    className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3"
+                    className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Server className="h-4 w-4 text-primary" />
-                        <span className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">
+                        <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">
                           {DOMAIN_LABELS[agent.domain]}
                         </span>
                       </div>
@@ -438,7 +438,7 @@ export default function AgentsDashboardTab() {
         <SectionTitle className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
           Ejecutar Tarea
         </SectionTitle>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Domain selector */}
             <div className="flex-1">
@@ -448,7 +448,7 @@ export default function AgentsDashboardTab() {
               <select
                 value={execDomain}
                 onChange={(e) => setExecDomain(e.target.value as AgentDomain)}
-                className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+                className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
               >
                 {Object.entries(DOMAIN_LABELS).map(([key, label]) => (
                   <option key={key} value={key}>
@@ -466,7 +466,7 @@ export default function AgentsDashboardTab() {
               <select
                 value={execAction}
                 onChange={(e) => setExecActionOverride(prev => ({ ...prev, [execDomain]: e.target.value }))}
-                className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+                className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
               >
                 {(DOMAIN_ACTIONS[execDomain] ?? []).map((action) => (
                   <option key={action} value={action}>
@@ -524,25 +524,25 @@ export default function AgentsDashboardTab() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div>
                   <span className="text-[var(--text-secondary)] dark:text-muted">ID:</span>{" "}
-                  <span className="font-mono font-semibold text-[var(--text-primary)] dark:text-foreground">
+                  <span className="font-mono font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {truncateId(execResult.id)}
                   </span>
                 </div>
                 <div>
                   <span className="text-[var(--text-secondary)] dark:text-muted">Dominio:</span>{" "}
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {DOMAIN_LABELS[execResult.domain]}
                   </span>
                 </div>
                 <div>
                   <span className="text-[var(--text-secondary)] dark:text-muted">Acción:</span>{" "}
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {execResult.action}
                   </span>
                 </div>
                 <div>
                   <span className="text-[var(--text-secondary)] dark:text-muted">Duración:</span>{" "}
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {fmtDuration(execResult.startedAt, execResult.completedAt)}
                   </span>
                 </div>
@@ -579,7 +579,7 @@ export default function AgentsDashboardTab() {
         )}
 
         {!recentLoading && recentTasks.length === 0 && (
-          <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
+          <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
             <Clock className="h-10 w-10 mx-auto mb-3" />
             <p className="font-semibold">Sin tareas recientes</p>
             <p className="text-xs mt-1">
@@ -589,11 +589,11 @@ export default function AgentsDashboardTab() {
         )}
 
         {!recentLoading && recentTasks.length > 0 && (
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px] text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                       ID
                     </th>
@@ -639,7 +639,7 @@ export default function AgentsDashboardTab() {
             onChange={(e) =>
               handleHistoryDomainChange(e.target.value as AgentDomain | "todos")
             }
-            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+            className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           >
             <option value="todos">Todos los dominios</option>
             {Object.entries(DOMAIN_LABELS).map(([key, label]) => (
@@ -658,7 +658,7 @@ export default function AgentsDashboardTab() {
         )}
 
         {!historyLoading && historyTasks.length === 0 && (
-          <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
+          <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
             <Zap className="h-10 w-10 mx-auto mb-3" />
             <p className="font-semibold">Sin historial</p>
             <p className="text-xs mt-1">
@@ -669,11 +669,11 @@ export default function AgentsDashboardTab() {
 
         {!historyLoading && historyTasks.length > 0 && (
           <>
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[700px] text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
+                    <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
                       <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                         ID
                       </th>
@@ -711,18 +711,18 @@ export default function AgentsDashboardTab() {
               <button
                 onClick={() => handleHistoryPageChange(historyPage - 1)}
                 disabled={historyPage <= 1}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Anterior
               </button>
-              <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">
+              <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 Página {historyPage} de {totalHistoryPages}
               </span>
               <button
                 onClick={() => handleHistoryPageChange(historyPage + 1)}
                 disabled={historyPage >= totalHistoryPages}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50 disabled:opacity-40 transition-colors"
               >
                 Siguiente
                 <ChevronRight className="h-4 w-4" />
@@ -756,7 +756,7 @@ function TaskRow({ task }: { task: AgentTask }) {
         </span>
       </td>
       <td className="px-2 sm:px-4 py-1.5 sm:py-2.5">
-        <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">
+        <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           {DOMAIN_LABELS[task.domain]}
         </span>
       </td>

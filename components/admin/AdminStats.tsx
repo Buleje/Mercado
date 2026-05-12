@@ -20,7 +20,7 @@ interface AdminStatsProps {
 /** Mobile quick stats strip (horizontal scroll) */
 export function AdminStatsMobile({ quickStats, navigateTab }: AdminStatsProps) {
   return (
-    <div className="sm:hidden flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-card border-b border-[var(--rule-soft)] dark:border-card-border overflow-x-auto scrollbar-none text-[length:var(--ts-xs)]">
+    <div className="sm:hidden flex items-center gap-1 px-2.5 py-1.5 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] overflow-x-auto scrollbar-none text-[length:var(--ts-xs)]">
       <button
         onClick={() => navigateTab("pedidos")}
         className={cn(
@@ -67,7 +67,7 @@ export function AdminStatsMobile({ quickStats, navigateTab }: AdminStatsProps) {
 /** Desktop quick stats bar */
 export function AdminStatsDesktop({ quickStats, navigateTab }: AdminStatsProps) {
   return (
-    <div className="hidden sm:flex items-center gap-1 px-6 py-1.5 bg-white dark:bg-card border-b border-[var(--rule-soft)] dark:border-card-border text-xs">
+    <div className="hidden sm:flex items-center gap-1 px-6 py-1.5 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-xs">
       <button
         onClick={() => navigateTab("pedidos")}
         className={cn(

@@ -228,7 +228,7 @@ export default function InvoiceEmitter({
           <SectionTitle className="text-xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             Comprobante emitido
           </SectionTitle>
-          <p className="text-2xl font-mono font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <p className="text-2xl font-mono font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {emitido.numeroCompleto}
           </p>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
@@ -236,19 +236,19 @@ export default function InvoiceEmitter({
           </p>
         </div>
 
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 space-y-3">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Cliente</p>
-              <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{emitido.cliente.nombre}</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{emitido.cliente.nombre}</p>
             </div>
             <div>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{emitido.cliente.ruc ? "RUC" : "DNI"}</p>
-              <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{emitido.cliente.ruc ?? emitido.cliente.dni ?? "-"}</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{emitido.cliente.ruc ?? emitido.cliente.dni ?? "-"}</p>
             </div>
             <div>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Gravado</p>
-              <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(emitido.totales.gravado)}</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(emitido.totales.gravado)}</p>
             </div>
             <div>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">IGV (18%)</p>
@@ -289,7 +289,7 @@ export default function InvoiceEmitter({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+        <SectionTitle className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <Receipt className="h-5 w-5 text-primary" />
           Emitir comprobante
         </SectionTitle>
@@ -312,7 +312,7 @@ export default function InvoiceEmitter({
               "px-4 py-2 text-sm font-bold rounded-lg transition-all",
               tipo === t
                 ? "bg-primary text-white "
-                : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground",
+                : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)]",
             )}
           >
             {t === "boleta" ? "Boleta (B001)" : "Factura (F001)"}
@@ -321,7 +321,7 @@ export default function InvoiceEmitter({
       </div>
 
       {/* Datos del cliente */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-3">
         <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
           Datos del cliente
         </p>
@@ -341,7 +341,7 @@ export default function InvoiceEmitter({
               }}
               placeholder={docPlaceholder}
               maxLength={docMaxLength}
-              className="flex-1 min-w-0 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground font-mono"
+              className="flex-1 min-w-0 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] font-mono"
             />
             <button
               onClick={buscarDocumento}
@@ -372,7 +372,7 @@ export default function InvoiceEmitter({
             value={clienteNombre}
             onChange={e => setClienteNombre(e.target.value)}
             placeholder={tipo === "boleta" ? "Juan Perez" : "Empresa S.A.C."}
-            className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+            className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           />
         </div>
 
@@ -385,13 +385,13 @@ export default function InvoiceEmitter({
             value={clienteDireccion}
             onChange={e => setClienteDireccion(e.target.value)}
             placeholder="Av. Centenario 123, Pucallpa"
-            className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+            className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           />
         </div>
       </div>
 
       {/* Items del comprobante */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
             Productos / Servicios
@@ -425,7 +425,7 @@ export default function InvoiceEmitter({
                   value={item.producto}
                   onChange={e => updateItem(idx, "producto", e.target.value)}
                   placeholder="Descripcion del producto"
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
               </div>
               <div className="col-span-1 sm:col-span-2">
@@ -435,7 +435,7 @@ export default function InvoiceEmitter({
                   onChange={e => updateItem(idx, "cantidad", Math.max(0, parseFloat(e.target.value) || 0))}
                   min="0"
                   step="1"
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
               </div>
               <div className="col-span-1 sm:col-span-2">
@@ -445,13 +445,13 @@ export default function InvoiceEmitter({
                   onChange={e => updateItem(idx, "precioUnitario", Math.max(0, parseFloat(e.target.value) || 0))}
                   min="0"
                   step="0.01"
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
               </div>
               <div className="hidden sm:block sm:col-span-1 text-xs text-[var(--data-warning-500)] font-semibold py-2">
                 {fmt(itemIgv)}
               </div>
-              <div className="hidden sm:block sm:col-span-1 text-sm font-bold text-[var(--text-primary)] dark:text-foreground py-2">
+              <div className="hidden sm:block sm:col-span-1 text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] py-2">
                 {fmt(itemTotal)}
               </div>
               <div className="hidden sm:flex sm:col-span-1 items-center">
@@ -466,7 +466,7 @@ export default function InvoiceEmitter({
               </div>
               {/* Mobile total + delete */}
               <div className="col-span-2 sm:hidden flex items-center justify-between text-sm px-1">
-                <span className="text-[var(--text-secondary)]">Total: <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(itemTotal)}</span></span>
+                <span className="text-[var(--text-secondary)]">Total: <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(itemTotal)}</span></span>
                 {items.length > 1 && (
                   <button
                     onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))}
@@ -481,15 +481,15 @@ export default function InvoiceEmitter({
         })}
 
         {/* Totales */}
-        <div className="border-t border-[var(--rule-soft)] dark:border-card-border pt-3 flex justify-end">
+        <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-3 flex justify-end">
           <div className="space-y-1 text-right text-sm">
             <p className="text-[var(--text-secondary)] dark:text-muted">
-              Gravado: <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(gravado)}</span>
+              Gravado: <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(gravado)}</span>
             </p>
             <p className="text-[var(--text-secondary)] dark:text-muted">
               IGV (18%): <span className="font-semibold text-[var(--data-warning-500)]">{fmt(igv)}</span>
             </p>
-            <p className="text-[var(--text-primary)] dark:text-foreground font-extrabold text-base">
+            <p className="text-[var(--text-primary)] dark:text-[var(--text-primary)] font-extrabold text-base">
               Total: <span className="text-primary">{fmt(total)}</span>
             </p>
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Moneda: PEN (S/.)</p>
@@ -508,14 +508,14 @@ export default function InvoiceEmitter({
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={handleNuevo}
-          className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
+          className="px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           Cancelar
         </button>
         <button
           onClick={() => setShowPreview(true)}
           disabled={items.every(i => !i.producto.trim())}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors disabled:opacity-40"
         >
           <Eye className="h-4 w-4" /> Vista previa
         </button>
@@ -536,11 +536,11 @@ export default function InvoiceEmitter({
       {showPreview && (
         <div className="modal-backdrop p-4" onClick={() => setShowPreview(false)}>
           <div
-            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-lg space-y-4 max-h-[80vh] overflow-y-auto"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-lg space-y-4 max-h-[80vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 Vista previa - {tipo === "boleta" ? "Boleta" : "Factura"}
               </CardTitle>
               <button onClick={() => setShowPreview(false)}>
@@ -548,8 +548,8 @@ export default function InvoiceEmitter({
               </button>
             </div>
 
-            <div className="text-center border-b border-[var(--rule-base)] dark:border-card-border pb-3">
-              <p className="font-extrabold text-lg text-[var(--text-primary)] dark:text-foreground">Buleje</p>
+            <div className="text-center border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] pb-3">
+              <p className="font-extrabold text-lg text-[var(--text-primary)] dark:text-[var(--text-primary)]">Buleje</p>
               <p className="text-xs text-[var(--text-secondary)]">Pucallpa, Ucayali, Peru</p>
               <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mt-2">
                 {tipo === "boleta" ? "BOLETA DE VENTA ELECTRONICA" : "FACTURA ELECTRONICA"}
@@ -558,15 +558,15 @@ export default function InvoiceEmitter({
             </div>
 
             <div className="text-sm space-y-1">
-              <p><span className="text-[var(--text-tertiary)]">Cliente:</span> <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{clienteNombre || "-"}</span></p>
-              <p><span className="text-[var(--text-tertiary)]">{docLabel}:</span> <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{docNumero || "-"}</span></p>
-              {clienteDireccion && <p><span className="text-[var(--text-tertiary)]">Direccion:</span> <span className="text-[var(--text-primary)] dark:text-foreground">{clienteDireccion}</span></p>}
-              <p><span className="text-[var(--text-tertiary)]">Fecha:</span> <span className="text-[var(--text-primary)] dark:text-foreground">{new Date().toLocaleDateString("es-PE")}</span></p>
+              <p><span className="text-[var(--text-tertiary)]">Cliente:</span> <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{clienteNombre || "-"}</span></p>
+              <p><span className="text-[var(--text-tertiary)]">{docLabel}:</span> <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{docNumero || "-"}</span></p>
+              {clienteDireccion && <p><span className="text-[var(--text-tertiary)]">Direccion:</span> <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{clienteDireccion}</span></p>}
+              <p><span className="text-[var(--text-tertiary)]">Fecha:</span> <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{new Date().toLocaleDateString("es-PE")}</span></p>
             </div>
 
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-tertiary)] uppercase">
+                <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-tertiary)] uppercase">
                   <th className="text-left py-1">Producto</th>
                   <th className="text-right py-1">Cant.</th>
                   <th className="text-right py-1">P.Unit</th>
@@ -575,25 +575,25 @@ export default function InvoiceEmitter({
               </thead>
               <tbody>
                 {items.filter(i => i.producto.trim()).map((item, idx) => (
-                  <tr key={idx} className="border-b border-[var(--rule-soft)] dark:border-card-border">
-                    <td className="py-1.5 text-[var(--text-primary)] dark:text-foreground">{item.producto}</td>
+                  <tr key={idx} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                    <td className="py-1.5 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.producto}</td>
                     <td className="py-1.5 text-right text-[var(--text-secondary)]">{item.cantidad}</td>
                     <td className="py-1.5 text-right text-[var(--text-secondary)]">{fmt(item.precioUnitario)}</td>
-                    <td className="py-1.5 text-right font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(item.cantidad * item.precioUnitario)}</td>
+                    <td className="py-1.5 text-right font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(item.cantidad * item.precioUnitario)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="border-t border-[var(--rule-base)] dark:border-card-border pt-2 space-y-1 text-sm text-right">
+            <div className="border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] pt-2 space-y-1 text-sm text-right">
               <p className="text-[var(--text-secondary)]">Gravado: <span className="font-semibold">{fmt(gravado)}</span></p>
               <p className="text-[var(--data-warning-500)]">IGV (18%): <span className="font-semibold">{fmt(igv)}</span></p>
-              <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-base">Total: {fmt(total)}</p>
+              <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-base">Total: {fmt(total)}</p>
             </div>
 
             <button
               onClick={() => setShowPreview(false)}
-              className="w-full py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
+              className="w-full py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
             >
               Cerrar
             </button>

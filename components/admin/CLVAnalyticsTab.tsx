@@ -23,11 +23,11 @@ function predictFutureCLV(c: CLVCustomer): number {
 
 function KPI({ label, value, sub, icon: Icon, color }: { label: string; value: string; sub?: string; icon: React.ElementType; color: string }) {
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
       <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", color)}>
         <Icon className="h-4 w-4 text-white" />
       </div>
-      <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{value}</p>
+      <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{value}</p>
       <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mt-0.5">{label}</p>
       {sub && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{sub}</p>}
     </div>
@@ -77,7 +77,7 @@ export default function CLVAnalyticsTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div>
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
           <TrendingUp className="h-6 w-6 text-primary" /> Valor de Vida del Cliente (CLV)
         </SectionTitle>
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Análisis de cohortes y retención de clientes</p>
@@ -96,7 +96,7 @@ export default function CLVAnalyticsTab() {
         {([["customers", "Clientes"], ["top10", "Top 10"], ["cohorts", "Cohortes"]] as const).map(([v, label]) => (
           <button key={v} onClick={() => setView(v)}
             className={cn("px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors",
-              view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-card"
+              view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-[var(--surface-raised)]"
             )}>
             {v === "top10" && <Medal className="h-3.5 w-3.5 inline mr-1" />}{label}
           </button>
@@ -104,15 +104,15 @@ export default function CLVAnalyticsTab() {
         {view === "customers" && (
           <div className="relative ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-48" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-1.5 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm w-48" />
           </div>
         )}
       </div>
 
       {/* Top 10 vista */}
       {view === "top10" && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <Medal className="h-4 w-4 text-[var(--data-warning-500)]" /> Top 10 Clientes más valiosos
           </CardTitle>
           {top10.length === 0 ? (
@@ -129,12 +129,12 @@ export default function CLVAnalyticsTab() {
                       <div className="flex items-center gap-2">
                         <span className="text-base w-6 shrink-0">{medals[idx] ?? `${idx + 1}.`}</span>
                         <div>
-                          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{c.name}</p>
+                          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</p>
                           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.phone} · {c.orderCount} pedidos · cohorte {fmtMonth(c.cohortMonth)}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(c.totalSpent)}</p>
+                        <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.totalSpent)}</p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-semibold">Proy. 6m: {fmt(predicted)}</p>
                       </div>
                     </div>
@@ -154,8 +154,8 @@ export default function CLVAnalyticsTab() {
         <div className="space-y-6">
           {/* Gráfico visual de CLV por cohorte */}
           {data.cohorts.length > 0 && (
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-5">
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" /> CLV promedio por cohorte
               </CardTitle>
               <div className="flex items-end gap-2 h-32">
@@ -184,11 +184,11 @@ export default function CLVAnalyticsTab() {
           )}
 
           {/* Tabla de cohortes */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
                     <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Cohorte</th>
                     <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">Clientes</th>
                     <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">Ingresos totales</th>
@@ -202,9 +202,9 @@ export default function CLVAnalyticsTab() {
                     const delta = prev ? cohort.avgLTV - prev.avgLTV : 0;
                     return (
                       <tr key={cohort.month} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
-                        <td className="px-4 py-2.5 font-semibold text-[var(--text-primary)] dark:text-foreground">{fmtMonth(cohort.month)}</td>
-                        <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-foreground">{cohort.customers}</td>
-                        <td className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(cohort.totalRevenue)}</td>
+                        <td className="px-4 py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtMonth(cohort.month)}</td>
+                        <td className="px-4 py-2.5 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{cohort.customers}</td>
+                        <td className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(cohort.totalRevenue)}</td>
                         <td className="px-4 py-2.5 text-right">
                           <span className="text-[var(--data-success-500)] font-semibold">{fmt(cohort.avgLTV)}</span>
                           {prev && (
@@ -227,11 +227,11 @@ export default function CLVAnalyticsTab() {
 
       {/* Vista clientes */}
       {view === "customers" && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
+                <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
                   <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">#</th>
                   <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
                   <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted text-right">CLV Total</th>
@@ -253,10 +253,10 @@ export default function CLVAnalyticsTab() {
                     <tr key={c.phone} className="hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                       <td className="px-4 py-2.5 text-[var(--text-tertiary)] dark:text-muted text-xs">{idx + 1}</td>
                       <td className="px-4 py-2.5">
-                        <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{c.name}</p>
+                        <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</p>
                         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{c.phone}</p>
                       </td>
-                      <td className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.totalSpent)}</td>
+                      <td className="px-4 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.totalSpent)}</td>
                       <td className="px-4 py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{c.orderCount}</td>
                       <td className="px-4 py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{fmt(c.avgOrderValue)}</td>
                       <td className="px-4 py-2.5 text-right hidden md:table-cell">

@@ -131,24 +131,24 @@ export default function ExpensesTab() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Wallet className="h-6 w-6 text-primary" />Control de Gastos</SectionTitle>
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Wallet className="h-6 w-6 text-primary" />Control de Gastos</SectionTitle>
         <button onClick={() => setShowForm(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition flex flex-wrap items-center gap-2"><Plus className="h-4 w-4" />Nuevo Gasto</button>
       </div>
 
       {/* Date filter + stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="sm:col-span-2 flex flex-wrap items-center gap-2 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+        <div className="sm:col-span-2 flex flex-wrap items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
           <Calendar className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
           <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
           <span className="text-[var(--text-tertiary)]">→</span>
           <input type="date" value={to} onChange={e => setTo(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)]">S/{totalPeriod.toFixed(2)}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Este periodo</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{totalAll.toFixed(2)}</p>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{totalAll.toFixed(2)}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Total histórico</p>
         </div>
       </div>
@@ -157,8 +157,8 @@ export default function ExpensesTab() {
       {summary.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {summary.map(s => (
-            <div key={s.category} className={cn("bg-white dark:bg-card border rounded-xl p-3 text-center", s.category === maxCat?.category ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border")}>
-              <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground">S/{Number(s.total).toFixed(0)}</p>
+            <div key={s.category} className={cn("bg-[var(--surface-raised)] border rounded-xl p-3 text-center", s.category === maxCat?.category ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
+              <p className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(s.total).toFixed(0)}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">{s.category} ({s.count})</p>
               {totalAll > 0 && <div className="mt-1 h-1 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
             </div>
@@ -170,10 +170,10 @@ export default function ExpensesTab() {
       {monthlyExpenseData.some(m => m.total > 0) && (() => {
         const maxVal = Math.max(...monthlyExpenseData.map(m => m.total), 1);
         return (
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 ">
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <BarChart2 className="h-4 w-4 text-primary" />
-              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground">Gastos mensuales (6 meses)</CardTitle>
+              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gastos mensuales (6 meses)</CardTitle>
             </div>
             <div className="flex flex-wrap items-end gap-2 h-28">
               {monthlyExpenseData.map((m, i) => {
@@ -201,21 +201,21 @@ export default function ExpensesTab() {
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-card rounded-xl w-full max-w-md p-3 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-3 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-lg">Registrar Gasto</CardTitle>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5 text-[var(--text-tertiary)]" /></button>
             </div>
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm">
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm">
               {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
-            <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+            <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
             <div className="flex flex-wrap gap-3">
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>
-                <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+                <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
               </div>
-              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
             </div>
             <label className="flex flex-wrap items-center gap-2 text-sm">
               <input type="checkbox" checked={form.recurring} onChange={e => setForm(f => ({ ...f, recurring: e.target.checked }))} className="rounded" />
@@ -230,9 +230,9 @@ export default function ExpensesTab() {
 
       {/* Expenses list */}
       {expenses.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
+        <div className="text-center py-12 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
           <TrendingUp className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
-          <p className="font-bold text-[var(--text-primary)] dark:text-foreground">Sin gastos registrados</p>
+          <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Sin gastos registrados</p>
           <p className="text-sm text-[var(--text-tertiary)]">Agrega un gasto para empezar</p>
         </div>
       ) : (
@@ -240,12 +240,12 @@ export default function ExpensesTab() {
           {expenses.map(e => {
             const CatIcon = catIcon(e.category);
             return (
-            <div key={e.id} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+            <div key={e.id} className="flex flex-wrap items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 sm:px-4 py-2 sm:py-3">
               <div className="h-8 w-8 rounded-lg bg-[var(--surface-canvas)] border border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)] shrink-0">
                 <CatIcon className="h-4 w-4" strokeWidth={1.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">{e.description}</p>
+                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{e.description}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{new Date(e.date).toLocaleDateString("es-PE")} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
               </div>
               <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-S/{Number(e.amount).toFixed(2)}</p>

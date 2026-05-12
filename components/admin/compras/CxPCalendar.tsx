@@ -132,7 +132,7 @@ export default function CxPCalendar() {
               <Clock className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
               <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Vence esta semana</p>
             </div>
-            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
+            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               S/ {Number(data.resumen.venceEstaSemana).toFixed(2)}
             </p>
           </div>
@@ -141,7 +141,7 @@ export default function CxPCalendar() {
               <Calendar className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
               <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Vence este mes</p>
             </div>
-            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
+            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               S/ {Number(data.resumen.venceEsteMes).toFixed(2)}
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function CxPCalendar() {
               <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
               <p className="text-xs font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] uppercase">Vencido</p>
             </div>
-            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">
+            <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               S/ {Number(data.resumen.vencido).toFixed(2)}
             </p>
           </div>
@@ -163,7 +163,7 @@ export default function CxPCalendar() {
           <ChevronLeft className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
         </button>
         <div className="text-center">
-          <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {MONTHS_ES[month]} {year}
           </CardTitle>
           <button onClick={goToday} className="text-xs text-primary hover:underline font-semibold">
@@ -176,7 +176,7 @@ export default function CxPCalendar() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         {/* Day headers */}
         <div className="grid grid-cols-7 bg-gray-50 dark:bg-accent/50">
           {DAYS_ES.map((d) => (
@@ -190,7 +190,7 @@ export default function CxPCalendar() {
         <div className="grid grid-cols-7">
           {cells.map((cell, idx) => {
             if (cell.day === null) {
-              return <div key={idx} className="h-16 border-t border-r border-[var(--rule-soft)] dark:border-card-border/30 bg-gray-50/50 dark:bg-accent/20" />;
+              return <div key={idx} className="h-16 border-t border-r border-[var(--rule-soft)] dark:border-[var(--rule-base)]/30 bg-gray-50/50 dark:bg-accent/20" />;
             }
 
             const entries = data?.calendar[cell.dateStr] ?? [];
@@ -205,7 +205,7 @@ export default function CxPCalendar() {
                 key={idx}
                 onClick={() => setSelectedDay(isSelected ? null : cell.dateStr)}
                 className={cn(
-                  "h-16 border-t border-r border-[var(--rule-soft)] dark:border-card-border/30 p-1 text-left transition-colors relative",
+                  "h-16 border-t border-r border-[var(--rule-soft)] dark:border-[var(--rule-base)]/30 p-1 text-left transition-colors relative",
                   isToday && "ring-2 ring-inset ring-[var(--data-success-500)]/40",
                   isSelected && "bg-primary/5 dark:bg-primary/10",
                   hasOverdue && !isSelected && "bg-[var(--data-error-50)]/60 dark:bg-red-950/10",
@@ -223,7 +223,7 @@ export default function CxPCalendar() {
                   <div className="mt-0.5">
                     <div className="flex items-center gap-0.5">
                       <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", hasOverdue ? "bg-[var(--data-error-500)]" : "bg-primary")} />
-                      <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">
+                      <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                         S/{totalAmount.toFixed(0)}
                       </span>
                     </div>
@@ -242,8 +242,8 @@ export default function CxPCalendar() {
 
       {/* Selected day detail */}
       {selectedDay && selectedEntries.length > 0 && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
-          <h4 className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
+          <h4 className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Pagos del {new Date(selectedDay + "T12:00:00").toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}
           </h4>
           {selectedEntries.map((entry) => (
@@ -255,11 +255,11 @@ export default function CxPCalendar() {
                   ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                   : entry.daysOverdue > 0
                     ? "bg-[var(--data-error-50)] dark:bg-red-950/10 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
-                    : "bg-gray-50 dark:bg-accent/50 border-[var(--rule-base)] dark:border-card-border",
+                    : "bg-gray-50 dark:bg-accent/50 border-[var(--rule-base)] dark:border-[var(--rule-base)]",
               )}
             >
               <div>
-                <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{entry.supplierName}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{entry.supplierName}</p>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{entry.description}</p>
                 {entry.daysOverdue > 0 && entry.status !== "pagado" && (
                   <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold mt-0.5">
@@ -269,7 +269,7 @@ export default function CxPCalendar() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">
+                  <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     S/ {(entry.amount - entry.paidAmount).toFixed(2)}
                   </p>
                   {entry.paidAmount > 0 && entry.status !== "pagado" && (

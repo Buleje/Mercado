@@ -72,7 +72,7 @@ export default function POSSplitPayment({
       <div className="space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Users className="h-4 w-4 text-primary" />
-          <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
+          <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Dividir entre cuantas personas?
           </span>
         </div>
@@ -81,7 +81,7 @@ export default function POSSplitPayment({
             <button
               key={n}
               onClick={() => setupSplit(n)}
-              className="flex-1 min-w-16 py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:border-primary hover:bg-primary/5 transition-colors"
+              className="flex-1 min-w-16 py-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:border-primary hover:bg-primary/5 transition-colors"
             >
               {n}
             </button>
@@ -92,7 +92,7 @@ export default function POSSplitPayment({
               min="2"
               max="10"
               placeholder="Otro"
-              className="w-full py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-primary)] dark:text-foreground text-center outline-none focus:border-primary"
+              className="w-full py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-center outline-none focus:border-primary"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const val = Number((e.target as HTMLInputElement).value);
@@ -122,7 +122,7 @@ export default function POSSplitPayment({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" />
-          <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
+          <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {fmt(total)} &divide; {people} = {fmt(total / people)} por persona
           </span>
         </div>
@@ -141,7 +141,7 @@ export default function POSSplitPayment({
         {payments.map((line, idx) => (
           <div
             key={idx}
-            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border"
+            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
           >
             <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-20 shrink-0">
               Persona {idx + 1}
@@ -163,7 +163,7 @@ export default function POSSplitPayment({
                 </button>
               ))}
             </div>
-            <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-16 text-right shrink-0">
+            <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] w-16 text-right shrink-0">
               {fmt(line.amount)}
             </span>
           </div>
@@ -173,7 +173,7 @@ export default function POSSplitPayment({
       <div className="flex gap-2">
         <button
           onClick={onCancel}
-          className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
+          className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
         >
           Cancelar
         </button>

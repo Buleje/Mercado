@@ -175,7 +175,7 @@ export default function PushNotificationBanner() {
               type="button"
               onClick={() => setDismissed(true)}
               title="Descartar"
-              className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-white/50 dark:hover:bg-white/10 transition-colors shrink-0"
+              className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors shrink-0"
             >
               <X className="h-3.5 w-3.5" />
             </button>

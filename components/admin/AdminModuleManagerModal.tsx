@@ -90,11 +90,11 @@ export function AdminModuleManagerModal({
     <div className="fixed inset-0 z-100 overflow-y-auto">
       <div className="modal-backdrop" onClick={onClose} />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-3xl max-h-[90vh] flex flex-col">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-3xl max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--rule-base)] dark:border-card-border">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <div>
-              <SectionTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Gestionar módulos</SectionTitle>
+              <SectionTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Gestionar módulos</SectionTitle>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
                 Activa, oculta o limpia datos de ejemplo por módulo
               </p>
@@ -108,7 +108,7 @@ export function AdminModuleManagerModal({
           </div>
 
           {/* Stats strip */}
-          <div className="px-6 py-3 bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border space-y-2.5">
+          <div className="px-6 py-3 bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-2.5">
             <div className="flex gap-6">
               <div className="text-center">
                 <div className="text-xl font-extrabold text-primary">{allowedTabs.length}</div>
@@ -147,7 +147,7 @@ export function AdminModuleManagerModal({
 
               return (
                 <div key={category.id} className="mb-1">
-                  <div className="flex items-center gap-2 px-6 py-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted sticky top-0 bg-white dark:bg-card z-10">
+                  <div className="flex items-center gap-2 px-6 py-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted sticky top-0 bg-[var(--surface-raised)] z-10">
                     <CatIcon className="h-3 w-3" />
                     <span>{category.label}</span>
                   </div>
@@ -194,7 +194,7 @@ export function AdminModuleManagerModal({
                             <span
                               className={cn(
                                 "text-sm font-bold",
-                                isHidden ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)] dark:text-foreground"
+                                isHidden ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                               )}
                             >
                               {tabInfo.label}
@@ -261,7 +261,7 @@ export function AdminModuleManagerModal({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--rule-base)] dark:border-card-border">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             {hiddenTabs.size > 0 ? (
               <button
                 onClick={onClearAllHidden}

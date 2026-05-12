@@ -134,10 +134,10 @@ function ProductCard({
     <button
       onClick={onAdd}
       className={cn(
-        "group relative bg-white dark:bg-card border rounded-xl p-3 text-left transition-all hover:shadow-sm hover:border-primary/40",
+        "group relative bg-[var(--surface-raised)] border rounded-xl p-3 text-left transition-all hover:shadow-sm hover:border-primary/40",
         inCart
           ? "border-primary/60 ring-1 ring-primary/20 bg-primary/5 dark:bg-primary/10"
-          : "border-[var(--rule-base)] dark:border-card-border",
+          : "border-[var(--rule-base)] dark:border-[var(--rule-base)]",
       )}
     >
       {/* Image */}
@@ -598,7 +598,7 @@ export default function PuntoDeCompraTab() {
       {/* ════════════════════════════════════════════════════════════════════
          LEFT PANEL — Product Catalog
          ════════════════════════════════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
         {/* Toolbar */}
         <div className="p-3 border-b border-[var(--rule-base)] space-y-2">
           {/* Search + Actions row */}
@@ -759,7 +759,7 @@ export default function PuntoDeCompraTab() {
          ════════════════════════════════════════════════════════════════════ */}
       <div
         className={cn(
-          "w-full lg:w-[420px] xl:w-[460px] flex flex-col bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden",
+          "w-full lg:w-[420px] xl:w-[460px] flex flex-col bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden",
           "max-lg:fixed max-lg:inset-0 max-lg:z-50 max-lg:rounded-none",
           !showCartMobile && "max-lg:hidden",
         )}
@@ -1104,7 +1104,7 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-xl p-6 w-full max-w-md"
+              className="bg-[var(--surface-raised)] rounded-xl p-6 w-full max-w-md"
             >
               <div className="flex items-center justify-between mb-4">
                 <CardTitle className="text-sm font-bold">Escanear Código</CardTitle>
@@ -1133,7 +1133,7 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+              className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
             >
               <div className="flex items-center justify-between p-4 border-b border-[var(--rule-base)]">
                 <div className="flex items-center gap-2">
@@ -1262,7 +1262,7 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-xl w-full max-w-md p-5"
+              className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-5"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -1382,7 +1382,7 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-xl w-full max-w-md p-5"
+              className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-5"
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-3 bg-primary/10 rounded-xl">
@@ -1501,7 +1501,7 @@ export default function PuntoDeCompraTab() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-card rounded-xl w-full max-w-sm p-6 text-center"
+              className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-6 text-center"
             >
               <m.div
                 initial={{ scale: 0 }}

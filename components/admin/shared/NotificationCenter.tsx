@@ -266,7 +266,7 @@ export default function NotificationCenter() {
                             "text-sm leading-tight",
                             notif.read
                               ? "text-[var(--text-secondary)]"
-                              : "text-[var(--text-primary)] dark:text-foreground font-semibold"
+                              : "text-[var(--text-primary)] dark:text-[var(--text-primary)] font-semibold"
                           )}>
                             {notif.title}
                           </p>

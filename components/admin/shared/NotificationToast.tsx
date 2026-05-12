@@ -61,7 +61,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
             <ShoppingBag className="h-5 w-5 text-[var(--data-success-500)]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground">Nuevo pedido</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Nuevo pedido</p>
             <p className="text-xs text-muted truncate">
               {order.customer} — S/{Number(order.total).toFixed(2)}
             </p>

@@ -330,7 +330,7 @@ export default function SupplierComparator() {
           value={productFilter}
           onChange={e => setProductFilter(e.target.value)}
           placeholder="Buscar proveedor o producto..."
-          className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
+          className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Ordenar:</span>
@@ -353,7 +353,7 @@ export default function SupplierComparator() {
 
       <div className="flex gap-4 flex-col lg:flex-row">
         {/* Table */}
-        <div className="flex-1 min-w-0 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+        <div className="flex-1 min-w-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
           {sorted.length === 0 ? (
             <div className="py-16 text-center">
               <Users className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-3" />
@@ -363,7 +363,7 @@ export default function SupplierComparator() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-card-border">
+                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)]">Proveedor</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Prods.</th>
                     <th className="px-4 py-3 text-right text-xs font-bold uppercase text-[var(--text-tertiary)] hidden md:table-cell">Precio prom.</th>
@@ -441,8 +441,8 @@ export default function SupplierComparator() {
 
         {/* Radar detail */}
         {selectedSupplier && (
-          <div className="w-full lg:w-64 shrink-0 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+          <div className="w-full lg:w-64 shrink-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <p className="text-xs font-bold text-[var(--text-primary)] truncate">{selectedSupplier.name}</p>
               <div className="flex items-center gap-2 mt-1">
                 <ScoreBadge score={selectedSupplier.score} />

@@ -276,16 +276,16 @@ export default function GiftCardManager() {
   ];
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-canvas)]/50">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)]/50">
         <Gift className="h-4 w-4 text-secondary" />
-        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Gift Cards y Vales</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gift Cards y Vales</span>
         <span className="ml-auto text-xs font-medium text-[var(--text-tertiary)]">{cards.filter(c => c.status === "activo").length} activos</span>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[var(--rule-soft)] dark:border-card-border">
+      <div className="flex border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -295,7 +295,7 @@ export default function GiftCardManager() {
               "flex-1 py-2.5 text-xs font-semibold transition-colors",
               activeTab === tab.key
                 ? "text-primary border-b-2 border-primary"
-                : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-foreground"
+                : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)]"
             )}
           >
             {tab.label}
@@ -312,10 +312,10 @@ export default function GiftCardManager() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 <input value={search} onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por codigo o nombre..."
-                  className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary" />
+                  className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
               </div>
               <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as GiftCardStatus | "todos")}
-                className="px-2 py-2 text-xs rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary">
+                className="px-2 py-2 text-xs rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary">
                 <option value="todos">Todos</option>
                 <option value="activo">Activos</option>
                 <option value="usado">Usados</option>
@@ -331,14 +331,14 @@ export default function GiftCardManager() {
             ) : (
               <div className="space-y-2">
                 {filteredCards.map((card) => (
-                  <div key={card.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-[var(--rule-soft)] dark:border-card-border hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                  <div key={card.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                       style={{ background: card.status === "activo" ? "rgba(244,162,97,0.15)" : "rgba(156,163,175,0.1)" }}>
                       <Gift className={cn("h-4 w-4", card.status === "activo" ? "text-secondary" : "text-[var(--text-tertiary)]")} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-[var(--text-primary)] dark:text-foreground">{card.code}</span>
+                        <span className="text-xs font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{card.code}</span>
                         <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-medium", statusColor[card.status])}>
                           {statusLabel[card.status]}
                         </span>
@@ -370,7 +370,7 @@ export default function GiftCardManager() {
                 </div>
                 <GiftCardDisplay card={justCreated} />
                 <button type="button" onClick={() => setJustCreated(null)}
-                  className="w-full py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 transition-colors">
+                  className="w-full py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 transition-colors">
                   Crear otro vale
                 </button>
               </div>
@@ -383,7 +383,7 @@ export default function GiftCardManager() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-secondary)]">S/</span>
                       <input type="number" min="1" step="0.50" value={createAmount} onChange={(e) => setCreateAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-full pl-8 pr-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary" />
+                        className="w-full pl-8 pr-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
                     </div>
                   </div>
 
@@ -391,20 +391,20 @@ export default function GiftCardManager() {
                     <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Para quien</label>
                     <input type="text" value={createRecipient} onChange={(e) => setCreateRecipient(e.target.value)}
                       placeholder="Nombre del destinatario"
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary" />
+                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
                   </div>
 
                   <div>
                     <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Mensaje (opcional)</label>
                     <input type="text" value={createMessage} onChange={(e) => setCreateMessage(e.target.value)}
                       placeholder="Feliz cumpleanos, con carino..."
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary" />
+                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
                   </div>
 
                   <div>
                     <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Valido por</label>
                     <select value={createMonths} onChange={(e) => setCreateMonths(e.target.value)}
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary">
+                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary">
                       <option value="1">1 mes</option>
                       <option value="3">3 meses</option>
                       <option value="6">6 meses</option>
@@ -435,7 +435,7 @@ export default function GiftCardManager() {
               <input type="text" value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
                 placeholder="XXXXXXXX"
                 maxLength={8}
-                className="w-full px-3 py-2.5 text-sm font-mono rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary tracking-widest uppercase" />
+                className="w-full px-3 py-2.5 text-sm font-mono rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary tracking-widest uppercase" />
             </div>
 
             <div>
@@ -444,7 +444,7 @@ export default function GiftCardManager() {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-secondary)]">S/</span>
                 <input type="number" min="0.01" step="0.01" value={redeemAmount} onChange={(e) => setRedeemAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:border-primary" />
+                  className="w-full pl-8 pr-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
               </div>
             </div>
 
@@ -453,10 +453,10 @@ export default function GiftCardManager() {
               const found = cards.find((c) => c.code === redeemCode);
               if (!found) return null;
               return (
-                <div className="px-3 py-2.5 rounded-xl bg-[var(--surface-canvas)]/50 border border-[var(--rule-soft)] dark:border-card-border space-y-1">
+                <div className="px-3 py-2.5 rounded-xl bg-[var(--surface-canvas)]/50 border border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-[var(--text-secondary)] dark:text-muted">Para</span>
-                    <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{found.recipientName}</span>
+                    <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{found.recipientName}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-[var(--text-secondary)] dark:text-muted">Saldo disponible</span>

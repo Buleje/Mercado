@@ -261,11 +261,11 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
       </div>
 
       {/* ── Rotación indicator ── */}
-      <div className="flex items-center gap-3 bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl px-5 py-3">
+      <div className="flex items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl px-5 py-3">
         <RefreshCw className={cn("h-4 w-4", refreshing ? "animate-spin text-[var(--text-tertiary)]" : "text-[var(--text-tertiary)]")} />
         <div className="flex-1 flex items-center gap-4 text-sm">
           <span className="text-[var(--text-secondary)] dark:text-muted">Rotación promedio:</span>
-          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{Number(data.rotacionPromedio).toFixed(1)}x</span>
+          <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{Number(data.rotacionPromedio).toFixed(1)}x</span>
           <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">(uds vendidas / stock promedio)</span>
         </div>
         {data.claseA > 0 && (

@@ -221,7 +221,7 @@ export default function LiquidityForecastTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" /> Proyección de Liquidez
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
@@ -241,7 +241,7 @@ export default function LiquidityForecastTab() {
               `liquidez-${scenario}`
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -268,7 +268,7 @@ export default function LiquidityForecastTab() {
       {/* Controles */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Horizonte */}
-        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
           {([30, 60, 90] as const).map((h) => (
             <button
               key={h}
@@ -286,7 +286,7 @@ export default function LiquidityForecastTab() {
         </div>
 
         {/* Escenario */}
-        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] dark:bg-surface p-1 gap-1">
+        <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface p-1 gap-1">
           {(Object.keys(SCENARIO_META) as Scenario[]).map((k) => (
             <button
               key={k}
@@ -294,7 +294,7 @@ export default function LiquidityForecastTab() {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
                 scenario === k
-                  ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground "
+                  ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] "
                   : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]"
               )}
             >
@@ -320,8 +320,8 @@ export default function LiquidityForecastTab() {
       )}
 
       {/* Gráfico de barras */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           Ingresos vs Egresos semanales ({horizon} días)
         </CardTitle>
         {weeks.length === 0 ? (
@@ -369,7 +369,7 @@ export default function LiquidityForecastTab() {
       </div>
 
       {/* Tabla detallada */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -386,11 +386,11 @@ export default function LiquidityForecastTab() {
                 <tr
                   key={w.weekLabel}
                   className={cn(
-                    "border-t border-[var(--rule-soft)] dark:border-card-border",
+                    "border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
                     w.cumulative < 0 && "bg-[var(--data-error-50)]/50 dark:bg-red-950/10"
                   )}
                 >
-                  <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground text-xs">
+                  <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs">
                     {w.weekLabel}
                   </td>
                   <td className="px-4 py-3 text-[var(--data-success-500)] font-bold flex items-center gap-1">
@@ -429,14 +429,14 @@ export default function LiquidityForecastTab() {
 
       {/* Compromisos pendientes */}
       {pendingPayables.length > 0 && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-3">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">
             Compromisos pendientes de pago ({payables.filter((p) => p.status !== "pagado").length} total)
           </CardTitle>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[400px] text-sm">
               <thead>
-                <tr className="text-xs text-[var(--text-tertiary)] border-b border-[var(--rule-soft)] dark:border-card-border">
+                <tr className="text-xs text-[var(--text-tertiary)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <th className="text-left pb-2">Proveedor</th>
                   <th className="text-right pb-2">Monto</th>
                   <th className="text-right pb-2">Pagado</th>
@@ -450,7 +450,7 @@ export default function LiquidityForecastTab() {
                   const isOverdue = new Date(p.dueDate) < new Date();
                   return (
                     <tr key={p.id} className={cn(isOverdue && "bg-[var(--data-warning-50)]/50 dark:bg-amber-950/10")}>
-                      <td className="py-2 font-semibold text-[var(--text-primary)] dark:text-foreground">
+                      <td className="py-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                         {p.supplierName || "Proveedor"}
                       </td>
                       <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(p.amount)}</td>

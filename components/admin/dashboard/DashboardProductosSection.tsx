@@ -19,18 +19,18 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null; sparklineData?: number[]; invertTrend?: boolean }) {
   const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
   const arrowUp = delta != null ? delta >= 0 : false;
-  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
+  return (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
     {delta != null && Math.abs(delta) >= 10 && <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]")} />}
     <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
-      <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none">{value}</p>
+      <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-none">{value}</p>
       {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
       {sparklineData && sparklineData.length > 0 && <div className="mt-1"><Sparkline data={sparklineData} color={accent.replace("text-","")} /></div>}
     </div><Icon className={cn("h-4 w-4 shrink-0 mb-0.5", accent)} /></div>
   </div>);
 }
 function Card({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{className?:string}>; children: React.ReactNode; action?: React.ReactNode }) {
-  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4"><div className="flex items-center justify-between mb-4"><CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />{title.toUpperCase()}</CardTitle>{action}</div>{children}</div>);
+  return (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4"><div className="flex items-center justify-between mb-4"><CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />{title.toUpperCase()}</CardTitle>{action}</div>{children}</div>);
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">{text}</div>; }
 
@@ -40,13 +40,13 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
   const topMax = topList.length>0?Math.max(...topList.map((p: any)=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
 
   return (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4")}>
           {expandAll && (
-            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="w-7 h-7 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center">
                 <TrendingUp className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
               </div>
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Productos</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Productos</CardTitle>
             </div>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -61,7 +61,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                 {(["revenue","profit","units"] as const).map(t => (
                   <button key={t} onClick={()=>setTopTab(t)}
                     className={cn("px-2 py-0.5 rounded text-xs font-semibold transition-all",
-                      topTab===t?"bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground ":"text-[var(--text-tertiary)] dark:text-muted"
+                      topTab===t?"bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] ":"text-[var(--text-tertiary)] dark:text-muted"
                     )}>{t==="revenue"?"Ingreso":t==="profit"?"Utilidad":"Uds."}</button>
                 ))}
               </div>
@@ -78,7 +78,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between mb-0.5">
                           <span className="text-xs text-[var(--text-secondary)] truncate">{p.name}</span>
-                          <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground ml-2 shrink-0">
+                          <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] ml-2 shrink-0">
                             {topTab==="units"?`${val} uds`:fmt(val)}
                           </span>
                         </div>
@@ -196,7 +196,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                     <div key={c.cat}>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-[var(--text-secondary)]">{c.label}</span>
-                        <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(c.total)}</span>
+                        <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.total)}</span>
                       </div>
                       <div className="h-1.5 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
                         <div className="h-full rounded-full" style={{width:`${(c.total/mx)*100}%`,background:c.color}} />
@@ -213,7 +213,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
             <Card title="Se compran juntos (Cross-sell)" icon={ShoppingCart}>
               <div className="space-y-2">
                 {st.productAffinities.map((pair: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-accent/40 border border-[var(--rule-soft)] dark:border-card-border">
+                  <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-accent/40 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                       <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold shrink-0",
                         i < 3 ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "bg-gray-100 dark:bg-accent text-[var(--text-tertiary)]"

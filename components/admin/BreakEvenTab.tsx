@@ -252,7 +252,7 @@ export default function BreakEvenTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Target className="h-6 w-6 text-[var(--data-error-500)]" /> Análisis Break-Even
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">
@@ -291,7 +291,7 @@ export default function BreakEvenTab() {
             "px-4 py-2 rounded-xl text-sm font-bold transition-colors",
             selectedProduct === "general"
               ? "bg-[var(--data-error-500)] text-white"
-              : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent"
+              : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent"
           )}
         >
           Vista General
@@ -308,7 +308,7 @@ export default function BreakEvenTab() {
               "px-3 py-2 rounded-xl text-sm font-bold transition-colors",
               selectedProduct === p.id
                 ? "bg-[var(--data-error-500)] text-white"
-                : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent"
+                : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent"
             )}
           >
             {p.name.split(" ").slice(0, 2).join(" ")}
@@ -322,8 +322,8 @@ export default function BreakEvenTab() {
       </div>
 
       {/* Costos fijos */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
-        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
+        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">
           Costos Fijos Mensuales
           {expenses.length > 0 && (
             <span className="ml-2 text-xs font-normal text-[var(--text-tertiary)]">
@@ -336,7 +336,7 @@ export default function BreakEvenTab() {
             {fixedCosts.map((c) => (
               <div key={c.name} className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3">
                 <p className="text-xs text-[var(--text-tertiary)] truncate">{c.name}</p>
-                <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.amount)}</p>
+                <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.amount)}</p>
               </div>
             ))}
           </div>
@@ -352,7 +352,7 @@ export default function BreakEvenTab() {
             value={customFixed}
             onChange={(e) => setCustomFixed(e.target.value.replace(/[^\d.]/g, ""))}
             placeholder="Sobrescribir total fijo"
-            className="ml-auto px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary w-52"
+            className="ml-auto px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary w-52"
           />
         </div>
       </div>
@@ -362,23 +362,23 @@ export default function BreakEvenTab() {
         <>
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Ventas del mes</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">
                 {fmt(generalAnalysis.totalRevenue)}
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 {enrichedProducts.filter((p) => (p.monthlySales ?? 0) > 0).length} productos vendidos
               </p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Punto de equilibrio</p>
               <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">
                 {generalAnalysis.breakEvenRevenue === Infinity ? "∞" : fmt(generalAnalysis.breakEvenRevenue)}
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">necesitas vender esto al mes</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Utilidad mensual</p>
               <p
                 className={cn(
@@ -399,7 +399,7 @@ export default function BreakEvenTab() {
                 </p>
               </div>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Margen de seguridad</p>
               <p
                 className={cn(
@@ -452,8 +452,8 @@ export default function BreakEvenTab() {
           </div>
 
           {/* Gráfico SVG */}
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6">
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6">
+            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">
               Gráfico Break-Even
             </CardTitle>
             <div className="relative h-64">
@@ -559,8 +559,8 @@ export default function BreakEvenTab() {
       {productAnalysis && (
         <>
           {/* Inputs de simulación */}
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
+            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">
               Simular Precio/Costo — {productAnalysis.product.name}
             </CardTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -571,7 +571,7 @@ export default function BreakEvenTab() {
                   step="0.10"
                   value={customPrice || productAnalysis.product.price}
                   onChange={(e) => setCustomPrice(e.target.value)}
-                  className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-bold outline-none focus:border-primary"
+                  className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold outline-none focus:border-primary"
                 />
               </div>
               <div>
@@ -581,7 +581,7 @@ export default function BreakEvenTab() {
                   step="0.10"
                   value={customCost || (productAnalysis.product.costPrice ?? productAnalysis.product.price * 0.65)}
                   onChange={(e) => setCustomCost(e.target.value)}
-                  className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-bold outline-none focus:border-primary"
+                  className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -589,14 +589,14 @@ export default function BreakEvenTab() {
 
           {/* KPIs por producto */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Contribución/Unidad</p>
               <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">
                 {fmt(productAnalysis.contrib)}
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">por cada unidad vendida</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Punto equilibrio</p>
               <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-1">
                 {productAnalysis.breakEvenUnits === Infinity
@@ -605,16 +605,16 @@ export default function BreakEvenTab() {
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">unidades/mes necesarias</p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">Ventas del mes</p>
-              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">
+              <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">
                 {productAnalysis.monthlySales.toLocaleString()} und
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 {fmt(productAnalysis.currentRevenue)} en ingresos
               </p>
             </div>
-            <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
+            <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted uppercase">
                 {productAnalysis.monthlySales >= productAnalysis.breakEvenUnits ? "Ganancia" : "Pérdida"}
               </p>
@@ -631,8 +631,8 @@ export default function BreakEvenTab() {
           </div>
 
           {/* Barra de progreso hacia break-even */}
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5">
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground mb-3">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5">
+            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">
               Progreso hacia el Punto de Equilibrio
             </CardTitle>
             {productAnalysis.breakEvenUnits === Infinity ? (
@@ -656,7 +656,7 @@ export default function BreakEvenTab() {
                       )}%`,
                     }}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">
+                  <div className="absolute inset-0 flex items-center justify-center text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {productAnalysis.monthlySales >= productAnalysis.breakEvenUnits
                       ? "Superado — ganando dinero"
                       : `${((productAnalysis.monthlySales / productAnalysis.breakEvenUnits) * 100).toFixed(0)}% del break-even`}

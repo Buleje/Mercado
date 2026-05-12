@@ -379,12 +379,12 @@ function ProductFormModal({
   return (
     <div className="modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white dark:bg-card rounded-xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-[var(--rule-base)] dark:border-card-border"
+        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-card z-10 flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-          <SectionTitle className="text-lg font-extrabold text-foreground">
+        <div className="sticky top-0 bg-[var(--surface-raised)] z-10 flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+          <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">
             {form.id ? "Editar producto" : "Nuevo producto"}
           </SectionTitle>
           <button
@@ -414,7 +414,7 @@ function ProductFormModal({
                   onFocus={() => nationalResults.length > 0 && setShowNationalDropdown(true)}
                   onBlur={() => setTimeout(() => setShowNationalDropdown(false), 200)}
                   placeholder="Ej: arroz, leche gloria, galletas..."
-                  className="w-full pl-9 pr-8 min-h-[44px] rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/10 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full pl-9 pr-8 min-h-[44px] rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/10 text-sm text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {nationalLoading && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
@@ -430,13 +430,13 @@ function ProductFormModal({
                 )}
               </div>
               {showNationalDropdown && nationalResults.length > 0 && (
-                <div className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border">
+                <div className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   {nationalResults.map((r, i) => (
                     <button
                       key={`${r.barcode}-${i}`}
                       type="button"
                       onClick={() => selectNationalProduct(r)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left border-b border-[var(--rule-base)] last:border-0"
                     >
                       {r.image ? (
                         <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover bg-gray-100 shrink-0" />
@@ -446,7 +446,7 @@ function ProductFormModal({
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{r.name}</p>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{r.name}</p>
                         <p className="text-xs text-muted truncate">
                           {r.brand && <span>{r.brand}</span>}
                           {r.quantity && <span> · {r.quantity}</span>}
@@ -457,7 +457,7 @@ function ProductFormModal({
                 </div>
               )}
               {showNationalDropdown && nationalResults.length === 0 && !nationalLoading && nationalQuery.length >= 2 && (
-                <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 text-center text-sm text-muted">
+                <div className="absolute z-50 left-0 right-0 mt-1 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 text-center text-sm text-muted">
                   No se encontraron productos para &ldquo;{nationalQuery}&rdquo;
                 </div>
               )}
@@ -479,10 +479,10 @@ function ProductFormModal({
                 onBlur={(e) => checkNameDuplicate(e.target.value)}
                 placeholder="Ej: Arroz Extra 5kg"
                 className={cn(
-                  "mt-1 w-full px-3 min-h-[44px] rounded-lg border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:border-primary",
+                  "mt-1 w-full px-3 min-h-[44px] rounded-lg border bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:border-primary",
                   nameDuplicate
                     ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] focus:ring-[var(--data-warning-500)]"
-                    : "border-[var(--rule-base)] dark:border-card-border focus:ring-primary/30"
+                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] focus:ring-primary/30"
                 )}
               />
               {nameChecking && (
@@ -503,7 +503,7 @@ function ProductFormModal({
                 <select
                   value={form.category}
                   onChange={(e) => set("category", e.target.value)}
-                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 >
                   {CATEGORY_OPTS.map((c) => (
                     <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
@@ -520,7 +520,7 @@ function ProductFormModal({
                 <select
                   value={form.unit}
                   onChange={(e) => set("unit", e.target.value)}
-                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 >
                   {UNIT_OPTS.map((u) => <option key={u} value={u}>{u}</option>)}
                 </select>
@@ -537,7 +537,7 @@ function ProductFormModal({
                 value={form.price === 0 ? "" : form.price}
                 onChange={(e) => set("price", parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
-                className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
           </FormSection>
@@ -555,7 +555,7 @@ function ProductFormModal({
                   value={form.costPrice ?? ""}
                   onChange={(e) => set("costPrice", e.target.value === "" ? undefined : parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
-                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {form.costPrice != null && form.price > 0 && (
                   <p className="text-xs text-[var(--data-success-500)] mt-0.5">Margen: {((1 - form.costPrice / form.price) * 100).toFixed(0)}%</p>
@@ -569,7 +569,7 @@ function ProductFormModal({
                   value={form.stock ?? ""}
                   onChange={(e) => set("stock", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
                   placeholder="—"
-                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
               </div>
               <div>
@@ -580,7 +580,7 @@ function ProductFormModal({
                   value={form.stockMin ?? ""}
                   onChange={(e) => set("stockMin", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
                   placeholder="5"
-                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="mt-1 w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
               </div>
             </div>
@@ -608,7 +608,7 @@ function ProductFormModal({
                 "relative aspect-video w-full rounded-lg overflow-hidden bg-gray-50 dark:bg-surface border-2 border-dashed cursor-pointer group transition-all",
                 dragOver
                   ? "border-primary bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/30"
-                  : "border-[var(--rule-base)] dark:border-card-border",
+                  : "border-[var(--rule-base)] dark:border-[var(--rule-base)]",
               )}
               onClick={() => !uploading && fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(true); }}
@@ -665,7 +665,7 @@ function ProductFormModal({
                 value={form.image ?? ""}
                 onChange={(e) => set("image", e.target.value)}
                 placeholder="https://..."
-                className="flex-1 px-2.5 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="flex-1 px-2.5 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
             {imageValidation && (
@@ -705,7 +705,7 @@ function ProductFormModal({
                     placeholder="Agregar etiqueta…"
                     maxLength={30}
                     list="tag-suggestions"
-                    className="w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    className="w-full px-3 min-h-[44px] rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   />
                   {availableTags.length > 0 && (
                     <datalist id="tag-suggestions">
@@ -768,7 +768,7 @@ function ProductFormModal({
                   type="button"
                   onClick={handleGenerateDescription}
                   disabled={iaLoading || !form.name.trim()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-semibold text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary disabled:opacity-40 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-semibold text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary disabled:opacity-40 transition-colors"
                   title="Generar descripción con IA"
                 >
                   {iaLoading
@@ -783,13 +783,13 @@ function ProductFormModal({
                 onChange={(e) => set("description", e.target.value)}
                 rows={2}
                 placeholder="Descripción breve del producto…"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
               />
             </div>
 
             {/* Active toggle */}
             <div className="flex flex-wrap items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl px-4 py-3">
-              <span className="text-sm font-semibold text-foreground flex-1">Visible en tienda</span>
+              <span className="text-sm font-semibold text-[var(--text-primary)] flex-1">Visible en tienda</span>
               <button
                 type="button"
                 onClick={() => set("active", !form.active)}
@@ -810,7 +810,7 @@ function ProductFormModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white dark:bg-card px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap items-center justify-end gap-2">
+        <div className="sticky bottom-0 bg-[var(--surface-raised)] px-3 sm:px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap items-center justify-end gap-2">
           <button
             onClick={onClose}
             className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
@@ -883,7 +883,7 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border border-[var(--rule-base)] dark:border-card-border rounded-lg overflow-hidden">
+    <div className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg overflow-hidden">
       <button
         type="button"
         onClick={() => onToggle(id)}
@@ -1066,13 +1066,13 @@ export default function ProductsAdminTab() {
       {/* Header row */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
         <div>
-          <CardTitle className="text-lg font-extrabold text-foreground">Catálogo de Productos</CardTitle>
+          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">Catálogo de Productos</CardTitle>
           <p className="text-xs text-muted mt-0.5">{filtered.length} de {products.length} productos</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={fetchProducts}
-            className="h-9 w-9 rounded-xl border border-[var(--rule-base)] dark:border-card-border flex items-center justify-center text-[var(--text-tertiary)] hover:text-primary hover:border-primary/50 transition-colors"
+            className="h-9 w-9 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex items-center justify-center text-[var(--text-tertiary)] hover:text-primary hover:border-primary/50 transition-colors"
             title="Recargar"
           >
             <RefreshCw className="h-4 w-4" />
@@ -1082,7 +1082,7 @@ export default function ProductsAdminTab() {
               <button
                 key={mode}
                 onClick={() => { setViewMode(mode); localStorage.setItem("admin-products-view", mode); }}
-                className={cn("p-2 rounded-lg transition-all", viewMode === mode ? "bg-white dark:bg-card text-primary " : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]")}
+                className={cn("p-2 rounded-lg transition-all", viewMode === mode ? "bg-[var(--surface-raised)] text-primary " : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]")}
               >
                 {mode === "list" ? <List className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
               </button>
@@ -1141,7 +1141,7 @@ export default function ProductsAdminTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre…"
-            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
@@ -1154,7 +1154,7 @@ export default function ProductsAdminTab() {
           <select
             value={catFilter}
             onChange={(e) => setCatFilter(e.target.value)}
-            className="px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            className="px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           >
             <option value="todos">Todas las categorías</option>
             {CATEGORY_OPTS.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
@@ -1177,14 +1177,14 @@ export default function ProductsAdminTab() {
 
       {/* List view */}
       {viewMode === "list" && filtered.length > 0 && (
-        <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+        <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
           {/* Table header */}
           <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center bg-gray-50 dark:bg-surface px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs font-bold text-muted">
             <span className="w-10">Img</span>
-            <button onClick={() => toggleSort("name")} className="flex items-center gap-1 hover:text-foreground">Producto <SortIcon col="name" /></button>
+            <button onClick={() => toggleSort("name")} className="flex items-center gap-1 hover:text-[var(--text-primary)]">Producto <SortIcon col="name" /></button>
             <span className="w-24 text-center">Categoría</span>
-            <button onClick={() => toggleSort("price")} className="flex items-center gap-1 hover:text-foreground w-16 justify-end">Precio <SortIcon col="price" /></button>
-            <button onClick={() => toggleSort("stock")} className="flex items-center gap-1 hover:text-foreground w-16 justify-center">Stock <SortIcon col="stock" /></button>
+            <button onClick={() => toggleSort("price")} className="flex items-center gap-1 hover:text-[var(--text-primary)] w-16 justify-end">Precio <SortIcon col="price" /></button>
+            <button onClick={() => toggleSort("stock")} className="flex items-center gap-1 hover:text-[var(--text-primary)] w-16 justify-center">Stock <SortIcon col="stock" /></button>
             <span className="w-20 text-right">Acciones</span>
           </div>
           {/* Rows */}
@@ -1211,7 +1211,7 @@ export default function ProductsAdminTab() {
                   </div>
                   {/* Name + badges */}
                   <div className="min-w-0">
-                    <p className={cn("text-sm font-semibold text-foreground truncate", p.active === false && "line-through")}>{p.name}</p>
+                    <p className={cn("text-sm font-semibold text-[var(--text-primary)] truncate", p.active === false && "line-through")}>{p.name}</p>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[length:var(--ts-2xs)] text-muted">{p.unit}</span>
                       {p.badge && (
@@ -1294,7 +1294,7 @@ export default function ProductsAdminTab() {
               <div
                 key={p.id}
                 className={cn(
-                  "group relative bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border overflow-hidden transition-all hover:border-primary/40 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5",
+                  "group relative bg-[var(--surface-raised)] rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden transition-all hover:border-primary/40 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5",
                   p.active === false && "opacity-60"
                 )}
               >
@@ -1327,7 +1327,7 @@ export default function ProductsAdminTab() {
                       <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-primary text-white shadow-[var(--shadow-sm)]">{p.badge}</span>
                     )}
                     {cat?.emoji && p.active !== false && !p.badge && (
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/90 dark:bg-card/90 text-[var(--text-secondary)] backdrop-blur-sm shadow-[var(--shadow-sm)]">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/90 dark:bg-[var(--surface-raised)]/90 text-[var(--text-secondary)] backdrop-blur-sm shadow-[var(--shadow-sm)]">
                         {cat.emoji} {cat.label}
                       </span>
                     )}
@@ -1341,7 +1341,7 @@ export default function ProductsAdminTab() {
                           "text-xs font-bold px-2.5 py-1 rounded-lg shadow-[var(--shadow-sm)] backdrop-blur-sm",
                           stockLevel === "out" && "bg-[var(--data-error-500)] text-white",
                           stockLevel === "low" && "bg-[var(--data-warning-500)] text-white",
-                          stockLevel === "ok" && "bg-white/90 dark:bg-card/90 text-[var(--text-primary)]"
+                          stockLevel === "ok" && "bg-white/90 dark:bg-[var(--surface-raised)]/90 text-[var(--text-primary)]"
                         )}
                       >
                         {stockLevel === "out" ? "Agotado" : `${p.stock} uds`}
@@ -1385,7 +1385,7 @@ export default function ProductsAdminTab() {
 
                 {/* INFO — jerarquía clara: nombre / precio / unidad+sku */}
                 <div className="p-4 space-y-2">
-                  <h3 className="text-base font-extrabold text-foreground line-clamp-2 leading-tight min-h-[2.5rem]" title={p.name}>
+                  <h3 className="text-base font-extrabold text-[var(--text-primary)] line-clamp-2 leading-tight min-h-[2.5rem]" title={p.name}>
                     {p.name}
                   </h3>
                   <div className="flex items-baseline justify-between gap-2">
@@ -1397,7 +1397,7 @@ export default function ProductsAdminTab() {
                     </span>
                   </div>
                   {(p.sku || p.barcode) && (
-                    <div className="pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
+                    <div className="pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                       <p className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate">
                         {p.sku ? `SKU: ${p.sku}` : `EAN: ${p.barcode}`}
                       </p>
@@ -1447,11 +1447,11 @@ export default function ProductsAdminTab() {
           onClick={() => setShowExcelImporter(false)}
         >
           <div
-            className="bg-white dark:bg-card rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-[var(--rule-base)] dark:border-card-border p-6"
+            className="bg-[var(--surface-raised)] rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <SectionTitle className="text-lg font-extrabold text-foreground">Importar desde Excel</SectionTitle>
+              <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">Importar desde Excel</SectionTitle>
               <button
                 onClick={() => { setShowExcelImporter(false); void fetchProducts(); }}
                 className="h-8 w-8 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors"
@@ -1515,7 +1515,7 @@ function CategorySuggestion({
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
           Sugerencia
         </p>
-        <p className="text-xs font-semibold text-foreground truncate">
+        <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
           Detectada: <span className="text-[var(--accent)]">{detection.label}</span>
         </p>
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">

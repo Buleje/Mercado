@@ -26,22 +26,22 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null; sparklineData?: number[]; invertTrend?: boolean }) {
   const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
   const arrowUp = delta != null ? delta >= 0 : false;
-  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
+  return (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
     {delta != null && Math.abs(delta) >= 10 && <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-[var(--data-success-500)]" : "bg-[var(--data-error-500)]")} />}
     <p className="text-xs font-medium text-[var(--text-tertiary)] dark:text-muted mb-2.5 truncate">{label}</p>
     <div className="flex flex-wrap items-end justify-between gap-2"><div className="flex flex-col gap-1.5">
-      <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-none">{value}</p>
+      <p className="text-base sm:text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-none">{value}</p>
       {delta != null && delta !== undefined ? <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>{arrowUp ? "\u2191" : "\u2193"} {Math.abs(delta).toFixed(1)}%</div> : delta === null ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">\u2014 Sin datos anteriores</span> : null}
       {sparklineData && sparklineData.length > 0 && <div className="mt-1"><Sparkline data={sparklineData} color={accent.replace("text-","")} /></div>}
     </div><Icon className={cn("h-4 w-4 shrink-0 mb-0.5", accent)} /></div>
   </div>);
 }
 function Card({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{className?:string}>; children: React.ReactNode; action?: React.ReactNode }) {
-  return (<div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4"><div className="flex items-center justify-between mb-4"><CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />{title.toUpperCase()}</CardTitle>{action}</div>{children}</div>);
+  return (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4"><div className="flex items-center justify-between mb-4"><CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-[var(--text-tertiary)] dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-[var(--text-tertiary)] dark:text-muted" />{title.toUpperCase()}</CardTitle>{action}</div>{children}</div>);
 }
 function Donut({ data, total, size = 96 }: { data: { total: number; color: string }[]; total: number; size?: number }) {
   const segments = useMemo(() => { const pcts = data.map(p => total > 0 ? (p.total / total) * 100 : 0); const cumulative = pcts.reduce<number[]>((acc, pct) => [...acc, (acc[acc.length - 1] ?? 0) + pct], []); return data.map((p, i) => `${p.color} ${cumulative[i - 1] ?? 0}% ${cumulative[i]}%`); }, [data, total]);
-  return (<div className="relative shrink-0" style={{ width: size, height: size }}><div className="w-full h-full rounded-full" style={{ background: `conic-gradient(${segments.join(", ")})` }} /><div className="absolute rounded-full bg-white dark:bg-card flex items-center justify-center" style={{ inset: size*0.2 }}><span className="text-xs font-bold text-[var(--text-secondary)] dark:text-foreground">{fmt(total)}</span></div></div>);
+  return (<div className="relative shrink-0" style={{ width: size, height: size }}><div className="w-full h-full rounded-full" style={{ background: `conic-gradient(${segments.join(", ")})` }} /><div className="absolute rounded-full bg-[var(--surface-raised)] flex items-center justify-center" style={{ inset: size*0.2 }}><span className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(total)}</span></div></div>);
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">{text}</div>; }
 function ElapsedTimer({ createdAt }: { createdAt: string }) {
@@ -83,13 +83,13 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
   }, [orders, sales, period]);
 
   return (
-        <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-xl border border-[var(--rule-soft)] dark:border-card-border p-4")}>
+        <div className={cn("space-y-4", expandAll && "bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4")}>
           {expandAll && (
-            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center">
                 <DollarSign className="h-3.5 w-3.5 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
               </div>
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Ventas</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ventas</CardTitle>
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -213,13 +213,13 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                           />
                         </div>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted mt-1">{f.day}</p>
-                        <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(f.value)}</p>
+                        <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(f.value)}</p>
                       </div>
                     );
                   })}
                 </div>
-                <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] dark:text-muted pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
-                  <span>Total estimado: <strong className="text-[var(--text-primary)] dark:text-foreground">{fmt(st.forecast7.reduce((a: number, f: any) => a + f.value, 0))}</strong></span>
+                <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] dark:text-muted pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                  <span>Total estimado: <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(st.forecast7.reduce((a: number, f: any) => a + f.value, 0))}</strong></span>
                   <span className="text-[length:var(--ts-2xs)]">Basado en tendencia lineal de {st.daily.length} días</span>
                 </div>
               </div>
@@ -463,7 +463,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                       <div key={c.cat}>
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="text-[var(--text-secondary)]">{c.label}</span>
-                          <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(c.total)}</span>
+                          <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.total)}</span>
                         </div>
                         <div className="h-1.5 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{width:`${(c.total/mx)*100}%`,background:c.color}} />
@@ -484,7 +484,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                       <div key={p.method} className="flex flex-wrap items-center gap-2 text-xs">
                         <div className="w-2.5 h-2.5 rounded-full" style={{background:p.color}} />
                         <span className="text-[var(--text-secondary)] w-20">{p.label}</span>
-                        <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(p.total)}</span>
+                        <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(p.total)}</span>
                       </div>
                     ))}
                   </div>
@@ -538,7 +538,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                         <span className="text-[var(--text-secondary)] font-medium">{step.label}</span>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-[var(--text-tertiary)]">{pct.toFixed(0)}%</span>
-                          <span className="font-semibold text-[var(--text-primary)] dark:text-foreground w-6 text-right">{step.count}</span>
+                          <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] w-6 text-right">{step.count}</span>
                         </div>
                       </div>
                       <div className="h-2 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
@@ -559,7 +559,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   className={cn("px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold transition-all border",
                     recentFilter === f
                       ? "bg-gray-900 dark:bg-foreground text-white dark:text-card border-transparent"
-                      : "bg-white dark:bg-card text-[var(--text-tertiary)] border-[var(--rule-base)] dark:border-card-border hover:text-[var(--text-secondary)]"
+                      : "bg-[var(--surface-raised)] text-[var(--text-tertiary)] border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:text-[var(--text-secondary)]"
                   )}>
                   {f === "all" ? "Todos" : f === "pendiente" ? "Pendiente" : f === "en_camino" ? "En camino" : "Entregado"}
                 </button>
@@ -567,10 +567,10 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
               {/* N4 — Date range filter */}
               <div className="flex items-center gap-1 ml-auto">
                 <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                  className="px-1.5 py-0.5 rounded-md border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-foreground" />
+                  className="px-1.5 py-0.5 rounded-md border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
                 <span className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)]">→</span>
                 <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                  className="px-1.5 py-0.5 rounded-md border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-foreground" />
+                  className="px-1.5 py-0.5 rounded-md border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
                 {(dateFrom || dateTo) && (
                   <button onClick={() => { setDateFrom(""); setDateTo(""); }}
                     className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] font-bold">X</button>
@@ -605,7 +605,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   <div className="flex flex-wrap gap-1 ml-auto">
                     {(["confirmado","en_camino","entregado","cancelado"] as const).map(s => (
                       <button key={s} onClick={() => handleBulkStatus(s)} disabled={bulkUpdating}
-                        className="text-[length:var(--ts-2xs)] font-bold px-2 py-1 rounded-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border hover:border-primary hover:text-primary text-[var(--text-secondary)] transition-colors disabled:opacity-50">
+                        className="text-[length:var(--ts-2xs)] font-bold px-2 py-1 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:text-primary text-[var(--text-secondary)] transition-colors disabled:opacity-50">
                         {s === "confirmado" ? "Confirmar" : s === "en_camino" ? "Despachar" : s === "entregado" ? "Entregado" : "Cancelar"}
                       </button>
                     ))}
@@ -616,7 +616,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
               <div className="overflow-x-auto -mx-4">
                 <table className="w-full min-w-[600px] text-xs">
                   <thead>
-                    <tr className="text-[var(--text-tertiary)] dark:text-muted font-medium border-b border-gray-50 dark:border-card-border">
+                    <tr className="text-[var(--text-tertiary)] dark:text-muted font-medium border-b border-[var(--rule-base)]">
                       <th className="w-8 px-2 py-2">
                         <input type="checkbox"
                           checked={filteredRecent.length > 0 && filteredRecent.every((o: any) => selectedOrders.has(o.id))}
@@ -638,7 +638,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   <tbody>
                     {pagedRecent.map((o: any) => (
                       <Fragment key={o.id}>
-                      <tr className="border-b border-gray-50 dark:border-card-border last:border-0 hover:bg-gray-50/50 dark:hover:bg-accent/50">
+                      <tr className="border-b border-[var(--rule-base)] last:border-0 hover:bg-gray-50/50 dark:hover:bg-accent/50">
                         {/* U3: Checkbox */}
                         <td className="w-8 px-2 py-2">
                           <input type="checkbox" checked={selectedOrders.has(o.id)} onChange={() => toggleOrderSelection(o.id)} className="rounded border-[var(--rule-base)] accent-primary" />
@@ -659,7 +659,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                         </td>
                         <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                           <div className="flex items-center gap-1">
-                            <span className="font-medium text-[var(--text-primary)] dark:text-foreground">{o.customer.name}</span>
+                            <span className="font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{o.customer.name}</span>
                             {/* J3 — New client badge */}
                             {o.customer.phone && (() => {
                               const otherOrders = orders.filter((ord: any) => ord.id !== o.id && ord.customer.phone === o.customer.phone);
@@ -714,13 +714,13 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                             );
                           })()}
                         </td>
-                        <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-right font-semibold text-[var(--text-primary)] dark:text-foreground">
+                        <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-right font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                           <span>{fmt(o.total)}</span>
                           <button onClick={() => printTicket(o)} className="ml-1.5 text-[var(--text-tertiary)] hover:text-primary transition-colors" title="Imprimir comanda">Impr.</button>
                         </td>
                       </tr>
                       {/* U2: Admin note row */}
-                      <tr className="border-b border-gray-50 dark:border-card-border">
+                      <tr className="border-b border-[var(--rule-base)]">
                         <td colSpan={7} className="px-4 py-1">
                           <input
                             type="text"
@@ -733,13 +733,13 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                       </tr>
                       {/* Y3: Status history timeline */}
                       {expandedHistory.has(o.id) && o.statusHistory && o.statusHistory.length > 0 && (
-                        <tr className="border-b border-gray-50 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+                        <tr className="border-b border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30">
                           <td colSpan={7} className="px-3 sm:px-6 py-2">
                             <div className="flex items-center gap-3 flex-wrap">
                               {o.statusHistory.map((h: any, hi: number) => (
                                 <div key={hi} className="flex items-center gap-1.5">
                                   <div className="w-2 h-2 rounded-full bg-primary" />
-                                  <span className="text-[length:var(--ts-2xs)] font-semibold text-foreground capitalize">{h.status.replace("_", " ")}</span>
+                                  <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] capitalize">{h.status.replace("_", " ")}</span>
                                   <span className="text-[length:var(--ts-2xs)] text-muted">{fmtDate(h.at)} {fmtTime(h.at)}</span>
                                   {hi < o.statusHistory!.length - 1 && <span className="text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">→</span>}
                                 </div>

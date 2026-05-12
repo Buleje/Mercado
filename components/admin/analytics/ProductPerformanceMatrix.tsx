@@ -257,7 +257,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
                   className="w-2 h-2 rounded-full shrink-0"
                   style={{ backgroundColor: QUADRANT_META[activeQuadrant].color }}
                 />
-                <span className="flex-1 truncate text-[var(--text-primary)] dark:text-foreground">{p.name}</span>
+                <span className="flex-1 truncate text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</span>
                 <span className="text-[var(--text-tertiary)]">{Number(p.share).toFixed(1)}%</span>
                 <span
                   className={cn(

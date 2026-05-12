@@ -591,6 +591,20 @@ function MarketplaceTiendaTab() {
 
   if (loading) return <Spinner />;
 
+  // Iniciales para el avatar fallback (cuando no hay logo)
+  const initials = (store.name || store.slug || "BS")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("") || "BS";
+
+  const statusBadge = !store.isActive
+    ? { label: "Inactiva", className: "bg-[var(--rule-soft)] text-[var(--text-secondary)] border border-[var(--rule-base)]" }
+    : store.vacationMode
+    ? { label: "En vacaciones", className: "bg-[var(--data-warning-50)] text-[var(--data-warning)] border border-[var(--data-warning)]/30" }
+    : { label: "Publicada", className: "bg-[var(--data-success-50)] text-[var(--data-success)] border border-[var(--data-success)]/30" };
+
   return (
     <div className="space-y-6">
       {error && (
@@ -600,42 +614,105 @@ function MarketplaceTiendaTab() {
         </div>
       )}
 
-      <div className="bg-white border border-[var(--rule-base)] rounded-xl p-5  space-y-5">
-        <CardTitle className="font-bold text-[var(--text-primary)] text-sm">Configuración de la tienda</CardTitle>
+      {/* ── Hero preview: cómo se verá tu tienda en el marketplace ── */}
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-gradient-to-br from-primary/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
+        <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          {/* Logo / Avatar */}
+          <div className="relative shrink-0">
+            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-[var(--surface-raised)] flex items-center justify-center">
+              {store.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={store.logoUrl} alt={store.name || store.slug} className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-2xl font-extrabold text-primary">{initials}</span>
+              )}
+            </div>
+            <span className={cn("absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider", statusBadge.className)}>
+              {statusBadge.label}
+            </span>
+          </div>
+
+          {/* Identidad */}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight truncate">
+              {store.name || "Tu tienda"}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)] line-clamp-2">
+              {store.description || "Sin descripción todavía. Cuéntale a los clientes qué te hace especial."}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+              <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-tertiary)]">
+                <Store className="h-3 w-3" /> {store.category || "Sin categoría"}
+              </span>
+              <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-tertiary)]">
+                <Zap className="h-3 w-3" /> {store.zone || "Sin zona"}
+              </span>
+              <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-tertiary)]">
+                <DollarSign className="h-3 w-3" /> {store.commissionRate}% comisión
+              </span>
+            </div>
+          </div>
+
+          {/* CTA: ver tienda pública */}
+          {store.slug && (
+            <a
+              href={`/marketplace/${store.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-xs font-bold text-[var(--text-primary)] hover:border-primary hover:text-primary transition-colors"
+            >
+              <Eye className="h-3.5 w-3.5" /> Ver pública
+              <ExternalLink className="h-3 w-3 opacity-60" />
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* ── Sección 1: Identidad ── */}
+      <section className="bg-white border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 space-y-5">
+        <header className="flex items-center gap-2 pb-3 border-b border-[var(--rule-soft)]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Store className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Identidad</h3>
+            <p className="text-xs text-[var(--text-tertiary)]">Cómo te encuentran los clientes en el marketplace</p>
+          </div>
+        </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Slug */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">
-              URL de la tienda (slug)
-            </label>
-            <input
-              type="text"
-              value={store.slug}
-              onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
-              placeholder="mi-bodega"
-              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-            />
-            {store.slug && (
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">marketplace.com/{store.slug}</p>
-            )}
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">URL</label>
+            <div className="flex items-stretch rounded-lg border border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+              <span className="inline-flex items-center px-3 text-xs font-semibold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r border-[var(--rule-base)] whitespace-nowrap">/marketplace/</span>
+              <input
+                type="text"
+                value={store.slug}
+                onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
+                placeholder="mi-bodega"
+                className="flex-1 min-w-0 px-3 py-2.5 bg-transparent text-sm text-[var(--text-primary)] outline-none"
+              />
+            </div>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Solo minúsculas, sin espacios. Cambiar la URL rompe links viejos.</p>
           </div>
 
           {/* Nombre */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre de la tienda</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Nombre visible</label>
             <input
               type="text"
               value={store.name}
               onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
-              placeholder="Mi Bodega"
-              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              placeholder="Bodega San Martín"
+              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
             />
           </div>
 
           {/* Categoría */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Categoría principal</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Categoría principal</label>
             <div className="relative">
               <select
                 value={store.category}
@@ -650,7 +727,7 @@ function MarketplaceTiendaTab() {
 
           {/* Zona */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Zona de cobertura</label>
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Zona de cobertura</label>
             <div className="relative">
               <select
                 value={store.zone}
@@ -662,123 +739,178 @@ function MarketplaceTiendaTab() {
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Comisión */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Comisión acordada (%)</label>
-            <input
-              type="number"
-              min={0}
-              max={30}
-              step={0.5}
-              value={store.commissionRate}
-              onChange={(e) => setStore((p) => ({ ...p, commissionRate: parseFloat(e.target.value) || 0 }))}
-              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-            />
+      {/* ── Sección 2: Marca visual ── */}
+      <section className="bg-white border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 space-y-5">
+        <header className="flex items-center gap-2 pb-3 border-b border-[var(--rule-soft)]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
+            <Star className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Marca visual</h3>
+            <p className="text-xs text-[var(--text-tertiary)]">Logo y descripción que verán tus clientes</p>
           </div>
+        </header>
 
-          {/* Logo URL */}
-          <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Logo de la tienda</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ImageUpload
+        <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-5 items-start">
+          <ImageUpload
+            value={store.logoUrl}
+            onChange={(url) => setStore((p) => ({ ...p, logoUrl: url }))}
+            onClear={() => setStore((p) => ({ ...p, logoUrl: "" }))}
+            folder="marketplace-logos"
+            label="Logo (200×200)"
+            hint="JPG, PNG o WebP · cuadrado recomendado"
+            aspectRatio="square"
+          />
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">URL del logo (opcional)</label>
+              <input
+                type="url"
                 value={store.logoUrl}
-                onChange={(url) => setStore((p) => ({ ...p, logoUrl: url }))}
-                onClear={() => setStore((p) => ({ ...p, logoUrl: "" }))}
-                folder="marketplace-logos"
-                label=""
-                hint="Logo cuadrado recomendado (200×200)"
-                aspectRatio="square"
+                onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
+                placeholder="https://… o sube una imagen arriba"
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
-              <div className="flex flex-col gap-2">
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Sube tu logo o pega una URL. Se mostrará en la tarjeta de tu tienda en el marketplace.
-                </p>
-                <input
-                  type="url"
-                  value={store.logoUrl}
-                  onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
-                  placeholder="https://... o sube una imagen"
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
-                {store.logoUrl && (
-                  <div className="flex items-center gap-2 text-xs text-[var(--data-success)]">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Logo configurado
-                  </div>
-                )}
+              {store.logoUrl && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--data-success)]">
+                  <CheckCircle className="h-3.5 w-3.5" /> Logo configurado
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Descripción</label>
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
+                  {(store.description ?? "").length}/240
+                </span>
               </div>
+              <textarea
+                rows={3}
+                maxLength={240}
+                value={store.description}
+                onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
+                placeholder="Describe tu bodega, horarios, especialidades..."
+                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
+              />
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Descripción */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-[var(--text-secondary)]">Descripción de la tienda</label>
-          <textarea
-            rows={3}
-            value={store.description}
-            onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
-            placeholder="Describe tu bodega, horarios, especialidades..."
-            className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
-          />
-        </div>
-
-        {/* Estado activo */}
-        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-[var(--rule-base)]">
+      {/* ── Sección 3: Operación ── */}
+      <section className="bg-white border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 space-y-5">
+        <header className="flex items-center gap-2 pb-3 border-b border-[var(--rule-soft)]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--data-warning)]/10 text-[var(--data-warning)]">
+            <Zap className="h-4 w-4" />
+          </span>
           <div>
-            <p className="text-sm font-bold text-[var(--text-primary)]">Tienda activa en marketplace</p>
-            <p className="text-xs text-[var(--text-secondary)]">Los clientes podrán encontrar y comprar en tu tienda</p>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Operación</h3>
+            <p className="text-xs text-[var(--text-tertiary)]">Visibilidad, comisión y modo vacaciones</p>
           </div>
-          <button
-            onClick={() => setStore((p) => ({ ...p, isActive: !p.isActive }))}
-            className={cn(
-              "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
-              store.isActive ? "bg-primary" : "bg-gray-300"
-            )}
-          >
-            <span className={cn(
-              "inline-block h-4 w-4 transform rounded-full bg-white  transition-transform",
-              store.isActive ? "translate-x-6" : "translate-x-1"
-            )} />
-          </button>
+        </header>
+
+        {/* Comisión + estado en grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Comisión acordada</label>
+            <div className="flex items-stretch rounded-lg border border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+              <input
+                type="number"
+                min={0}
+                max={30}
+                step={0.5}
+                value={store.commissionRate}
+                onChange={(e) => setStore((p) => ({ ...p, commissionRate: parseFloat(e.target.value) || 0 }))}
+                className="flex-1 min-w-0 px-3 py-2.5 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none tabular-nums"
+              />
+              <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l border-[var(--rule-base)]">%</span>
+            </div>
+          </div>
+
+          {/* Estado activo */}
+          <div className="flex items-center justify-between gap-3 px-4 py-3 bg-[var(--surface-sunken)] rounded-lg border border-[var(--rule-base)]">
+            <div className="flex items-start gap-2.5 min-w-0">
+              <span className={cn("flex h-7 w-7 items-center justify-center rounded-full shrink-0", store.isActive ? "bg-[var(--data-success)]/15 text-[var(--data-success)]" : "bg-[var(--rule-base)] text-[var(--text-tertiary)]")}>
+                {store.isActive ? <CheckCircle className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-[var(--text-primary)]">Visible en marketplace</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{store.isActive ? "Los clientes te encuentran" : "Tienda oculta"}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setStore((p) => ({ ...p, isActive: !p.isActive }))}
+              className={cn(
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0",
+                store.isActive ? "bg-primary" : "bg-gray-300"
+              )}
+              aria-label="Activar tienda en marketplace"
+            >
+              <span className={cn(
+                "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
+                store.isActive ? "translate-x-6" : "translate-x-1"
+              )} />
+            </button>
+          </div>
         </div>
 
         {/* Modo vacaciones */}
-        <div className="space-y-3 p-3 bg-[var(--data-warning-50)] border border-[var(--data-warning)] rounded-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Modo vacaciones</p>
-              <p className="text-xs text-[var(--text-secondary)]">Pausa pedidos temporalmente sin despublicar tu tienda</p>
+        <div className={cn(
+          "space-y-3 p-4 rounded-xl border transition-colors",
+          store.vacationMode
+            ? "bg-[var(--data-warning-50)] border-[var(--data-warning)]/40"
+            : "bg-[var(--surface-sunken)] border-[var(--rule-base)]"
+        )}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5 min-w-0">
+              <span className={cn("flex h-7 w-7 items-center justify-center rounded-full shrink-0", store.vacationMode ? "bg-[var(--data-warning)]/20 text-[var(--data-warning)]" : "bg-[var(--rule-base)] text-[var(--text-tertiary)]")}>
+                <Clock className="h-3.5 w-3.5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-[var(--text-primary)]">Modo vacaciones</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pausa pedidos sin despublicar la tienda</p>
+              </div>
             </div>
             <button
               onClick={() => setStore((p) => ({ ...p, vacationMode: !p.vacationMode }))}
               className={cn(
-                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0",
                 store.vacationMode ? "bg-[var(--data-warning)]" : "bg-gray-300"
               )}
+              aria-label="Activar modo vacaciones"
             >
               <span className={cn(
-                "inline-block h-4 w-4 transform rounded-full bg-white  transition-transform",
+                "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
                 store.vacationMode ? "translate-x-6" : "translate-x-1"
               )} />
             </button>
           </div>
           {store.vacationMode && (
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Mensaje para tus clientes (opcional)</label>
+              <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] uppercase tracking-wide">Mensaje a clientes (opcional)</label>
               <input
                 type="text"
                 value={store.vacationMessage ?? ""}
                 onChange={(e) => setStore((p) => ({ ...p, vacationMessage: e.target.value }))}
                 placeholder="Ej: Volvemos el lunes 15. ¡Gracias por tu paciencia!"
-                className="w-full px-3 py-2 rounded-lg border border-[var(--data-warning)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-warning)] focus:border-[var(--data-warning)] transition-all"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--data-warning)]/40 bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-warning)] focus:border-[var(--data-warning)] transition-all"
               />
             </div>
           )}
         </div>
+      </section>
 
-        <div className="flex items-center justify-end gap-3 pt-2">
+      {/* ── Sticky save bar ── */}
+      <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 px-5 py-3 rounded-2xl border border-[var(--rule-base)] bg-white/95 backdrop-blur shadow-lg">
+        <p className="text-xs text-[var(--text-tertiary)] hidden sm:block">
+          Los cambios se aplican al instante en tu tienda pública.
+        </p>
+        <div className="flex items-center gap-3 ml-auto">
           {saved && (
             <span className="text-sm text-[var(--data-success)] font-semibold flex items-center gap-1">
               <CheckCircle className="h-4 w-4" /> Guardado
@@ -787,7 +919,7 @@ function MarketplaceTiendaTab() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
           >
             {saving ? (
               <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1002,8 +1134,23 @@ function MarketplaceComisionesTab() {
 
   if (loading) return <TableSkeleton />;
 
+  // Total absoluto y % en cada estado para barras de proporción visual.
+  const total = (summary.pendiente || 0) + (summary.liquidado || 0) + (summary.pagado || 0);
+  const pct = (n: number) => (total > 0 ? Math.max(2, (n / total) * 100) : 0);
+
+  // Counts por estado para los chips (para mostrar cuántos hay en cada filtro).
+  const counts = {
+    all: filtered.length || 0,
+    pendiente: 0,
+    liquidado: 0,
+    pagado: 0,
+  };
+  // Dado que `filtered` ya respeta el filtro activo, contamos sobre ello cuando es "all"
+  // y sobre `summary` (montos totales) como heurística; el dato exacto requeriría el hook
+  // exponer `entries`. Los chips muestran montos (S/) más útiles que counts en este flow.
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {error && (
         <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -1012,111 +1159,158 @@ function MarketplaceComisionesTab() {
         </div>
       )}
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {[
-          { key: "pendiente", label: "Por pagar", color: "text-[var(--data-warning)]", bg: "bg-[var(--data-warning-50)]" },
-          { key: "liquidado", label: "Liquidado",  color: "text-[var(--data-success)]",  bg: "bg-[var(--accent-soft)]" },
-          { key: "pagado",    label: "Pagado",     color: "text-[var(--data-success)]", bg: "bg-[var(--accent-soft)]" },
-        ].map(({ key, label, color, bg }) => (
-          <div key={key} className={cn("rounded-xl p-4 border border-[var(--rule-base)] ", bg)}>
-            <p className="text-xs font-bold text-[var(--text-secondary)]">{label}</p>
-            <p className={cn("text-2xl font-extrabold mt-1", color)}>
-              S/{(summary[key as keyof typeof summary] || 0).toFixed(2)}
-            </p>
+      {/* ── Hero card: total + barra de distribución ── */}
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-gradient-to-br from-primary/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
+        <div className="absolute -top-20 -right-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
+          <div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Comisiones marketplace</p>
+            <h3 className="mt-1 text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] tracking-tight tabular-nums">
+              S/ {total.toFixed(2)}
+            </h3>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">Suma de todos los estados · {filtered.length} {filtered.length === 1 ? "comisión" : "comisiones"} listadas</p>
           </div>
-        ))}
+          {summary.liquidado > 0 && (
+            <button
+              onClick={handleBulkPay}
+              disabled={markingPaid === "bulk"}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
+            >
+              <DollarSign className="h-4 w-4" />
+              {markingPaid === "bulk" ? "Procesando..." : `Pagar liquidado · S/${summary.liquidado.toFixed(2)}`}
+            </button>
+          )}
+        </div>
+
+        {/* Barra de proporción visual (Pendiente / Liquidado / Pagado) */}
+        <div className="relative">
+          <div className="flex h-2 rounded-full overflow-hidden bg-[var(--rule-soft)]">
+            {total > 0 ? (
+              <>
+                <span className="bg-[var(--data-warning)]" style={{ width: `${pct(summary.pendiente)}%` }} />
+                <span className="bg-primary" style={{ width: `${pct(summary.liquidado)}%` }} />
+                <span className="bg-[var(--data-success)]" style={{ width: `${pct(summary.pagado)}%` }} />
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Detalle por estado */}
+        <div className="grid grid-cols-3 gap-3 mt-4">
+          {[
+            { key: "pendiente", label: "Por pagar", value: summary.pendiente, dot: "bg-[var(--data-warning)]", icon: Clock },
+            { key: "liquidado", label: "Liquidado", value: summary.liquidado, dot: "bg-primary", icon: CheckCircle },
+            { key: "pagado", label: "Pagado", value: summary.pagado, dot: "bg-[var(--data-success)]", icon: CheckCircle },
+          ].map(({ key, label, value, dot, icon: Icon }) => (
+            <div key={key} className="flex items-start gap-2.5">
+              <span className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0", dot)} />
+              <div className="min-w-0">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
+                <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tabular-nums">S/ {(value || 0).toFixed(2)}</p>
+              </div>
+              <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)] ml-auto mt-1 shrink-0" />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Filters + Bulk actions */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--text-secondary)]">Filtrar:</span>
-          {[
-            { value: "all", label: "Todos" },
-            { value: "pendiente", label: "Pendiente" },
-            { value: "liquidado", label: "Liquidado" },
-            { value: "pagado", label: "Pagado" },
-          ].map((f) => (
+      {/* ── Filtros como chips grandes con monto ── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { value: "all", label: "Todas", amount: total },
+          { value: "pendiente", label: "Por pagar", amount: summary.pendiente },
+          { value: "liquidado", label: "Liquidado", amount: summary.liquidado },
+          { value: "pagado", label: "Pagado", amount: summary.pagado },
+        ].map((f) => {
+          const active = filterStatus === f.value;
+          return (
             <button
               key={f.value}
               onClick={() => setFilterStatus(f.value)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
-                filterStatus === f.value
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-bold transition-all tabular-nums",
+                active
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
               )}
             >
               {f.label}
+              <span className={cn("text-xs font-semibold tabular-nums", active ? "text-primary/80" : "text-[var(--text-tertiary)]")}>
+                S/{(f.amount || 0).toFixed(0)}
+              </span>
             </button>
-          ))}
-        </div>
-        {summary.liquidado > 0 && (
-          <button
-            onClick={handleBulkPay}
-            disabled={markingPaid === "bulk"}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
-          >
-            <DollarSign className="h-3.5 w-3.5" />
-            {markingPaid === "bulk" ? "Procesando..." : `Pagar todo liquidado (S/${summary.liquidado.toFixed(2)})`}
-          </button>
-        )}
+          );
+        })}
       </div>
 
       {filtered.length === 0 && !error ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)]">
-          <DollarSign className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">Sin comisiones {filterStatus !== "all" ? `en estado "${filterStatus}"` : "registradas aún"}</p>
+        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
+            <DollarSign className="h-6 w-6" />
+          </div>
+          <p className="text-base font-extrabold text-[var(--text-primary)]">
+            {filterStatus !== "all" ? `Sin comisiones en "${filterStatus}"` : "Sin comisiones registradas aún"}
+          </p>
+          <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-sm mx-auto">
+            {filterStatus !== "all"
+              ? "Probá con otro filtro o vé al estado anterior del flujo."
+              : "Cuando recibas pedidos por marketplace, las comisiones aparecerán acá."}
+          </p>
         </div>
       ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl  overflow-hidden">
+        <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-[var(--rule-base)]">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Orden</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Total orden</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Comisión</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Estado</th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Fecha</th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-secondary)]">Acción</th>
+                  <th className="text-left px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Orden</th>
+                  <th className="text-right px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</th>
+                  <th className="text-right px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Comisión</th>
+                  <th className="text-center px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Estado</th>
+                  <th className="text-right px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Fecha</th>
+                  <th className="text-center px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtered.map((e) => {
                   const sc = COMMISSION_STATUS_CONFIG[e.status] ?? COMMISSION_STATUS_CONFIG.pendiente;
                   const StatusIcon = sc.icon;
                   return (
-                    <tr key={e.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="font-mono text-xs font-bold text-[var(--text-primary)]">
+                    <tr key={e.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
+                      <td className="px-5 py-3">
+                        <span className="inline-flex items-center gap-2 font-mono text-xs font-bold text-[var(--text-primary)] bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-md px-2 py-1">
                           #{e.orderId.slice(-8).toUpperCase()}
-                        </p>
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-[var(--text-secondary)]">S/{e.orderTotal.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">S/{e.amount.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold", sc.className)}>
+                      <td className="px-5 py-3 text-right text-sm text-[var(--text-secondary)] tabular-nums">S/{e.orderTotal.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-right text-sm font-extrabold text-[var(--text-primary)] tabular-nums">S/{e.amount.toFixed(2)}</td>
+                      <td className="px-5 py-3 text-center">
+                        <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider", sc.className)}>
                           <StatusIcon className="h-3 w-3" />
                           {sc.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-xs text-[var(--text-secondary)]">
-                        {new Date(e.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                      <td className="px-5 py-3 text-right text-xs text-[var(--text-secondary)] tabular-nums">
+                        {new Date(e.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" })}
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        {e.status !== "pagado" && (
+                      <td className="px-5 py-3 text-center">
+                        {e.status !== "pagado" ? (
                           <button
                             onClick={() => handleMarkPaid(e.id)}
                             disabled={markingPaid === e.id}
-                            className="px-2.5 py-1 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] text-xs font-bold hover:bg-[var(--accent-soft)] transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
                           >
+                            {markingPaid === e.id ? (
+                              <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <CheckCircle className="h-3.5 w-3.5" />
+                            )}
                             {markingPaid === e.id ? "..." : "Marcar pagado"}
                           </button>
-                        )}
-                        {e.status === "pagado" && (
-                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pagado</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                            <CheckCircle className="h-3 w-3" /> Pagado
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -1143,170 +1337,455 @@ function MarketplaceCuponesTab() {
 
   if (loading) return <TableSkeleton />;
 
+  // Stats agregadas
+  const activeCount = coupons.filter((c) => c.active).length;
+  const totalUses = coupons.reduce((s, c) => s + (c.usedCount || 0), 0);
+  const expiringSoon = coupons.filter((c) => {
+    if (!c.expiresAt) return false;
+    const days = (new Date(c.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    return days > 0 && days < 7;
+  }).length;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-[var(--text-secondary)]">{coupons.length} cupón(es)</p>
+      {/* ── Header con stats + CTA ── */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-5">
+          <div>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Cupones marketplace</p>
+            <p className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-tight">{coupons.length}</p>
+          </div>
+          <div className="h-10 w-px bg-[var(--rule-base)]" />
+          <div className="flex items-center gap-5">
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Activos</p>
+              <p className="text-base font-bold text-[var(--data-success)] tabular-nums">{activeCount}</p>
+            </div>
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Usos</p>
+              <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{totalUses}</p>
+            </div>
+            {expiringSoon > 0 && (
+              <div>
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-warning)]">Vencen pronto</p>
+                <p className="text-base font-bold text-[var(--data-warning)] tabular-nums">{expiringSoon}</p>
+              </div>
+            )}
+          </div>
+        </div>
         <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:opacity-90 transition"
+          onClick={() => setShowForm(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
         >
-          + Nuevo Cupón
+          <Ticket className="h-4 w-4" />
+          Nuevo cupón
         </button>
       </div>
 
+      {/* ── Modal "Nuevo cupón" ── */}
       {showForm && (
-        <div className="bg-gray-50 border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Código</label>
-              <input
-                type="text"
-                placeholder="BIENVENIDO10"
-                value={form.code}
-                onChange={(e) => setForm({ ...form, code: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Tipo</label>
-              <select
-                value={form.discountType}
-                onChange={(e) => setForm({ ...form, discountType: e.target.value as "percent" | "fixed" })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+        <NewCouponModal
+          form={form}
+          setForm={setForm}
+          saving={saving}
+          onClose={() => setShowForm(false)}
+          onCreate={handleCreate}
+        />
+      )}
+
+      {coupons.length === 0 ? (
+        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
+            <Ticket className="h-6 w-6" />
+          </div>
+          <p className="text-base font-extrabold text-[var(--text-primary)]">Sin cupones todavía</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-sm mx-auto">
+            Crea un cupón para atraer clientes al marketplace y aumentar tu conversión.
+          </p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          >
+            <Ticket className="h-4 w-4" />
+            Crear primer cupón
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {coupons.map((c) => {
+            const expired = c.expiresAt ? new Date(c.expiresAt).getTime() < Date.now() : false;
+            const usagePct = c.maxUses ? Math.min(100, (c.usedCount / c.maxUses) * 100) : 0;
+            return (
+              <div
+                key={c.id}
+                className={cn(
+                  "group relative overflow-hidden rounded-2xl border-2 p-4 transition-all",
+                  c.active && !expired
+                    ? "bg-white border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
+                    : "bg-[var(--surface-sunken)] border-[var(--rule-base)] opacity-75"
+                )}
               >
-                <option value="percent">Porcentaje (%)</option>
-                <option value="fixed">Monto fijo (S/)</option>
-              </select>
+                {/* Banda lateral con tipo */}
+                <div className={cn(
+                  "absolute left-0 top-0 bottom-0 w-1.5",
+                  c.active && !expired ? "bg-primary" : "bg-[var(--rule-base)]"
+                )} />
+
+                <div className="pl-2 flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {/* Código + estado */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono font-extrabold text-base text-[var(--text-primary)] tracking-tight truncate">
+                        {c.code}
+                      </span>
+                      <span className={cn(
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
+                        expired
+                          ? "bg-[var(--data-error-50)] text-[var(--data-error)]"
+                          : c.active
+                          ? "bg-[var(--data-success-50)] text-[var(--data-success)]"
+                          : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
+                      )}>
+                        {expired ? "Vencido" : c.active ? "Activo" : "Pausado"}
+                      </span>
+                    </div>
+
+                    {/* Descuento principal grande */}
+                    <p className="mt-2 text-2xl font-extrabold text-primary tabular-nums leading-none">
+                      {c.discountType === "percent" ? `${c.discountValue}%` : `S/${c.discountValue.toFixed(2)}`}
+                      <span className="text-xs font-semibold text-[var(--text-tertiary)] ml-1.5">de descuento</span>
+                    </p>
+
+                    {/* Descripción */}
+                    {c.description && (
+                      <p className="mt-1.5 text-xs text-[var(--text-secondary)] line-clamp-1">{c.description}</p>
+                    )}
+
+                    {/* Meta info */}
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                      {c.minPurchase ? (
+                        <span className="inline-flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" /> Mín S/{c.minPurchase.toFixed(2)}
+                        </span>
+                      ) : null}
+                      {c.expiresAt ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> {new Date(c.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> Sin vencimiento
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Barra de uso si hay maxUses */}
+                    {c.maxUses ? (
+                      <div className="mt-2.5">
+                        <div className="flex items-center justify-between text-[length:var(--ts-2xs)] mb-1">
+                          <span className="font-bold text-[var(--text-tertiary)]">Usos</span>
+                          <span className="tabular-nums font-bold text-[var(--text-secondary)]">{c.usedCount} / {c.maxUses}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-[var(--rule-soft)] overflow-hidden">
+                          <div
+                            className={cn("h-full rounded-full transition-all", usagePct >= 80 ? "bg-[var(--data-warning)]" : "bg-primary")}
+                            style={{ width: `${usagePct}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">{c.usedCount} usos · ilimitado</p>
+                    )}
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="flex flex-col gap-1 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => navigator.clipboard?.writeText(c.code).catch(() => {})}
+                      title="Copiar código"
+                      className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-[var(--text-tertiary)]"
+                    >
+                      <Star className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => toggleActive(c.id, c.active)}
+                      title={c.active ? "Desactivar" : "Activar"}
+                      className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors text-[var(--text-tertiary)]"
+                    >
+                      {c.active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4 text-[var(--data-success)]" />}
+                    </button>
+                    <button
+                      onClick={() => deleteCoupon(c.id)}
+                      title="Eliminar"
+                      className="p-2 rounded-lg hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] transition-colors text-[var(--text-tertiary)]"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Modal "Nuevo cupón" — diseño dedicado con preview
+// ─────────────────────────────────────────────
+function NewCouponModal({
+  form,
+  setForm,
+  saving,
+  onClose,
+  onCreate,
+}: {
+  form: ReturnType<typeof useMarketplaceCoupons>["form"];
+  setForm: ReturnType<typeof useMarketplaceCoupons>["setForm"];
+  saving: boolean;
+  onClose: () => void;
+  onCreate: () => void;
+}) {
+  const isPercent = form.discountType === "percent";
+  const previewValue = form.discountValue
+    ? isPercent
+      ? `${form.discountValue}%`
+      : `S/${parseFloat(form.discountValue).toFixed(2)}`
+    : isPercent
+    ? "10%"
+    : "S/10";
+
+  // Cerrar con Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border border-[var(--rule-base)]"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Crear nuevo cupón"
+      >
+        {/* Header con preview del cupón */}
+        <div className="relative overflow-hidden rounded-t-3xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 border-b border-[var(--rule-base)]">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 h-8 w-8 inline-flex items-center justify-center rounded-full bg-white border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
+            aria-label="Cerrar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary mb-1">
+            <Ticket className="h-3.5 w-3.5" />
+            Nuevo cupón marketplace
+          </div>
+          <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">Configurá tu descuento</h3>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Aparecerá en el carrito de los clientes que entren al marketplace.</p>
+
+          {/* Preview ticket */}
+          <div className="mt-5 relative">
+            <div className="relative inline-flex items-stretch rounded-xl bg-white border-2 border-dashed border-primary/40 overflow-hidden shadow-sm">
+              <div className="flex items-center justify-center px-4 py-3 bg-primary text-white">
+                <Ticket className="h-5 w-5" />
+              </div>
+              <div className="px-4 py-3 min-w-[180px]">
+                <p className="font-mono text-xs font-bold text-[var(--text-tertiary)] tracking-wider truncate max-w-[200px]">
+                  {form.code || "MICUPON10"}
+                </p>
+                <p className="text-2xl font-extrabold text-primary tabular-nums leading-none mt-0.5">{previewValue}</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
+                  {form.minPurchase ? `Mín S/${form.minPurchase}` : "Sin compra mínima"}
+                  {form.expiresAt ? ` · Vence ${new Date(form.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}` : ""}
+                </p>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
-                Valor {form.discountType === "percent" ? "(%)" : "(S/)"}
-              </label>
-              <input
-                type="number"
-                placeholder="10"
-                value={form.discountValue}
-                onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+        </div>
+
+        {/* Form body */}
+        <div className="p-6 space-y-6">
+          {/* Sección 1: Identificación */}
+          <section className="space-y-4">
+            <header className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-extrabold">1</span>
+              <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Identificación</h4>
+            </header>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Código del cupón</label>
+                <input
+                  type="text"
+                  placeholder="BIENVENIDO10"
+                  value={form.code}
+                  onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, "") })}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
+                  maxLength={20}
+                />
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Mayúsculas, sin espacios. Ej: BIENVENIDO10</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Descripción interna</label>
+                <input
+                  type="text"
+                  placeholder="Descuento de bienvenida"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Compra mínima (S/)</label>
-              <input
-                type="number"
-                placeholder="Opcional"
-                value={form.minPurchase}
-                onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+          </section>
+
+          {/* Sección 2: Tipo y valor */}
+          <section className="space-y-4">
+            <header className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-extrabold">2</span>
+              <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Tipo de descuento</h4>
+            </header>
+
+            {/* Toggle tipo: percent vs fixed */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: "percent", label: "Porcentaje", hint: "Descuenta un % del total", icon: "%" },
+                { value: "fixed",   label: "Monto fijo", hint: "Resta soles directos",    icon: "S/" },
+              ].map((opt) => {
+                const active = form.discountType === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setForm({ ...form, discountType: opt.value as "percent" | "fixed" })}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all",
+                      active
+                        ? "border-primary bg-primary/5"
+                        : "border-[var(--rule-base)] bg-white hover:border-[var(--text-tertiary)]"
+                    )}
+                  >
+                    <span className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-lg font-extrabold text-base",
+                      active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+                    )}>
+                      {opt.icon}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-sm font-bold", active ? "text-primary" : "text-[var(--text-primary)]")}>{opt.label}</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{opt.hint}</p>
+                    </div>
+                    {active && <CheckCircle className="h-4 w-4 text-primary shrink-0" />}
+                  </button>
+                );
+              })}
             </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Usos máximos</label>
-              <input
-                type="number"
-                placeholder="Ilimitado"
-                value={form.maxUses}
-                onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  Valor {isPercent ? "(%)" : "(S/)"}
+                </label>
+                <div className="flex items-stretch rounded-xl border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+                  <input
+                    type="number"
+                    placeholder={isPercent ? "10" : "5.00"}
+                    value={form.discountValue}
+                    onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+                    min={0}
+                    max={isPercent ? 100 : undefined}
+                    step={isPercent ? 1 : 0.5}
+                    className="flex-1 min-w-0 px-4 py-3 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
+                  />
+                  <span className="inline-flex items-center px-4 text-sm font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
+                    {isPercent ? "%" : "S/"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Compra mínima (S/)</label>
+                <input
+                  type="number"
+                  placeholder="Sin mínimo"
+                  value={form.minPurchase}
+                  onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
+                  min={0}
+                  step={0.5}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                />
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Descripción</label>
-              <input
-                type="text"
-                placeholder="Descuento de bienvenida"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+          </section>
+
+          {/* Sección 3: Límites */}
+          <section className="space-y-4">
+            <header className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-extrabold">3</span>
+              <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Límites</h4>
+            </header>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Usos máximos</label>
+                <input
+                  type="number"
+                  placeholder="Ilimitado"
+                  value={form.maxUses}
+                  onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
+                  min={1}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                />
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin tope de canjes</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Vence el</label>
+                <input
+                  type="datetime-local"
+                  value={form.expiresAt ? form.expiresAt.slice(0, 16) : ""}
+                  onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin vencimiento</p>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Vence el</label>
-              <input
-                type="datetime-local"
-                value={form.expiresAt}
-                onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2 justify-end">
+          </section>
+        </div>
+
+        {/* Footer sticky */}
+        <div className="sticky bottom-0 flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--rule-base)] bg-white/95 backdrop-blur rounded-b-3xl">
+          <p className="text-xs text-[var(--text-tertiary)] hidden sm:block">
+            Podés activar/desactivar el cupón después.
+          </p>
+          <div className="flex items-center gap-3 ml-auto">
             <button
-              onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-lg text-sm text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-gray-100 transition"
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] border-2 border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Cancelar
             </button>
             <button
-              onClick={handleCreate}
+              onClick={onCreate}
               disabled={saving || !form.code || !form.discountValue}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:opacity-90 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
             >
-              {saving ? "Guardando…" : "Crear Cupón"}
+              {saving ? (
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Ticket className="h-4 w-4" />
+              )}
+              {saving ? "Creando…" : "Crear cupón"}
             </button>
           </div>
         </div>
-      )}
-
-      {coupons.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-tertiary)]">
-          <Ticket className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No hay cupones todavía</p>
-          <p className="text-xs mt-1">Crea un cupón para atraer más clientes al marketplace.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {coupons.map((c) => (
-            <div
-              key={c.id}
-              className={cn(
-                "flex items-center justify-between bg-white border rounded-xl p-3 ",
-                !c.active && "opacity-60"
-              )}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-sm text-primary">{c.code}</span>
-                  <span className={cn(
-                    "text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full",
-                    c.active ? "bg-[var(--accent-soft)] text-[var(--data-success)]" : "bg-gray-200 text-[var(--text-secondary)]"
-                  )}>
-                    {c.active ? "Activo" : "Inactivo"}
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                  {c.discountType === "percent" ? `${c.discountValue}%` : `S/${c.discountValue.toFixed(2)}`} de descuento
-                  {c.minPurchase ? ` · Mín S/${c.minPurchase.toFixed(2)}` : ""}
-                  {c.maxUses ? ` · ${c.usedCount}/${c.maxUses} usos` : ` · ${c.usedCount} usos`}
-                  {c.expiresAt ? ` · Vence ${new Date(c.expiresAt).toLocaleDateString("es-PE")}` : ""}
-                </p>
-                {c.description && <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{c.description}</p>}
-              </div>
-              <div className="flex items-center gap-1 shrink-0 ml-2">
-                <button
-                  onClick={() => toggleActive(c.id, c.active)}
-                  title={c.active ? "Desactivar" : "Activar"}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 transition"
-                >
-                  {c.active ? <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" /> : <Eye className="h-4 w-4 text-[var(--data-success)]" />}
-                </button>
-                <button
-                  onClick={() => deleteCoupon(c.id)}
-                  title="Eliminar"
-                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] transition"
-                >
-                  <X className="h-4 w-4 text-[var(--data-error)]" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -1324,161 +1803,334 @@ function MarketplaceResenasTab() {
 
   if (loading) return <TableSkeleton />;
 
+  // Métricas agregadas
+  const total = reviews.length;
+  const avg = total > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / total : 0;
+  const approvedCount = reviews.filter((r) => r.status === "approved").length;
+  const rejectedCount = reviews.filter((r) => r.status === "rejected").length;
+  const responseRate = approvedCount > 0
+    ? Math.round((reviews.filter((r) => r.status === "approved" && r.adminReply).length / approvedCount) * 100)
+    : 0;
+
+  // Distribución por estrellas (5,4,3,2,1)
+  const distribution = [5, 4, 3, 2, 1].map((s) => {
+    const count = reviews.filter((r) => r.rating === s).length;
+    const pct = total > 0 ? (count / total) * 100 : 0;
+    return { stars: s, count, pct };
+  });
+
+  // Iniciales avatar
+  const initials = (name: string | null | undefined) => {
+    const n = (name ?? "").trim();
+    if (!n) return "?";
+    return n.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
+  };
+
+  const filterMeta = {
+    all: { label: "Todas", count: total },
+    pending: { label: "Por moderar", count: pendingCount },
+    approved: { label: "Aprobadas", count: approvedCount },
+    rejected: { label: "Rechazadas", count: rejectedCount },
+  } as const;
+
   return (
     <div className="space-y-6">
-      {/* Summary strip */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-primary">{reviews.length}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Total reseñas</p>
-        </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-warning)]">{pendingCount}</p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Por moderar</p>
-        </div>
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-3 text-center">
-          <p className="text-2xl font-extrabold text-[var(--data-success)]">
-            {reviews.length > 0
-              ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
-              : "—"}
-          </p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] mt-0.5">Promedio ★</p>
-        </div>
-      </div>
-
-      {/* Filter buttons */}
-      <div className="flex flex-wrap gap-2">
-        {(["all", "pending", "approved", "rejected"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-              filter === f
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
-            )}
-          >
-            {f === "all" ? `Todas (${reviews.length})` :
-             f === "pending" ? `Pendientes (${pendingCount})` :
-             f === "approved" ? `Aprobadas (${reviews.filter((r) => r.status === "approved").length})` :
-             `Rechazadas (${reviews.filter((r) => r.status === "rejected").length})`}
-          </button>
-        ))}
-      </div>
-
-      {/* Empty state */}
-      {filtered.length === 0 && (
-        <div className="text-center py-8 text-[var(--text-tertiary)]">
-          <Star className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No hay reseñas {filter !== "all" ? "con este filtro" : "todavía"}</p>
-        </div>
-      )}
-
-      {/* Review list */}
-      <div className="space-y-3">
-        {filtered.map((review) => {
-          const cfg = REVIEW_STATUS_CONFIG[review.status] ?? REVIEW_STATUS_CONFIG.pending;
-          return (
-            <div key={review.id} className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-              {/* Header: name, stars, status badge */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-sm text-[var(--text-primary)] truncate">{review.name || "Anónimo"}</span>
-                    <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", cfg.className)}>
-                      {cfg.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        className={cn("h-3.5 w-3.5", s <= review.rating ? "fill-[var(--data-warning)] text-[var(--data-warning)]" : "text-gray-200")}
-                      />
-                    ))}
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] ml-1">
-                      {new Date(review.date).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
-                  </div>
-                </div>
-                {/* Action buttons */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {review.status !== "approved" && (
-                    <button
-                      onClick={() => handleStatusChange(review.id, "approved")}
-                      disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success)] hover:bg-[var(--accent-soft)] transition-colors"
-                      title="Aprobar"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                    </button>
+      {/* ── Hero: rating promedio + distribución ── */}
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-gradient-to-br from-[var(--data-warning)]/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
+        <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-[var(--data-warning)]/10 blur-3xl pointer-events-none" />
+        <div className="relative grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-6 items-center">
+          {/* Promedio grande */}
+          <div className="text-center sm:text-left sm:border-r sm:border-[var(--rule-base)] sm:pr-6">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Calificación promedio</p>
+            <p className="mt-1 flex items-center gap-2 justify-center sm:justify-start">
+              <span className="text-5xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
+                {avg > 0 ? avg.toFixed(1) : "—"}
+              </span>
+              <span className="text-base font-bold text-[var(--text-tertiary)] tabular-nums">/ 5.0</span>
+            </p>
+            <div className="mt-2 flex items-center gap-0.5 justify-center sm:justify-start">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star
+                  key={s}
+                  className={cn(
+                    "h-5 w-5",
+                    s <= Math.round(avg)
+                      ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
+                      : "text-[var(--rule-base)]"
                   )}
-                  {review.status !== "rejected" && (
-                    <button
-                      onClick={() => handleStatusChange(review.id, "rejected")}
-                      disabled={saving === review.id}
-                      className="p-1.5 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] hover:bg-[var(--data-error-100)] transition-colors"
-                      title="Rechazar"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => { setReplyingTo(replyingTo === review.id ? null : review.id); setReplyText(review.adminReply ?? ""); }}
-                    className={cn(
-                      "p-1.5 rounded-lg transition-colors",
-                      replyingTo === review.id ? "bg-primary/20 text-primary" : "bg-gray-50 text-[var(--text-tertiary)] hover:bg-gray-100"
-                    )}
-                    title="Responder"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Review text */}
-              <p className="text-sm text-[var(--text-primary)] leading-relaxed">{review.text}</p>
-
-              {/* Existing admin reply */}
-              {review.adminReply && replyingTo !== review.id && (
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-1">Tu respuesta:</p>
-                  <p className="text-xs text-[var(--text-primary)]">{review.adminReply}</p>
-                </div>
-              )}
-
-              {/* Reply form */}
-              {replyingTo === review.id && (
-                <div className="space-y-2">
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Escribe tu respuesta al cliente..."
-                    rows={2}
-                    className="w-full rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleReply(review.id)}
-                      disabled={saving === review.id || !replyText.trim()}
-                      className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
-                    >
-                      {saving === review.id ? "Guardando..." : "Enviar respuesta"}
-                    </button>
-                    <button
-                      onClick={() => { setReplyingTo(null); setReplyText(""); }}
-                      className="px-3 py-1.5 rounded-lg bg-gray-100 text-[var(--text-secondary)] text-xs font-bold hover:bg-gray-200 transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              )}
+                />
+              ))}
             </div>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">
+              <span className="font-bold text-[var(--text-primary)] tabular-nums">{total}</span> {total === 1 ? "reseña" : "reseñas"}
+            </p>
+          </div>
+
+          {/* Distribución por estrellas */}
+          <div className="space-y-1.5">
+            {distribution.map(({ stars, count, pct }) => (
+              <div key={stars} className="flex items-center gap-2 text-xs">
+                <span className="inline-flex items-center gap-1 w-8 font-bold text-[var(--text-secondary)] tabular-nums shrink-0">
+                  {stars}
+                  <Star className="h-3 w-3 fill-[var(--data-warning)] text-[var(--data-warning)]" />
+                </span>
+                <div className="flex-1 h-2 rounded-full bg-[var(--rule-soft)] overflow-hidden">
+                  <div
+                    className="h-full bg-[var(--data-warning)] rounded-full transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="w-8 text-right font-bold text-[var(--text-tertiary)] tabular-nums shrink-0">{count}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Mini stats secundarias */}
+          <div className="grid grid-cols-3 sm:grid-cols-1 gap-3 sm:gap-2 sm:border-l sm:border-[var(--rule-base)] sm:pl-6 sm:min-w-[140px]">
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-warning)]">Por moderar</p>
+              <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">{pendingCount}</p>
+            </div>
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success)]">Aprobadas</p>
+              <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">{approvedCount}</p>
+            </div>
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">Respondidas</p>
+              <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">{responseRate}%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Filtros como chips grandes ── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {(["all", "pending", "approved", "rejected"] as const).map((f) => {
+          const active = filter === f;
+          const meta = filterMeta[f];
+          return (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={cn(
+                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-bold transition-all",
+                active
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
+              )}
+            >
+              {meta.label}
+              <span className={cn(
+                "tabular-nums text-xs font-bold px-1.5 py-0.5 rounded-md",
+                active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+              )}>
+                {meta.count}
+              </span>
+            </button>
           );
         })}
       </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[var(--data-warning)]/10 text-[var(--data-warning)] mb-4">
+            <Star className="h-6 w-6" />
+          </div>
+          <p className="text-base font-extrabold text-[var(--text-primary)]">
+            {filter === "all" ? "Sin reseñas todavía" : `Sin reseñas ${filterMeta[filter].label.toLowerCase()}`}
+          </p>
+          <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-sm mx-auto">
+            {filter === "all"
+              ? "Cuando los clientes valoren tus productos, las reseñas aparecerán acá."
+              : "Probá con otro filtro para ver más resultados."}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((review) => {
+            const cfg = REVIEW_STATUS_CONFIG[review.status] ?? REVIEW_STATUS_CONFIG.pending;
+            const isReplying = replyingTo === review.id;
+            const hasReply = !!review.adminReply;
+            return (
+              <div
+                key={review.id}
+                className={cn(
+                  "relative overflow-hidden rounded-2xl border-2 bg-white transition-all",
+                  review.status === "pending"
+                    ? "border-[var(--data-warning)]/40 hover:border-[var(--data-warning)]"
+                    : review.status === "rejected"
+                    ? "border-[var(--rule-base)] opacity-75"
+                    : "border-[var(--rule-base)] hover:border-primary/30"
+                )}
+              >
+                {/* Banda lateral según estado */}
+                <div className={cn(
+                  "absolute left-0 top-0 bottom-0 w-1.5",
+                  review.status === "pending"
+                    ? "bg-[var(--data-warning)]"
+                    : review.status === "approved"
+                    ? "bg-[var(--data-success)]"
+                    : "bg-[var(--rule-base)]"
+                )} />
+
+                <div className="pl-3 p-5 space-y-4">
+                  {/* Header: avatar + nombre + estrellas + estado + acciones */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      {/* Avatar con iniciales */}
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 text-primary font-extrabold text-sm shrink-0">
+                        {initials(review.name)}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-extrabold text-sm text-[var(--text-primary)] truncate">
+                            {review.name || "Anónimo"}
+                          </span>
+                          <span className={cn(
+                            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
+                            cfg.className
+                          )}>
+                            {cfg.label}
+                          </span>
+                          {hasReply && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-primary bg-primary/10">
+                              <MessageSquare className="h-2.5 w-2.5" /> Respondida
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={cn(
+                                  "h-4 w-4",
+                                  s <= review.rating
+                                    ? "fill-[var(--data-warning)] text-[var(--data-warning)]"
+                                    : "text-[var(--rule-base)]"
+                                )}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">·</span>
+                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
+                            {new Date(review.date).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Acciones */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {review.status !== "approved" && (
+                        <button
+                          onClick={() => handleStatusChange(review.id, "approved")}
+                          disabled={saving === review.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success)]/10 text-[var(--data-success)] text-xs font-bold hover:bg-[var(--data-success)] hover:text-white transition-colors disabled:opacity-50"
+                          title="Aprobar"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Aprobar</span>
+                        </button>
+                      )}
+                      {review.status !== "rejected" && (
+                        <button
+                          onClick={() => handleStatusChange(review.id, "rejected")}
+                          disabled={saving === review.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error)] text-xs font-bold hover:bg-[var(--data-error)] hover:text-white transition-colors disabled:opacity-50"
+                          title="Rechazar"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Rechazar</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { setReplyingTo(isReplying ? null : review.id); setReplyText(review.adminReply ?? ""); }}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
+                          isReplying
+                            ? "bg-primary text-white"
+                            : "bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                        )}
+                        title="Responder"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">{hasReply ? "Editar" : "Responder"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Texto de la reseña — destacado tipo cita */}
+                  <blockquote className="text-sm text-[var(--text-primary)] leading-relaxed italic font-display border-l-4 border-[var(--rule-base)] pl-4">
+                    “{review.text}”
+                  </blockquote>
+
+                  {/* Respuesta admin existente */}
+                  {hasReply && !isReplying && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
+                          <MessageSquare className="h-2.5 w-2.5" />
+                        </span>
+                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">Tu respuesta</p>
+                      </div>
+                      <p className="text-sm text-[var(--text-primary)] leading-relaxed">{review.adminReply}</p>
+                    </div>
+                  )}
+
+                  {/* Reply form */}
+                  {isReplying && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
+                            <MessageSquare className="h-2.5 w-2.5" />
+                          </span>
+                          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">
+                            {hasReply ? "Editar respuesta" : "Nueva respuesta"}
+                          </p>
+                        </div>
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
+                          {replyText.length}/500
+                        </span>
+                      </div>
+                      <textarea
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Gracias por tu reseña…"
+                        rows={3}
+                        maxLength={500}
+                        className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-white px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
+                      />
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => { setReplyingTo(null); setReplyText(""); }}
+                          className="px-3 py-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-white text-[var(--text-secondary)] text-xs font-bold hover:bg-[var(--surface-sunken)] transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={() => handleReply(review.id)}
+                          disabled={saving === review.id || !replyText.trim()}
+                          className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                        >
+                          {saving === review.id ? (
+                            <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <MessageSquare className="h-3 w-3" />
+                          )}
+                          {saving === review.id ? "Guardando…" : "Enviar respuesta"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1547,111 +2199,264 @@ function MarketplaceFidelidadTab() {
     setSaving(false);
   };
 
+  // Datos visuales por tier (rediseño 2026-05-09)
+  const tierVisuals: Record<string, { label: string; emoji: string; gradient: string; ring: string; benefit: string; minPts: number; maxPts: number | null }> = {
+    bronce: { label: "Bronce", emoji: "🥉", gradient: "from-orange-100 to-orange-50",  ring: "ring-orange-300/40", benefit: "Acumula puntos en cada compra", minPts: 0, maxPts: 499 },
+    plata:  { label: "Plata",  emoji: "🥈", gradient: "from-slate-100 to-slate-50",    ring: "ring-slate-300/50",  benefit: "5% de descuento en pedidos",      minPts: 500, maxPts: 999 },
+    oro:    { label: "Oro",    emoji: "🥇", gradient: "from-amber-100 to-yellow-50",   ring: "ring-amber-300/50",  benefit: "10% de descuento + envío prioritario", minPts: 1000, maxPts: null },
+  };
+
+  // Cliente actual: barra de progreso al siguiente tier
+  const currentTier = data ? (tierVisuals[data.tier] ?? tierVisuals.bronce) : null;
+  const nextTierKey = data?.tier === "bronce" ? "plata" : data?.tier === "plata" ? "oro" : null;
+  const nextTier = nextTierKey ? tierVisuals[nextTierKey] : null;
+  const pointsToNext = nextTier ? Math.max(0, nextTier.minPts - (data?.points ?? 0)) : 0;
+  const tierProgress = data && currentTier
+    ? currentTier.maxPts
+      ? Math.min(100, ((data.points - currentTier.minPts) / (currentTier.maxPts - currentTier.minPts + 1)) * 100)
+      : 100
+    : 0;
+
   return (
     <div className="space-y-6">
-      {/* Info cards */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
-          <div key={key} className={cn("rounded-xl p-2 text-xs font-semibold", cfg.className)}>
-            <p className="text-sm">{cfg.label}</p>
-            <p className="text-[length:var(--ts-2xs)] font-normal mt-0.5">{cfg.minPoints} pts</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Search */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Teléfono del cliente (ej: 961234567)"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
-          className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-        />
-        <button
-          onClick={searchCustomer}
-          disabled={loading}
-          className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:opacity-90 transition disabled:opacity-50"
-        >
-          {loading ? "Buscando…" : "Buscar"}
-        </button>
-      </div>
-
-      {data && (
-        <div className="bg-white border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
-          {/* Customer info */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-sm">{data.name}</p>
-              <p className="text-xs text-[var(--text-secondary)]">{data.phone}</p>
+      {/* ── Hero: tarjetas de tier ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {Object.entries(tierVisuals).map(([key, tv]) => {
+          const isCurrent = data?.tier === key;
+          return (
+            <div
+              key={key}
+              className={cn(
+                "relative overflow-hidden rounded-2xl border-2 p-4 transition-all bg-gradient-to-br",
+                tv.gradient,
+                isCurrent ? `ring-4 ${tv.ring} border-[var(--data-warning)]` : "border-[var(--rule-base)]"
+              )}
+            >
+              {isCurrent && (
+                <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--data-warning)] text-white">
+                  Actual
+                </span>
+              )}
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{tv.emoji}</span>
+                <div className="min-w-0">
+                  <p className="text-base font-extrabold text-[var(--text-primary)] tracking-tight">{tv.label}</p>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums">
+                    {tv.minPts}{tv.maxPts ? ` - ${tv.maxPts}` : "+"} pts
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs font-semibold text-[var(--text-secondary)] leading-snug">{tv.benefit}</p>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-extrabold text-primary">{data.points}</p>
-              <span className={cn("text-[length:var(--ts-2xs)] font-semibold px-2 py-0.5 rounded-full", TIER_CONFIG[data.tier]?.className ?? "bg-gray-100 text-[var(--text-secondary)]")}>
-                {TIER_CONFIG[data.tier]?.label ?? data.tier}
+          );
+        })}
+      </div>
+
+      {/* ── Buscador ── */}
+      <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
+        <header className="flex items-center gap-2 mb-3">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Gift className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Buscar cliente</h3>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Por número de WhatsApp para ver y gestionar puntos</p>
+          </div>
+        </header>
+        <div className="flex items-stretch gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+          <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r-2 border-[var(--rule-base)] whitespace-nowrap">
+            +51
+          </span>
+          <input
+            type="text"
+            placeholder="961 234 567"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
+            className="flex-1 min-w-0 px-3 py-3 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none tabular-nums tracking-wide"
+          />
+          <button
+            onClick={searchCustomer}
+            disabled={loading || !phone.trim()}
+            className="inline-flex items-center gap-2 px-5 bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+          >
+            {loading ? (
+              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+            {loading ? "Buscando…" : "Buscar"}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Cliente encontrado ── */}
+      {data && currentTier && (
+        <div className="space-y-4">
+          {/* Hero del cliente */}
+          <div className={cn(
+            "relative overflow-hidden rounded-2xl border-2 p-5 sm:p-6 bg-gradient-to-br",
+            currentTier.gradient
+          )}>
+            <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-lg text-4xl shrink-0">
+                  {currentTier.emoji}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-extrabold text-base text-[var(--text-primary)] truncate">{data.name}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-white border border-[var(--data-warning)]/30 text-[var(--data-warning)]">
+                      {currentTier.label}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-[var(--text-secondary)] tabular-nums mt-0.5">{data.phone}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
+                    Gasto total · <span className="font-bold text-[var(--text-secondary)] tabular-nums">S/ {data.totalSpent.toFixed(2)}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Puntos disponibles</p>
+                <p className="text-4xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">{data.points}</p>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 tabular-nums">≈ S/ {(data.points / 100).toFixed(2)} canjeable</p>
+              </div>
+            </div>
+
+            {/* Progreso al siguiente tier */}
+            {nextTier && (
+              <div className="mt-5">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="font-semibold text-[var(--text-secondary)]">
+                    Progreso a <span className="font-extrabold text-[var(--text-primary)]">{nextTier.label}</span>
+                  </span>
+                  <span className="tabular-nums font-bold text-[var(--text-tertiary)]">
+                    {pointsToNext > 0 ? `Faltan ${pointsToNext} pts` : "¡Lo lograste!"}
+                  </span>
+                </div>
+                <div className="h-2.5 rounded-full bg-white/60 overflow-hidden border border-white">
+                  <div
+                    className="h-full bg-[var(--data-warning)] rounded-full transition-all"
+                    style={{ width: `${tierProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Asignar puntos manualmente */}
+          <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
+            <header className="flex items-center gap-2 mb-3">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--data-success)]/10 text-[var(--data-success)]">
+                <CheckCircle className="h-4 w-4" />
               </span>
-            </div>
-          </div>
-
-          <p className="text-xs text-[var(--text-tertiary)]">Gasto total: S/{data.totalSpent.toFixed(2)}</p>
-
-          {/* Manual earn */}
-          <div className="flex gap-2 items-end">
-            <div className="flex-1">
-              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">Asignar puntos</label>
+              <div>
+                <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Asignar puntos manualmente</h3>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Para premios fuera de compra (eventos, referidos, fidelidad)</p>
+              </div>
+            </header>
+            <div className="flex items-stretch gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
               <input
                 type="number"
                 placeholder="100"
                 value={earnPoints}
                 onChange={(e) => setEarnPoints(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                min={1}
+                className="flex-1 min-w-0 px-4 py-3 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
               />
+              <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
+                pts
+              </span>
+              <button
+                onClick={handleEarn}
+                disabled={saving || !earnPoints}
+                className="inline-flex items-center gap-2 px-5 bg-[var(--data-success)] text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50"
+              >
+                {saving ? (
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Gift className="h-4 w-4" />
+                )}
+                {saving ? "Asignando…" : "Dar puntos"}
+              </button>
             </div>
-            <button
-              onClick={handleEarn}
-              disabled={saving || !earnPoints}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--accent-soft)] text-white hover:opacity-90 transition disabled:opacity-50"
-            >
-              {saving ? "…" : "+ Dar puntos"}
-            </button>
           </div>
 
-          {/* Transaction history */}
+          {/* Historial de transacciones */}
           {data.transactions.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2">Historial reciente</p>
-              <div className="space-y-1 max-h-48 overflow-y-auto">
-                {data.transactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between text-xs py-1 border-b border-[var(--rule-soft)] last:border-0">
-                    <div>
-                      <span className={tx.type === "earn" ? "text-[var(--data-success)] font-semibold" : "text-[var(--data-error)] font-semibold"}>
-                        {tx.points > 0 ? "+" : ""}{tx.points} pts
+            <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+              <header className="flex items-center gap-2 px-5 py-3 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+                <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
+                <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Historial reciente</h3>
+                <span className="ml-auto text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">{data.transactions.length} movs</span>
+              </header>
+              <ul className="divide-y divide-[var(--rule-soft)] max-h-80 overflow-y-auto">
+                {data.transactions.map((tx) => {
+                  const isEarn = tx.type === "earn" || tx.points > 0;
+                  return (
+                    <li key={tx.id} className="flex items-center gap-3 px-5 py-3">
+                      <span className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-full shrink-0",
+                        isEarn ? "bg-[var(--data-success)]/10 text-[var(--data-success)]" : "bg-[var(--data-error)]/10 text-[var(--data-error)]"
+                      )}>
+                        {isEarn ? <Gift className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
                       </span>
-                      <span className="text-[var(--text-tertiary)] ml-2">{tx.description}</span>
-                    </div>
-                    <span className="text-[var(--text-tertiary)] text-[length:var(--ts-2xs)]">
-                      {new Date(tx.createdAt).toLocaleDateString("es-PE")}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tx.description}</p>
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
+                          {new Date(tx.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+                        </p>
+                      </div>
+                      <span className={cn(
+                        "text-sm font-extrabold tabular-nums shrink-0",
+                        isEarn ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
+                      )}>
+                        {isEarn ? "+" : ""}{tx.points} pts
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           )}
         </div>
       )}
 
+      {/* ── Empty state: sin búsqueda ── */}
       {!data && !loading && (
-        <div className="text-center py-12 text-[var(--text-tertiary)]">
-          <Gift className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Programa de Fidelidad</p>
-          <p className="text-xs mt-1">Busca un cliente por teléfono para ver y gestionar sus puntos.</p>
-          <div className="mt-4 bg-gray-50 rounded-xl p-3 text-left max-w-xs mx-auto">
-            <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">Reglas de puntos:</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 1 punto por cada S/1 de compra</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 500 pts = Nivel Plata (5% descuento)</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 1000 pts = Nivel Oro (10% descuento)</p>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">• 100 pts = S/1 de descuento al canjear</p>
+        <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-8 sm:p-10">
+          <div className="text-center max-w-md mx-auto">
+            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
+              <Gift className="h-6 w-6" />
+            </div>
+            <p className="text-base font-extrabold text-[var(--text-primary)]">Programa de fidelidad</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1.5">
+              Busca un cliente por teléfono para ver sus puntos, asignar bonus o consultar el historial.
+            </p>
+          </div>
+
+          {/* Reglas en 4 cards */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+            {[
+              { icon: Gift,        title: "Acumular",        desc: "1 punto por cada S/ 1 gastado en compras" },
+              { icon: TrendingUp,  title: "Subir de nivel",  desc: "500 pts → Plata · 1000 pts → Oro" },
+              { icon: DollarSign,  title: "Canjear",         desc: "100 pts equivalen a S/ 1 de descuento" },
+              { icon: Star,        title: "Beneficios extra",desc: "Plata 5% off · Oro 10% off + envío prioritario" },
+            ].map((rule, i) => {
+              const Icon = rule.icon;
+              return (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white border border-[var(--rule-base)] text-primary shrink-0">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-[var(--text-primary)]">{rule.title}</p>
+                    <p className="text-xs text-[var(--text-secondary)] leading-snug mt-0.5">{rule.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1682,26 +2487,8 @@ export default function MarketplaceModule() {
         </button>
       </AdminModuleHeader>
 
-      {/* KPI strip */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: "Productos publicados", value: kpis.publishedProducts, color: "text-primary" },
-          { label: "Órdenes del mes",      value: kpis.monthOrders,       color: "text-[var(--data-success)]" },
-          { label: "Comisiones pendientes",value: `S/${kpis.pendingCommissions.toFixed(2)}`, color: "text-[var(--data-warning)]" },
-        ].map(({ label, value, color }) => (
-          <div
-            key={label}
-            className="bg-white border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  text-center"
-          >
-            {kpisLoading ? (
-              <div className="h-7 w-16 mx-auto bg-gray-200 rounded animate-pulse" />
-            ) : (
-              <p className={cn("text-2xl font-extrabold", color)}>{value}</p>
-            )}
-            <p className="text-[length:var(--ts-2xs)] sm:text-xs text-[var(--text-secondary)] mt-0.5 leading-tight">{label}</p>
-          </div>
-        ))}
-      </div>
+      {/* KPI strip removido — Brandon decisión 2026-05-09. Los KPIs detallados
+          están dentro del sub-tab "Resumen" (MarketplaceDashboardTab). */}
 
       <AdminTabBar
         tabs={TABS}

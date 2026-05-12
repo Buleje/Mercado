@@ -100,7 +100,7 @@ export function MicroDonut({
                 {centerSubLabel}
               </span>
             )}
-            <span className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-foreground tabular-nums leading-tight mt-1 tracking-tight">
+            <span className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-tight mt-1 tracking-tight">
               {centerLabel}
             </span>
           </div>
@@ -119,7 +119,7 @@ export function MicroDonut({
                 style={{ backgroundColor: item.color }}
               />
               <span className="truncate max-w-[110px]">{item.name}</span>
-              <span className="font-extrabold text-[var(--text-primary)] dark:text-foreground tabular-nums">
+              <span className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums">
                 {pct}%
               </span>
             </span>

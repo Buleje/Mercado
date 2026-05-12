@@ -60,8 +60,8 @@ export function VendorQuickActions() {
   const actions = useMemo(() => buildActions(slug), [slug]);
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
-      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4">Acciones rápidas</CardTitle>
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
+      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Acciones rápidas</CardTitle>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {actions.map((action) => {
           const Icon = action.icon;

@@ -97,13 +97,13 @@ function WidgetCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-card",
+        "rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]",
         " flex flex-col overflow-hidden",
         className
       )}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-base)]">
-        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground tracking-wide">
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] tracking-wide">
           {title}
         </span>
         {onRefresh && (
@@ -216,7 +216,7 @@ export default function AnalyticsProDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <PageTitle className="text-2xl font-bold text-[var(--text-primary)] dark:text-foreground">
+          <PageTitle className="text-2xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Analytics Pro Dashboard
           </PageTitle>
           <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
@@ -258,7 +258,7 @@ export default function AnalyticsProDashboard() {
               "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border",
               period === key
                 ? "bg-primary text-white border-primary"
-                : "bg-white dark:bg-card text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary hover:text-primary"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary hover:text-primary"
             )}
           >
             {PERIOD_LABELS[key]}
@@ -271,14 +271,14 @@ export default function AnalyticsProDashboard() {
               type="date"
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
-              className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground"
+              className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
             />
             <span className="text-[var(--text-tertiary)] text-sm">hasta</span>
             <input
               type="date"
               value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
-              className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground"
+              className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
             />
           </div>
         )}

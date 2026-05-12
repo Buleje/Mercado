@@ -1063,7 +1063,7 @@ function FinanzasDashboard() {
         <div className="h-16 w-16 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
           <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
         </div>
-        <CardTitle className="text-lg font-semibold text-foreground">Sin datos financieros</CardTitle>
+        <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Sin datos financieros</CardTitle>
         <p className="text-sm text-muted mt-1">Registra tus primeras ventas y gastos para ver el dashboard</p>
       </div>
     );

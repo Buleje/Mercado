@@ -100,7 +100,7 @@ export default function CategoryBannersTab({
           <Sparkles className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-base font-bold text-foreground">Promociones por categoría</p>
+          <p className="text-base font-bold text-[var(--text-primary)]">Promociones por categoría</p>
           <p className="text-sm text-muted mt-0.5">
             Subí una imagen promocional por cada categoría. Aparece en la sección{" "}
             <span className="font-bold">&ldquo;Oferta de Temporada&rdquo;</span> del storefront. Al click, el
@@ -114,14 +114,14 @@ export default function CategoryBannersTab({
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border p-10 text-center">
+        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-10 text-center">
           <div className="h-10 w-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin mx-auto" />
           <p className="text-sm text-muted mt-3">Cargando categorías…</p>
         </div>
       ) : categories.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border p-8 text-center">
+        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
           <Tag className="h-10 w-10 text-muted mx-auto mb-2" />
-          <p className="text-base font-bold text-foreground">Aún no hay categorías</p>
+          <p className="text-base font-bold text-[var(--text-primary)]">Aún no hay categorías</p>
           <p className="text-sm text-muted mt-1">Agregá productos primero — las categorías se generan automáticamente.</p>
         </div>
       ) : (
@@ -139,20 +139,20 @@ export default function CategoryBannersTab({
                   "rounded-2xl border-2 transition-all overflow-hidden",
                   hasImage
                     ? "border-primary/30 bg-primary/[0.02]"
-                    : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
+                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]"
                 )}
               >
                 {/* Header de categoría */}
-                <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+                <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold",
-                      hasImage ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-foreground"
+                      hasImage ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-primary)]"
                     )}>
                       <Tag className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-base font-bold text-foreground leading-tight truncate">{cat.label}</h3>
+                      <h3 className="text-base font-bold text-[var(--text-primary)] leading-tight truncate">{cat.label}</h3>
                       <p className="text-xs text-muted">{cat.count} producto{cat.count !== 1 ? "s" : ""}{hasImage ? " · banner configurado" : " · sin banner"}</p>
                     </div>
                   </div>
@@ -271,7 +271,7 @@ export default function CategoryBannersTab({
                       <Sparkles className="h-3 w-3" />
                       Preview de cómo se verá
                     </p>
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border h-44">
+                    <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] h-44">
                       <Image
                         src={banner.image!}
                         alt={banner.title ?? cat.label}
@@ -311,7 +311,7 @@ export default function CategoryBannersTab({
           <ExternalLink className="h-5 w-5 text-[var(--data-success-500)]" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-bold text-foreground">Tip: cómo se ve en la tienda</p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">Tip: cómo se ve en la tienda</p>
           <p className="text-xs text-muted mt-1 leading-snug">
             Los banners aparecen en la sección <span className="font-bold">&ldquo;Oferta de Temporada&rdquo;</span> rotando automáticamente cada 5 segundos.
             En desktop se muestra grande con 2 promos secundarias al lado. Al click, navegan al producto vinculado (si elegiste uno) o filtran la categoría en el catálogo.

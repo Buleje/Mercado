@@ -45,7 +45,7 @@ function SectionEditor({
   onToggle: () => void;
 }) {
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden  hover:shadow-[var(--shadow-sm)] transition-shadow">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden  hover:shadow-[var(--shadow-sm)] transition-shadow">
       <button
         onClick={onToggle}
         className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group"
@@ -54,7 +54,7 @@ function SectionEditor({
           {section.icon}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">{section.title}</p>
+          <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{section.title}</p>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{section.description}</p>
         </div>
         <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] dark:bg-surface flex items-center justify-center group-hover:bg-primary/8 transition-colors shrink-0">
@@ -63,13 +63,13 @@ function SectionEditor({
       </button>
 
       {expanded && (
-        <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-4 pt-4">
+        <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-4 pt-4">
           {section.fields.map((field) => {
             const value = content[field.key];
             if (field.type === "toggle") {
               return (
                 <div key={field.key} className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground">{field.label}</label>
+                  <label className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{field.label}</label>
                   <button
                     type="button"
                     onClick={() => onChange(field.key, !value)}
@@ -92,7 +92,7 @@ function SectionEditor({
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
                     rows={3}
-                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
                   />
                 ) : (
                   <input
@@ -100,7 +100,7 @@ function SectionEditor({
                     value={String(value)}
                     onChange={(e) => onChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
-                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 )}
               </div>
@@ -306,14 +306,14 @@ export default function HomepageEditorTab() {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors"
           >
             <Eye className="h-3.5 w-3.5" /> Vista previa
           </a>
           <button
             onClick={handleReset}
             disabled={!hasChanges}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-foreground bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Restaurar
           </button>
@@ -361,13 +361,13 @@ export default function HomepageEditorTab() {
         ))}
 
         {/* FAQ Editor */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("faq")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20">
               <HelpCircle className="h-6 w-6 text-[var(--data-warning-500)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Preguntas Frecuentes (FAQ)</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Preguntas Frecuentes (FAQ)</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{content.faqItems.length} preguntas configuradas</p>
             </div>
             <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] dark:bg-surface flex items-center justify-center">
@@ -375,11 +375,11 @@ export default function HomepageEditorTab() {
             </div>
           </button>
           {expandedSections.has("faq") && (
-            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
+            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-3 pt-4">
               {content.faqItems.map((item, i) => (
-                <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
-                  <input value={item.question} onChange={(e) => handleListChange("faqItems", i, "question", e.target.value)} placeholder="Pregunta..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <textarea value={item.answer} onChange={(e) => handleListChange("faqItems", i, "answer", e.target.value)} placeholder="Respuesta..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                <div key={i} className="border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3 space-y-2">
+                  <input value={item.question} onChange={(e) => handleListChange("faqItems", i, "question", e.target.value)} placeholder="Pregunta..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <textarea value={item.answer} onChange={(e) => handleListChange("faqItems", i, "answer", e.target.value)} placeholder="Respuesta..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <button onClick={() => handleListRemove("faqItems", i)} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>
                 </div>
               ))}
@@ -389,13 +389,13 @@ export default function HomepageEditorTab() {
         </div>
 
         {/* Benefits Editor */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("benefits")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
               <Heart className="h-6 w-6 text-[var(--data-success-500)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Beneficios</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Beneficios</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{content.benefitItems.length} beneficios configurados</p>
             </div>
             <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] dark:bg-surface flex items-center justify-center">
@@ -403,11 +403,11 @@ export default function HomepageEditorTab() {
             </div>
           </button>
           {expandedSections.has("benefits") && (
-            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
+            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-3 pt-4">
               {content.benefitItems.map((item, i) => (
-                <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
-                  <input value={item.title} onChange={(e) => handleListChange("benefitItems", i, "title", e.target.value)} placeholder="Título del beneficio..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  <textarea value={item.description} onChange={(e) => handleListChange("benefitItems", i, "description", e.target.value)} placeholder="Descripción..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                <div key={i} className="border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3 space-y-2">
+                  <input value={item.title} onChange={(e) => handleListChange("benefitItems", i, "title", e.target.value)} placeholder="Título del beneficio..." className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                  <textarea value={item.description} onChange={(e) => handleListChange("benefitItems", i, "description", e.target.value)} placeholder="Descripción..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <button onClick={() => handleListRemove("benefitItems", i)} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>
                 </div>
               ))}
@@ -417,13 +417,13 @@ export default function HomepageEditorTab() {
         </div>
 
         {/* Testimonials Editor */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <button onClick={() => toggleSection("testimonials")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-[var(--data-info-50)] dark:bg-[var(--data-info-500)]/20">
               <MessageSquare className="h-6 w-6 text-[var(--data-info-500)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">Testimonios</p>
+              <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Testimonios</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{content.testimonialItems.length} testimonios configurados</p>
             </div>
             <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] dark:bg-surface flex items-center justify-center">
@@ -431,17 +431,17 @@ export default function HomepageEditorTab() {
             </div>
           </button>
           {expandedSections.has("testimonials") && (
-            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-card-border space-y-3 pt-4">
+            <div className="px-5 pb-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-3 pt-4">
               {content.testimonialItems.map((item, i) => (
-                <div key={i} className="border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-3 space-y-2">
+                <div key={i} className="border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-3 space-y-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input value={item.name} onChange={(e) => handleListChange("testimonialItems", i, "name", e.target.value)} placeholder="Nombre..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                    <input value={item.location} onChange={(e) => handleListChange("testimonialItems", i, "location", e.target.value)} placeholder="Ubicación..." className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input value={item.name} onChange={(e) => handleListChange("testimonialItems", i, "name", e.target.value)} placeholder="Nombre..." className="rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input value={item.location} onChange={(e) => handleListChange("testimonialItems", i, "location", e.target.value)} placeholder="Ubicación..." className="rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   </div>
-                  <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+                  <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="text-xs text-muted">Rating:</label>
-                    <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-background px-2 py-1 text-sm">
+                    <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-2 py-1 text-sm">
                       {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} {r === 1 ? "estrella" : "estrellas"}</option>)}
                     </select>
                     <button onClick={() => handleListRemove("testimonialItems", i)} className="ml-auto text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>

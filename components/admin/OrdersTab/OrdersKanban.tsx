@@ -484,29 +484,29 @@ const KanbanColumn = memo(function KanbanColumn({
           : "border-[var(--rule-base)] bg-[var(--surface-sunken)]",
       )}
     >
-      {/* Header editorial Buleje — chip pill con icono accent + label + counters */}
+      {/* Header editorial Buleje — bloque centrado: icono → label → contadores.
+          Layout simétrico que se ve igual de bien en columnas estrechas (4 al
+          mismo tiempo en lg) que anchas. Antes era flex horizontal con icono
+          + label/descripción + count/total a la derecha — a 1440px el texto
+          quedaba apretado contra el badge y la descripción no se leía. */}
       <div
-        className="flex items-center gap-3 px-4 h-14 rounded-xl bg-[var(--surface-raised)] border-2 mb-3 shrink-0"
+        className="flex flex-col items-center justify-center text-center px-3 py-3 rounded-xl bg-[var(--surface-raised)] border-2 mb-3 shrink-0"
         style={{ borderColor: `color-mix(in oklab, ${accentVar} 35%, transparent)` }}
+        title={description}
       >
         <span
           aria-hidden
-          className="inline-flex items-center justify-center h-9 w-9 rounded-lg shrink-0"
+          className="inline-flex items-center justify-center h-9 w-9 rounded-lg shrink-0 mb-2"
           style={{ backgroundColor: `color-mix(in oklab, ${accentVar} 15%, transparent)` }}
         >
           <Icon className={cn("h-4 w-4", iconColor)} strokeWidth={2.5} />
         </span>
-        <div className="flex-1 min-w-0 leading-tight">
-          <p className="text-[length:var(--ts-sm)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)] truncate">
-            {label}
-          </p>
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium truncate mt-0.5">
-            {description}
-          </p>
-        </div>
-        <div className="text-right shrink-0 leading-tight">
-          <p
-            className="inline-flex items-center justify-center h-7 min-w-7 px-2 rounded-full font-mono tabular-nums text-[length:var(--ts-sm)] font-extrabold"
+        <p className="text-[length:var(--ts-sm)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)] leading-tight">
+          {label}
+        </p>
+        <div className="mt-2 inline-flex items-center gap-2 leading-none">
+          <span
+            className="inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full font-mono tabular-nums text-[length:var(--ts-2xs)] font-extrabold"
             style={{
               backgroundColor: `color-mix(in oklab, ${accentVar} 12%, transparent)`,
               color: accentVar,
@@ -514,10 +514,11 @@ const KanbanColumn = memo(function KanbanColumn({
             aria-label={`${orders.length} pedidos en ${label}`}
           >
             {orders.length}
-          </p>
-          <p className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--text-secondary)] mt-1">
+          </span>
+          <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--rule-base)]" />
+          <span className="text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--text-secondary)]">
             S/{total.toFixed(0)}
-          </p>
+          </span>
         </div>
       </div>
 

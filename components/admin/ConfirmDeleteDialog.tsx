@@ -60,8 +60,8 @@ export function ConfirmDeleteDialog({
           <m.div
             className={cn(
               "relative z-10 w-full max-w-md",
-              "bg-white dark:bg-card",
-              "rounded-xl border border-[var(--rule-base)] dark:border-card-border",
+              "bg-[var(--surface-raised)]",
+              "rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]",
               "overflow-hidden"
             )}
             initial={{ opacity: 0, scale: 0.92, y: 12 }}
@@ -76,7 +76,7 @@ export function ConfirmDeleteDialog({
                 <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <CardTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">
+                <CardTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   {title}
                 </CardTitle>
                 <p className="mt-0.5 text-sm text-[var(--text-secondary)] dark:text-muted">
@@ -93,7 +93,7 @@ export function ConfirmDeleteDialog({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-card-border">
+            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <button
                 onClick={onClose}
                 disabled={loading}

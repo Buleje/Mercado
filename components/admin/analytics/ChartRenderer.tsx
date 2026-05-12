@@ -39,7 +39,7 @@ export function BarChart({
           return (
             <div key={i} className="space-y-0.5">
               <div className="flex justify-between text-xs">
-                <span className="text-[var(--text-primary)] dark:text-foreground font-medium truncate">{item.label}</span>
+                <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium truncate">{item.label}</span>
                 {showValues && <span className="text-[var(--text-secondary)] dark:text-muted font-bold shrink-0">{formatValue(item.value)}</span>}
               </div>
               <div className="h-2 bg-[var(--surface-sunken)] dark:bg-accent rounded-full overflow-hidden">
@@ -127,7 +127,7 @@ export function DonutChart({
       />
       {(centerLabel || centerValue) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {centerValue && <span className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{centerValue}</span>}
+          {centerValue && <span className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{centerValue}</span>}
           {centerLabel && <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted">{centerLabel}</span>}
         </div>
       )}

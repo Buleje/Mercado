@@ -216,7 +216,7 @@ export default function DocumentManagerTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <FolderOpen className="h-6 w-6 text-primary" /> Gestion Documental
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Repositorio central de documentos de la empresa</p>
@@ -229,7 +229,7 @@ export default function DocumentManagerTab() {
           <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Agregar
           </button>
-          <button onClick={() => exportToCSV(filtered.map(d => ({ nombre: d.name, categoria: d.category, estado: d.status, fecha_carga: d.uploadDate, vencimiento: d.expiryDate || "\u2014", tamano: d.size, relacionado: d.relatedTo, notas: d.notes })), "documentos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(d => ({ nombre: d.name, categoria: d.category, estado: d.status, fecha_carga: d.uploadDate, vencimiento: d.expiryDate || "\u2014", tamano: d.size, relacionado: d.relatedTo, notas: d.notes })), "documentos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
@@ -273,16 +273,16 @@ export default function DocumentManagerTab() {
 
       {/* Add form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Nuevo documento</CardTitle>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-3">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nuevo documento</CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <input value={form.name} onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Nombre del documento *" className="col-span-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
-            <select value={form.category} onChange={e => setForm(prev => ({ ...prev, category: e.target.value as DocCategory }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+            <input value={form.name} onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Nombre del documento *" className="col-span-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <select value={form.category} onChange={e => setForm(prev => ({ ...prev, category: e.target.value as DocCategory }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               {(Object.keys(CATEGORY_META) as DocCategory[]).map(c => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
             </select>
-            <input type="date" value={form.expiryDate} onChange={e => setForm(prev => ({ ...prev, expiryDate: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" title="Vencimiento (opcional)" />
-            <input value={form.relatedTo} onChange={e => setForm(prev => ({ ...prev, relatedTo: e.target.value }))} placeholder="Entidad relacionada" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
-            <input value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notas" className="px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+            <input type="date" value={form.expiryDate} onChange={e => setForm(prev => ({ ...prev, expiryDate: e.target.value }))} className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" title="Vencimiento (opcional)" />
+            <input value={form.relatedTo} onChange={e => setForm(prev => ({ ...prev, relatedTo: e.target.value }))} placeholder="Entidad relacionada" className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <input value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notas" className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">Cancelar</button>
@@ -295,23 +295,23 @@ export default function DocumentManagerTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, entidad..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, entidad..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value as DocCategory | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value as DocCategory | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las categorias</option>
           {(Object.keys(CATEGORY_META) as DocCategory[]).map(c => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
         </select>
-        <select value={filterSt} onChange={e => setFilterSt(e.target.value as DocStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterSt} onChange={e => setFilterSt(e.target.value as DocStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as DocStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Documento</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Categoria</th>
@@ -343,7 +343,7 @@ export default function DocumentManagerTab() {
                           <FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
                         )}
                         <div>
-                          <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-sm">{d.name}</p>
+                          <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{d.name}</p>
                           <p className="text-xs text-[var(--text-tertiary)]">{d.size}</p>
                         </div>
                         {isContratoPorVencer && (
@@ -398,9 +398,9 @@ export default function DocumentManagerTab() {
       {/* Detail modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm flex items-center gap-1.5">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm flex items-center gap-1.5">
                 {detail.isContrato && <FileSignature className="h-4 w-4 text-[var(--text-secondary)]" />}
                 Detalle del documento
               </CardTitle>
@@ -415,13 +415,13 @@ export default function DocumentManagerTab() {
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-[var(--text-secondary)] dark:text-muted">{k}</span>
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{v}</span>
                 </div>
               ))}
             </div>
             {/* Quick actions for contratos */}
             {detail.isContrato && (
-              <div className="pt-2 border-t border-[var(--rule-soft)] dark:border-card-border flex flex-wrap gap-2">
+              <div className="pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-2">
                 {(detail.status === "por-vencer" || detail.status === "vencido") && (
                   <button
                     onClick={() => { handleRenew(detail); setDetail(null); }}

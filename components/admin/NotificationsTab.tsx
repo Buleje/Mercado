@@ -75,20 +75,20 @@ export default function NotificationsTab() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Bell className="h-6 w-6 text-primary" />Notificaciones WhatsApp</SectionTitle>
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Bell className="h-6 w-6 text-primary" />Notificaciones WhatsApp</SectionTitle>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{logs.length}</p>
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
+          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{logs.length}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Total enviados</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">{sentCount}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Exitosos</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
           <p className="text-xl sm:text-2xl font-extrabold text-primary">{todayCount}</p>
           <p className="text-xs text-[var(--text-tertiary)]">Hoy</p>
         </div>
@@ -96,21 +96,21 @@ export default function NotificationsTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Send notification */}
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
           <CardTitle className="font-extrabold flex flex-wrap items-center gap-2"><MessageCircle className="h-5 w-5 text-[var(--data-success-500)]" />Enviar Notificación</CardTitle>
 
           {/* Order picker */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input value={orderSearch} onChange={e => { setOrderSearch(e.target.value); setSelectedOrder(null); setWaUrl(null); }} placeholder="Buscar pedido por nombre, teléfono o ID..." className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+            <input value={orderSearch} onChange={e => { setOrderSearch(e.target.value); setSelectedOrder(null); setWaUrl(null); }} placeholder="Buscar pedido por nombre, teléfono o ID..." className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
           </div>
 
           {!selectedOrder && filteredOrders.length > 0 && (
             <div className="max-h-48 overflow-y-auto space-y-1">
               {filteredOrders.map(o => (
-                <button key={o.id} onClick={() => { setSelectedOrder(o); setOrderSearch(""); setWaUrl(null); }} className="w-full text-left flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface border border-transparent hover:border-gray-200 dark:hover:border-card-border transition text-sm">
+                <button key={o.id} onClick={() => { setSelectedOrder(o); setOrderSearch(""); setWaUrl(null); }} className="w-full text-left flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface border border-transparent hover:border-gray-200 dark:hover:border-[var(--rule-base)] transition text-sm">
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[var(--text-primary)] dark:text-foreground truncate">{o.customerName ?? "Sin nombre"}</p>
+                    <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{o.customerName ?? "Sin nombre"}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">{o.customerPhone} · #{o.id.slice(0, 8)}</p>
                   </div>
                   <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase",
@@ -129,7 +129,7 @@ export default function NotificationsTab() {
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{selectedOrder.customerName}</p>
+                  <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{selectedOrder.customerName}</p>
                   <p className="text-sm text-[var(--text-tertiary)]">{selectedOrder.customerPhone}</p>
                 </div>
                 <button onClick={() => { setSelectedOrder(null); setWaUrl(null); }} className="text-xs text-[var(--text-tertiary)] underline">Cambiar</button>
@@ -164,16 +164,16 @@ export default function NotificationsTab() {
         <div className="space-y-3">
           <CardTitle className="font-extrabold flex flex-wrap items-center gap-2"><Clock className="h-5 w-5 text-[var(--text-tertiary)]" />Historial de Envíos</CardTitle>
           {logs.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
+            <div className="text-center py-12 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
               <Bell className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
               <p className="text-sm text-[var(--text-tertiary)]">Sin notificaciones enviadas</p>
             </div>
           ) : (
             <div className="max-h-100 overflow-y-auto space-y-2">
               {logs.map(l => (
-                <div key={l.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-1">
+                <div key={l.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                       {l.recipient}
                     </span>
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{new Date(l.createdAt).toLocaleString("es-PE")}</span>

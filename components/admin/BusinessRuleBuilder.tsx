@@ -181,7 +181,7 @@ export default function BusinessRuleBuilder() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5  space-y-5">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5  space-y-5">
           <p className="text-sm font-semibold text-[var(--text-secondary)]">Nueva regla automatica</p>
 
           {/* Condition row */}
@@ -191,7 +191,7 @@ export default function BusinessRuleBuilder() {
               <select
                 value={form.conditionType}
                 onChange={e => setForm(f => ({ ...f, conditionType: e.target.value as ConditionType, conditionValue: "" }))}
-                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 {CONDITION_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -205,8 +205,8 @@ export default function BusinessRuleBuilder() {
                     onChange={e => setForm(f => ({ ...f, conditionValue: e.target.value }))}
                     placeholder={conditionMeta.placeholder}
                     className={cn(
-                      "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-                      errors.conditionValue ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"
+                      "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
+                      errors.conditionValue ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                     )}
                   />
                   <span className="text-xs text-[var(--text-tertiary)] whitespace-nowrap">{conditionMeta.unit}</span>
@@ -223,7 +223,7 @@ export default function BusinessRuleBuilder() {
               <select
                 value={form.actionType}
                 onChange={e => setForm(f => ({ ...f, actionType: e.target.value as ActionType, actionValue: "" }))}
-                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 {ACTION_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -236,8 +236,8 @@ export default function BusinessRuleBuilder() {
                   onChange={e => setForm(f => ({ ...f, actionValue: e.target.value }))}
                   placeholder={actionMeta.valuePlaceholder}
                   className={cn(
-                    "w-full px-3 py-2 rounded-lg border bg-white dark:bg-card text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-                    errors.actionValue ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-card-border"
+                    "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
+                    errors.actionValue ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                   )}
                 />
                 {errors.actionValue && <p className="text-xs text-[var(--data-error-500)]">{errors.actionValue}</p>}
@@ -275,8 +275,8 @@ export default function BusinessRuleBuilder() {
           <div
             key={rule.id}
             className={cn(
-              "bg-white dark:bg-card border rounded-xl p-4  transition-opacity",
-              rule.enabled ? "border-[var(--rule-base)] dark:border-card-border" : "border-[var(--rule-soft)] dark:border-card-border/50 opacity-60"
+              "bg-[var(--surface-raised)] border rounded-xl p-4  transition-opacity",
+              rule.enabled ? "border-[var(--rule-base)] dark:border-[var(--rule-base)]" : "border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 opacity-60"
             )}
           >
             <div className="flex flex-wrap items-center gap-3">

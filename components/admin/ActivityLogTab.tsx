@@ -118,7 +118,7 @@ export default function ActivityLogTab() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Activity className="h-5 w-5 text-primary" />
-          <SectionTitle className="text-lg font-extrabold text-foreground">Log de Actividad</SectionTitle>
+          <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">Log de Actividad</SectionTitle>
           <span className="text-xs text-muted">({filtered.length})</span>
         </div>
         <div className="flex flex-wrap items-center gap-2 ml-auto">
@@ -126,16 +126,16 @@ export default function ActivityLogTab() {
           <button
             onClick={() => setAutoRefresh(p => !p)}
             className={cn("flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border rounded-lg transition-colors",
-              autoRefresh ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5"
+              autoRefresh ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 text-[var(--data-success)] dark:text-[var(--data-success)]" : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5"
             )}
             title={autoRefresh ? "Auto-refresh activo (30s)" : "Auto-refresh desactivado"}
           >
             <RefreshCw className={cn("h-3.5 w-3.5", autoRefresh && "animate-spin")} /> {autoRefresh ? "Auto" : "Manual"}
           </button>
-          <button onClick={load} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors">
+          <button onClick={load} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors">
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Actualizar
           </button>
-          <button onClick={clearLog} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--data-error)] bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors">
+          <button onClick={clearLog} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[var(--data-error)] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 transition-colors">
             <Trash2 className="h-3.5 w-3.5" /> Limpiar
           </button>
         </div>
@@ -150,7 +150,7 @@ export default function ActivityLogTab() {
             value={filter}
             onChange={e => { setFilter(e.target.value); setLogPage(1); }}
             placeholder="Buscar en el log..."
-            className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            className="w-full pl-9 pr-3 py-2 text-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
           />
         </div>
         <div className="flex items-center gap-1">
@@ -158,7 +158,7 @@ export default function ActivityLogTab() {
           <select
             value={entityFilter}
             onChange={e => { setEntityFilter(e.target.value); setLogPage(1); }}
-            className="text-sm bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/30 outline-none"
+            className="text-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary/30 outline-none"
           >
             {entities.map(e => (
               <option key={e} value={e}>{e === "todos" ? "Todas las entidades" : e.charAt(0).toUpperCase() + e.slice(1)}</option>
@@ -168,7 +168,7 @@ export default function ActivityLogTab() {
       </div>
 
       {/* Log entries */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl divide-y divide-gray-100 dark:divide-card-border overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl divide-y divide-gray-100 dark:divide-card-border overflow-hidden">
         {loading && entries.length === 0 ? (
           <div className="p-8 text-center text-muted text-sm">Cargando...</div>
         ) : filtered.length === 0 ? (
@@ -191,7 +191,7 @@ export default function ActivityLogTab() {
                     <span className="text-xs text-muted capitalize">{entry.entity}</span>
                     {entry.entityId && <span className="text-[length:var(--ts-2xs)] text-muted font-mono">#{entry.entityId.slice(0, 8)}</span>}
                   </div>
-                  <p className="text-sm text-foreground mt-0.5 line-clamp-2">{entry.detail}</p>
+                  <p className="text-sm text-[var(--text-primary)] mt-0.5 line-clamp-2">{entry.detail}</p>
                 </div>
                 <div className="text-[length:var(--ts-2xs)] text-muted whitespace-nowrap shrink-0 mt-1">
                   {entry.user && <span className="block text-right font-medium">{entry.user}</span>}
@@ -207,14 +207,14 @@ export default function ActivityLogTab() {
       {!loading && filtered.length > LOG_PER_PAGE && (
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           <button disabled={safeLogPage <= 1} onClick={() => setLogPage(p => Math.max(1, p - 1))}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             ← Anterior
           </button>
           <span className="text-xs text-[var(--text-secondary)] dark:text-muted">
             Página {safeLogPage} de {logTotalPages} · {filtered.length} registros
           </span>
           <button disabled={safeLogPage >= logTotalPages} onClick={() => setLogPage(p => p + 1)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
             Siguiente →
           </button>
         </div>

@@ -169,7 +169,7 @@ function KpiCard({ label, value, sub, icon, danger }: KpiCardProps) {
   return (
     <div
       className={
-        "rounded-lg border bg-white p-4  dark:bg-card " +
+        "rounded-lg border bg-white p-4  dark:bg-[var(--surface-raised)] " +
         (danger
           ? "border-amber-300 dark:border-[var(--data-warning-700)]"
           : "border-[var(--rule-base)]")

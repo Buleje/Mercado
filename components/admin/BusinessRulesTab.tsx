@@ -57,7 +57,7 @@ export default function BusinessRulesTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Zap className="h-6 w-6 text-primary" /> Reglas de Negocio</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Zap className="h-6 w-6 text-primary" /> Reglas de Negocio</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Automatiza acciones con reglas Si → Entonces</p>
         </div>
         <button onClick={openCreate} className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" /> Nueva regla</button>
@@ -71,9 +71,9 @@ export default function BusinessRulesTab() {
           { label: "Ejecuciones totales", value: rules.reduce((s, r) => s + r.executionCount, 0) },
           { label: "Categorías", value: new Set(rules.map(r => r.category)).size },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
-            <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{k.value}</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{k.value}</p>
           </div>
         ))}
       </div>
@@ -89,11 +89,11 @@ export default function BusinessRulesTab() {
       {/* Rules */}
       <div className="space-y-3">
         {filtered.map(r => (
-          <div key={r.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 transition-all", !r.enabled && "opacity-60")}>
+          <div key={r.id} className={cn("bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5 transition-all", !r.enabled && "opacity-60")}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{r.name}</CardTitle>
+                  <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.name}</CardTitle>
                   <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", CATEGORIES[r.category].color)}>{CATEGORIES[r.category].label}</span>
                   <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.enabled ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{r.enabled ? "Activa" : "Pausada"}</span>
                 </div>
@@ -126,15 +126,15 @@ export default function BusinessRulesTab() {
       {/* Modal */}
       {showModal && (
         <div className="modal-backdrop p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-lg w-full mx-4 border border-[var(--rule-base)] dark:border-card-border" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">{editRule ? "Editar regla" : "Nueva regla"}</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl p-3 sm:p-6 max-w-lg w-full mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)]" onClick={e => e.stopPropagation()}>
+            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editRule ? "Editar regla" : "Nueva regla"}</CardTitle>
             <div className="space-y-3">
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" rows={2} /></div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as Rule["category"] })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Trigger (evento)</label><input value={form.trigger} onChange={e => setForm({ ...form, trigger: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_update, daily_check..." /></div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Condición (SI…)</label><input value={form.condition} onChange={e => setForm({ ...form, condition: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual < punto_reorden" /></div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acción (ENTONCES…)</label><input value={form.action} onChange={e => setForm({ ...form, action: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: Crear orden de compra" /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" rows={2} /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</label><select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as Rule["category"] })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm">{Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Trigger (evento)</label><input value={form.trigger} onChange={e => setForm({ ...form, trigger: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="ej: stock_update, daily_check..." /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Condición (SI…)</label><input value={form.condition} onChange={e => setForm({ ...form, condition: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual < punto_reorden" /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acción (ENTONCES…)</label><input value={form.action} onChange={e => setForm({ ...form, action: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="ej: Crear orden de compra" /></div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>

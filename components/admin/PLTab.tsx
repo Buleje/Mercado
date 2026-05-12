@@ -185,7 +185,7 @@ export default function PLTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <DollarSign className="h-6 w-6 text-primary" />
             Ganancias y Pérdidas del Mes
           </PageTitle>
@@ -195,21 +195,21 @@ export default function PLTab() {
           <select
             value={month}
             onChange={e => setMonth(Number(e.target.value))}
-            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
           <select
             value={year}
             onChange={e => setYear(Number(e.target.value))}
-            className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => setTick(t => t + 1)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
           </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Descargar
           </button>
         </div>
@@ -244,9 +244,9 @@ export default function PLTab() {
           </div>
 
           {/* P&L Statement Table */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
-            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
-              <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+            <div className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
+              <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">
                 Ganancias y Pérdidas — {summary.period}
               </SectionTitle>
               <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)]")}>
@@ -280,9 +280,9 @@ export default function PLTab() {
                     {Object.entries(summary.expenses).length === 0 ? (
                       <p className="px-10 py-3 text-xs text-[var(--text-tertiary)] dark:text-muted italic">Sin gastos registrados en este período</p>
                     ) : Object.entries(summary.expenses).map(([cat, val]) => (
-                      <div key={cat} className="flex items-center justify-between px-10 py-2.5 text-sm border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
+                      <div key={cat} className="flex items-center justify-between px-10 py-2.5 text-sm border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0">
                         <span className="text-[var(--text-secondary)] dark:text-muted capitalize">{cat}</span>
-                        <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(val)}</span>
+                        <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(val)}</span>
                       </div>
                     ))}
                   </div>
@@ -294,8 +294,8 @@ export default function PLTab() {
           </div>
 
           {/* Trend Chart (last 6 months) */}
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6">
-            <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm mb-4 flex flex-wrap items-center gap-2">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
+            <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm mb-4 flex flex-wrap items-center gap-2">
               <BarChart2 className="h-4 w-4 text-primary" />
               Tendencia últimos 6 meses
             </SectionTitle>
@@ -327,7 +327,7 @@ export default function PLTab() {
           </div>
         </>
       ) : (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
           Sin datos para el período seleccionado.
         </div>
       )}
@@ -353,12 +353,12 @@ function PLRow({
     highlight === "blue" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
     highlight === "green" ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
     highlight === "red" ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
-    value < 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-foreground";
+    value < 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]";
 
   return (
     <div className={cn("flex items-center justify-between px-3 sm:px-6 py-3.5", bold && "bg-gray-50/70 dark:bg-surface/30")}>
       <div>
-        <p className={cn("text-sm text-[var(--text-primary)] dark:text-foreground", bold && "font-bold", large && "text-base")}>{label}</p>
+        <p className={cn("text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]", bold && "font-bold", large && "text-base")}>{label}</p>
         {sub && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{sub}</p>}
       </div>
       <div className="text-right">

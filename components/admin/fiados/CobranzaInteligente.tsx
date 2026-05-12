@@ -176,7 +176,7 @@ function KpiCard({
   colorClass: string;
 }) {
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  flex items-center gap-3">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4  flex items-center gap-3">
       <div
         className={cn(
           "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
@@ -218,9 +218,9 @@ function ModalDescuento({
 
   return (
     <div className="modal-backdrop flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-card rounded-xl w-full max-w-sm border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
           <div className="flex items-center gap-2">
             <Gift className="h-5 w-5 text-primary" />
             <SectionTitle className="text-sm font-bold text-[var(--text-primary)]">
@@ -254,7 +254,7 @@ function ModalDescuento({
             return (
               <div
                 key={op.desc}
-                className="border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 space-y-2"
+                className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -446,7 +446,7 @@ export default function CobranzaInteligente() {
       </div>
 
       {/* Acciones masivas por nivel */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 ">
         <p className="text-xs font-bold text-[var(--text-tertiary)] mb-3">
           Envío masivo por nivel
         </p>
@@ -515,7 +515,7 @@ export default function CobranzaInteligente() {
 
       {/* Tabla de cobranza */}
       {fiadosFiltrados.length === 0 ? (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center">
           <TrendingUp className="h-10 w-10 text-primary/40 mx-auto mb-2" />
           <p className="text-sm font-bold text-[var(--text-tertiary)]">
             {fiados.length === 0
@@ -524,10 +524,10 @@ export default function CobranzaInteligente() {
           </p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-sm">
-              <thead className="sticky top-0 bg-white dark:bg-card z-10 border-b border-[var(--rule-soft)] dark:border-white/5">
+              <thead className="sticky top-0 bg-[var(--surface-raised)] z-10 border-b border-[var(--rule-soft)] dark:border-white/5">
                 <tr className="text-left">
                   <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-xs">
                     Cliente
@@ -734,7 +734,7 @@ export default function CobranzaInteligente() {
           return (
             <div
               key={nivel}
-              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 flex items-start gap-2"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 flex items-start gap-2"
             >
               <span
                 className={cn(

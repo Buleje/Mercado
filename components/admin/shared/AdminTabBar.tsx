@@ -149,8 +149,8 @@ export default function AdminTabBar({
           "w-full shrink-0",
           // Desktop: fixed strip matching sidebar visual style
           "lg:w-40 lg:self-stretch lg:-ml-3 sm:lg:-ml-6 lg:pl-3 sm:lg:pl-6 lg:pr-0",
-          "lg:border-r lg:border-gray-200 lg:dark:border-card-border",
-          "lg:bg-white lg:dark:bg-card",
+          "lg:border-r lg:border-gray-200 lg:dark:border-[var(--rule-base)]",
+          "lg:bg-white lg:dark:bg-[var(--surface-raised)]",
           "lg:pt-1 lg:pb-4",
         )}>
           <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1 lg:pt-0">

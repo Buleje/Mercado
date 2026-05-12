@@ -573,7 +573,7 @@ export default function BrandConceptTab({
           <WandSparkles className="h-5 w-5 text-primary" />
         </div>
         <div className="min-w-0">
-          <p className="text-base font-bold text-foreground">Tu logo guía toda la tienda</p>
+          <p className="text-base font-bold text-[var(--text-primary)]">Tu logo guía toda la tienda</p>
           <p className="text-sm text-muted mt-0.5">
             Subimos tu logo, extraemos sus colores reales y te damos <span className="font-bold">conceptos verticales</span> con
             armonías profesionales. Cada concepto cambia colores + fuente + estilos en bloque — y abajo ves cómo
@@ -589,7 +589,7 @@ export default function BrandConceptTab({
             <ImageIcon className="h-5 w-5 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-base font-extrabold text-foreground leading-tight">Tu logo actual</p>
+            <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">Tu logo actual</p>
             <p className="text-sm text-muted leading-snug mt-0.5">El sistema lo lee para extraer la paleta y el feeling.</p>
           </div>
           {logo && (
@@ -597,7 +597,7 @@ export default function BrandConceptTab({
               type="button"
               onClick={() => void analyze()}
               disabled={analyzing}
-              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-foreground hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-50"
             >
               {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {analyzing ? "Analizando…" : "Re-analizar"}
@@ -606,28 +606,28 @@ export default function BrandConceptTab({
         </header>
 
         {!logo ? (
-          <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-card-border p-8 text-center">
+          <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
               <ImageIcon className="h-7 w-7 text-primary" />
             </div>
-            <p className="text-base font-bold text-foreground">Subí tu logo primero</p>
+            <p className="text-base font-bold text-[var(--text-primary)]">Subí tu logo primero</p>
             <p className="text-sm text-muted mt-1">
               Andá a <span className="font-bold">Identidad</span> y subí tu logo. Después volvé acá y te genero los conceptos.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface p-4 flex items-center justify-center min-h-[180px]">
+            <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface p-4 flex items-center justify-center min-h-[180px]">
               <div className="relative h-32 w-32">
                 <Image src={logo} alt="Logo" fill sizes="128px" className="object-contain" unoptimized={logo.startsWith("data:")} />
               </div>
             </div>
 
             <div className="md:col-span-2 space-y-3">
-              <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4">
+              <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Palette className="h-4 w-4 text-primary" />
-                  <p className="text-sm font-bold text-foreground">Paleta extraída</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">Paleta extraída</p>
                   {analyzing && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" />}
                 </div>
                 {error ? (
@@ -641,7 +641,7 @@ export default function BrandConceptTab({
                         <div className="h-9 w-9 rounded-lg border-2 border-white dark:border-card shadow-[var(--shadow-sm)]" style={{ backgroundColor: c }} />
                         <div className="leading-tight">
                           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted">{i === 0 ? "Dominante" : `#${i + 1}`}</p>
-                          <p className="text-xs font-mono text-foreground">{c.toUpperCase()}</p>
+                          <p className="text-xs font-mono text-[var(--text-primary)]">{c.toUpperCase()}</p>
                         </div>
                       </div>
                     ))}
@@ -652,24 +652,24 @@ export default function BrandConceptTab({
               {primaryColor && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {fontSuggestion && (
-                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4">
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Type className="h-4 w-4 text-primary" />
-                        <p className="text-sm font-bold text-foreground">Tipografía sugerida</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Tipografía sugerida</p>
                       </div>
-                      <p className="text-2xl font-extrabold text-foreground" style={{ fontFamily: fontSuggestion.label === "Sistema" ? "system-ui" : `'${fontSuggestion.label}', sans-serif` }}>
+                      <p className="text-2xl font-extrabold text-[var(--text-primary)]" style={{ fontFamily: fontSuggestion.label === "Sistema" ? "system-ui" : `'${fontSuggestion.label}', sans-serif` }}>
                         Aa {fontSuggestion.label}
                       </p>
                       <p className="text-xs text-muted mt-1 leading-snug">{fontSuggestion.vibe}</p>
                     </div>
                   )}
                   {brandDescription && (
-                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border p-4">
+                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="h-4 w-4 text-primary" />
-                        <p className="text-sm font-bold text-foreground">Tu logo transmite</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Tu logo transmite</p>
                       </div>
-                      <p className="text-base font-bold text-foreground leading-tight">{brandDescription.theme}</p>
+                      <p className="text-base font-bold text-[var(--text-primary)] leading-tight">{brandDescription.theme}</p>
                       <p className="text-xs text-muted mt-1 leading-snug">{brandDescription.tone}</p>
                     </div>
                   )}
@@ -688,7 +688,7 @@ export default function BrandConceptTab({
               <WandSparkles className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-base font-extrabold text-foreground leading-tight">{concepts.length} conceptos para tu marca</p>
+              <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">{concepts.length} conceptos para tu marca</p>
               <p className="text-sm text-muted leading-snug mt-0.5">
                 Cada concepto está pensado para una <span className="font-bold">vertical específica</span>.
                 Click para aplicar — abajo ves cómo se ve en cada componente.
@@ -738,7 +738,7 @@ export default function BrandConceptTab({
               <Eye className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-base font-extrabold text-foreground leading-tight">
+              <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                 Cómo se ve {activeConcept.name} en tus componentes
               </p>
               <p className="text-sm text-muted leading-snug mt-0.5">
@@ -785,7 +785,7 @@ function ConceptCard({
         "group rounded-2xl border-2 overflow-hidden transition-all flex flex-col",
         isActive
           ? "border-primary ring-2 ring-primary/20 shadow-[var(--shadow-lg)]"
-          : "border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:shadow-[var(--shadow-xl)]",
+          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-[var(--shadow-xl)]",
       )}
     >
       {/* Mini-mockup grande */}
@@ -976,10 +976,10 @@ function ConceptCard({
       </button>
 
       {/* Body */}
-      <div className="p-4 bg-white dark:bg-card border-t border-[var(--rule-soft)] dark:border-card-border flex-1 flex flex-col">
+      <div className="p-4 bg-[var(--surface-raised)] border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex-1 flex flex-col">
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="min-w-0">
-            <p className="text-base font-extrabold text-foreground leading-tight">{c.name}</p>
+            <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">{c.name}</p>
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-primary mt-0.5">{c.tagline}</p>
           </div>
           <div className="flex gap-1 shrink-0 mt-0.5">
@@ -1028,7 +1028,7 @@ function ConceptCard({
               "flex-1 h-10 rounded-xl text-xs font-extrabold transition-colors",
               isActive
                 ? "bg-primary/10 text-primary border-2 border-primary"
-                : "bg-gray-100 dark:bg-surface text-foreground hover:bg-primary/10 hover:text-primary border-2 border-transparent",
+                : "bg-gray-100 dark:bg-surface text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary border-2 border-transparent",
             )}
           >
             {isActive ? "✓ Aplicado" : "Aplicar"}

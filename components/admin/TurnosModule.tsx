@@ -377,13 +377,13 @@ export default function TurnosModule() {
         <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-xl p-1 w-fit">
           <button
             onClick={() => { setMainTab("turnos"); try { localStorage.setItem("turnos-subtab", "turnos"); } catch {} }}
-            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
           >
             <Clock className="h-3.5 w-3.5" /> Turnos
           </button>
           <button
             onClick={() => { setMainTab("cajeros"); try { localStorage.setItem("turnos-subtab", "cajeros"); } catch {} }}
-            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
           >
             <User className="h-3.5 w-3.5" /> Cajeros
           </button>
@@ -459,7 +459,7 @@ export default function TurnosModule() {
                 Equipo de Cajeros
               </CardTitle>
               {cajeroStats.length === 0 ? (
-                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl py-10 px-4 text-center">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl py-10 px-4 text-center">
                   <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
                     <User className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
                   </div>
@@ -473,8 +473,8 @@ export default function TurnosModule() {
                     const barWidth = maxVentas > 0 ? Math.max(5, (c.ventasPorHora / maxVentas) * 100) : 0;
                     return (
                       <div key={c.id} className={cn(
-                        "bg-white dark:bg-card border rounded-2xl p-5 transition-shadow hover:shadow-sm",
-                        isTop ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] ring-1 ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border"
+                        "bg-[var(--surface-raised)] border rounded-2xl p-5 transition-shadow hover:shadow-sm",
+                        isTop ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] ring-1 ring-[var(--data-warning-500)] dark:ring-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                       )}>
                         <div className="flex items-center gap-3 mb-4">
                           <div
@@ -537,7 +537,7 @@ export default function TurnosModule() {
                   <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                   Ranking de Cajeros
                 </CardTitle>
-                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl overflow-hidden">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-base">
                       <thead>
@@ -599,7 +599,7 @@ export default function TurnosModule() {
                   <BarChart3 className="h-5 w-5 text-primary" />
                   Ventas por Cajero (este mes)
                 </CardTitle>
-                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-5">
                   <TurnosChart chartData={chartData} />
                 </div>
               </div>
@@ -643,28 +643,28 @@ export default function TurnosModule() {
         }
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-primary" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Turnos del mes</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{turnosMesCount}</p>
             </div>
-            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Timer className="h-4 w-4 text-[var(--data-success-500)]" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Horas trabajadas</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{horasTrabajadas.toFixed(1)}h</p>
             </div>
-            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <DollarSign className="h-4 w-4 text-[var(--data-success-500)]" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Ventas/hora</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(ventasPorHora)}</p>
             </div>
-            <div className="rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card  hover:shadow-sm transition-shadow p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]  hover:shadow-sm transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
                 <Trophy className="h-4 w-4 text-[var(--data-warning-500)]" />
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Mejor cajero</p>
@@ -745,7 +745,7 @@ export default function TurnosModule() {
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-6 sm:p-7">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-6 sm:p-7">
             <div className="flex items-start gap-4 mb-6">
               <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
                 <Clock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
@@ -818,7 +818,7 @@ export default function TurnosModule() {
               </button>
             </div>
           </div>
-          <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-card-border rounded-2xl p-5 flex flex-col gap-5">
+          <aside className="bg-[var(--surface-sunken)] dark:bg-white/[0.03] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-5 flex flex-col gap-5">
             <div>
               <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-3">Último turno cerrado</p>
               {ultimoTurno ? (
@@ -960,7 +960,7 @@ export default function TurnosModule() {
                 <CalendarDays className="h-5 w-5 text-primary" />
                 Calendario Semanal
               </CardTitle>
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-2xl overflow-hidden">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <div className="grid grid-cols-7 min-w-[700px]">
                     {DIAS_SEMANA.map((dia, idx) => {
@@ -1003,7 +1003,7 @@ export default function TurnosModule() {
                 <BarChart3 className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Productividad por cajero
               </CardTitle>
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
                 {cajerosStats.length <= 1 && cajerosStats.length === 1 ? (
                   <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Solo hay 1 cajero registrado</div>
                 ) : cajerosStats.length === 0 ? (
@@ -1061,8 +1061,8 @@ export default function TurnosModule() {
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Historial de turnos</CardTitle>
             {historial.length > 0 && (
               <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5">
-                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
-                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
+                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
+                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
               </div>
             )}
           </div>
@@ -1094,7 +1094,7 @@ export default function TurnosModule() {
             </button>
           )}
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           {historial.length === 0 ? (
             <div className="text-center py-12 px-4">
               <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
@@ -1208,10 +1208,10 @@ export default function TurnosModule() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden"
+              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] max-h-[92vh] flex flex-col overflow-hidden"
             >
               {/* Header — icono + titulo + X */}
-              <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+              <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 flex items-center justify-center shrink-0">
                     <Square className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
@@ -1314,10 +1314,10 @@ export default function TurnosModule() {
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30 flex gap-3">
+              <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
                 <button
                   onClick={() => setShowCierre(false)}
-                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-card hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
+                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1352,7 +1352,7 @@ export default function TurnosModule() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg bg-white dark:bg-card rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
+              className="w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-2xl ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
             >
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">

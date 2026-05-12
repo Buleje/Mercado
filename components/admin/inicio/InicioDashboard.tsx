@@ -599,7 +599,7 @@ function KPICard({
 }) {
   const c = COLOR_MAP[color];
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-soft)] dark:border-card-border rounded-xl p-4  flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-4  flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
       {/* Sparkline background (decorative) */}
       {spark && spark.length > 1 && (
         <svg className="absolute bottom-0 left-0 right-0 h-10 opacity-10 pointer-events-none" viewBox={`0 0 ${spark.length - 1} 1`} preserveAspectRatio="none" aria-hidden="true">
@@ -628,7 +628,7 @@ function KPICard({
         )}
       </div>
 
-      <p className="font-display text-2xl sm:text-3xl font-semibold text-[var(--text-primary)] dark:text-foreground leading-none tracking-[var(--ls-tight)] tabular-nums">
+      <p className="font-display text-2xl sm:text-3xl font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-none tracking-[var(--ls-tight)] tabular-nums">
         {value}
       </p>
       <p className="text-[length:var(--ts-xs)] font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] dark:text-muted leading-tight">

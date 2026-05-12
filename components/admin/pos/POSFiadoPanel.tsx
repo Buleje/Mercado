@@ -85,7 +85,7 @@ export default function POSFiadoPanel({
   // Loading
   if (loading) {
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
         <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-tertiary)]" />
         <span className="text-xs text-[var(--text-tertiary)]">Consultando fiados...</span>
       </div>
@@ -132,9 +132,9 @@ export default function POSFiadoPanel({
 
       {/* Cobrar mini modal */}
       {showCobrar && (
-        <div className="p-3 rounded-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border  space-y-2">
+        <div className="p-3 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)]  space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">
+            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Cobrar fiado
             </p>
             <button
@@ -159,7 +159,7 @@ export default function POSFiadoPanel({
                 value={cobroMonto}
                 onChange={(e) => setCobroMonto(e.target.value)}
                 placeholder={Number(data.montoPendiente).toFixed(2)}
-                className="w-full pl-7 pr-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                className="w-full pl-7 pr-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
             <button

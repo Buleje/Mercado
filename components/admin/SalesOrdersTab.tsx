@@ -712,7 +712,7 @@ export default function SalesOrdersTab() {
           setShowDashboard(v);
           localStorage.setItem('orders-show-dashboard', String(v));
         }}
-        className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-muted dark:hover:text-foreground"
+        className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:text-muted dark:hover:text-[var(--text-primary)]"
       >
         {showDashboard ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         Dashboard detallado
@@ -762,8 +762,8 @@ export default function SalesOrdersTab() {
               return (
                 <div key={col.key} className={cn("rounded-xl border-2 min-w-[200px]", col.bg, col.border)}>
                   <div className={cn("px-3 py-2 rounded-t-lg flex items-center justify-between", col.headerBg)}>
-                    <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{col.label}</span>
-                    <span className="px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-white/10 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-foreground">{colOrders.length}</span>
+                    <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{col.label}</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-white/60 dark:bg-white/10 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{colOrders.length}</span>
                   </div>
                   <div className="p-2 space-y-2 max-h-[60vh] overflow-y-auto">
                     {colOrders.length === 0 ? (
@@ -773,9 +773,9 @@ export default function SalesOrdersTab() {
                       const cfg = STATUS_CONFIG[order.status];
                       const nextStatus = cfg?.next;
                       return (
-                        <div key={order.id} className="bg-white dark:bg-card rounded-lg border border-[var(--rule-base)] dark:border-card-border p-2.5  hover:shadow-sm transition-shadow">
+                        <div key={order.id} className="bg-[var(--surface-raised)] rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-2.5  hover:shadow-sm transition-shadow">
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{order.customerName ?? "Sin nombre"}</p>
+                            <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{order.customerName ?? "Sin nombre"}</p>
                             {/* Mejora 14: Time badge */}
                             {!TERMINAL.has(order.status) && (
                               <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", minutos < 15 ? "text-[var(--data-success-500)]" : minutos < 30 ? "text-[var(--data-warning-500)]" : minutos > 60 ? "text-[var(--data-error-500)] animate-pulse" : "text-[var(--data-error-500)]")}>
@@ -822,10 +822,10 @@ export default function SalesOrdersTab() {
         const hasMoreHist = histPaged.length < histFiltered.length;
         return (
           <div className="space-y-2">
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+                  <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                     <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">#</th>
                     <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
                     <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
@@ -838,10 +838,10 @@ export default function SalesOrdersTab() {
                   {histPaged.map((order, idx) => {
                     const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: "bg-gray-100 text-[var(--text-secondary)]", icon: null };
                     return (
-                      <tr key={order.id} className="border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                      <tr key={order.id} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                         <td className="px-4 py-3 font-mono text-xs text-[var(--text-tertiary)]">{idx + 1}</td>
-                        <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-foreground">{fmtDate(order.createdAt)}</td>
-                        <td className="px-4 py-3 text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">{order.customerName ?? "Cliente"}</td>
+                        <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmtDate(order.createdAt)}</td>
+                        <td className="px-4 py-3 text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{order.customerName ?? "Cliente"}</td>
                         <td className="px-4 py-3 text-xs font-extrabold text-primary text-right">{fmt(order.total)}</td>
                         <td className="px-4 py-3 text-center">
                           <StatusBadge variant={cfg.variant} label={cfg.label} icon={cfg.badgeIcon} size="sm" />
@@ -862,7 +862,7 @@ export default function SalesOrdersTab() {
             </div>
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center">{histFiltered.length} pedido{histFiltered.length !== 1 ? "s" : ""} en total</p>
             {hasMoreHist && (
-              <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+              <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                 Cargar más ({histFiltered.length - histPaged.length} restantes)
               </button>
             )}
@@ -897,10 +897,10 @@ export default function SalesOrdersTab() {
             <div
               key={order.id}
               className={cn(
-                "bg-white dark:bg-card border rounded-xl overflow-hidden transition-all",
+                "bg-[var(--surface-raised)] border rounded-xl overflow-hidden transition-all",
                 isTerminal
-                  ? "border-[var(--rule-soft)] dark:border-card-border opacity-70"
-                  : "border-[var(--rule-base)] dark:border-card-border "
+                  ? "border-[var(--rule-soft)] dark:border-[var(--rule-base)] opacity-70"
+                  : "border-[var(--rule-base)] dark:border-[var(--rule-base)] "
               )}
             >
               {/* Main row — clickable to expand */}
@@ -909,7 +909,7 @@ export default function SalesOrdersTab() {
                 className="w-full p-3.5 flex items-center justify-between gap-3 text-left"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">
+                  <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                     {order.customerName ?? "Cliente"}
                   </p>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{fmtDate(order.createdAt)}</p>
@@ -940,7 +940,7 @@ export default function SalesOrdersTab() {
                           <ShoppingBag className="h-4 w-4 text-primary" />
                         </div>
                         <div>
-                          <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">Pedido #{order.id.slice(0, 8)}</p>
+                          <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Pedido #{order.id.slice(0, 8)}</p>
                           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{fmtDate(order.createdAt)}</p>
                         </div>
                       </div>
@@ -952,7 +952,7 @@ export default function SalesOrdersTab() {
 
                     <div className="px-4 pb-4 pt-3 space-y-3">
                     {/* Timeline visual (Mejora 2) */}
-                    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+                    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5">
                       <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-2 flex items-center gap-1.5">
                         <Clock className="h-3 w-3" /> Progreso del pedido
                       </p>
@@ -965,23 +965,23 @@ export default function SalesOrdersTab() {
                     </div>
 
                     {/* Meta info — card style */}
-                    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+                    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5">
                       <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-2 flex items-center gap-1.5">
                         <Receipt className="h-3 w-3" /> Información del pedido
                       </p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                         <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
                           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted block mb-0.5">ID Pedido</span>
-                          <span className="font-mono font-bold text-[var(--text-primary)] dark:text-foreground">{order.id.slice(0, 8)}</span>
+                          <span className="font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{order.id.slice(0, 8)}</span>
                         </div>
                         <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
                           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted block mb-0.5">Método de pago</span>
-                          <span className="font-bold text-[var(--text-primary)] dark:text-foreground capitalize">{order.paymentMethod ?? "efectivo"}</span>
+                          <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] capitalize">{order.paymentMethod ?? "efectivo"}</span>
                         </div>
                         {order.customerPhone && (
                           <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
                             <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted block mb-0.5">Teléfono</span>
-                            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{order.customerPhone}</span>
+                            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{order.customerPhone}</span>
                           </div>
                         )}
                       </div>
@@ -989,14 +989,14 @@ export default function SalesOrdersTab() {
 
                     {/* Items list — card style */}
                     {order.items && order.items.length > 0 && (
-                      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5">
+                      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5">
                         <p className="text-[length:var(--ts-2xs)] font-bold text-primary mb-2 flex items-center gap-1.5">
                           <Package className="h-3 w-3" /> Productos ({order.items.length})
                         </p>
                         <div className="space-y-1.5">
                         {order.items.map((item, i) => (
                           <div key={i} className="flex justify-between text-xs px-2.5 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                            <span className="text-[var(--text-primary)] dark:text-foreground">{item.qty}x {item.name}</span>
+                            <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.qty}x {item.name}</span>
                             {item.price != null && (
                               <span className="font-bold text-[var(--text-secondary)] dark:text-muted">{fmt(item.price * item.qty)}</span>
                             )}
@@ -1004,7 +1004,7 @@ export default function SalesOrdersTab() {
                         ))}
                         </div>
                         <div className="flex justify-between text-sm pt-2.5 mt-2 border-t-2 border-primary/20 dark:border-primary/10 px-2.5">
-                          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">Total</span>
+                          <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</span>
                           <span className="font-extrabold text-primary text-base">{fmt(order.total)}</span>
                         </div>
                       </div>
@@ -1046,7 +1046,7 @@ export default function SalesOrdersTab() {
                                     }}
                                     className="h-3.5 w-3.5 rounded border-[var(--data-success-500)]/30 text-[var(--data-success-500)] focus:ring-[var(--data-success-500)]/40"
                                   />
-                                  <span className={cn("text-[var(--text-primary)] dark:text-foreground", isChecked && "text-[var(--text-tertiary)] dark:text-muted")}>{item.name} x {item.qty}</span>
+                                  <span className={cn("text-[var(--text-primary)] dark:text-[var(--text-primary)]", isChecked && "text-[var(--text-tertiary)] dark:text-muted")}>{item.name} x {item.qty}</span>
                                 </label>
                               );
                             })}
@@ -1074,7 +1074,7 @@ export default function SalesOrdersTab() {
                         defaultValue={order.notes?.startsWith("[ADMIN]") ? order.notes.replace("[ADMIN] ", "") : (order.notes ?? "")}
                         placeholder="Ej: Confirmar direccion, entregar despues de las 3pm..."
                         rows={2}
-                        className="w-full text-xs bg-white/80 dark:bg-white/5 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/50 rounded-lg px-2 py-1.5 text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-warning-500)] resize-none"
+                        className="w-full text-xs bg-white/80 dark:bg-white/5 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/50 rounded-lg px-2 py-1.5 text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-warning-500)] resize-none"
                         onChange={(e) => {
                           const value = e.target.value;
                           const orderId = order.id;
@@ -1199,7 +1199,7 @@ export default function SalesOrdersTab() {
                   <div key={zone}>
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{zone}</span>
+                      <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{zone}</span>
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">({zoneOrders.length} pedido{zoneOrders.length !== 1 ? "s" : ""})</span>
                     </div>
                     <div className="space-y-2">
@@ -1208,7 +1208,7 @@ export default function SalesOrdersTab() {
                   </div>
                 ))}
                 {hasMore && (
-                  <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                  <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                     Cargar mas ({filtered.length - paginated.length} restantes)
                   </button>
                 )}
@@ -1220,7 +1220,7 @@ export default function SalesOrdersTab() {
             <div className="space-y-2">
               {paginated.map(renderOrder)}
               {hasMore && (
-                <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                   Cargar mas ({filtered.length - paginated.length} restantes)
                 </button>
               )}
@@ -1229,10 +1229,10 @@ export default function SalesOrdersTab() {
         })()}
 
       {/* ── Idea 11: Panel de Repartidores ─────────────────────────── */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
         <button
           onClick={() => setShowDeliveryPanel(!showDeliveryPanel)}
-          className="w-full flex items-center justify-between text-sm font-bold text-[var(--text-primary)] dark:text-foreground"
+          className="w-full flex items-center justify-between text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
         >
           <span className="flex items-center gap-2">
             <Truck className="h-4 w-4 text-primary" /> Repartidores ({deliveryPeople.filter(p => p.activo).length} activos)
@@ -1247,7 +1247,7 @@ export default function SalesOrdersTab() {
               <div className="flex flex-wrap gap-2">
                 {deliveryPeople.filter(p => p.activo).map(p => (
                   <div key={p.nombre} className="bg-gray-50 dark:bg-surface rounded-lg px-3 py-2 text-xs">
-                    <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{p.nombre}</p>
+                    <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.nombre}</p>
                     <p className="text-[var(--text-tertiary)] dark:text-muted">{p.zona} &middot; {p.entregas} entregas (S/{(p.entregas * p.comision).toFixed(0)} comisiones)</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Comision: S/{p.comision}/delivery</p>
                   </div>
@@ -1260,12 +1260,12 @@ export default function SalesOrdersTab() {
               <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-3 space-y-2">
                 <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Nuevo repartidor</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="text" placeholder="Nombre" value={newDelivery.nombre} onChange={e => setNewDelivery({...newDelivery, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
-                  <input type="tel" placeholder="Teléfono" value={newDelivery.teléfono} onChange={e => setNewDelivery({...newDelivery, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
-                  <input type="text" placeholder="Zona (ej: Manantay)" value={newDelivery.zona} onChange={e => setNewDelivery({...newDelivery, zona: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
+                  <input type="text" placeholder="Nombre" value={newDelivery.nombre} onChange={e => setNewDelivery({...newDelivery, nombre: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                  <input type="tel" placeholder="Teléfono" value={newDelivery.teléfono} onChange={e => setNewDelivery({...newDelivery, teléfono: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                  <input type="text" placeholder="Zona (ej: Manantay)" value={newDelivery.zona} onChange={e => setNewDelivery({...newDelivery, zona: e.target.value})} className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-[var(--text-secondary)]">S/</span>
-                    <input type="number" min={1} max={20} value={newDelivery.comision} onChange={e => setNewDelivery({...newDelivery, comision: Number(e.target.value) || 3})} className="w-16 text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground" />
+                    <input type="number" min={1} max={20} value={newDelivery.comision} onChange={e => setNewDelivery({...newDelivery, comision: Number(e.target.value) || 3})} className="w-16 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">/delivery</span>
                   </div>
                 </div>
@@ -1275,7 +1275,7 @@ export default function SalesOrdersTab() {
                 </div>
               </div>
             ) : (
-              <button onClick={() => setShowAddDelivery(true)} className="w-full py-2 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-tertiary)] hover:text-primary hover:border-primary/40 transition-colors">
+              <button onClick={() => setShowAddDelivery(true)} className="w-full py-2 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-tertiary)] hover:text-primary hover:border-primary/40 transition-colors">
                 + Agregar repartidor
               </button>
             )}
@@ -1289,8 +1289,8 @@ export default function SalesOrdersTab() {
         if (!order) return null;
         return (
           <div className="modal-backdrop p-4" onClick={() => setAssigningDelivery(null)}>
-            <div className="bg-white dark:bg-card rounded-xl max-w-sm w-full p-4" onClick={e => e.stopPropagation()}>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-3">Asignar repartidor a #{order.id.slice(-6).toUpperCase()}</p>
+            <div className="bg-[var(--surface-raised)] rounded-xl max-w-sm w-full p-4" onClick={e => e.stopPropagation()}>
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">Asignar repartidor a #{order.id.slice(-6).toUpperCase()}</p>
               <div className="space-y-2">
                 {deliveryPeople.filter(p => p.activo).map(p => (
                   <button
@@ -1299,7 +1299,7 @@ export default function SalesOrdersTab() {
                     className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-surface hover:bg-primary/10 transition-colors text-left"
                   >
                     <div>
-                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{p.nombre}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.nombre}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{p.zona} &middot; S/{p.comision}/delivery</p>
                     </div>
                     <Truck className="h-4 w-4 text-primary" />
@@ -1317,8 +1317,8 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 9: WhatsApp toast notification */}
       {whatsappToast && (
-        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 max-w-sm animate-in slide-in-from-bottom-5">
-          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground mb-2">
+        <div className="fixed bottom-4 right-4 z-50 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 max-w-sm animate-in slide-in-from-bottom-5">
+          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2">
             Notificar a {whatsappToast.name}
           </p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] dark:text-muted mb-3">{whatsappToast.message}</p>
@@ -1343,13 +1343,13 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 7: GRR created toast */}
       {grrToast && (
-        <div className="fixed bottom-4 left-4 z-50 bg-white dark:bg-card border border-[var(--data-info-500)] dark:border-[var(--data-info-500)] rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-4 left-4 z-50 bg-[var(--surface-raised)] border border-[var(--data-info-500)] dark:border-[var(--data-info-500)] rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-[var(--data-info-100)] dark:bg-[var(--data-info-500)]/30 flex items-center justify-center shrink-0">
               <Truck className="h-5 w-5 text-[var(--data-info-500)]" />
             </div>
             <div>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{grrToast}</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{grrToast}</p>
             </div>
             <button onClick={() => setGrrToast(null)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] shrink-0">
               <XCircle className="h-4 w-4" />
@@ -1360,13 +1360,13 @@ export default function SalesOrdersTab() {
 
       {/* Mejora 20: New order toast */}
       {newOrderToast && (
-        <div className="fixed top-4 right-4 z-50 bg-white dark:bg-card border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-top-5">
+        <div className="fixed top-4 right-4 z-50 bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-top-5">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center shrink-0">
               <Bell className="h-5 w-5 text-[var(--data-success-500)]" />
             </div>
             <div>
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">Nuevo pedido!</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nuevo pedido!</p>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                 {newOrderToast.name} — {fmt(newOrderToast.total)}
               </p>
@@ -1618,7 +1618,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 2: Pedidos por Estado (PieChart donut grande) === */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
         <div className="flex items-center justify-between mb-4">
           <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400">Pedidos por Estado</CardTitle>
           <button onClick={() => setExpandedChart("pedidos-estado")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
@@ -1655,7 +1655,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 3: Pedidos por Hora + Metodo de Pago === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por hora */}
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Pedidos por Hora - Hoy</CardTitle>
           <ResponsiveContainer minWidth={0} width="100%" height={250}>
             <BarChart data={hourlyData}>
@@ -1673,7 +1673,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         </div>
 
         {/* Metodo de pago */}
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Metodo de Pago</CardTitle>
           <ResponsiveContainer minWidth={0} width="100%" height={250}>
             <PieChart>
@@ -1697,7 +1697,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 4: Tendencia 7 Dias (ComposedChart) === */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
         <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Tendencia de Pedidos - Ultimos 7 dias</CardTitle>
         <ResponsiveContainer minWidth={0} width="100%" height={280}>
           <ComposedChart data={weeklyData}>
@@ -1722,7 +1722,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       {/* === SECCION 5: Pedidos por Zona + SECCION 6: Top 5 Clientes === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pedidos por zona */}
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Top 5 Zonas</CardTitle>
           {zonaData.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de zona" />
@@ -1740,7 +1740,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
         </div>
 
         {/* Top 5 clientes */}
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
           <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Top 5 Clientes</CardTitle>
           {topClientes.length === 0 ? (
             <OrdersEmptyChart message="Sin datos de clientes" />
@@ -1776,7 +1776,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       </div>
 
       {/* === SECCION 7: Tiempo Promedio de Procesamiento === */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-6 ">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6 ">
         <CardTitle className="text-sm font-medium text-[var(--text-secondary)] dark:text-zinc-400 mb-4">Tiempo Promedio de Procesamiento</CardTitle>
         <div className="flex flex-col items-center justify-center py-4">
           {/* Gauge semicircular */}
@@ -1916,7 +1916,7 @@ function DashKpi({ icon, iconBg, label, value, border, pulse, sparkColor, sparkV
   // Lazy init so mock delta is computed once per mount, not each render (React Compiler purity rule)
   const [change] = useState(() => Math.round((Math.random() - 0.3) * 30));
   return (
-    <div className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-5  border-l-4", border)}>
+    <div className={cn("bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-5  border-l-4", border)}>
       <div className="flex items-start gap-3">
         <div className={cn("rounded-full p-2 shrink-0", iconBg, pulse && "animate-pulse")}>
           {icon}

@@ -154,7 +154,7 @@ function AlertSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 animate-pulse"
+          className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 animate-pulse"
         >
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 bg-[var(--rule-soft)] dark:bg-gray-700 rounded-xl shrink-0" />
@@ -420,7 +420,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
     return (
       <div className="text-center py-16">
         <span className="text-6xl block mb-4">&#x2705;</span>
-        <CardTitle className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground">
+        <CardTitle className="text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           Todo en orden
         </CardTitle>
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-2">
@@ -490,7 +490,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
         <button
           onClick={fetchAlerts}
           disabled={loading}
-          className="ml-auto p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
+          className="ml-auto p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
           title="Actualizar alertas"
         >
           <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
@@ -524,13 +524,13 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                       "flex items-center gap-3 sm:gap-4 rounded-xl border border-l-4 p-4",
                       config.border,
                       config.bg,
-                      "border-[var(--rule-base)] dark:border-card-border",
+                      "border-[var(--rule-base)] dark:border-[var(--rule-base)]",
                     )}
                   >
                     {/* Icon */}
                     <div
                       className={cn(
-                        "flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-card shrink-0",
+                        "flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--surface-raised)] shrink-0",
                         config.icon,
                       )}
                     >
@@ -540,7 +540,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">
+                        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                           {alert.title}
                         </p>
                         <span
@@ -577,7 +577,7 @@ export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Pro
                             );
                           }
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
                       >
                         {alert.action}
                         <ArrowRight className="w-3 h-3" />

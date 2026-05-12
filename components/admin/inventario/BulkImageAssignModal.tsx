@@ -220,7 +220,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
     >
       <div className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-[var(--rule-soft)] bg-white dark:bg-card flex items-center gap-3">
+        <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
           <div className="h-11 w-11 rounded-xl bg-linear-to-br from-primary to-[var(--data-success-500)] text-white flex items-center justify-center shrink-0">
             <Sparkles className="h-5 w-5" />
           </div>
@@ -250,7 +250,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
         {/* Body — split view */}
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 overflow-hidden">
           {/* Izquierda — banco de imágenes */}
-          <section className="flex flex-col overflow-hidden border-b sm:border-b-0 sm:border-r border-[var(--rule-soft)] bg-white dark:bg-card">
+          <section className="flex flex-col overflow-hidden border-b sm:border-b-0 sm:border-r border-[var(--rule-soft)] bg-[var(--surface-raised)]">
             <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
@@ -276,7 +276,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                       "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
                       !activeCatId
                         ? "border-primary bg-primary text-white"
-                        : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
                     )}
                   >
                     Todas
@@ -289,7 +289,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                         "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
                         activeCatId === c.id
                           ? "border-primary bg-primary text-white"
-                          : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
                       )}
                     >
                       {c.name}
@@ -336,7 +336,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                             onClick={() => handleBankItemClick(item)}
                             title={`${item.name} — arrastra al producto`}
                             className={cn(
-                              "group relative rounded-xl border-2 bg-white dark:bg-card overflow-hidden transition-all text-left cursor-grab active:cursor-grabbing",
+                              "group relative rounded-xl border-2 bg-[var(--surface-raised)] overflow-hidden transition-all text-left cursor-grab active:cursor-grabbing",
                               isDragging
                                 ? "border-primary ring-2 ring-primary/30 opacity-60 scale-95"
                                 : "border-[var(--rule-soft)] hover:border-primary hover:shadow-md",
@@ -364,7 +364,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           </section>
 
           {/* Derecha — productos sin imagen */}
-          <section className="flex flex-col overflow-hidden bg-white dark:bg-card">
+          <section className="flex flex-col overflow-hidden bg-[var(--surface-raised)]">
             <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
@@ -390,7 +390,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                       "px-3 py-1 rounded-full text-xs font-bold border-2 transition-colors",
                       !activeProductCat
                         ? "border-primary bg-primary text-white"
-                        : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
                     )}
                   >
                     Todas <span className="ml-1 opacity-80">· {baseWithoutImage.length}</span>
@@ -405,7 +405,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                           ? "border-primary bg-primary text-white"
                           : c.pending === 0
                           ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
-                          : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
                       )}
                       title={`${c.name}: ${c.pending} pendientes / ${c.total} totales`}
                     >
@@ -451,7 +451,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                     <div
                       className={cn(
                         "h-14 w-14 sm:h-16 sm:w-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center",
-                        assigned ? "bg-white dark:bg-card border border-[var(--data-success-500)]/30" : "bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)]",
+                        assigned ? "bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30" : "bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)]",
                       )}
                     >
                       {assigned ? (
@@ -491,7 +491,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
         </div>
 
         {/* Footer */}
-        <footer className="shrink-0 px-4 sm:px-6 py-3 border-t border-[var(--rule-soft)] bg-white dark:bg-card flex items-center justify-between gap-3">
+        <footer className="shrink-0 px-4 sm:px-6 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center justify-between gap-3">
           <div className="flex sm:hidden items-center gap-2 text-xs">
             <span className="px-2 py-1 rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] font-bold">
               {totalAssigned} ✓

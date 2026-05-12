@@ -85,12 +85,12 @@ export default function ProfitabilityTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" /> Cuánto Gano por Producto
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Mira cuánto ganas con cada producto y categoría</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: Number(l.marginPct).toFixed(1) + "%" })), "ganancias-producto")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: Number(l.marginPct).toFixed(1) + "%" })), "ganancias-producto")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Descargar
         </button>
       </div>
@@ -112,8 +112,8 @@ export default function ProfitabilityTab() {
       </div>
 
       {/* Category bar chart */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-4">Ganancia por categoría</CardTitle>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Ganancia por categoría</CardTitle>
         <div className="space-y-3">
           {catSummary.map(([cat, data]) => {
             const pctFill = maxCatMargin > 0 ? (data.margin / maxCatMargin) * 100 : 0;
@@ -124,7 +124,7 @@ export default function ProfitabilityTab() {
                 <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
                   <div className="h-full rounded-full bg-[var(--data-success-500)] transition-all" style={{ width: `${pctFill}%` }} />
                 </div>
-                <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-24 text-right">{fmt(data.margin)}</span>
+                <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] w-24 text-right">{fmt(data.margin)}</span>
                 <span className="text-xs font-semibold text-[var(--data-success-500)] w-12 text-right">{pct(mPct)}</span>
               </div>
             );
@@ -136,13 +136,13 @@ export default function ProfitabilityTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="marginPct">Mayor % margen</option>
           <option value="grossMargin">Mayor margen bruto</option>
           <option value="revenue">Mayor ingreso</option>
@@ -151,10 +151,10 @@ export default function ProfitabilityTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">#</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Producto</th>
@@ -172,10 +172,10 @@ export default function ProfitabilityTab() {
               {filtered.map((l, i) => (
                 <tr key={l.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-tertiary)]">{i + 1}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{l.product}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.product}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{l.category}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)] dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(l.revenue)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(l.revenue)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(l.cogs)}</td>
                   <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(l.grossMargin)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
@@ -190,11 +190,11 @@ export default function ProfitabilityTab() {
                 </tr>
               ))}
             </tbody>
-            <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface/50">
+            <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface/50">
               <tr className="font-extrabold">
                 <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-[var(--text-secondary)]">Totales</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{totals.units.toLocaleString("es-PE")}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-foreground">{fmt(totals.revenue)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{totals.units.toLocaleString("es-PE")}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(totals.revenue)}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(totals.cogs)}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{fmt(totals.grossMargin)}</td>
                 <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{pct(totals.marginPct)}</td>
@@ -208,9 +208,9 @@ export default function ProfitabilityTab() {
       {/* Detail modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">Detalle de producto</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle de producto</CardTitle>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2 text-sm">
@@ -222,7 +222,7 @@ export default function ProfitabilityTab() {
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-[var(--text-secondary)] dark:text-muted">{k}</span>
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{v}</span>
                 </div>
               ))}
             </div>

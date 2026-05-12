@@ -12,7 +12,7 @@
  *   - Selección bulk con checkbox a la izquierda
  *   - Hover translate-y sutil + ring accent on selected
  *
- * Sin `bg-gray-100 dark:bg-card` legacy — solo tokens Buleje.
+ * Sin `bg-gray-100 dark:bg-[var(--surface-raised)]` legacy — solo tokens Buleje.
  */
 
 import { useState, useEffect } from "react";

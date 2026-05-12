@@ -61,7 +61,7 @@ function StarDisplay({ rating }: { rating: number }) {
             "h-4 w-4",
             i < rating
               ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
-              : "fill-muted text-muted-foreground"
+              : "fill-muted text-[var(--text-secondary)]"
           )}
         />
       ))}
@@ -107,11 +107,11 @@ export default function AIReviewResponder({
       : { text: "Resena critica", className: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-orange-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" };
 
   return (
-    <div className="rounded-lg border border-border bg-card dark:bg-card p-4 space-y-3">
+    <div className="rounded-lg border border-border bg-[var(--surface-raised)] dark:bg-[var(--surface-raised)] p-4 space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground dark:text-foreground">
+          <p className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {reviewerName || "Cliente anonimo"}
           </p>
           <StarDisplay rating={rating} />
@@ -127,14 +127,14 @@ export default function AIReviewResponder({
       </div>
 
       {/* Review text */}
-      <blockquote className="border-l-2 border-primary pl-3 text-sm text-muted-foreground dark:text-muted-foreground italic">
+      <blockquote className="border-l-2 border-primary pl-3 text-sm text-[var(--text-secondary)] dark:text-[var(--text-secondary)] italic">
         {reviewText || "Sin texto en la resena."}
       </blockquote>
 
       {/* Draft editor */}
       {editing && (
         <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
             <Edit3 className="h-3.5 w-3.5" />
             <span>Puedes editar la respuesta antes de enviar</span>
           </div>
@@ -144,9 +144,9 @@ export default function AIReviewResponder({
             rows={4}
             className={cn(
               "w-full rounded-md border border-border bg-background dark:bg-background",
-              "text-sm text-foreground dark:text-foreground",
+              "text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]",
               "px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50",
-              "placeholder:text-muted-foreground"
+              "placeholder:text-[var(--text-secondary)]"
             )}
           />
         </div>
@@ -193,7 +193,7 @@ export default function AIReviewResponder({
               onClick={handleReset}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                "border border-border text-muted-foreground hover:bg-muted dark:hover:bg-muted/50"
+                "border border-border text-[var(--text-secondary)] hover:bg-muted dark:hover:bg-muted/50"
               )}
             >
               <RotateCcw className="h-3.5 w-3.5" />
@@ -207,7 +207,7 @@ export default function AIReviewResponder({
             onClick={handleReset}
             className={cn(
               "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-              "border border-border text-muted-foreground hover:bg-muted dark:hover:bg-muted/50"
+              "border border-border text-[var(--text-secondary)] hover:bg-muted dark:hover:bg-muted/50"
             )}
           >
             <RotateCcw className="h-3.5 w-3.5" />

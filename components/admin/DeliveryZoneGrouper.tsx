@@ -89,7 +89,7 @@ export default function DeliveryZoneGrouper() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <SectionTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+          <SectionTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <Truck className="h-5 w-5 text-primary" /> Pedidos por Zona
           </SectionTitle>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">
@@ -111,7 +111,7 @@ export default function DeliveryZoneGrouper() {
           {zones.map(group => {
             const isExpanded = expandedZone === group.zone;
             return (
-              <div key={group.zone} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+              <div key={group.zone} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
                 <button
                   onClick={() => setExpandedZone(isExpanded ? null : group.zone)}
                   className="w-full p-3.5 flex items-center justify-between text-left"
@@ -121,7 +121,7 @@ export default function DeliveryZoneGrouper() {
                       <MapPin className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{group.zone}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{group.zone}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
                         {group.orders.length} pedido{group.orders.length !== 1 ? "s" : ""} — {fmt(group.totalValue)}
                       </p>
@@ -131,14 +131,14 @@ export default function DeliveryZoneGrouper() {
                 </button>
 
                 {isExpanded && (
-                  <div className="border-t border-[var(--rule-soft)] dark:border-card-border divide-y divide-gray-50 dark:divide-card-border">
+                  <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] divide-y divide-gray-50 dark:divide-card-border">
                     {group.orders.map((order, i) => (
                       <div key={order.id} className="px-3.5 py-2.5 flex items-center gap-3">
                         <span className="h-6 w-6 rounded-full bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] shrink-0">
                           {i + 1}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{order.customerName}</p>
+                          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{order.customerName}</p>
                           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate">
                             {order.customerLocation || order.customerReference || "Sin direccion"}
                           </p>

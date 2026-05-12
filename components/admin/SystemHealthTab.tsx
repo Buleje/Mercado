@@ -96,7 +96,7 @@ export default function SystemHealthTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Activity className="h-6 w-6 text-primary" /> Salud del Sistema
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
@@ -142,11 +142,11 @@ export default function SystemHealthTab() {
           const SIcon = SC.icon;
           const ServiceIcon = SERVICE_ICONS[s.id] ?? Activity;
           return (
-            <div key={s.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+            <div key={s.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <ServiceIcon className="h-4 w-4 text-[var(--text-tertiary)]" />
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{s.name}</h4>
+                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.name}</h4>
                 </div>
                 <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", SC.bg, SC.color)}>
                   <SIcon className="h-3 w-3" />{SC.label}
@@ -155,7 +155,7 @@ export default function SystemHealthTab() {
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">{s.description}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{s.uptime}</p>
+                  <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.uptime}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Uptime</p>
                 </div>
                 <div>
@@ -177,8 +177,8 @@ export default function SystemHealthTab() {
 
       {/* Metrics */}
       {metrics.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex flex-wrap items-center gap-2">
             <Cpu className="h-4 w-4 text-primary" /> Métricas clave
           </CardTitle>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
@@ -191,8 +191,8 @@ export default function SystemHealthTab() {
               return (
                 <div key={m.label}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{m.label}</span>
-                    <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-foreground">{m.value} {m.unit}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.label}</span>
+                    <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.value} {m.unit}</span>
                   </div>
                   <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                     <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${pct}%` }} />
@@ -205,8 +205,8 @@ export default function SystemHealthTab() {
       )}
 
       {/* Incidents */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Incidentes
         </CardTitle>
         {incidents.length === 0 ? (
@@ -217,13 +217,13 @@ export default function SystemHealthTab() {
         ) : (
           <div className="space-y-2">
             {incidents.map(inc => (
-              <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-[var(--rule-soft)] dark:border-card-border last:border-0">
+              <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0">
                 <div className={cn(
                   "h-2.5 w-2.5 rounded-full shrink-0",
                   inc.severity === "critical" ? "bg-[var(--data-error-500)]" : inc.severity === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]"
                 )} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{inc.title}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{inc.title}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(inc.createdAt)}</p>
                 </div>
                 <span className={cn(

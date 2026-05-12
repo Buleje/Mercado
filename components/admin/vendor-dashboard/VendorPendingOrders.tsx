@@ -34,8 +34,8 @@ function statusColor(status: string): string {
 export function VendorPendingOrders({ orders }: Props) {
   if (orders.length === 0) {
     return (
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
           Pedidos sin atender
         </CardTitle>
@@ -55,9 +55,9 @@ export function VendorPendingOrders({ orders }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-4">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
           Pedidos sin atender
           <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--data-warning-500)] text-white text-xs font-bold">
@@ -77,7 +77,7 @@ export function VendorPendingOrders({ orders }: Props) {
           <li key={order.id} className="py-3 flex items-start gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-sm text-[var(--text-primary)] dark:text-foreground truncate">
+                <span className="font-semibold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                   {order.customer.name}
                 </span>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(order.status)}`}>
@@ -93,7 +93,7 @@ export function VendorPendingOrders({ orders }: Props) {
               </div>
             </div>
             <div className="shrink-0 text-right">
-              <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">
+              <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 S/ {Number(order.total).toFixed(2)}
               </p>
             </div>

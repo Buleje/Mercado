@@ -188,7 +188,7 @@ export default function CollectionCenterTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <DollarSign className="h-6 w-6 text-primary" /> Centro de Cobros
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">
@@ -211,7 +211,7 @@ export default function CollectionCenterTab() {
               "centro-cobros"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -236,8 +236,8 @@ export default function CollectionCenterTab() {
       </div>
 
       {/* Gráfico de antigüedad */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground mb-4">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">
           Antigüedad de cartera
         </CardTitle>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -294,13 +294,13 @@ export default function CollectionCenterTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar cliente o pedido..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           />
         </div>
         <select
           value={filterBucket}
           onChange={(e) => setFilterBucket(e.target.value as AgeBucket | "todos")}
-          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground"
+          className="px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
         >
           <option value="todos">Todos los tramos</option>
           {(Object.keys(BUCKET_META) as AgeBucket[]).map((b) => (
@@ -312,7 +312,7 @@ export default function CollectionCenterTab() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
@@ -335,12 +335,12 @@ export default function CollectionCenterTab() {
                   <tr
                     key={d.id}
                     className={cn(
-                      "border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20",
+                      "border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20",
                       d.bucket === "90+" && "bg-[var(--data-error-50)]/50 dark:bg-red-950/10",
                       d.bucket === "61-90" && "bg-[var(--data-warning-50)]/30 dark:bg-orange-950/5"
                     )}
                   >
-                    <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{d.customer}</td>
+                    <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{d.customer}</td>
                     <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)] dark:text-muted">{d.orderRef}</td>
                     <td className="px-4 py-3 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(d.amount)}</td>
                     <td className="px-4 py-3 text-right font-extrabold text-[var(--data-error-500)]">{fmt(saldo)}</td>
@@ -414,12 +414,12 @@ export default function CollectionCenterTab() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 w-full max-w-md space-y-4"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 w-full max-w-md space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.customer}</CardTitle>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.customer}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">{detail.orderRef}</p>
               </div>
               <button onClick={() => setDetail(null)}>
@@ -429,7 +429,7 @@ export default function CollectionCenterTab() {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-[var(--text-tertiary)]">Monto original</p>
-                <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(detail.amount)}</p>
+                <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(detail.amount)}</p>
               </div>
               <div>
                 <p className="text-xs text-[var(--text-tertiary)]">Pagado</p>
@@ -453,10 +453,10 @@ export default function CollectionCenterTab() {
               </div>
               <div>
                 <p className="text-xs text-[var(--text-tertiary)]">Teléfono</p>
-                <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{detail.phone || "—"}</p>
+                <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.phone || "—"}</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--rule-soft)] dark:border-card-border">
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               {detail.phone && (
                 <a
                   href={`https://wa.me/51${detail.phone.replace(/\D/g, "")}?text=Hola%20${encodeURIComponent(detail.customer)}%2C%20le%20recordamos%20su%20deuda%20pendiente%20de%20${fmt(detail.amount - detail.paid)}`}
@@ -469,7 +469,7 @@ export default function CollectionCenterTab() {
               )}
               <a
                 href={`tel:${detail.phone}`}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors"
               >
                 <Phone className="h-3.5 w-3.5" /> Llamar
               </a>

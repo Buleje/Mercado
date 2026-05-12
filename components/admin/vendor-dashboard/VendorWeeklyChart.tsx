@@ -36,8 +36,8 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl px-3 py-2 text-xs">
-      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{label}</p>
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
+      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{label}</p>
       <p className="text-primary font-bold">{formatSolesTooltip(payload[0].value)}</p>
     </div>
   );
@@ -58,9 +58,9 @@ export function VendorWeeklyChart({ data }: Props) {
   const weekTotal = data.reduce((s, d) => s + d.total, 0);
 
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6 ">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-1">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
           Ingresos — últimos 7 días
         </CardTitle>

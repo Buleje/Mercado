@@ -89,12 +89,12 @@ export default function ProjectsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Target className="h-6 w-6 text-primary" /> Proyectos & CAPEX
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Gestión de inversiones, presupuesto y ROI por proyecto</p>
         </div>
-        <button onClick={() => exportToCSV(projects.map(p => ({ nombre: p.name, tipo: TYPE_META[p.type].label, estado: STATUS_META[p.status].label, presupuesto: p.budget, ejecutado: p.expenses.reduce((a, e) => a + e.amount, 0), roi_proyectado: p.roiProjected, roi_actual: p.roiActual ?? "N/A", responsable: p.responsible })), "proyectos-capex")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(projects.map(p => ({ nombre: p.name, tipo: TYPE_META[p.type].label, estado: STATUS_META[p.status].label, presupuesto: p.budget, ejecutado: p.expenses.reduce((a, e) => a + e.amount, 0), roi_proyectado: p.roiProjected, roi_actual: p.roiActual ?? "N/A", responsable: p.responsible })), "proyectos-capex")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -118,13 +118,13 @@ export default function ProjectsTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, responsable..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, responsable..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ProjectStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ProjectStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as ProjectStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as ProjectType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterType} onChange={e => setFilterType(e.target.value as ProjectType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los tipos</option>
           {(Object.keys(TYPE_META) as ProjectType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
         </select>
@@ -138,10 +138,10 @@ export default function ProjectsTab() {
           const st = STATUS_META[p.status];
           const StIcon = st.icon;
           return (
-            <div key={p.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3 hover:shadow-[var(--shadow-lg)] transition-shadow">
+            <div key={p.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3 hover:shadow-[var(--shadow-lg)] transition-shadow">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{p.name}</p>
+                  <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</p>
                   <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{TYPE_META[p.type].label} · {p.responsible}</p>
                 </div>
                 <span className={cn("flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
@@ -151,7 +151,7 @@ export default function ProjectsTab() {
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[var(--text-secondary)] dark:text-muted">Ejecución</span>
-                  <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(spent)} / {fmt(p.budget)}</span>
+                  <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(spent)} / {fmt(p.budget)}</span>
                 </div>
                 <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                   <div className={cn("h-full rounded-full transition-all", execPct > 100 ? "bg-[var(--data-error-500)]" : execPct > 80 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(execPct, 100)}%` }} />
@@ -160,7 +160,7 @@ export default function ProjectsTab() {
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-[var(--text-secondary)] dark:text-muted">ROI Proy. / Real</span>
-                <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{pct(p.roiProjected)} / {p.roiActual != null ? pct(p.roiActual) : "—"}</span>
+                <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{pct(p.roiProjected)} / {p.roiActual != null ? pct(p.roiActual) : "—"}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
                 <span>{p.startDate}</span>
@@ -176,9 +176,9 @@ export default function ProjectsTab() {
       {/* Detail modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.name}</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{detail.description}</p>
@@ -194,17 +194,17 @@ export default function ProjectsTab() {
                 ["Fin", detail.endDate],
                 ["Responsable", detail.responsible],
               ].map(([k, v]) => (
-                <div key={k}><p className="text-xs text-[var(--text-tertiary)]">{k}</p><p className="font-bold text-[var(--text-primary)] dark:text-foreground">{v}</p></div>
+                <div key={k}><p className="text-xs text-[var(--text-tertiary)]">{k}</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{v}</p></div>
               ))}
             </div>
             {detail.expenses.length > 0 && (
               <div>
-                <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-2">Gastos registrados</h4>
+                <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2">Gastos registrados</h4>
                 <div className="space-y-1">
                   {detail.expenses.map(e => (
                     <div key={e.id} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-surface rounded-xl px-3 py-2">
                       <span className="text-[var(--text-secondary)] dark:text-muted">{e.date} — {e.description}</span>
-                      <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(e.amount)}</span>
+                      <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(e.amount)}</span>
                     </div>
                   ))}
                 </div>

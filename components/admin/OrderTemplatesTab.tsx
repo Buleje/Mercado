@@ -99,8 +99,8 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           onChange={(e) => onChange(index, "name", e.target.value)}
           maxLength={120}
           className={cn(
-            "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground",
+            "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-[var(--surface-raised)]",
+            "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)]",
             "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
@@ -117,8 +117,8 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           value={item.qty === 0 ? "" : item.qty}
           onChange={(e) => onChange(index, "qty", e.target.value)}
           className={cn(
-            "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground",
+            "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-[var(--surface-raised)]",
+            "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)]",
             "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
@@ -135,8 +135,8 @@ function ItemRow({ item, index, onChange, onRemove, canRemove }: ItemRowProps) {
           value={item.price === 0 ? "" : item.price}
           onChange={(e) => onChange(index, "price", e.target.value)}
           className={cn(
-            "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground",
+            "w-full px-2.5 py-1.5 rounded-lg text-sm border bg-[var(--surface-raised)]",
+            "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)]",
             "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
@@ -234,8 +234,8 @@ function TemplateForm({ initial, onSave, onCancel }: TemplateFormProps) {
           maxLength={80}
           autoFocus
           className={cn(
-            "w-full px-3 py-2 rounded-lg text-sm border bg-white dark:bg-card",
-            "border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground",
+            "w-full px-3 py-2 rounded-lg text-sm border bg-[var(--surface-raised)]",
+            "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)]",
             "placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted",
             "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
           )}
@@ -326,8 +326,8 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
 
   return (
     <div className={cn(
-      "rounded-xl border bg-white dark:bg-card overflow-hidden transition-shadow",
-      "border-[var(--rule-base)] dark:border-card-border  hover:shadow-[var(--shadow-sm)]"
+      "rounded-xl border bg-[var(--surface-raised)] overflow-hidden transition-shadow",
+      "border-[var(--rule-base)] dark:border-[var(--rule-base)]  hover:shadow-[var(--shadow-sm)]"
     )}>
       {/* Cabecera */}
       <div className="flex items-center gap-3 px-4 py-3">
@@ -335,13 +335,13 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
           <ClipboardList className="h-4.5 w-4.5 text-primary" style={{ width: 18, height: 18 }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground truncate">{template.name}</p>
+          <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{template.name}</p>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted">
             {template.items.length} {template.items.length === 1 ? "producto" : "productos"}
             {" · "}
             {units} {units === 1 ? "unidad" : "unidades"}
             {" · "}
-            <span className="font-semibold text-[var(--text-secondary)] dark:text-foreground">{fmt(total)}</span>
+            <span className="font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(total)}</span>
           </p>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -367,22 +367,22 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
 
       {/* Detalle expandible */}
       {expanded && (
-        <div className="border-t border-[var(--rule-soft)] dark:border-card-border">
+        <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
           {/* Lista de items */}
           <div className="px-4 py-3 space-y-1.5 bg-gray-50/50 dark:bg-surface/30">
             {template.items.map((item, idx) => (
               <div key={idx} className="flex items-center gap-2 text-sm">
                 <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
-                <span className="flex-1 text-[var(--text-primary)] dark:text-foreground truncate">{item.name}</span>
+                <span className="flex-1 text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{item.name}</span>
                 <span className="text-[var(--text-tertiary)] dark:text-muted tabular-nums text-xs">x{item.qty}</span>
-                <span className="font-mono text-xs text-[var(--text-secondary)] dark:text-foreground">{fmt(item.price)}</span>
+                <span className="font-mono text-xs text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(item.price)}</span>
                 <span className="font-semibold text-xs text-primary tabular-nums">{fmt(item.qty * item.price)}</span>
               </div>
             ))}
           </div>
 
           {/* Acciones */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--rule-soft)] dark:border-card-border">
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
               Creada {new Date(template.createdAt).toLocaleDateString("es-PE", {
                 day: "2-digit", month: "short", year: "numeric",
@@ -391,7 +391,7 @@ function TemplateCard({ template, onApply, onEdit, onDelete }: TemplateCardProps
             <div className="flex items-center gap-1">
               <button
                 onClick={() => { onEdit(template); setExpanded(false); }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Editar
@@ -488,7 +488,7 @@ export default function OrderTemplatesTab({ onApplyTemplate, className }: Props)
       {/* ── Encabezado ── */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-base font-bold text-[var(--text-primary)] dark:text-foreground">Plantillas de pedidos</SectionTitle>
+          <SectionTitle className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Plantillas de pedidos</SectionTitle>
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
             Guarda combos de productos frecuentes y cargalos con un clic.
           </p>

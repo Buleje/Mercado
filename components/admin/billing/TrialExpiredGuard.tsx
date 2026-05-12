@@ -88,27 +88,27 @@ function TrialExpiredScreen() {
         <div className="mt-10 grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
           <PlanCard
             name="Pro"
-            price="S/ 99"
+            price="S/ 179"
             period="/mes"
-            tagline="Para bodegas en crecimiento"
+            tagline="Sweet spot: bodega establecida que ya vende online"
             features={[
-              "Hasta 500 productos",
-              "Pedidos ilimitados",
-              "Marketplace Buleje",
-              "Soporte por WhatsApp",
+              "Productos ilimitados · 2 sucursales · 5 admins",
+              "SUNAT facturacion + cotizaciones",
+              "Promociones, fidelizacion y chat",
+              "Marketplace destacado",
             ]}
             highlighted
           />
           <PlanCard
             name="Business"
-            price="S/ 249"
+            price="S/ 349"
             period="/mes"
-            tagline="Para negocios establecidos"
+            tagline="Cadenas, productores y mayoristas · sin limites"
             features={[
-              "Productos ilimitados",
-              "POS + Multi-almacén",
-              "Reportes avanzados + IA",
-              "Soporte prioritario",
+              "Sucursales y admins ilimitados",
+              "Forecasting IA + sugerencias",
+              "Lives streaming + ventas en vivo",
+              "Soporte 24/7 con account manager",
             ]}
           />
         </div>

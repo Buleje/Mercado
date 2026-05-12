@@ -242,7 +242,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
           "border focus:outline-none focus:ring-2 focus:ring-primary/40",
           voiceState === "listening"
             ? "bg-primary text-white border-primary animate-pulse"
-            : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground hover:border-primary"
+            : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:border-primary"
         )}
         aria-label="Venta por voz"
       >
@@ -252,12 +252,12 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
       {/* Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 z-50 w-80 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-canvas)]/50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)]/50">
             <div className="flex items-center gap-2">
               <Volume2 className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Venta por voz</span>
+              <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Venta por voz</span>
             </div>
             <button type="button" onClick={() => setIsOpen(false)} className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)]">
               <X className="h-4 w-4" />
@@ -319,9 +319,9 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
             {/* Transcript */}
             {transcript && (
-              <div className="px-3 py-2 rounded-xl bg-[var(--surface-canvas)]/50 border border-[var(--rule-soft)] dark:border-card-border">
+              <div className="px-3 py-2 rounded-xl bg-[var(--surface-canvas)]/50 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-0.5">Escuche:</p>
-                <p className="text-sm text-[var(--text-primary)] dark:text-foreground italic">&ldquo;{transcript}&rdquo;</p>
+                <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] italic">&ldquo;{transcript}&rdquo;</p>
               </div>
             )}
 

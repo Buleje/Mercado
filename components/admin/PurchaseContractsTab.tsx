@@ -118,13 +118,13 @@ export default function PurchaseContractsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <FileSignature className="h-6 w-6 text-primary" /> Contratos con Proveedores
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Gestión de contratos de compra, plazos, descuentos y renovaciones</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(processed.map(c => ({ codigo: c.code, proveedor: c.supplierName, ruc: c.supplierRuc, categoria: c.category, inicio: c.startDate, fin: c.endDate, credito_dias: c.creditDays, pedido_min: c.minOrderAmount, descuento_pct: c.agreedDiscount, estado: c.computedStatus, renovacion_auto: c.autoRenew, ocs_vinculadas: c.linkedPOs, gasto_total: c.totalSpend })), "contratos-proveedores")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(processed.map(c => ({ codigo: c.code, proveedor: c.supplierName, ruc: c.supplierRuc, categoria: c.category, inicio: c.startDate, fin: c.endDate, credito_dias: c.creditDays, pedido_min: c.minOrderAmount, descuento_pct: c.agreedDiscount, estado: c.computedStatus, renovacion_auto: c.autoRenew, ocs_vinculadas: c.linkedPOs, gasto_total: c.totalSpend })), "contratos-proveedores")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -136,7 +136,7 @@ export default function PurchaseContractsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total contratos", value: String(stats.total), color: "text-[var(--text-primary)] dark:text-foreground",   bg: "bg-gray-50 dark:bg-surface/50" },
+          { label: "Total contratos", value: String(stats.total), color: "text-[var(--text-primary)] dark:text-[var(--text-primary)]",   bg: "bg-gray-50 dark:bg-surface/50" },
           { label: "Activos",         value: String(stats.activo), color: "text-[var(--data-success-500)]",                    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Por vencer",      value: String(stats.porVencer), color: "text-[var(--data-warning-500)]",                   bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Vencidos",        value: String(stats.vencido), color: "text-[var(--data-error-500)]",                       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },
@@ -165,9 +165,9 @@ export default function PurchaseContractsTab() {
 
       {/* New contract form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nuevo contrato</CardTitle>
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nuevo contrato</CardTitle>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -175,7 +175,7 @@ export default function PurchaseContractsTab() {
             <CF label="RUC" value={form.supplierRuc} onChange={v => setForm(p => ({ ...p, supplierRuc: v }))} placeholder="20XXXXXXXXX" />
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Categoría</label>
-              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -184,20 +184,20 @@ export default function PurchaseContractsTab() {
             <CF label="Fecha fin *" value={form.endDate} onChange={v => setForm(p => ({ ...p, endDate: v }))} type="date" />
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Crédito (días)</label>
-              <input type="number" value={form.creditDays} onChange={e => setForm(p => ({ ...p, creditDays: parseInt(e.target.value) || 0 }))} min="0" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="number" value={form.creditDays} onChange={e => setForm(p => ({ ...p, creditDays: parseInt(e.target.value) || 0 }))} min="0" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Pedido mínimo (S/)</label>
-              <input type="number" value={form.minOrderAmount} onChange={e => setForm(p => ({ ...p, minOrderAmount: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="number" value={form.minOrderAmount} onChange={e => setForm(p => ({ ...p, minOrderAmount: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Descuento acordado (%)</label>
-              <input type="number" value={form.agreedDiscount} onChange={e => setForm(p => ({ ...p, agreedDiscount: parseFloat(e.target.value) || 0 }))} min="0" max="100" step="0.5" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="number" value={form.agreedDiscount} onChange={e => setForm(p => ({ ...p, agreedDiscount: parseFloat(e.target.value) || 0 }))} min="0" max="100" step="0.5" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div className="flex items-end pb-2">
               <label className="flex flex-wrap items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.autoRenew} onChange={e => setForm(p => ({ ...p, autoRenew: e.target.checked }))} className="w-4 h-4 rounded accent-primary" />
-                <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Renovación automática</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Renovación automática</span>
               </label>
             </div>
             <CF label="Contacto proveedor" value={form.contactName} onChange={v => setForm(p => ({ ...p, contactName: v }))} placeholder="Nombre del contacto" />
@@ -205,7 +205,7 @@ export default function PurchaseContractsTab() {
             <CF label="Notas" value={form.notes} onChange={v => setForm(p => ({ ...p, notes: v }))} placeholder="Condiciones especiales..." span={2} />
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
             <button onClick={handleAdd} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">Registrar contrato</button>
           </div>
         </div>
@@ -215,13 +215,13 @@ export default function PurchaseContractsTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Proveedor, código, categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Proveedor, código, categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContractStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as ContractStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as ContractStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
-        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -235,7 +235,7 @@ export default function PurchaseContractsTab() {
           const Icon = meta.icon;
           const dLeft = daysUntil(c.endDate);
           return (
-            <div key={c.id} className={cn("bg-white dark:bg-card border rounded-xl p-3 sm:p-5", c.computedStatus === "vencido" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : c.computedStatus === "por-vencer" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-card-border")}>
+            <div key={c.id} className={cn("bg-[var(--surface-raised)] border rounded-xl p-3 sm:p-5", c.computedStatus === "vencido" ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : c.computedStatus === "por-vencer" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
               <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-start gap-3 mb-2">
@@ -245,18 +245,18 @@ export default function PurchaseContractsTab() {
                         <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span>
                         {c.autoRenew && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">Auto-renovación</span>}
                       </div>
-                      <p className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{c.supplierName}</p>
+                      <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.supplierName}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{c.category} · {c.description}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mt-3">
                     <div className="bg-gray-50 dark:bg-surface/50 rounded-xl p-3">
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-0.5">Vigencia</p>
-                      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">{fmtDate(c.startDate)} — {fmtDate(c.endDate)}</p>
+                      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs">{fmtDate(c.startDate)} — {fmtDate(c.endDate)}</p>
                     </div>
                     <div className="bg-gray-50 dark:bg-surface/50 rounded-xl p-3">
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-0.5">Crédito</p>
-                      <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{c.creditDays} días</p>
+                      <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.creditDays} días</p>
                     </div>
                     <div className="bg-gray-50 dark:bg-surface/50 rounded-xl p-3">
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-0.5">Descuento acordado</p>
@@ -273,7 +273,7 @@ export default function PurchaseContractsTab() {
                     {dLeft < 0 ? `${Math.abs(dLeft)}d vencido` : dLeft === 0 ? "Vence hoy" : `${dLeft}d restantes`}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setDetail(c)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
+                    <button onClick={() => setDetail(c)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
                       <Eye className="h-3.5 w-3.5" />
                     </button>
                     {(c.computedStatus === "vencido" || c.computedStatus === "por-vencer") && (
@@ -292,9 +292,9 @@ export default function PurchaseContractsTab() {
       {/* Detail modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">Detalle del contrato</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle del contrato</CardTitle>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2 text-sm">
@@ -309,7 +309,7 @@ export default function PurchaseContractsTab() {
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-[var(--text-secondary)] dark:text-muted shrink-0">{k}</span>
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{v}</span>
                 </div>
               ))}
             </div>
@@ -324,7 +324,7 @@ function CF({ label, value, onChange, type = "text", placeholder, span }: { labe
   return (
     <div className={span ? `col-span-${span}` : ""}>
       <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30" />
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
     </div>
   );
 }

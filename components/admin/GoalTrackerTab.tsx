@@ -30,7 +30,7 @@ export default function GoalTrackerTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Trophy className="h-6 w-6 text-primary" /> Tablero de Metas</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Trophy className="h-6 w-6 text-primary" /> Tablero de Metas</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Seguimiento visual de objetivos del negocio</p>
         </div>
         <button onClick={() => exportToCSV(goals.map(g => ({ titulo: g.title, actual: g.currentValue, meta: g.targetValue, unidad: g.unit, estado: g.status, prioridad: g.priority, fecha_limite: fmtDate(g.deadline) })), "metas")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
@@ -43,7 +43,7 @@ export default function GoalTrackerTab() {
           { label: "Completadas", value: completed, color: "text-[var(--data-success-500)]", icon: Trophy },
           { label: "Tasa de éxito", value: `${goals.length > 0 ? Math.round((completed / goals.length) * 100) : 0}%`, color: "text-[var(--text-secondary)]", icon: Star },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex flex-wrap items-center gap-3">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 flex flex-wrap items-center gap-3">
             <k.icon className={cn("h-5 w-5", k.color)} />
             <div>
               <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
@@ -61,18 +61,18 @@ export default function GoalTrackerTab() {
             : Math.min((g.currentValue / g.targetValue) * 100, 100);
 
           return (
-            <div key={g.id} className={cn("bg-white dark:bg-card rounded-xl border p-3 sm:p-5", g.status === "completado" ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] dark:border-card-border")}>
+            <div key={g.id} className={cn("bg-[var(--surface-raised)] rounded-xl border p-3 sm:p-5", g.status === "completado" ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
               <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{g.title}</CardTitle>
+                    <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{g.title}</CardTitle>
                     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", STATUS_COLORS[g.status])}>{g.status}</span>
                     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", PRIORITY_COLORS[g.priority])}>{g.priority}</span>
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{g.description}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{Math.round(progress)}%</p>
+                  <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{Math.round(progress)}%</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Fecha límite: {fmtDate(g.deadline)}</p>
                 </div>
               </div>
@@ -86,16 +86,16 @@ export default function GoalTrackerTab() {
                 <div className="flex justify-between">
                   {g.milestones.map((m, i) => (
                     <div key={i} className="flex flex-col items-center">
-                      <div className={cn("h-3 w-3 rounded-full border-2", m.reached ? "bg-[var(--accent-soft)] border-[var(--data-success-500)]/30" : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border")} />
+                      <div className={cn("h-3 w-3 rounded-full border-2", m.reached ? "bg-[var(--accent-soft)] border-[var(--data-success-500)]/30" : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]")} />
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{m.label}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border text-xs text-[var(--text-secondary)] dark:text-muted">
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
                 <span>{g.category}</span>
-                <span>Actual: <b className="text-[var(--text-primary)] dark:text-foreground">{fmt(g.currentValue, g.unit)}</b> / Meta: <b className="text-primary">{fmt(g.targetValue, g.unit)}</b></span>
+                <span>Actual: <b className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(g.currentValue, g.unit)}</b> / Meta: <b className="text-primary">{fmt(g.targetValue, g.unit)}</b></span>
               </div>
             </div>
           );

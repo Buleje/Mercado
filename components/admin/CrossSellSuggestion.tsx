@@ -180,7 +180,7 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
         <div className="flex items-center gap-2 mb-2.5">
           <div className="flex items-center gap-1.5">
             <TrendingUp className="h-3.5 w-3.5 text-secondary" />
-            <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-foreground">
+            <span className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Clientes que compran esto tambien llevan:
             </span>
           </div>
@@ -197,11 +197,11 @@ export default function CrossSellSuggestion({ currentItems, onAddProduct, classN
             visibleSuggestions.map((product) => (
               <div
                 key={product.id}
-                className="flex items-center gap-2 bg-white dark:bg-card rounded-xl px-3 py-2 border border-[var(--rule-soft)] dark:border-card-border "
+                className="flex items-center gap-2 bg-[var(--surface-raised)] rounded-xl px-3 py-2 border border-[var(--rule-soft)] dark:border-[var(--rule-base)] "
               >
                 <ShoppingBasket className="h-4 w-4 text-secondary shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground truncate">{product.name}</p>
+                  <p className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{product.name}</p>
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-primary font-semibold">
                       S/ {product.price?.toFixed(2) ?? "—"}

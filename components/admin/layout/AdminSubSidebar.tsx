@@ -50,7 +50,7 @@ export function AdminSubSidebar({
   const content = (
     <>
       {/* Category header with back button */}
-      <div className="flex items-center gap-2 px-3 py-3.5 border-b border-[var(--rule-base)] dark:border-card-border bg-white/50 dark:bg-card/80">
+      <div className="flex items-center gap-2 px-3 py-3.5 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white/50 dark:bg-[var(--surface-raised)]/80">
         <button
           onClick={onBack}
           className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-accent transition-colors"
@@ -111,7 +111,7 @@ export function AdminSubSidebar({
       </nav>
 
       {/* Breadcrumb at bottom */}
-      <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-3 py-2">
+      <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-3 py-2">
         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted truncate">
           {categoryLabel} → {tabs.find(t => t.id === activeTab)?.label ?? ""}
         </p>
@@ -123,7 +123,7 @@ export function AdminSubSidebar({
     <>
       {/* Desktop — fixed secondary sidebar */}
       <aside
-        className="hidden sm:flex fixed bottom-0 top-0 z-30 w-48 flex-col border-r border-[var(--rule-base)]/80 dark:border-card-border bg-gray-50/90 dark:bg-card/60 backdrop-blur-sm transition-all duration-[var(--dur-base)]"
+        className="hidden sm:flex fixed bottom-0 top-0 z-30 w-48 flex-col border-r border-[var(--rule-base)]/80 dark:border-[var(--rule-base)] bg-gray-50/90 dark:bg-[var(--surface-raised)]/60 backdrop-blur-sm transition-all duration-[var(--dur-base)]"
         style={{ left: mainSidebarWidth }}
       >
         {content}
@@ -136,7 +136,7 @@ export function AdminSubSidebar({
             className="sm:hidden modal-backdrop"
             onClick={onMobileClose}
           />
-          <aside className="sm:hidden fixed left-0 top-0 bottom-0 z-50 w-72 flex flex-col bg-white dark:bg-card animate-in slide-in-from-left duration-[var(--dur-base)]">
+          <aside className="sm:hidden fixed left-0 top-0 bottom-0 z-50 w-72 flex flex-col bg-[var(--surface-raised)] animate-in slide-in-from-left duration-[var(--dur-base)]">
             {content}
           </aside>
         </>

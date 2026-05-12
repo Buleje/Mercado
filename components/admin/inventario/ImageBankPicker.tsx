@@ -78,7 +78,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
           className="fixed left-1/2 top-1/2 z-[8501] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden"
         >
           {/* Header */}
-          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-white dark:bg-card flex items-center gap-3">
+          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <ImageIcon className="h-5 w-5" />
             </div>
@@ -96,7 +96,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
           </div>
 
           {/* Search + categories filter */}
-          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-white dark:bg-card">
+          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-[var(--surface-raised)]">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input
@@ -115,7 +115,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
                     "px-3 py-1 rounded-full text-xs font-bold border transition-colors",
                     !activeCategoryId
                       ? "border-primary bg-primary text-white"
-                      : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
                   )}
                 >
                   Todas
@@ -128,7 +128,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
                       "px-3 py-1 rounded-full text-xs font-bold border transition-colors",
                       activeCategoryId === c.id
                         ? "border-primary bg-primary text-white"
-                        : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
                     )}
                   >
                     {c.name}
@@ -175,7 +175,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
                     <button
                       key={item.id}
                       onClick={() => handlePick(item)}
-                      className="group rounded-xl border-2 border-[var(--rule-soft)] bg-white dark:bg-card overflow-hidden hover:border-primary hover:shadow-md transition-all text-left"
+                      className="group rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden hover:border-primary hover:shadow-md transition-all text-left"
                     >
                       <div className="aspect-square bg-[var(--surface-sunken)] relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

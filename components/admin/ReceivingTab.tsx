@@ -226,7 +226,7 @@ export default function ReceivingTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Recepción de Mercadería
           </SectionTitle>
         </div>
@@ -238,7 +238,7 @@ export default function ReceivingTab() {
               estado: STATUS_MAP[r.status].label, inspector: r.inspector,
               items: r.items.length, fotos: r.photos, no_conformidades: r.nonConformities,
             })), "recepciones")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition"
           >
             <Download className="h-4 w-4" /> Exportar
           </button>
@@ -307,7 +307,7 @@ export default function ReceivingTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         {loading ? (
           <LoadingState />
         ) : (
@@ -330,12 +330,12 @@ export default function ReceivingTab() {
                 {filtered.map(r => {
                   const discrepancies = getDiscrepancies(r.items);
                   return (
-                    <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition">
+                    <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent/20 transition">
                       <td className="px-4 py-3">
-                        <div className="font-mono text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{r.ref}</div>
+                        <div className="font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.ref}</div>
                         <div className="font-mono text-xs text-[var(--text-tertiary)]">{r.orderRef}</div>
                       </td>
-                      <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-foreground">{r.supplier}</td>
+                      <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.supplier}</td>
                       <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>
                       <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{r.receivedDate ? fmtDate(r.receivedDate) : "—"}</td>
                       <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{r.inspector || "—"}</td>
@@ -381,12 +381,12 @@ export default function ReceivingTab() {
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
           <div
-            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[85vh] overflow-auto"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[85vh] overflow-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{detail.ref}</CardTitle>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">OC: {detail.orderRef} · {detail.supplier}</p>
                 {detail.inspector && <p className="text-xs text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}
               </div>
@@ -419,8 +419,8 @@ export default function ReceivingTab() {
                 </thead>
                 <tbody>
                   {detail.items.map((it, i) => (
-                    <tr key={i} className={cn("border-t border-[var(--rule-soft)] dark:border-card-border", it.condition !== "ok" && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
-                      <td className="px-3 py-2.5 font-bold text-[var(--text-primary)] dark:text-foreground">{it.product}</td>
+                    <tr key={i} className={cn("border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]", it.condition !== "ok" && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
+                      <td className="px-3 py-2.5 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{it.product}</td>
                       <td className="px-3 py-2.5 text-[var(--text-secondary)] text-center">{it.expectedQty}</td>
                       <td className={cn("px-3 py-2.5 font-bold text-center",
                         it.receivedQty < it.expectedQty ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"
@@ -461,11 +461,11 @@ export default function ReceivingTab() {
       {showNew && (
         <div className="modal-backdrop p-4" onClick={() => setShowNew(false)}>
           <div
-            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[90vh] overflow-auto"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[90vh] overflow-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Nueva recepción de mercadería</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva recepción de mercadería</CardTitle>
               <button onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
 
@@ -499,31 +499,31 @@ export default function ReceivingTab() {
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</label>
                 <input value={newForm.supplier} onChange={e => setNewForm(f => ({ ...f, supplier: e.target.value }))}
                   placeholder="Distribuidora ABC"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nro. Orden de Compra</label>
                 <input value={newForm.orderRef} onChange={e => setNewForm(f => ({ ...f, orderRef: e.target.value }))}
                   placeholder="OC-001"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-mono" />
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha programada</label>
                 <input type="date" value={newForm.scheduledDate} onChange={e => setNewForm(f => ({ ...f, scheduledDate: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Inspector</label>
                 <input value={newForm.inspector} onChange={e => setNewForm(f => ({ ...f, inspector: e.target.value }))}
                   placeholder="Nombre del responsable"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" />
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
               </div>
             </div>
 
             {/* Checklist */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">Checklist de productos</h4>
+                <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Checklist de productos</h4>
                 <button onClick={addChecklistRow} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
                   <Plus className="h-3 w-3" /> Agregar fila
                 </button>
@@ -533,18 +533,18 @@ export default function ReceivingTab() {
                   <div key={idx} className="flex flex-wrap items-center gap-2 bg-gray-50 dark:bg-surface rounded-xl p-2">
                     <input
                       value={row.product} onChange={e => updateChecklistRow(idx, "product", e.target.value)}
-                      placeholder="Producto" className="flex-1 min-w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-xs"
+                      placeholder="Producto" className="flex-1 min-w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs"
                     />
                     <input type="number" min="0" value={row.expectedQty} onChange={e => updateChecklistRow(idx, "expectedQty", +e.target.value)}
-                      placeholder="Esperado" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-xs" />
+                      placeholder="Esperado" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     <input type="number" min="0" value={row.receivedQty} onChange={e => updateChecklistRow(idx, "receivedQty", +e.target.value)}
-                      placeholder="Recibido" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-xs" />
+                      placeholder="Recibido" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     <select value={row.condition} onChange={e => updateChecklistRow(idx, "condition", e.target.value as ItemCondition)}
-                      className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-xs">
+                      className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs">
                       {Object.entries(COND_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                     </select>
                     <input value={row.notes} onChange={e => updateChecklistRow(idx, "notes", e.target.value)}
-                      placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-xs" />
+                      placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     {checklist.length > 1 && (
                       <button onClick={() => removeChecklistRow(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
                         <X className="h-3.5 w-3.5" />

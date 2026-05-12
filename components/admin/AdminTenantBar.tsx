@@ -45,9 +45,9 @@ export function AdminTenantBar({ tenantSlug, tenantName }: AdminTenantBarProps) 
     >
       <div className="flex items-center gap-2 min-w-0">
         <StoreIcon className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
-        <span className="text-muted-foreground hidden sm:inline">Administrando:</span>
+        <span className="text-[var(--text-secondary)] hidden sm:inline">Administrando:</span>
         <span className="font-semibold text-primary truncate">{displayName}</span>
-        <span className="text-xs text-muted-foreground hidden md:inline">({tenantSlug})</span>
+        <span className="text-xs text-[var(--text-secondary)] hidden md:inline">({tenantSlug})</span>
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0">

@@ -113,7 +113,7 @@ export default function ChangelogModule() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <PageTitle className="text-xl font-extrabold text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl font-extrabold text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <FlaskConical className="h-5 w-5 text-[var(--data-warning-500)]" />
             Changelog del Proyecto
           </PageTitle>
@@ -135,12 +135,12 @@ export default function ChangelogModule() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-xl bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border p-4 flex flex-wrap items-center gap-3"
+            className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 flex flex-wrap items-center gap-3"
           >
             <s.icon className={`h-5 w-5 shrink-0 ${s.color}`} />
             <div>
               <p className="text-[length:var(--ts-xs)] text-muted leading-none mb-0.5">{s.label}</p>
-              <p className="text-lg font-extrabold text-foreground leading-tight">{s.value}</p>
+              <p className="text-lg font-extrabold text-[var(--text-primary)] leading-tight">{s.value}</p>
             </div>
           </div>
         ))}
@@ -154,14 +154,14 @@ export default function ChangelogModule() {
             className={`rounded-xl border ${
               release.status === "current"
                 ? "border-[var(--data-info-500)] dark:border-[var(--data-info-500)] bg-[var(--data-info-50)]/60 dark:bg-indigo-950/20"
-                : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)]"
             } overflow-hidden`}
           >
             {/* Release header */}
             <div className={`flex items-center justify-between px-5 py-4 ${
               release.status === "current"
                 ? "border-b border-[var(--rule-base)]"
-                : "border-b border-[var(--rule-soft)] dark:border-card-border"
+                : "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
             }`}>
               <div className="flex flex-wrap items-center gap-3">
                 {release.status === "current" ? (
@@ -172,7 +172,7 @@ export default function ChangelogModule() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`text-base font-extrabold ${
-                      release.status === "current" ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-foreground"
+                      release.status === "current" ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-[var(--text-primary)]"
                     }`}>
                       {release.version}
                     </span>
@@ -203,7 +203,7 @@ export default function ChangelogModule() {
                       release.status === "current" ? "text-[var(--text-tertiary)]" : "text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                     }`} />
                     <TypeBadge type={change.type} />
-                    <span className="text-sm text-foreground/80 leading-relaxed">{change.text}</span>
+                    <span className="text-sm text-[var(--text-primary)]/80 leading-relaxed">{change.text}</span>
                   </li>
                 ))}
               </ul>

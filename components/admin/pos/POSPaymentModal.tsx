@@ -184,15 +184,15 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
     : customers;
 
   return (
-    <div className="absolute inset-0 z-10 bg-white dark:bg-card rounded-2xl flex flex-col">
+    <div className="absolute inset-0 z-10 bg-[var(--surface-raised)] rounded-2xl flex flex-col">
       {/* Header grande */}
-      <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-card-border flex items-center justify-between">
+      <div className="px-6 py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <ClipboardList className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h4 className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">Todos los clientes</h4>
+            <h4 className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Todos los clientes</h4>
             <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Selecciona un cliente existente</p>
           </div>
         </div>
@@ -202,7 +202,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
       </div>
 
       {/* Search — input grande */}
-      <div className="px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
+      <div className="px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
           <input
@@ -210,7 +210,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
             value={filter}
             onChange={e => setFilter(e.target.value)}
             placeholder="Buscar por nombre o teléfono..."
-            className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-base text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
             autoFocus
           />
         </div>
@@ -243,7 +243,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                   <User className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-[var(--text-primary)] dark:text-foreground truncate">{c.name}</p>
+                  <p className="text-base font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{c.name}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <Phone className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                     <p className="text-sm text-[var(--text-tertiary)] dark:text-muted tabular-nums">{c.phone}</p>
@@ -272,7 +272,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
       </div>
 
       {/* Footer count */}
-      <div className="px-6 py-3 border-t border-[var(--rule-soft)] dark:border-card-border text-center bg-gray-50/50 dark:bg-surface/30">
+      <div className="px-6 py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-center bg-gray-50/50 dark:bg-surface/30">
         <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">
           <span className="font-semibold text-[var(--text-secondary)]">{filtered.length}</span> de {customers.length} clientes
         </p>
@@ -515,11 +515,11 @@ export default function POSPaymentModal({
         )}
 
         {/* Header — tipografia clara, sin kbd ni toggle voz en esquinas */}
-        <div className="px-6 py-7 border-b border-[var(--rule-soft)] dark:border-card-border text-center relative">
+        <div className="px-6 py-7 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-center relative">
           <p className="text-sm font-semibold text-[var(--text-tertiary)] dark:text-muted mb-2 uppercase tracking-wide">
             Total a cobrar
           </p>
-          <p className="text-4xl sm:text-5xl font-extrabold text-[var(--text-primary)] dark:text-foreground tabular-nums">
+          <p className="text-4xl sm:text-5xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums">
             {fmt(total)}
           </p>
           {discountAmount > 0 && (
@@ -593,9 +593,9 @@ export default function POSPaymentModal({
             </button>
 
             {showDiscount && (
-              <div className="space-y-3 bg-gray-50 dark:bg-surface rounded-xl p-4 border border-[var(--rule-soft)] dark:border-card-border">
+              <div className="space-y-3 bg-gray-50 dark:bg-surface rounded-xl p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <div className="flex items-center gap-3">
-                  <div className="flex bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-lg overflow-hidden">
+                  <div className="flex bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg overflow-hidden">
                     <button
                       onClick={() => {
                         setDiscountMode("percent");
@@ -633,7 +633,7 @@ export default function POSPaymentModal({
                     value={discountValue}
                     onChange={(e) => setDiscountValue(e.target.value)}
                     placeholder="0"
-                    className="w-24 px-3 py-2 text-sm font-semibold border border-[var(--rule-base)] dark:border-card-border rounded-lg text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary text-center"
+                    className="w-24 px-3 py-2 text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary text-center"
                   />
                   {discountAmount > 0 && (
                     <button
@@ -657,7 +657,7 @@ export default function POSPaymentModal({
                         "px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors",
                         Number(discountValue) === q
                           ? "border-primary bg-primary/10 text-primary"
-                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
                       )}
                     >
                       {discountMode === "percent" ? `${q}%` : `S/${q}`}
@@ -675,7 +675,7 @@ export default function POSPaymentModal({
                       <span>Descuento {discountMode === "percent" ? `${discountPercent.toFixed(0)}%` : ""}</span>
                       <span className="tabular-nums">-{fmt(discountAmount)}</span>
                     </div>
-                    <div className="flex justify-between text-[var(--text-primary)] dark:text-foreground font-extrabold border-t border-[var(--rule-base)] dark:border-card-border pt-2 text-base">
+                    <div className="flex justify-between text-[var(--text-primary)] dark:text-[var(--text-primary)] font-extrabold border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] pt-2 text-base">
                       <span>Total</span>
                       <span className="tabular-nums">{fmt(total)}</span>
                     </div>
@@ -724,7 +724,7 @@ export default function POSPaymentModal({
                           "flex flex-col items-center gap-2 px-3 py-4 rounded-xl border text-sm font-semibold transition-all",
                           paymentLines[0].method === m.id
                             ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
-                            : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
+                            : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
                         )}
                       >
                         <m.icon className="h-6 w-6" />
@@ -783,7 +783,7 @@ export default function POSPaymentModal({
                             try { localStorage.setItem(storageKey, v); } catch { /* ignore */ }
                           }}
                           placeholder={`Número ${isYape ? "Yape" : "Plin"} del negocio`}
-                          className="flex-1 px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary"
+                          className="flex-1 px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                         />
                         {savedNumber && (
                           <button
@@ -827,7 +827,7 @@ export default function POSPaymentModal({
                   {paymentLines.map((line, idx) => (
                     <div
                       key={idx}
-                      className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border"
+                      className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
                     >
                       {!isSinglePayment && (
                         <select
@@ -838,7 +838,7 @@ export default function POSPaymentModal({
                               e.target.value as PaymentLineMethod
                             )
                           }
-                          className="flex-1 min-w-24 px-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs font-semibold bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground outline-none"
+                          className="flex-1 min-w-24 px-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-semibold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none"
                         >
                           {METHODS.map((m) => (
                             <option key={m.id} value={m.id}>
@@ -862,10 +862,10 @@ export default function POSPaymentModal({
                           readOnly={isFiado}
                           placeholder={total.toFixed(2)}
                           className={cn(
-                            "w-full pl-7 pr-2 py-2 rounded-lg border text-sm font-bold text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary",
+                            "w-full pl-7 pr-2 py-2 rounded-lg border text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary",
                             isFiado
                               ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)] cursor-not-allowed"
-                              : "border-[var(--rule-base)] dark:border-card-border"
+                              : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                           )}
                           autoFocus={idx === 0 && !isFiado}
                         />
@@ -897,7 +897,7 @@ export default function POSPaymentModal({
                               "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
                               paymentLines[0].amount === a
                                 ? "border-primary bg-primary/10 text-primary"
-                                : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                             )}
                           >
                             S/{a}
@@ -909,7 +909,7 @@ export default function POSPaymentModal({
                           "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
                           paymentLines[0].amount === total
                             ? "border-primary bg-primary/10 text-primary"
-                            : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                            : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
                         Exacto
@@ -1077,7 +1077,7 @@ export default function POSPaymentModal({
                       value={newCustName}
                       onChange={e => setNewCustName(e.target.value)}
                       placeholder="Ej: Maria Rodriguez"
-                      className="w-full px-4 py-3 text-base border border-[var(--rule-base)] dark:border-card-border rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground transition-all"
+                      className="w-full px-4 py-3 text-base border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] transition-all"
                     />
                   </div>
                   <div>
@@ -1089,7 +1089,7 @@ export default function POSPaymentModal({
                       value={newCustPhone}
                       onChange={e => setNewCustPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                       placeholder="9XX XXX XXX"
-                      className="w-full px-4 py-3 text-base tabular-nums border border-[var(--rule-base)] dark:border-card-border rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground transition-all"
+                      className="w-full px-4 py-3 text-base tabular-nums border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] transition-all"
                     />
                     {newCustPhone.length > 0 && newCustPhone.length < 9 && (
                       <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Faltan {9 - newCustPhone.length} dígitos</p>
@@ -1134,7 +1134,7 @@ export default function POSPaymentModal({
                   </button>
                   <button
                     onClick={() => { setShowNewCustomer(false); setNewCustName(""); setNewCustPhone(""); }}
-                    className="px-5 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] hover:bg-white dark:hover:bg-card transition-colors"
+                    className="px-5 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] hover:bg-white dark:hover:bg-[var(--surface-raised)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1186,7 +1186,7 @@ export default function POSPaymentModal({
                         "flex-1 min-w-[calc(33%-8px)] py-2.5 rounded-lg text-sm font-semibold border transition-all",
                         comprobanteTipo === tipo
                           ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
-                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
                       )}
                     >
                       {labels[tipo]}
@@ -1219,10 +1219,10 @@ export default function POSPaymentModal({
                   placeholder="RUC (11 digitos)"
                   maxLength={11}
                   className={cn(
-                    "w-full px-3 py-3 rounded-lg border text-sm text-[var(--text-primary)] dark:text-foreground outline-none transition-colors",
+                    "w-full px-3 py-3 rounded-lg border text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none transition-colors",
                     rucError
                       ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]"
-                      : "border-[var(--rule-base)] dark:border-card-border focus:border-primary"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] focus:border-primary"
                   )}
                 />
                 {rucError && (
@@ -1240,7 +1240,7 @@ export default function POSPaymentModal({
         </div>
 
         {/* Footer — CTA grande y claro */}
-        <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
+        <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30">
           {isFiado && !customerPhone && (
             <p className="text-sm text-[var(--data-error-500)] font-semibold text-center mb-3">
               Selecciona un cliente para continuar

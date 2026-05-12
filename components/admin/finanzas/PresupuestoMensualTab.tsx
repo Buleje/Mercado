@@ -218,7 +218,7 @@ export default function PresupuestoMensualTab() {
           return (
             <div
               key={cat.nombre}
-              className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  space-y-3"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4  space-y-3"
             >
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-[var(--text-primary)]">{cat.nombre}</p>
@@ -273,7 +273,7 @@ export default function PresupuestoMensualTab() {
       </div>
 
       {/* Resumen inferior */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 ">
         <div className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total presupuestado</p>
@@ -313,7 +313,7 @@ export default function PresupuestoMensualTab() {
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={e => e.target === e.currentTarget && setShowEdit(false)}
           >
-            <div className="w-full max-w-lg bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="w-full max-w-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Editar Presupuesto</CardTitle>
                 <button onClick={() => setShowEdit(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">

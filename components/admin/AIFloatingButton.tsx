@@ -93,7 +93,7 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
 
         {/* Mini health label */}
         {healthScore !== null && !open && alertCount === 0 && (
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[length:var(--ts-2xs)] font-bold bg-white dark:bg-card text-[var(--text-secondary)] px-1.5 rounded-full border border-[var(--rule-base)] dark:border-card-border ">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-raised)] text-[var(--text-secondary)] px-1.5 rounded-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] ">
             {healthScore}%
           </span>
         )}
@@ -107,7 +107,7 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-24 right-6 z-50 w-105 h-140 max-h-[80vh] rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden bg-white dark:bg-card"
+            className="fixed bottom-24 right-6 z-50 w-105 h-140 max-h-[80vh] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]"
           >
             <AIAssistant
               embedded

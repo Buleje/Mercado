@@ -123,7 +123,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                   </div>
                 )}
                 {status === "futura" && (
-                  <div className="h-6 w-6 rounded-full border-2 border-[var(--rule-base)] dark:border-gray-600 bg-white dark:bg-card flex items-center justify-center">
+                  <div className="h-6 w-6 rounded-full border-2 border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] flex items-center justify-center">
                     <Circle className="h-3 w-3 text-[var(--text-tertiary)]" />
                   </div>
                 )}

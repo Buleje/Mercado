@@ -178,7 +178,7 @@ export default function WhatsAppTemplates() {
 
       {/* Create/Edit form */}
       {creating && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-[var(--text-secondary)]">
             {editingId ? "Editar plantilla" : "Nueva plantilla"}
           </p>
@@ -187,14 +187,14 @@ export default function WhatsAppTemplates() {
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder="Nombre (ej: Recordatorio pago)"
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <textarea
             value={newText}
             onChange={e => setNewText(e.target.value)}
             placeholder="Mensaje. Usa {nombre}, {monto}, etc. para variables"
             rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
           />
           {newText && (
             <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface text-xs text-[var(--text-secondary)] leading-relaxed">
@@ -225,7 +225,7 @@ export default function WhatsAppTemplates() {
         {allTemplates.map(template => (
           <div
             key={template.id}
-            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 hover:shadow-sm transition-shadow"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">

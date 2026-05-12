@@ -219,7 +219,7 @@ export default function LoyaltyTab() {
       {/* Search */}
       <div className="h-10 w-full max-w-sm bg-[var(--rule-soft)] dark:bg-surface rounded-xl" />
       {/* Customer rows */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
         {[1, 2, 3, 4, 5, 6].map(i => (
           <div key={i} className="flex flex-wrap items-center gap-3">
             <div className="h-10 w-10 bg-[var(--rule-soft)] dark:bg-surface rounded-xl shrink-0" />
@@ -238,14 +238,14 @@ export default function LoyaltyTab() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" />Programa de Fidelización</SectionTitle>
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" />Programa de Fidelización</SectionTitle>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
             <select
               value={expirationPolicy}
               onChange={e => setExpirationPolicy(e.target.value === 'never' ? 'never' : Number(e.target.value) as 3 | 6 | 12)}
-              className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-xs font-medium"
+              className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-xs font-medium"
             >
               <option value="3">3 meses</option>
               <option value="6">6 meses</option>
@@ -255,7 +255,7 @@ export default function LoyaltyTab() {
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-56" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm w-56" />
           </div>
         </div>
       </div>
@@ -268,8 +268,8 @@ export default function LoyaltyTab() {
           { label: "Gasto Promedio", value: `S/${avgSpent.toFixed(0)}` },
           { label: "Diamante", value: customers.filter(c => c.loyaltyTier === "diamante").length },
         ].map(s => (
-          <div key={s.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 text-center">
-            <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{s.value}</p>
+          <div key={s.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
+            <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.value}</p>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{s.label}</p>
           </div>
         ))}
@@ -280,10 +280,10 @@ export default function LoyaltyTab() {
         <div className="lg:col-span-2 space-y-2 max-h-125 overflow-y-auto">
           {filtered.length === 0 && <p className="text-center text-[var(--text-tertiary)] py-8">No se encontraron clientes</p>}
           {filtered.map(c => (
-            <button key={c.phone ?? c.id} onClick={() => c.phone && loadLoyalty(c.phone)} disabled={!c.phone} className={cn("w-full text-left flex items-center gap-3 p-3 rounded-lg border transition", selected?.phone === c.phone ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card hover:bg-[var(--surface-alt)] dark:hover:bg-surface")}>
+            <button key={c.phone ?? c.id} onClick={() => c.phone && loadLoyalty(c.phone)} disabled={!c.phone} className={cn("w-full text-left flex items-center gap-3 p-3 rounded-lg border transition", selected?.phone === c.phone ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface")}>
               <div className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase shrink-0", TIER_COLORS[c.loyaltyTier] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>{c.loyaltyTier}</div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground truncate">{c.name}</p>
+                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{c.name}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
               </div>
               <div className="text-right shrink-0">
@@ -306,15 +306,15 @@ export default function LoyaltyTab() {
         {/* Detail Panel */}
         <div className="space-y-6">
           {!selected ? (
-            <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-8 text-center">
               <Award className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
               <p className="text-sm text-[var(--text-tertiary)]">Selecciona un cliente para ver detalles</p>
             </div>
           ) : (
             <>
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 text-center">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 text-center">
                 <div className={cn("inline-block px-4 py-1 rounded-full text-sm font-extrabold uppercase mb-3", TIER_COLORS[selected.loyaltyTier] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>{selected.loyaltyTier}</div>
-                <p className="font-extrabold text-lg text-[var(--text-primary)] dark:text-foreground">{selected.name}</p>
+                <p className="font-extrabold text-lg text-[var(--text-primary)] dark:text-[var(--text-primary)]">{selected.name}</p>
                 <p className="text-sm text-[var(--text-tertiary)]">{selected.phone}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-4">
                   <div>
@@ -322,18 +322,18 @@ export default function LoyaltyTab() {
                     <p className="text-xs text-[var(--text-tertiary)]">Puntos</p>
                   </div>
                   <div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">S/{(selected.totalSpent ?? 0).toFixed(0)}</p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{(selected.totalSpent ?? 0).toFixed(0)}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">Gastado total</p>
                   </div>
                 </div>
               </div>
 
               {/* Redeem */}
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><Gift className="h-4 w-4 text-primary" />Canjear Puntos</h4>
                 <p className="text-xs text-[var(--text-tertiary)]">1 punto = S/0.10 de descuento</p>
                 <div className="flex flex-wrap gap-2">
-                  <input type="number" value={redeemPts} onChange={e => setRedeemPts(e.target.value)} placeholder="Puntos a canjear" className="flex-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm" />
+                  <input type="number" value={redeemPts} onChange={e => setRedeemPts(e.target.value)} placeholder="Puntos a canjear" className="flex-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
                   <button onClick={redeem} disabled={!redeemPts || Number(redeemPts) <= 0 || Number(redeemPts) > selected.loyaltyPoints} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
                     Canjear
                   </button>
@@ -344,14 +344,14 @@ export default function LoyaltyTab() {
               </div>
 
               {/* Private Notes */}
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><NotebookPen className="h-4 w-4 text-primary" />Notas Privadas</h4>
                 <textarea
                   value={privateNotes}
                   onChange={e => setPrivateNotes(e.target.value)}
                   rows={3}
                   placeholder="Notas internas sobre este cliente (no visibles para el cliente)…"
-                  className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm resize-none"
+                  className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-sm resize-none"
                 />
                 <button
                   onClick={savePrivateNotes}
@@ -364,7 +364,7 @@ export default function LoyaltyTab() {
               </div>
 
               {/* Credit Balance */}
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><DollarSign className="h-4 w-4 text-primary" />Saldo a Favor</h4>
                 <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">S/{(selected.creditBalance ?? 0).toFixed(2)}</p>
                 <div className="flex flex-wrap gap-2">
@@ -374,7 +374,7 @@ export default function LoyaltyTab() {
                     placeholder="+ agregar  /  - deducir"
                     value={creditInput}
                     onChange={e => setCreditInput(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm"
+                    className="flex-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-sm"
                   />
                   <button
                     onClick={updateCredit}
@@ -393,7 +393,7 @@ export default function LoyaltyTab() {
                 if (!expiration) return null;
                 const { expirationDate, daysRemaining, percentRemaining } = expiration;
                 return (
-                  <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+                  <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                     <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
                       <Clock className="h-4 w-4 text-primary" />
                       Vencimiento de Puntos
@@ -426,7 +426,7 @@ export default function LoyaltyTab() {
               })()}
 
               {/* Notification Panel */}
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
                     <Bell className="h-4 w-4 text-primary" />
@@ -450,7 +450,7 @@ export default function LoyaltyTab() {
                   {customers.filter(c => c.loyaltyPoints > 0 && c.phone).slice(0, 5).map(c => (
                     <div key={c.phone} className="flex items-center justify-between p-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground truncate">{c.name}</p>
+                        <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{c.name}</p>
                         <p className="text-xs text-[var(--text-tertiary)]">{c.loyaltyPoints} pts · S/{(c.loyaltyPoints * 0.1).toFixed(2)}</p>
                       </div>
                       <button
@@ -469,7 +469,7 @@ export default function LoyaltyTab() {
               </div>
 
               {/* Referral Program */}
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
                   <Users2 className="h-4 w-4 text-primary" />
                   Programa de Referidos
@@ -496,11 +496,11 @@ export default function LoyaltyTab() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="text-center p-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg">
-                        <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{referralCount}</p>
+                        <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{referralCount}</p>
                         <p className="text-xs text-[var(--text-tertiary)]">Referidos</p>
                       </div>
                       <div className="text-center p-2 bg-[var(--surface-alt)] dark:bg-surface rounded-lg">
-                        <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{customers.filter(c => c.referralCode).length}</p>
+                        <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customers.filter(c => c.referralCode).length}</p>
                         <p className="text-xs text-[var(--text-tertiary)]">Total sistema</p>
                       </div>
                     </div>
@@ -521,7 +521,7 @@ export default function LoyaltyTab() {
                         </p>
                         <button
                           onClick={() => copyToClipboard(`¡Únete a Buleje con mi código ${referralCode}!`, 'referral-message')}
-                          className="absolute top-2 right-2 p-1 hover:bg-[var(--rule-soft)] dark:hover:bg-card rounded transition"
+                          className="absolute top-2 right-2 p-1 hover:bg-[var(--rule-soft)] dark:hover:bg-[var(--surface-raised)] rounded transition"
                         >
                           {copiedMessage === 'referral-message' ? (
                             <span className="text-xs text-[var(--data-success-500)] font-bold">OK</span>
@@ -548,7 +548,7 @@ export default function LoyaltyTab() {
 
               {/* Tiers */}
               {tiers.length > 0 && (
-                <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 space-y-2">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-2">
                   <h4 className="font-bold text-sm">Niveles</h4>
                   {tiers.map(t => (
                     <div key={t.name} className={cn("flex items-center justify-between text-xs px-3 py-2 rounded-lg", selected.loyaltyTier === t.name ? "bg-primary/10 border border-primary" : "bg-[var(--surface-alt)] dark:bg-surface")}>

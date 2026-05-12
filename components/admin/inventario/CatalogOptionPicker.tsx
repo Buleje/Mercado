@@ -132,7 +132,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
           className="fixed left-1/2 top-1/2 z-[8801] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[88vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-2xl overflow-hidden"
         >
           {/* Header */}
-          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-white dark:bg-card flex items-center gap-3">
+          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <BookOpen className="h-5 w-5" />
             </div>
@@ -150,7 +150,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
           </div>
 
           {/* Search + chips */}
-          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-white dark:bg-card">
+          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-[var(--surface-raised)]">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input
@@ -169,7 +169,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                     "px-3 py-1 rounded-full text-xs font-bold border transition-colors",
                     !activeCategory
                       ? "border-primary bg-primary text-white"
-                      : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
                   )}
                 >
                   Todas
@@ -184,7 +184,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                         "px-3 py-1 rounded-full text-xs font-bold border transition-colors",
                         active
                           ? "border-primary bg-primary text-white"
-                          : "border-[var(--rule-base)] bg-white dark:bg-card text-[var(--text-secondary)] hover:border-primary/40",
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40",
                       )}
                     >
                       {c}
@@ -244,7 +244,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                             ? "border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50 opacity-60 cursor-not-allowed"
                             : recent
                               ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5"
-                              : "border-[var(--rule-soft)] bg-white dark:bg-card hover:border-primary hover:bg-primary/5",
+                              : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-primary hover:bg-primary/5",
                         )}
                       >
                         {/* Thumbnail */}
@@ -290,7 +290,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between gap-2 bg-white dark:bg-card">
+          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3 flex items-center justify-between gap-2 bg-[var(--surface-raised)]">
             <span className="text-xs text-[var(--text-tertiary)]">
               {recentlyPicked.size > 0
                 ? `${recentlyPicked.size} item${recentlyPicked.size === 1 ? "" : "s"} agregado${recentlyPicked.size === 1 ? "" : "s"} en esta sesión`

@@ -244,11 +244,11 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
   };
 
   return (
-    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-canvas)]/50">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)]/50">
         <CreditCard className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">Score de confianza para fiado</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Score de confianza para fiado</span>
       </div>
 
       <div className="p-4 space-y-4">
@@ -279,7 +279,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
             {/* Customer name */}
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-[var(--text-tertiary)]" />
-              <span className="text-sm font-medium text-[var(--text-primary)] dark:text-foreground">{customer.name}</span>
+              <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customer.name}</span>
             </div>
 
             {/* Gauge */}
@@ -297,7 +297,7 @@ export default function CreditScoreCard({ customerPhone, className }: CreditScor
                 <span className={cn("text-xs font-bold", colorClasses[result.color].badge.split(" ").filter(c => c.startsWith("text-")).join(" "))}>
                   {result.label}
                 </span>
-                <p className="text-sm text-[var(--text-primary)] dark:text-foreground mt-0.5">{result.recommendation}</p>
+                <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-0.5">{result.recommendation}</p>
               </div>
             </div>
 

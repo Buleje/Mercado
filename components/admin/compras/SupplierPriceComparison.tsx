@@ -101,9 +101,9 @@ export function QuotationComparator({ orders, suppliers }: {
 
   return (
     <div className="modal-backdrop p-4" onClick={() => setOpen(false)}>
-      <div className="bg-white dark:bg-card rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground flex items-center gap-2">
+          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparar cotizaciones completas
           </CardTitle>
           <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -127,7 +127,7 @@ export function QuotationComparator({ orders, suppliers }: {
                     "text-left px-3 py-2 rounded-xl border text-xs transition-colors",
                     isSelected
                       ? "border-[var(--data-info-500)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] font-bold"
-                      : "border-[var(--rule-base)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface text-[var(--text-primary)] dark:text-foreground",
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]",
                     !isSelected && selectedOCIds.length >= 3 && "opacity-40 cursor-not-allowed"
                   )}
                 >
@@ -146,7 +146,7 @@ export function QuotationComparator({ orders, suppliers }: {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
                   {selectedOCs.map(oc => (
                     <th key={oc.id} className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
@@ -160,13 +160,13 @@ export function QuotationComparator({ orders, suppliers }: {
                 {productIds.map(pid => {
                   const best = bestPerProduct[pid];
                   return (
-                    <tr key={pid} className="border-b border-[var(--rule-soft)] dark:border-card-border/50">
-                      <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground font-medium">{productNames[pid]}</td>
+                    <tr key={pid} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
+                      <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{productNames[pid]}</td>
                       {selectedOCs.map(oc => {
                         const item = oc.items.find(i => i.productId === pid);
                         const isBest = best && best.ocId === oc.id;
                         return (
-                          <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                          <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                             {item ? `S/ ${Number(item.unitCost).toFixed(2)}` : "—"}
                           </td>
                         );
@@ -183,12 +183,12 @@ export function QuotationComparator({ orders, suppliers }: {
                 })}
                 {/* TOTAL row */}
                 <tr className="border-t-2 border-[var(--rule-base)] dark:border-gray-600 font-bold">
-                  <td className="py-2 px-2 text-[var(--text-primary)] dark:text-foreground">TOTAL</td>
+                  <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">TOTAL</td>
                   {selectedOCs.map(oc => {
                     const total = ocTotals.find(t => t.id === oc.id)?.total ?? 0;
                     const isBest = oc.id === bestTotalOcId;
                     return (
-                      <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-foreground")}>
+                      <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                         S/ {total.toFixed(2)}
                       </td>
                     );
@@ -284,7 +284,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+            <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</th>
               <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Último precio</th>
               <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
@@ -299,11 +299,11 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                 <tr
                   key={c.supplierId}
                   className={cn(
-                    "border-b border-[var(--rule-soft)] dark:border-card-border/50 transition-colors",
+                    "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 transition-colors",
                     c.isCheapest && "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
                   )}
                 >
-                  <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-foreground">
+                  <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {c.supplierName}
                     {c.isCheapest && (
                       <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-1.5 py-0.5 rounded-full">
@@ -311,7 +311,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                       </span>
                     )}
                   </td>
-                  <td className="py-2 px-2 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
+                  <td className="py-2 px-2 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     S/ {Number(c.lastPrice).toFixed(2)}
                   </td>
                   <td className="py-2 px-2 text-right text-[var(--text-secondary)] dark:text-muted text-xs">

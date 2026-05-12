@@ -260,13 +260,13 @@ export default function TeamTab() {
                 <button
                   onClick={() => handleToggleActive(u)}
                   title={u.active ? "Desactivar" : "Activar"}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
+                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-[var(--text-primary)]"
                 >
                   {u.active ? <CheckCircle2 className="w-4 h-4 text-[var(--data-success-500)]" /> : <XCircle className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => openEdit(u)}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
+                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-[var(--text-primary)]"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>

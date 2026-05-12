@@ -160,21 +160,21 @@ export default function DocumentosEmitidosTab() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Boletas del mes</p>
           <p className="text-xl font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{kpis.boletasMes}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Facturas del mes</p>
           <p className="text-xl font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{kpis.facturasMes}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Total facturado</p>
           <p className="text-xl font-extrabold text-primary">{fmt(kpis.totalFacturado)}</p>
         </div>
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted">Documentos hoy</p>
-          <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">{kpis.docsHoy}</p>
+          <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{kpis.docsHoy}</p>
         </div>
         {/* Contratos KPI */}
         <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3">
@@ -223,7 +223,7 @@ export default function DocumentosEmitidosTab() {
                   ? f.id === "contrato"
                     ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] ring-1 ring-[var(--rule-base)]"
                     : "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
-                  : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)] dark:text-muted hover:border-gray-300"
+                  : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-tertiary)] dark:text-muted hover:border-gray-300"
               )}
             >
               {f.id === "contrato" && <FileSignature className="h-3 w-3 inline mr-1" />}
@@ -241,7 +241,7 @@ export default function DocumentosEmitidosTab() {
               placeholder="Buscar por número o cliente..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-raised)] outline-none focus:border-primary"
             />
           </div>
           <div className="flex gap-2">
@@ -249,13 +249,13 @@ export default function DocumentosEmitidosTab() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-raised)] outline-none focus:border-primary"
             />
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-xs text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary"
+              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-raised)] outline-none focus:border-primary"
             />
           </div>
         </div>
@@ -263,7 +263,7 @@ export default function DocumentosEmitidosTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6">
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="h-10 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />
@@ -271,7 +271,7 @@ export default function DocumentosEmitidosTab() {
           </div>
         </div>
       ) : documentos.length === 0 ? (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-8 text-center">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-8 text-center">
           <Filter className="h-8 w-8 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-2" />
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">No hay documentos emitidos para estos filtros</p>
           {tipoFiltro === "contrato" && (
@@ -281,11 +281,11 @@ export default function DocumentosEmitidosTab() {
           )}
         </div>
       ) : (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border bg-[var(--surface-alt)] dark:bg-surface/30">
+                <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface/30">
                   <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Tipo</th>
                   <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">N Documento</th>
                   <th className="text-left px-3 py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
@@ -299,18 +299,18 @@ export default function DocumentosEmitidosTab() {
                 {documentos.map((doc) => {
                   const badge = TIPO_BADGES[doc.tipo] || TIPO_BADGES.ticket;
                   return (
-                    <tr key={`${doc.fuente}-${doc.id}`} className="border-b border-gray-50 dark:border-card-border/50 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
+                    <tr key={`${doc.fuente}-${doc.id}`} className="border-b border-[var(--rule-base)]/50 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
                       <td className="px-3 py-2.5">
                         <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", badge.bg, badge.text)}>
                           {badge.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 font-mono font-bold text-[var(--text-primary)] dark:text-foreground">{doc.número}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-primary)] dark:text-foreground truncate max-w-[150px]">{doc.cliente}</td>
+                      <td className="px-3 py-2.5 font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{doc.número}</td>
+                      <td className="px-3 py-2.5 text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[150px]">{doc.cliente}</td>
                       <td className="px-3 py-2.5 text-[var(--text-secondary)] dark:text-muted whitespace-nowrap">
                         {new Date(doc.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </td>
-                      <td className="px-3 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{doc.total > 0 ? fmt(doc.total) : "-"}</td>
+                      <td className="px-3 py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{doc.total > 0 ? fmt(doc.total) : "-"}</td>
                       <td className="px-3 py-2.5 text-center">
                         <span className={cn(
                           "px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",

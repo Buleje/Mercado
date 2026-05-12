@@ -119,7 +119,7 @@ export function AdminTopHeader({
       : theming.theme === "dark"
         ? "bg-zinc-950 border-white/[0.06] text-zinc-300"
         : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] text-[var(--text-primary)]"
-    : "bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border";
+    : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]";
 
   return (
     <header
@@ -148,7 +148,7 @@ export function AdminTopHeader({
             "group flex items-center gap-2.5 px-3.5 h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all border",
             isBulejeTheme
               ? "bg-white/[0.04] border-[color-mix(in oklab, var(--accent) 15%, transparent)] hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] hover:bg-white/[0.07]"
-              : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-card-border hover:border-primary/40 hover:bg-white dark:hover:bg-card hover:shadow-[var(--shadow-sm)]"
+              : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-white dark:hover:bg-[var(--surface-raised)] hover:shadow-[var(--shadow-sm)]"
           )}
         >
           <Search className={cn(
@@ -165,7 +165,7 @@ export function AdminTopHeader({
             "hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border",
             isBulejeTheme
               ? "text-white/55 bg-white/[0.06] border-white/[0.1]"
-              : "text-[var(--text-tertiary)] dark:text-muted bg-white dark:bg-card border-[var(--rule-base)] dark:border-card-border"
+              : "text-[var(--text-tertiary)] dark:text-muted bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]"
           )}>
             <span className="text-base leading-none">⌘</span>K
           </kbd>

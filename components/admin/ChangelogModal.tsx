@@ -78,12 +78,12 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
     <div className="fixed inset-0 z-100 overflow-y-auto">
       <div className="modal-backdrop" onClick={onClose} />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-lg max-h-[85vh] flex flex-col">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-lg max-h-[85vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-card-border">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              <SectionTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-lg">Novedades</SectionTitle>
+              <SectionTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Novedades</SectionTitle>
             </div>
             <button
               onClick={onClose}
@@ -126,7 +126,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-card-border">
+          <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <button
               onClick={onClose}
               className={cn(

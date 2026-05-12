@@ -70,7 +70,7 @@ export default function HeatMapTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Activity className="h-6 w-6 text-primary" /> Mapa de Calor
             {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
@@ -99,7 +99,7 @@ export default function HeatMapTab() {
           { label: "Día más activo", value: peakDay.day, color: "text-[var(--text-secondary)]" },
           { label: "Monto total", value: `S/ ${totalAmount.toFixed(0)}`, color: "text-[var(--data-warning-500)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             {loading
               ? <div className="h-7 w-20 bg-[var(--surface-sunken)] dark:bg-surface rounded animate-pulse mt-1" />
@@ -109,8 +109,8 @@ export default function HeatMapTab() {
       </div>
 
       {/* Heatmap */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 overflow-x-auto relative">
-        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-4">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5 overflow-x-auto relative">
+        <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">
           Transacciones por hora y día de la semana
         </CardTitle>
 
@@ -185,8 +185,8 @@ export default function HeatMapTab() {
 
       {/* Resumen por día */}
       {!loading && !error && cells.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-3">Resumen por día</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">Resumen por día</CardTitle>
           <div className="space-y-2">
             {DAYS.map(day => {
               const dayTotal = cells.filter(c => c.day === day).reduce((s, c) => s + c.value, 0);
@@ -198,7 +198,7 @@ export default function HeatMapTab() {
                   <div className="flex-1 h-2 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
                     <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${ratio * 100}%` }} />
                   </div>
-                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-foreground w-10 text-right">{dayTotal}</span>
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] w-10 text-right">{dayTotal}</span>
                   <span className="text-xs text-[var(--text-tertiary)] w-24 text-right">S/ {dayAmount.toFixed(0)}</span>
                 </div>
               );

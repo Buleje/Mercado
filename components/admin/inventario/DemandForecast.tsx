@@ -101,13 +101,13 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">
+        <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           Pronostico: {data.product.name}
         </CardTitle>
         {onClose && (
           <button
             onClick={onClose}
-            className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-foreground transition-colors"
+            className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -117,7 +117,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
       </div>
 
       {/* Chart */}
-      <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
         <h4 className="text-sm font-medium text-[var(--text-primary)] dark:text-muted mb-3">Ventas diarias (últimos 30 días)</h4>
         <div className="h-48">
           <ResponsiveContainer minWidth={0} width="100%" height="100%">
@@ -156,10 +156,10 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
           <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Venta promedio</div>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-[var(--text-primary)] dark:text-foreground">{data.dailyAvg}</span>
+            <span className="text-xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{data.dailyAvg}</span>
             <span className="text-xs text-[var(--text-secondary)]">und/dia</span>
           </div>
           <div className={`text-xs font-medium ${trendColor} mt-1`}>
@@ -167,7 +167,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
           </div>
         </div>
 
-        <div className={`rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ${stockBg}`}>
+        <div className={`rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 ${stockBg}`}>
           <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Stock alcanza para</div>
           <div className="flex items-baseline gap-2">
             <span className={`text-xl font-bold ${stockColor}`}>
@@ -180,7 +180,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
           <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Comprar cuando llegues a</div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-bold text-[var(--data-warning-500)]">{data.reorderPoint}</span>
@@ -189,7 +189,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
           <div className="text-xs text-[var(--text-secondary)] mt-1">Buffer de 1 semana</div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
           <div className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Pronostico proximos 7 dias</div>
           <div className="flex items-baseline gap-2">
             <span className="text-xl font-bold text-primary">~{data.forecastNext7}</span>

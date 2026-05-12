@@ -46,7 +46,7 @@ export function EmptyState({
     <div
       className={[
         "flex flex-col items-center justify-center text-center py-14 px-6",
-        "bg-white dark:bg-card border border-dashed border-[var(--rule-base)] dark:border-card-border",
+        "bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]",
         "rounded-xl",
         className,
       ]
@@ -59,7 +59,7 @@ export function EmptyState({
         </div>
       )}
 
-      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-base leading-snug">
+      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-base leading-snug">
         {title}
       </p>
 
@@ -77,7 +77,7 @@ export function EmptyState({
               "min-h-11 px-4 py-2 rounded-xl text-sm font-semibold transition-colors",
               isPrimary
                 ? "bg-primary text-white hover:bg-primary/90"
-                : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--rule-soft)] dark:hover:bg-card-border",
+                : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] dark:hover:bg-card-border",
             ].join(" ");
 
             if (action.href) {

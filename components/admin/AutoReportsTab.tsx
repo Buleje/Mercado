@@ -48,7 +48,7 @@ export default function AutoReportsTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><FileBarChart className="h-6 w-6 text-primary" /> Reportes Automáticos</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><FileBarChart className="h-6 w-6 text-primary" /> Reportes Automáticos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Programa reportes que se generan y envían automáticamente</p>
         </div>
         <button onClick={openCreate} className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90"><Plus className="h-4 w-4" /> Nuevo reporte</button>
@@ -61,7 +61,7 @@ export default function AutoReportsTab() {
           { label: "Total generados", value: reports.reduce((s, r) => s + r.runCount, 0), color: "text-[var(--text-secondary)]" },
           { label: "Destinatarios únicos", value: new Set(reports.flatMap(r => r.recipients)).size, color: "text-[var(--data-warning-500)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>
           </div>
@@ -70,11 +70,11 @@ export default function AutoReportsTab() {
 
       <div className="space-y-3">
         {reports.map(r => (
-          <div key={r.id} className={cn("bg-white dark:bg-card rounded-xl border p-3 sm:p-5 transition-opacity", r.active ? "border-[var(--rule-base)] dark:border-card-border" : "border-[var(--rule-base)] dark:border-card-border opacity-60")}>
+          <div key={r.id} className={cn("bg-[var(--surface-raised)] rounded-xl border p-3 sm:p-5 transition-opacity", r.active ? "border-[var(--rule-base)] dark:border-[var(--rule-base)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] opacity-60")}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">{r.name}</CardTitle>
+                  <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.name}</CardTitle>
                   <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.format === "PDF" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" : r.format === "Excel" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]")}>{r.format}</span>
                   <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted px-2 py-0.5 rounded-full">{SCHEDULE_LABELS[r.schedule]}</span>
                 </div>
@@ -105,16 +105,16 @@ export default function AutoReportsTab() {
 
       {showModal && (
         <div className="modal-backdrop p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-3 sm:p-6 max-w-lg w-full mx-4 border border-[var(--rule-base)] dark:border-card-border" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">{editReport ? "Editar reporte" : "Nuevo reporte"}</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl p-3 sm:p-6 max-w-lg w-full mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)]" onClick={e => e.stopPropagation()}>
+            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editReport ? "Editar reporte" : "Nuevo reporte"}</CardTitle>
             <div className="space-y-3">
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label><input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label><input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Formato</label><select value={formFormat} onChange={e => setFormFormat(e.target.value as Report["format"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"><option>PDF</option><option>Excel</option><option>CSV</option></select></div>
-                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Frecuencia</label><select value={formSchedule} onChange={e => setFormSchedule(e.target.value as Report["schedule"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm"><option value="diario">Diario</option><option value="semanal">Semanal</option><option value="mensual">Mensual</option><option value="manual">Manual</option></select></div>
+                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Formato</label><select value={formFormat} onChange={e => setFormFormat(e.target.value as Report["format"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"><option>PDF</option><option>Excel</option><option>CSV</option></select></div>
+                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Frecuencia</label><select value={formSchedule} onChange={e => setFormSchedule(e.target.value as Report["schedule"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"><option value="diario">Diario</option><option value="semanal">Semanal</option><option value="mensual">Mensual</option><option value="manual">Manual</option></select></div>
               </div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Destinatarios (separados por coma)</label><input value={formRecipients} onChange={e => setFormRecipients(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="email1@example.com, email2@example.com" /></div>
+              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Destinatarios (separados por coma)</label><input value={formRecipients} onChange={e => setFormRecipients(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="email1@example.com, email2@example.com" /></div>
             </div>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>

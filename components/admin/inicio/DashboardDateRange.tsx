@@ -181,7 +181,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             className={cn(
               "px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap",
               value.preset === p.id && mode === "none"
-                ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm"
+                ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-sm"
                 : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
             )}
           >
@@ -195,7 +195,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
           className={cn(
             "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
             mode === "specific" || value.preset === "especifica"
-              ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm"
+              ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-sm"
               : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
           )}
           title="Día específico"
@@ -209,7 +209,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
           className={cn(
             "flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all",
             mode === "range" || value.preset === "personalizado"
-              ? "bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground shadow-sm"
+              ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-sm"
               : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-tertiary)] hover:bg-gray-50 dark:hover:bg-gray-700",
           )}
           title="Rango personalizado"
@@ -232,7 +232,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             type="date"
             value={toInputDate(value.from)}
             onChange={handleSpecific}
-            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
             aria-label="Fecha específica"
           />
         </div>
@@ -245,7 +245,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             type="date"
             value={toInputDate(value.from)}
             onChange={handleCustomFrom}
-            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
             aria-label="Fecha desde"
           />
           <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-medium">a</span>
@@ -253,7 +253,7 @@ export default function DashboardDateRange({ value, onChange, className }: Dashb
             type="date"
             value={toInputDate(value.to)}
             onChange={handleCustomTo}
-            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-card text-xs text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
+            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30 focus:border-[var(--brand-primary)]"
             aria-label="Fecha hasta"
           />
         </div>

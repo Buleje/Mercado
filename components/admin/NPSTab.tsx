@@ -129,7 +129,7 @@ export default function NPSTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Star className="h-6 w-6 text-primary" /> NPS & Satisfacción</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Star className="h-6 w-6 text-primary" /> NPS & Satisfacción</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Net Promoter Score y análisis de satisfacción del cliente</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -139,7 +139,7 @@ export default function NPSTab() {
       </div>
 
       {/* Gauge + KPIs principales */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 sm:p-6">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           {/* Gauge grande */}
           <div className="flex flex-col items-center shrink-0">
@@ -221,20 +221,20 @@ export default function NPSTab() {
               <span className="text-sm">Cargando reseñas...</span>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-10 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl">
+            <div className="text-center py-10 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
               <Star className="h-10 w-10 text-[var(--text-tertiary)] dark:text-surface mx-auto mb-2" />
               <p className="text-sm font-semibold text-[var(--text-tertiary)]">Sin reseñas para este filtro</p>
             </div>
           ) : filtered.map(s => {
             const type = classify(s.score);
             return (
-              <div key={s.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3", type === "promoter" ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : type === "passive" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30" : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30")}>
+              <div key={s.id} className={cn("bg-[var(--surface-raised)] rounded-xl border p-4 flex items-start gap-3", type === "promoter" ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : type === "passive" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30" : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30")}>
                 <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-base font-extrabold shrink-0", type === "promoter" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : type === "passive" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                   {s.score}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{s.customer}</span>
+                    <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.customer}</span>
                     <span className="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded text-[var(--text-secondary)] dark:text-muted">{s.channel}</span>
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(s.date)}</span>
                   </div>
@@ -253,8 +253,8 @@ export default function NPSTab() {
 
       {/* Vista tendencia */}
       {view === "trend" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 sm:p-5">
-          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground mb-4 flex items-center gap-2">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 sm:p-5">
+          <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" /> Evolución NPS mensual
           </CardTitle>
           {loading ? (

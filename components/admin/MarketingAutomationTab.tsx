@@ -95,12 +95,12 @@ export default function MarketingAutomationTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Megaphone className="h-6 w-6 text-primary" /> Marketing Automation
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Campañas automáticas, segmentación y seguimiento de ROI</p>
         </div>
-        <button onClick={() => exportToCSV(campaigns.map(c => ({ nombre: c.name, tipo: TYPE_META[c.type].label, estado: STATUS_META[c.status].label, trigger: TRIGGER_LABELS[c.trigger], enviados: c.sentCount, apertura: c.openRate, clicks: c.clickRate, conversiones: c.conversions, revenue: c.revenue, costo: c.cost })), "marketing-campañas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+        <button onClick={() => exportToCSV(campaigns.map(c => ({ nombre: c.name, tipo: TYPE_META[c.type].label, estado: STATUS_META[c.status].label, trigger: TRIGGER_LABELS[c.trigger], enviados: c.sentCount, apertura: c.openRate, clicks: c.clickRate, conversiones: c.conversions, revenue: c.revenue, costo: c.cost })), "marketing-campañas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
@@ -122,22 +122,22 @@ export default function MarketingAutomationTab() {
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, segmento..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, segmento..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as CampaignStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as CampaignStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as CampaignStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as CampaignType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterType} onChange={e => setFilterType(e.target.value as CampaignType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los tipos</option>
           {(Object.keys(TYPE_META) as CampaignType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
         </select>
       </div>
 
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Estado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Campaña</th>
@@ -161,16 +161,16 @@ export default function MarketingAutomationTab() {
                   <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <p className="font-semibold text-[var(--text-primary)] dark:text-foreground text-xs">{c.name}</p>
+                      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs">{c.name}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.segment}</p>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-semibold", tp.color)}><TpIcon className="h-3 w-3" />{tp.label}</span></td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)]">{TRIGGER_LABELS[c.trigger]}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{c.sentCount.toLocaleString("es-PE")}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.sentCount.toLocaleString("es-PE")}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{pct(c.openRate)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{pct(c.clickRate)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success-500)]">{c.conversions}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(c.revenue)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.revenue)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(c)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 );
@@ -181,8 +181,8 @@ export default function MarketingAutomationTab() {
       </div>
 
       {/* Funnel */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-3">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Embudo de conversión (campañas activas)</CardTitle>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-3">
+        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Embudo de conversión (campañas activas)</CardTitle>
         {(() => {
           const active = campaigns.filter(c => c.status === "activa");
           const totalSent = active.reduce((s, c) => s + c.sentCount, 0);
@@ -201,7 +201,7 @@ export default function MarketingAutomationTab() {
                 const w = totalSent > 0 ? (s.value / totalSent) * 100 : 0;
                 return (
                   <div key={s.label} className="space-y-1">
-                    <div className="flex justify-between text-xs"><span className="text-[var(--text-secondary)] dark:text-muted">{s.label}</span><span className="font-bold text-[var(--text-primary)] dark:text-foreground">{s.value.toLocaleString("es-PE")}</span></div>
+                    <div className="flex justify-between text-xs"><span className="text-[var(--text-secondary)] dark:text-muted">{s.label}</span><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.value.toLocaleString("es-PE")}</span></div>
                     <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden"><div className={cn("h-full rounded-full", s.color)} style={{ width: `${Math.max(w, 2)}%` }} /></div>
                   </div>
                 );
@@ -213,9 +213,9 @@ export default function MarketingAutomationTab() {
 
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">{detail.name}</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{detail.name}</CardTitle>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2 text-sm">
@@ -231,7 +231,7 @@ export default function MarketingAutomationTab() {
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-[var(--text-secondary)] dark:text-muted shrink-0">{k}</span>
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{v}</span>
                 </div>
               ))}
             </div>

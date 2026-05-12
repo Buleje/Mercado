@@ -67,11 +67,11 @@ export default function SeasonalityTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Estacionalidad de Productos</SectionTitle>
+          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Estacionalidad de Productos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Patrones estacionales de ventas y demanda por producto</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+          <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
             {(["mensual", "productos"] as const).map(v => (
               <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold transition-colors capitalize", view === v ? "bg-primary text-white" : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}>{v}</button>
             ))}
@@ -87,21 +87,21 @@ export default function SeasonalityTab() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Mejor mes</p>
           <p className="text-lg font-extrabold text-[var(--data-success-500)] mt-1">{bestMonth.shortMonth}</p>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmt(bestMonth.sales)}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Peor mes</p>
           <p className="text-lg font-extrabold text-[var(--data-error-500)] mt-1">{worstMonth.shortMonth}</p>
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmt(worstMonth.sales)}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Promedio mensual</p>
-          <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mt-1">{fmt(avgSales)}</p>
+          <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">{fmt(avgSales)}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 ">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted font-semibold">Variación estacional</p>
           <p className="text-lg font-extrabold text-[var(--data-warning-500)] mt-1">{seasonVariation.toFixed(1)}%</p>
         </div>
@@ -109,8 +109,8 @@ export default function SeasonalityTab() {
 
       {/* Monthly view */}
       {view === "mensual" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-6 ">
-          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">Ventas por mes</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-6 ">
+          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Ventas por mes</CardTitle>
           <div className="space-y-3">
             {MONTHLY_DATA.map(m => {
               const pct = (m.sales / maxSales) * 100;
@@ -119,11 +119,11 @@ export default function SeasonalityTab() {
               return (
                 <div key={m.month} className="flex flex-wrap items-center gap-3">
                   <div className="w-8 text-center"><SeasonIcon className={cn("h-4 w-4 mx-auto", SEASON_COLORS[m.season])} /></div>
-                  <div className="w-10 text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{m.shortMonth}</div>
+                  <div className="w-10 text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.shortMonth}</div>
                   <div className="flex-1">
                     <div className="w-full h-6 bg-gray-100 dark:bg-surface rounded-lg overflow-hidden relative">
                       <div className={cn("h-full rounded-lg transition-all", m.sales === maxSales ? "bg-[var(--accent-soft)]" : m.sales === minSales ? "bg-[var(--data-error-500)]" : "bg-primary/70")} style={{ width: `${pct}%` }} />
-                      <span className="absolute inset-0 flex items-center justify-end pr-2 text-xs font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(m.sales)}</span>
+                      <span className="absolute inset-0 flex items-center justify-end pr-2 text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(m.sales)}</span>
                     </div>
                   </div>
                   <div className={cn("w-16 text-right text-xs font-bold", vsAvg >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{vsAvg >= 0 ? "+" : ""}{vsAvg.toFixed(1)}%</div>
@@ -139,15 +139,15 @@ export default function SeasonalityTab() {
       {view === "productos" && (
         <>
           <div className="flex flex-wrap items-center gap-3">
-            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:border-primary">
+            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary">
               <option value="all">Todas las categorías</option>
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border  overflow-y-hidden overflow-x-auto">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]  overflow-y-hidden overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+                <tr className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Producto</th>
                   <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Categoría</th>
                   <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted font-semibold">Meses pico</th>
@@ -158,8 +158,8 @@ export default function SeasonalityTab() {
               </thead>
               <tbody>
                 {filteredProducts.map(p => (
-                  <tr key={p.product} className="border-b border-[var(--rule-soft)] dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{p.product}</td>
+                  <tr key={p.product} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.product}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-1">{p.peakMonths.map(m => <span key={m} className="px-1.5 py-0.5 rounded bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs font-bold">{m}</span>)}</div>

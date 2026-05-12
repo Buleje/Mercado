@@ -77,7 +77,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden z-100"
+            className="absolute right-0 top-full mt-2 w-64 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden z-100"
           >
             {/* User info header */}
             <div className="px-4 py-3.5 border-b border-[var(--rule-soft)] dark:border-white/5 bg-[var(--surface-alt)]/50 dark:bg-surface/50">

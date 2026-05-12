@@ -131,11 +131,11 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
 
   return (
     <div className="modal-backdrop flex items-center justify-center" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white dark:bg-card w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
+      <div className="bg-[var(--surface-raised)] w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">Inventario completo</SectionTitle>
+            <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario completo</SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{filtered.length} productos activos</p>
           </div>
           <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar producto..."
-                className="pl-9 pr-3 py-2 w-56 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="pl-9 pr-3 py-2 w-56 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
@@ -200,7 +200,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                         <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
                           noStock ? "bg-[var(--data-error-500)]" : lowStock ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]"
                         )} />
-                        <span className="font-semibold text-[var(--text-primary)] dark:text-foreground truncate max-w-[220px]">{p.name}</span>
+                        <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[220px]">{p.name}</span>
                       </div>
                     </td>
 
@@ -297,8 +297,8 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
         </div>
 
         {/* Footer summary */}
-        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface flex flex-wrap items-center gap-4 text-xs shrink-0">
-          <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{filtered.length} productos</span>
+        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface flex flex-wrap items-center gap-4 text-xs shrink-0">
+          <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{filtered.length} productos</span>
           <span className="text-[var(--data-error-500)] font-semibold">{filtered.filter(p => (p.stock ?? 0) === 0).length} sin stock</span>
           <span className="text-[var(--data-error-500)] font-semibold">{filtered.filter(p => p.daysSinceMove === null || (p.daysSinceMove ?? 0) > 30).length} sin movimiento</span>
           <span className="text-[var(--data-warning-500)] font-semibold">{filtered.filter(p => p.margin && p.margin.pct < 15).length} margen bajo (&lt;15%)</span>

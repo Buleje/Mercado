@@ -104,7 +104,7 @@ export function MicroGauge({
           <span
             className={cn(
               "font-display text-3xl sm:text-4xl font-extrabold tabular-nums leading-none tracking-tight",
-              "text-[var(--text-primary)] dark:text-foreground",
+              "text-[var(--text-primary)] dark:text-[var(--text-primary)]",
             )}
           >
             {centerLabel}

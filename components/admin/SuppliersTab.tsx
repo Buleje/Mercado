@@ -216,7 +216,7 @@ export default function SuppliersTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Proveedores</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Proveedores</SectionTitle>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -235,7 +235,7 @@ export default function SuppliersTab() {
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
-                <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">Alertas de Pagos</CardTitle>
+                <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Alertas de Pagos</CardTitle>
               </div>
               <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
                 {overduePayables.length > 0 && (
@@ -264,7 +264,7 @@ export default function SuppliersTab() {
             </div>
             <button
               onClick={() => setShowAlerts(!showAlerts)}
-              className="flex items-center gap-1 text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-card/50"
+              className="flex items-center gap-1 text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-[var(--surface-raised)]/50"
             >
               Ver alertas
               {showAlerts ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -287,7 +287,7 @@ export default function SuppliersTab() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">
+                        <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                           {p.supplierName}
                         </span>
                         <span className="text-sm text-[var(--text-secondary)] dark:text-muted truncate">
@@ -303,7 +303,7 @@ export default function SuppliersTab() {
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="font-bold text-[var(--text-primary)] dark:text-foreground">
+                      <div className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                         S/ {(p.amount - p.paidAmount).toFixed(2)}
                       </div>
                       {p.dueDate && (
@@ -412,14 +412,14 @@ export default function SuppliersTab() {
 
       {/* Suppliers list */}
       {loading ? (
-        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
+        <TableSkeleton rows={4} cols={4} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl" />
       ) : suppliers.length === 0 ? (
         <EmptyState
           icon={Plus}
           title="Sin proveedores registrados"
           description="No hay proveedores registrados. Agrega tu primer proveedor."
           action={{ label: "Nuevo proveedor", onClick: () => { setEditingSupplier(null); setShowProveedorModal(true); } }}
-          className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl"
+          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl"
         />
       ) : (() => {
         const supplierIdsWithDebt = new Set(payables.filter(p => p.status !== "pagado" && (p.amount - p.paidAmount) > 0).map(p => p.supplierId));
@@ -446,15 +446,15 @@ export default function SuppliersTab() {
         return (
         <div className="space-y-3">
           {visible.map((s) => (
-            <div key={s.id} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 ">
+            <div key={s.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 ">
               {editingId === s.id ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nombre" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
-                    <input value={editForm.ruc ?? ""} onChange={(e) => setEditForm(f => ({ ...f, ruc: e.target.value }))} placeholder="RUC" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
-                    <input value={editForm.phone ?? ""} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="Teléfono" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
-                    <input value={editForm.email ?? ""} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
-                    <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm sm:col-span-2" />
+                    <input value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nombre" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                    <input value={editForm.ruc ?? ""} onChange={(e) => setEditForm(f => ({ ...f, ruc: e.target.value }))} placeholder="RUC" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
+                    <input value={editForm.phone ?? ""} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="Teléfono" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                    <input value={editForm.email ?? ""} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
+                    <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm sm:col-span-2" />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] text-sm font-bold transition-colors">
@@ -469,7 +469,7 @@ export default function SuppliersTab() {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-[var(--text-primary)] dark:text-foreground">{s.name}</span>
+                      <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.name}</span>
                       {s.ruc && <span className="text-xs font-mono text-[var(--text-tertiary)] dark:text-muted bg-gray-100 dark:bg-accent px-2 py-0.5 rounded">RUC: {s.ruc}</span>}
 
                       {/* Mejora 15: Proveedor mas confiable badge */}
@@ -537,7 +537,7 @@ export default function SuppliersTab() {
                       if (!history.some((h) => h.total > 0)) return null;
                       const maxVal = Math.max(...history.map((h) => h.total), 1);
                       return (
-                        <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
+                        <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted mb-1.5">Compras últimos 6 meses</p>
                           <div className="flex flex-wrap items-end gap-1 h-10">
                             {history.map((h, i) => (
@@ -556,7 +556,7 @@ export default function SuppliersTab() {
                     })()}
 
                     {/* Scorecard toggle */}
-                    <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-card-border">
+                    <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                       <button
                         onClick={() => setExpandedScorecard(expandedScorecard === s.id ? null : s.id)}
                         className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
@@ -622,40 +622,40 @@ export default function SuppliersTab() {
 
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-          <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
-            <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Nuevo proveedor</CardTitle>
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
+            <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
               <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
             </div>
             <form onSubmit={addSupplier} className="p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Nombre / Razon social *</label>
-                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">RUC</label>
-                  <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
+                  <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Teléfono</label>
-                  <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Email</label>
-                  <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Direccion</label>
-                  <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm" />
+                  <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Notas</label>
-                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
+                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm resize-none" />
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando..." : "Agregar proveedor"}
                 </button>

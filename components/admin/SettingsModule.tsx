@@ -116,8 +116,8 @@ function TextInput({ value, onChange, placeholder, mono, type = "text", disabled
       placeholder={placeholder}
       disabled={disabled}
       className={cn(
-        "w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-card-border",
-        "bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm",
+        "w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]",
+        "bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm",
         "outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         mono && "font-mono"
@@ -136,7 +136,7 @@ function NumberInput({ value, onChange, min, max, step, suffix }: {
         value={value}
         onChange={e => onChange(Number(e.target.value))}
         min={min} max={max} step={step}
-        className="flex-1 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
+        className="flex-1 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
       />
       {suffix && <span className="text-xs text-[var(--text-secondary)] dark:text-muted font-medium shrink-0">{suffix}</span>}
     </div>
@@ -150,7 +150,7 @@ function SelectInput({ value, onChange, options }: {
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
+      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
     >
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -161,9 +161,9 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
   enabled: boolean; onChange: (v: boolean) => void; label: string; desc?: string; danger?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
+    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-foreground">{label}</p>
+        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{label}</p>
         {desc && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{desc}</p>}
       </div>
       <button
@@ -182,9 +182,9 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
 
 function SectionCard({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-        <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{title}</h4>
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+        <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{title}</h4>
         {desc && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{desc}</p>}
       </div>
       <div className="px-5 py-4 space-y-4">{children}</div>
@@ -216,7 +216,7 @@ function StatusDot({ ok, label }: { ok: boolean; label: string }) {
   return (
     <div className="flex items-center gap-2">
       <div className={cn("w-2.5 h-2.5 rounded-full", ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]")} />
-      <span className="text-xs text-[var(--text-primary)] dark:text-foreground font-medium">{label}</span>
+      <span className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{label}</span>
       <span className={cn("text-[length:var(--ts-2xs)] font-bold uppercase", ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{ok ? "Conectado" : "No configurado"}</span>
     </div>
   );
@@ -228,7 +228,7 @@ function ProgressBar({ value, max, label, unit }: { value: number; max: number; 
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-[var(--text-primary)] dark:text-foreground font-medium">{label}</span>
+        <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{label}</span>
         <span className={cn("font-bold", isHigh ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)] dark:text-muted")}>{value}/{max} {unit}</span>
       </div>
       <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
@@ -246,13 +246,13 @@ function OverviewCard({ section, completionPct, onClick }: {
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border-2 border-[var(--rule-soft)] dark:border-card-border text-left transition-all bg-white dark:bg-card hover:shadow-[var(--shadow-lg)] hover:border-gray-200 dark:hover:border-gray-600"
+      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left transition-all bg-[var(--surface-raised)] hover:shadow-[var(--shadow-lg)] hover:border-gray-200 dark:hover:border-gray-600"
     >
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", section.color)}>
         {section.icon}
       </div>
       <div>
-        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-foreground">{section.title}</p>
+        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{section.title}</p>
         <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted mt-0.5 line-clamp-1">{section.desc}</p>
       </div>
       <div className="w-full flex items-center gap-2 mt-auto">
@@ -708,7 +708,7 @@ export default function SettingsModule({
   if (loading) return (
     <div className="space-y-4 animate-pulse">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-6">
+        <div key={i} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6">
           <div className="flex items-center gap-4"><div className="h-12 w-12 bg-gray-200 dark:bg-surface rounded-xl" /><div className="flex-1 space-y-2"><div className="h-5 bg-gray-200 dark:bg-surface rounded w-1/3" /><div className="h-3 bg-gray-200 dark:bg-surface rounded w-2/3" /></div></div>
         </div>
       ))}
@@ -777,18 +777,18 @@ export default function SettingsModule({
           )}
           <div className="space-y-3">
             {customShortcuts.map(sc => (
-              <div key={sc.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
+              <div key={sc.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <Zap className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
                 <input
                   value={sc.label}
                   onChange={e => updateShortcut(sc.id, "label", e.target.value)}
-                  className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground"
+                  className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   placeholder="Nombre del acceso"
                 />
                 <select
                   value={sc.tabId}
                   onChange={e => updateShortcut(sc.id, "tabId", e.target.value)}
-                  className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-[var(--text-primary)] dark:text-foreground"
+                  className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 >
                   {availableTabs.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
@@ -799,7 +799,7 @@ export default function SettingsModule({
             ))}
           </div>
           {customShortcuts.length < 6 && (
-            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors mt-2">
+            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors mt-2">
               <Plus className="h-4 w-4" /> Agregar acceso directo
             </button>
           )}
@@ -819,7 +819,7 @@ export default function SettingsModule({
           {(["whatsapp", "checkout"] as const).map(m => (
             <button key={m} onClick={() => setMode(m)} className={cn(
               "flex flex-col items-center gap-2 py-5 px-3 rounded-xl border-2 transition-all",
-              mode === m ? (m === "whatsapp" ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
+              mode === m ? (m === "whatsapp" ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-gray-300"
             )}>
               {m === "whatsapp" ? <MessageCircle className={cn("h-8 w-8", mode === m ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")} /> : <ShoppingCart className={cn("h-8 w-8", mode === m ? "text-primary" : "text-[var(--text-tertiary)]")} />}
               <span className={cn("font-bold text-sm", mode === m ? (m === "whatsapp" ? "text-[var(--data-success-500)]" : "text-primary") : "text-[var(--text-tertiary)]")}>{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
@@ -881,7 +881,7 @@ export default function SettingsModule({
           <div><FieldLabel icon={<Clock className="h-3.5 w-3.5" />}>Horario</FieldLabel><TextInput value={hours} onChange={setHours} placeholder="Lun - Sáb: 7am - 9pm" /></div>
         </div>
         <div><FieldLabel icon={<AlignLeft className="h-3.5 w-3.5" />}>Descripción</FieldLabel>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
         </div>
       </SectionCard>
 
@@ -972,7 +972,7 @@ export default function SettingsModule({
       <SectionCard title="Credenciales de acceso" desc="Usuario y contraseña para iniciar sesión en el panel">
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex items-center gap-2 mb-1.5">
                 <User className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Usuario</span>
@@ -984,7 +984,7 @@ export default function SettingsModule({
                 </button>
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-card-border">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex items-center gap-2 mb-1.5">
                 <Key className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Contraseña</span>
@@ -1100,12 +1100,12 @@ export default function SettingsModule({
       <SectionCard title="Navegación del sitio" desc="Orden y visibilidad del menú">
         <div className="space-y-2">
           {navLinks.map((link, idx) => (
-            <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
+            <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex flex-col gap-0.5">
                 <button disabled={idx === 0} onClick={() => { const n = [...navLinks]; [n[idx], n[idx - 1]] = [n[idx - 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowUp className="h-3.5 w-3.5" /></button>
                 <button disabled={idx === navLinks.length - 1} onClick={() => { const n = [...navLinks]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowDown className="h-3.5 w-3.5" /></button>
               </div>
-              <span className="flex-1 font-semibold text-sm text-[var(--text-primary)] dark:text-foreground">{NAV_LABEL[link.id] || link.id}</span>
+              <span className="flex-1 font-semibold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{NAV_LABEL[link.id] || link.id}</span>
               <button onClick={() => setNavLinks(prev => prev.map((l, i) => i === idx ? { ...l, visible: !l.visible } : l))} className={cn("p-1.5 rounded-lg", link.visible ? "text-primary bg-primary/10" : "text-[var(--text-tertiary)]")}>
                 {link.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
@@ -1172,7 +1172,7 @@ export default function SettingsModule({
               <TextInput value={val} onChange={v => setInvoiceSeries(p => ({ ...p, [key]: v }))} mono />
               <div className="mt-1">
                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Inicio: </span>
-                <input type="number" min={1} value={invoiceStart[val] || 1} onChange={e => setInvoiceStart(p => ({ ...p, [val]: Number(e.target.value) }))} className="w-20 px-2 py-1 text-xs font-mono rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface outline-none" />
+                <input type="number" min={1} value={invoiceStart[val] || 1} onChange={e => setInvoiceStart(p => ({ ...p, [val]: Number(e.target.value) }))} className="w-20 px-2 py-1 text-xs font-mono rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface outline-none" />
               </div>
             </div>
           ))}
@@ -1187,7 +1187,7 @@ export default function SettingsModule({
               <button key={t} onClick={() => {
                 const types = enabledDocTypes.split(",").filter(Boolean);
                 setEnabledDocTypes(active ? types.filter(x => x !== t).join(",") : [...types, t].join(","));
-              }} className={cn("px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-tertiary)] hover:border-gray-300")}>
+              }} className={cn("px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-gray-300")}>
                 {active ? <Check className="h-3.5 w-3.5 inline mr-1.5" /> : null}
                 {t === "nota_venta" ? "Nota de venta" : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
@@ -1214,7 +1214,7 @@ export default function SettingsModule({
 
       <SectionCard title="Pie de comprobante">
         <FieldLabel>Texto legal / agradecimiento</FieldLabel>
-        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
       </SectionCard>
 
       <SaveButton saving={saving} saved={savedSection === "sales"} onClick={() => patch({
@@ -1369,9 +1369,9 @@ export default function SettingsModule({
       <SectionCard title="Zonas de delivery" desc="Define zonas con tarifas y tiempos diferentes">
         <div className="space-y-2">
           {deliveryZones.map((zone, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
+            <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex-1 grid grid-cols-3 gap-2">
-                <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm bg-white dark:bg-card outline-none" />
+                <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm bg-[var(--surface-raised)] outline-none" />
                 <div className="flex items-center gap-1">
                   <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white dark:bg-[var(--color-card)] outline-none" />
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">S/</span>
@@ -1406,7 +1406,7 @@ export default function SettingsModule({
       <SectionCard title="Repartidores" desc="Equipo de delivery">
         <div className="space-y-2">
           {riders.map((rider, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-card-border">
+            <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex-1 grid grid-cols-3 gap-2">
                 <input value={rider.name} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, name: e.target.value } : r))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white dark:bg-[var(--color-card)] outline-none" />
                 <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white dark:bg-[var(--color-card)] outline-none" />
@@ -1482,7 +1482,7 @@ export default function SettingsModule({
             { label: "SUNAT", ok: sunatProvider !== "none" && !!sunatApiKey },
             { label: "Google Analytics", ok: !!googleAnalyticsId },
           ].map(s => (
-            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-card-border")}>
+            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
               {s.ok ? <Wifi className="h-4 w-4 text-[var(--data-success-500)]" /> : <WifiOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
               <span className={cn("text-xs font-semibold", s.ok ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>{s.label}</span>
             </div>
@@ -1554,7 +1554,7 @@ export default function SettingsModule({
           <div className="sm:col-span-2"><FieldLabel>Slogan</FieldLabel><TextInput value={slogan} onChange={setSlogan} placeholder="Productos frescos, precios justos" /></div>
         </div>
         {/* Live preview */}
-        <div className="mt-4 p-4 rounded-xl border border-[var(--rule-base)] dark:border-card-border" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
+        <div className="mt-4 p-4 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
           <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-2">Vista previa</p>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>Buleje</div>
@@ -1579,7 +1579,7 @@ export default function SettingsModule({
               "p-4 rounded-xl border-2 text-left transition-all",
               (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") !== "technical")
                 ? "border-primary bg-primary/5"
-                : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-gray-300"
             )}
           >
             <p className="font-bold text-sm">Sencillo</p>
@@ -1596,7 +1596,7 @@ export default function SettingsModule({
               "p-4 rounded-xl border-2 text-left transition-all",
               (typeof window !== "undefined" && localStorage.getItem("buleje-vocabulary-mode") === "technical")
                 ? "border-primary bg-primary/5"
-                : "border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-gray-300"
             )}
           >
             <p className="font-bold text-sm">Profesional</p>
@@ -1687,9 +1687,9 @@ export default function SettingsModule({
       {/* Restore modal */}
       {showRestoreModal && (
         <div className="modal-backdrop p-4" onClick={() => !restoring && setShowRestoreModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Restaurar Base de Datos</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Restaurar Base de Datos</CardTitle>
               {!restoring && <button onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100"><X className="h-5 w-5" /></button>}
             </div>
             <div className="px-6 py-5 space-y-4">
@@ -1856,7 +1856,7 @@ export default function SettingsModule({
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); if (e.target.value) setShowOverview(true); }}
             placeholder="Buscar configuración..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-foreground placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
@@ -1873,7 +1873,7 @@ export default function SettingsModule({
             Configuración
           </button>
           <ChevronRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-          <span className="text-[var(--text-primary)] dark:text-foreground font-medium">
+          <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
             {SECTION_META.find(s => s.id === activeSection)?.title}
           </span>
         </m.div>
@@ -1891,15 +1891,15 @@ export default function SettingsModule({
           >
             {/* Quick stats bar */}
             <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 text-center">
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Secciones</p>
                 <p className="text-2xl font-extrabold text-[var(--text-primary)]">{SECTION_META.length}</p>
               </div>
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 text-center">
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Completas</p>
                 <p className="text-2xl font-extrabold text-[var(--data-success-500)]">{Object.values(sectionCompletion).filter(v => v === 100).length}</p>
               </div>
-              <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 text-center">
                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Pendientes</p>
                 <p className="text-2xl font-extrabold text-[var(--data-warning-500)]">{Object.values(sectionCompletion).filter(v => v < 100).length}</p>
               </div>
@@ -1936,12 +1936,12 @@ export default function SettingsModule({
               <div className={cn(
                 "shrink-0 space-y-1",
                 showMobileNav
-                  ? "fixed inset-0 z-40 bg-white dark:bg-card p-4 overflow-y-auto sm:relative sm:inset-auto sm:z-auto sm:bg-transparent sm:p-0 sm:w-60"
+                  ? "fixed inset-0 z-40 bg-[var(--surface-raised)] p-4 overflow-y-auto sm:relative sm:inset-auto sm:z-auto sm:bg-transparent sm:p-0 sm:w-60"
                   : "hidden sm:block w-60"
               )}>
                 {showMobileNav && (
                   <div className="flex items-center justify-between mb-4 sm:hidden">
-                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">Secciones</CardTitle>
+                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Secciones</CardTitle>
                     <button onClick={() => setShowMobileNav(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100">
                       <X className="h-5 w-5" />
                     </button>
@@ -1997,7 +1997,7 @@ export default function SettingsModule({
                     {SECTION_META.find(s => s.id === activeSection)?.icon}
                   </div>
                   <div className="flex-1">
-                    <CardTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-foreground">{SECTION_META.find(s => s.id === activeSection)?.title}</CardTitle>
+                    <CardTitle className="text-base font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{SECTION_META.find(s => s.id === activeSection)?.title}</CardTitle>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{SECTION_META.find(s => s.id === activeSection)?.desc}</p>
                   </div>
                   {/* Mobile nav toggle */}
@@ -2030,11 +2030,11 @@ export default function SettingsModule({
           <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-card rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+            className="bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-card-border">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">Ubicación del negocio</CardTitle>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ubicación del negocio</CardTitle>
               <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
@@ -2091,7 +2091,7 @@ function ImageDropCard({
 }: ImageDropCardProps) {
   const safeUrl = value && !value.startsWith("data:") ? value : "";
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-raised)] dark:bg-surface p-4 flex flex-col gap-3">
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-surface p-4 flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -2155,7 +2155,7 @@ function ImageDropCard({
           value={safeUrl}
           onChange={(e) => onChange(e.target.value)}
           placeholder="o pegá URL: https://…"
-          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-[var(--surface-canvas)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
     </div>

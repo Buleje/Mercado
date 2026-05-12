@@ -51,7 +51,7 @@ export function ModuleEmptyState({
     <div
       className={cn(
         "py-12 px-4 text-center",
-        variant === "card" && "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl",
+        variant === "card" && "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl",
         className,
       )}
     >

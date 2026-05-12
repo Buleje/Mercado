@@ -47,7 +47,8 @@ export type Tab =
   | "mi-perfil"
   | "rendimiento"
   | "colas"
-  | "pagina-inicio";
+  | "pagina-inicio"
+  | "documentos";
 
 export type TabCategory = {
   id: string;
@@ -90,7 +91,7 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   facturacion: "plata", "e-facturacion": "plata", impuestos: "plata", cuentas: "plata",
   gastos: "plata", "centros-costo": "plata", seguros: "plata",
   activos: "plata", "gastos-activos": "plata",
-  reportes: "plata", "reportes-auto": "plata", "importar-exportar": "plata", documentos: "plata",
+  reportes: "plata", "reportes-auto": "plata", "importar-exportar": "plata",
   "reportes-documentos": "plata",
   "analytics-bi": "plata", bi: "plata", "mapa-calor": "plata", "abc-analysis": "plata",
   pareto: "plata", "bcg-matrix": "plata", "analisis-cesta": "plata", "kpi-personalizado": "plata",

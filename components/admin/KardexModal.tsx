@@ -108,12 +108,12 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
 
   return (
     <div className="modal-backdrop p-4">
-      <div className="bg-white dark:bg-card rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-[var(--surface-raised)] rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-card-border shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div className="flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Kardex — {productName ?? data?.producto.name ?? `#${productId}`}
             </CardTitle>
           </div>
@@ -123,7 +123,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-card-border shrink-0">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-[var(--rule-base)] shrink-0">
           <div className="flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
             <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Desde</label>
@@ -131,7 +131,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div className="flex items-center gap-1.5">
@@ -140,7 +140,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="text-xs border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <button
@@ -193,7 +193,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[600px] text-xs">
                     <thead>
-                      <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                      <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                         <th className="text-left py-2 font-bold text-[var(--text-tertiary)]">Fecha</th>
                         <th className="text-left py-2 font-bold text-[var(--text-tertiary)]">Tipo</th>
                         <th className="text-left py-2 font-bold text-[var(--text-tertiary)]">Referencia</th>
@@ -206,7 +206,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                       {data.movimientos.map((m) => {
                         const meta = TYPE_LABELS[m.tipo] ?? { label: m.tipo, color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]", dir: "out" };
                         return (
-                          <tr key={m.id} className="border-t border-gray-50 dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
+                          <tr key={m.id} className="border-t border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
                             <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{fmtDate(m.fecha)}</td>
                             <td className="py-2">
                               <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", meta.color)}>
@@ -221,14 +221,14 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                             <td className={cn("py-2 text-right font-bold", m.salida > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
                               {m.salida > 0 ? `-${m.salida}` : "—"}
                             </td>
-                            <td className="py-2 text-right font-extrabold text-[var(--text-primary)] dark:text-foreground">{m.saldo}</td>
+                            <td className="py-2 text-right font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.saldo}</td>
                           </tr>
                         );
                       })}
                     </tbody>
                     <tfoot>
-                      <tr className="border-t-2 border-[var(--rule-base)] dark:border-card-border font-bold">
-                        <td colSpan={3} className="py-2 text-[var(--text-primary)] dark:text-foreground">Totales</td>
+                      <tr className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] font-bold">
+                        <td colSpan={3} className="py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">Totales</td>
                         <td className="py-2 text-right text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">+{data.resumen.totalEntradas}</td>
                         <td className="py-2 text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">-{data.resumen.totalSalidas}</td>
                         <td className="py-2 text-right text-primary font-extrabold">{data.resumen.saldoFinal}</td>

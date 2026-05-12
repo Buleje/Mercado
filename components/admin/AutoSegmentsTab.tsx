@@ -158,11 +158,11 @@ export default function AutoSegmentsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><Users className="h-6 w-6 text-primary" /> Segmentación Automática</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Users className="h-6 w-6 text-primary" /> Segmentación Automática</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Reglas dinámicas que se actualizan con datos reales</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={reload} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-sunken)] dark:bg-surface hover:bg-[var(--rule-soft)] dark:hover:bg-card">
+          <button onClick={reload} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-sunken)] dark:bg-surface hover:bg-[var(--rule-soft)] dark:hover:bg-[var(--surface-raised)]">
             <RefreshCw className="h-4 w-4" />
           </button>
           <button onClick={openCreate} className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
@@ -179,7 +179,7 @@ export default function AutoSegmentsTab() {
           { label: "Clientes segmentados", value: totalSegmented,       color: "text-[var(--text-secondary)]" },
           { label: "Total en base",        value: allCustomers.length,  color: "text-[var(--text-secondary)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
             <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             <p className={cn("text-xl sm:text-2xl font-extrabold mt-1", k.color)}>{k.value}</p>
           </div>
@@ -191,13 +191,13 @@ export default function AutoSegmentsTab() {
         {segments.map(sg => {
           const isExpanded = expandedId === sg.id;
           return (
-            <div key={sg.id} className={cn("bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden transition-opacity", !sg.active && "opacity-50")}>
+            <div key={sg.id} className={cn("bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden transition-opacity", !sg.active && "opacity-50")}>
               {/* Card header */}
               <div className="p-3 sm:p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={cn("h-3 w-3 rounded-full shrink-0", sg.color)} />
-                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground truncate">{sg.name}</CardTitle>
+                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{sg.name}</CardTitle>
                     {!sg.active && <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] px-1.5 py-0.5 rounded">Inactivo</span>}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -213,15 +213,15 @@ export default function AutoSegmentsTab() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   <div className="text-center bg-[var(--surface-alt)] dark:bg-surface rounded-lg py-2">
-                    <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{sg.customerCount}</p>
+                    <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{sg.customerCount}</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">clientes</p>
                   </div>
                   <div className="text-center bg-[var(--surface-alt)] dark:bg-surface rounded-lg py-2">
-                    <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(sg.avgTicket)}</p>
+                    <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(sg.avgTicket)}</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">ticket prom.</p>
                   </div>
                   <div className="text-center bg-[var(--surface-alt)] dark:bg-surface rounded-lg py-2">
-                    <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{Number(sg.avgFrequency).toFixed(1)}x</p>
+                    <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{Number(sg.avgFrequency).toFixed(1)}x</p>
                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">pedidos prom.</p>
                   </div>
                 </div>
@@ -248,13 +248,13 @@ export default function AutoSegmentsTab() {
 
               {/* Preview de clientes */}
               {isExpanded && sg.matchedCustomers.length > 0 && (
-                <div className="border-t border-[var(--rule-soft)] dark:border-card-border px-3 sm:px-5 py-3 bg-[var(--surface-alt)]/50 dark:bg-surface/30">
+                <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-3 sm:px-5 py-3 bg-[var(--surface-alt)]/50 dark:bg-surface/30">
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-2">Clientes en este segmento</p>
                   <div className="space-y-1.5">
                     {sg.matchedCustomers.slice(0, 5).map(c => (
                       <div key={c.phone} className="flex items-center justify-between text-xs">
                         <div>
-                          <span className="font-semibold text-[var(--text-primary)] dark:text-foreground">{c.name}</span>
+                          <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</span>
                           <span className="text-[var(--text-tertiary)] ml-1.5">{c.phone}</span>
                         </div>
                         <div className="flex items-center gap-2 text-[var(--text-secondary)] dark:text-muted">
@@ -285,7 +285,7 @@ export default function AutoSegmentsTab() {
         })}
 
         {segments.length === 0 && (
-          <div className="col-span-2 bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl flex flex-col items-center py-12 gap-3 text-[var(--text-tertiary)] dark:text-muted">
+          <div className="col-span-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl flex flex-col items-center py-12 gap-3 text-[var(--text-tertiary)] dark:text-muted">
             <Users className="h-10 w-10 opacity-30" />
             <p className="text-sm">No hay segmentos definidos</p>
             <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
@@ -298,16 +298,16 @@ export default function AutoSegmentsTab() {
       {/* Modal crear/editar */}
       {showModal && (
         <div className="modal-backdrop p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 max-w-lg w-full border border-[var(--rule-base)] dark:border-card-border max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground mb-4">{editSegment ? "Editar segmento" : "Nuevo segmento"}</CardTitle>
+          <div className="bg-[var(--surface-raised)] rounded-xl p-4 sm:p-6 max-w-lg w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editSegment ? "Editar segmento" : "Nuevo segmento"}</CardTitle>
             <div className="space-y-6">
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label>
-                <input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Clientes inactivos" />
+                <input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="ej. Clientes inactivos" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
-                <input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej. Sin comprar en más de 30 días" />
+                <input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="ej. Sin comprar en más de 30 días" />
               </div>
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1.5">Color</label>
@@ -321,13 +321,13 @@ export default function AutoSegmentsTab() {
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Reglas (se aplican todas)</label>
                 {formRules.map((r, i) => (
                   <div key={i} className="flex gap-2 mb-2 flex-wrap">
-                    <select value={r.field} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], field: e.target.value }; setFormRules(nr); }} className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs min-w-[120px]">
+                    <select value={r.field} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], field: e.target.value }; setFormRules(nr); }} className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs min-w-[120px]">
                       {FIELDS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
                     </select>
-                    <select value={r.operator} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], operator: e.target.value }; setFormRules(nr); }} className="w-14 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs">
+                    <select value={r.operator} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], operator: e.target.value }; setFormRules(nr); }} className="w-14 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs">
                       {OPERATORS.map(o => <option key={o}>{o}</option>)}
                     </select>
-                    <input value={r.value} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], value: e.target.value }; setFormRules(nr); }} className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs" placeholder="valor" />
+                    <input value={r.value} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], value: e.target.value }; setFormRules(nr); }} className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs" placeholder="valor" />
                     {formRules.length > 1 && <button onClick={() => setFormRules(formRules.filter((_, j) => j !== i))} className="text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><X className="h-4 w-4" /></button>}
                   </div>
                 ))}

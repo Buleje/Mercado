@@ -140,7 +140,7 @@ export default function DeliveryCalendarTab() {
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
           <CalendarDays className="h-6 w-6 text-primary" />
           Calendario de Entregas
         </SectionTitle>
@@ -151,7 +151,7 @@ export default function DeliveryCalendarTab() {
       <div className="flex items-center gap-2">
         <button
           onClick={() => setWeekOffset(w => w - 1)}
-          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition"
         >
           <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
@@ -171,7 +171,7 @@ export default function DeliveryCalendarTab() {
                     ? "bg-primary text-white"
                     : isToday
                     ? "bg-primary/10 text-primary border border-primary/30"
-                    : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+                    : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
                 )}
               >
                 <span className="capitalize text-[length:var(--ts-2xs)] font-semibold">{day}</span>
@@ -188,7 +188,7 @@ export default function DeliveryCalendarTab() {
         </div>
         <button
           onClick={() => setWeekOffset(w => w + 1)}
-          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition"
+          className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition"
         >
           <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
         </button>
@@ -197,12 +197,12 @@ export default function DeliveryCalendarTab() {
       {/* Day KPIs */}
       <div className="grid grid-cols-4 gap-2">
         {[
-          { label: "Total",       value: dayKpis.total,      color: "text-[var(--text-primary)] dark:text-foreground" },
+          { label: "Total",       value: dayKpis.total,      color: "text-[var(--text-primary)] dark:text-[var(--text-primary)]" },
           { label: "Entregados",  value: dayKpis.entregados, color: "text-[var(--data-success-500)]" },
           { label: "En camino",   value: dayKpis.enCamino,   color: "text-[var(--data-success-500)]" },
           { label: "Fallidos",    value: dayKpis.fallidos,   color: "text-[var(--data-error-500)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 text-center">
+          <div key={k.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 text-center">
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
           </div>
@@ -218,7 +218,7 @@ export default function DeliveryCalendarTab() {
             const Icon = cfg.icon;
             const slotOrders = daySlots.filter(s => s.slot === key);
             return (
-              <div key={key} className={cn("bg-white dark:bg-card border rounded-xl overflow-hidden", cfg.border)}>
+              <div key={key} className={cn("bg-[var(--surface-raised)] border rounded-xl overflow-hidden", cfg.border)}>
                 {/* Slot header */}
                 <div className={cn("flex items-center gap-2 px-4 py-3", cfg.color)}>
                   <Icon className="h-4 w-4 shrink-0" />
@@ -247,10 +247,10 @@ export default function DeliveryCalendarTab() {
                         <span className={cn("mt-1 w-2 h-2 rounded-full shrink-0", stCfg.dot)} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1 flex-wrap">
-                            <span className="font-bold text-[var(--text-primary)] dark:text-foreground">
+                            <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                               #{s.orderId.slice(-6)}
                             </span>
-                            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-white dark:bg-card px-1.5 py-0.5 rounded-full">
+                            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-[var(--surface-raised)] px-1.5 py-0.5 rounded-full">
                               {stCfg.label}
                             </span>
                           </div>
@@ -304,11 +304,11 @@ export default function DeliveryCalendarTab() {
           onClick={() => setAssigningSlot(null)}
         >
           <div
-            className="bg-white dark:bg-card rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4 border border-[var(--rule-base)] dark:border-card-border"
+            className="bg-[var(--surface-raised)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 Asignar pedido — {SLOT_CONFIG[assigningSlot].label}
               </CardTitle>
               <button onClick={() => setAssigningSlot(null)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">
@@ -326,10 +326,10 @@ export default function DeliveryCalendarTab() {
                   <button
                     key={o.id}
                     onClick={() => assignSlot(o.id)}
-                    className="w-full text-left p-3 border border-[var(--rule-base)] dark:border-card-border rounded-lg hover:border-primary/40 hover:bg-primary/5 transition text-sm group"
+                    className="w-full text-left p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg hover:border-primary/40 hover:bg-primary/5 transition text-sm group"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-[var(--text-primary)] dark:text-foreground">#{o.id.slice(-6)}</span>
+                      <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">#{o.id.slice(-6)}</span>
                       <span className="font-extrabold text-primary">S/ {Number(o.total).toFixed(2)}</span>
                     </div>
                     {o.customerName && (

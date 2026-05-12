@@ -52,7 +52,7 @@ export default function CommunicationHubTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><MessageSquare className="h-6 w-6 text-primary" /> Hub de Comunicaciones</SectionTitle>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><MessageSquare className="h-6 w-6 text-primary" /> Hub de Comunicaciones</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Bandeja unificada: WhatsApp, SMS, email y llamadas</p>
         </div>
         <button onClick={() => exportToCSV(filtered.map(m => ({ cliente: m.customer, canal: m.channel, dir: m.direction, mensaje: m.content, estado: m.status, fecha: fmtFull(m.timestamp) })), "comunicaciones")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
@@ -65,7 +65,7 @@ export default function CommunicationHubTab() {
           { label: "Entrantes", value: inbound, color: "text-[var(--data-success-500)]" },
           { label: "Salientes", value: outbound, color: "text-[var(--text-secondary)]" },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 text-center">
+          <div key={k.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 text-center">
             <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] dark:text-muted">{k.label}</p>
             <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
           </div>
@@ -75,7 +75,7 @@ export default function CommunicationHubTab() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar por cliente o contenido…" />
+          <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="Buscar por cliente o contenido…" />
         </div>
         <div className="flex items-center gap-1.5">
           {["all", "whatsapp", "sms", "email", "llamada"].map(c => (
@@ -96,14 +96,14 @@ export default function CommunicationHubTab() {
           const Ch = CHANNEL_CONFIG[m.channel];
           const Icon = Ch.icon;
           return (
-            <div key={m.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", m.status === "pendiente" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]/30 dark:bg-amber-950/5" : "border-[var(--rule-base)] dark:border-card-border")}>
+            <div key={m.id} className={cn("bg-[var(--surface-raised)] rounded-xl border p-4", m.status === "pendiente" ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]/30 dark:bg-amber-950/5" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
               <div className="flex flex-wrap items-start gap-3">
                 <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", Ch.color)}>
                   <Icon className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="font-bold text-sm text-[var(--text-primary)] dark:text-foreground">{m.customer}</span>
+                    <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.customer}</span>
                     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded", m.direction === "in" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-surface dark:text-muted")}>{m.direction === "in" ? "← Entrante" : "→ Saliente"}</span>
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] bg-[var(--surface-alt)] dark:bg-surface px-1.5 py-0.5 rounded">{m.category}</span>
                     {m.status === "pendiente" && <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><AlertTriangle className="h-2.5 w-2.5" /> Pendiente</span>}
@@ -114,7 +114,7 @@ export default function CommunicationHubTab() {
 
                   {replyTo === m.id && (
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <input value={replyText} onChange={e => setReplyText(e.target.value)} className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-xs" placeholder="Escribe tu respuesta…" />
+                      <input value={replyText} onChange={e => setReplyText(e.target.value)} className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs" placeholder="Escribe tu respuesta…" />
                       <button onClick={() => { setReplyTo(null); setReplyText(""); }} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90"><Send className="h-3 w-3" /></button>
                     </div>
                   )}

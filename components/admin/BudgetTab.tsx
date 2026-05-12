@@ -116,13 +116,13 @@ export default function BudgetTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Wallet className="h-6 w-6 text-primary" /> Presupuestos
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Control presupuestario por departamento, categoría y período</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => exportToCSV(processed.map(l => ({ departamento: l.department, categoria: l.category, periodo: l.period, planificado: l.planned, ejecutado: l.executed, comprometido: l.committed, disponible: l.available, pct_ejecucion: Number(l.executionPct).toFixed(1), estado: l.computedStatus })), "presupuestos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(processed.map(l => ({ departamento: l.department, categoria: l.category, periodo: l.period, planificado: l.planned, ejecutado: l.executed, comprometido: l.committed, disponible: l.available, pct_ejecucion: Number(l.executionPct).toFixed(1), estado: l.computedStatus })), "presupuestos")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -134,7 +134,7 @@ export default function BudgetTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Total planificado", value: fmt(stats.totalPlanned), color: "text-[var(--text-primary)] dark:text-foreground", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
+          { label: "Total planificado", value: fmt(stats.totalPlanned), color: "text-[var(--text-primary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-alt)] dark:bg-surface/50" },
           { label: "Ejecutado", value: fmt(stats.totalExecuted), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
           { label: "Comprometido", value: fmt(stats.totalCommitted), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Disponible", value: fmt(stats.available), color: stats.available >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: stats.available >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
@@ -163,35 +163,35 @@ export default function BudgetTab() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5 space-y-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nueva partida presupuestaria</CardTitle>
+            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nueva partida presupuestaria</CardTitle>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Departamento</label>
-              <select value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">{DEPARTMENTS.map(d => <option key={d}>{d}</option>)}</select>
+              <select value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">{DEPARTMENTS.map(d => <option key={d}>{d}</option>)}</select>
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Categoría</label>
-              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
+              <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Período</label>
-              <input type="month" value={form.period} onChange={e => setForm(p => ({ ...p, period: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="month" value={form.period} onChange={e => setForm(p => ({ ...p, period: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div>
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Monto planificado (S/)</label>
-              <input type="number" value={form.planned || ""} onChange={e => setForm(p => ({ ...p, planned: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="number" value={form.planned || ""} onChange={e => setForm(p => ({ ...p, planned: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
             <div className="col-span-2">
               <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Notas</label>
-              <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones opcionales..." className="w-full text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+              <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones opcionales..." className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
             <button onClick={handleAdd} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">Registrar partida</button>
           </div>
         </div>
@@ -201,27 +201,27 @@ export default function BudgetTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar departamento, categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar departamento, categoría..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
         </div>
-        <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los departamentos</option>
           {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
-        <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los períodos</option>
           {periods.map(p => <option key={p} value={p}>{monthLabel(p)} {p.slice(0, 4)}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as BudgetStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-foreground">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as BudgetStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todos los estados</option>
           {(Object.keys(STATUS_META) as BudgetStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-card-border">
+            <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Estado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Departamento</th>
@@ -245,10 +245,10 @@ export default function BudgetTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-foreground">{l.department}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.department}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{l.category}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-mono text-[var(--text-secondary)]">{monthLabel(l.period)} {l.period.slice(0, 4)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-[var(--text-primary)] dark:text-foreground">{fmt(l.planned)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(l.planned)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-[var(--data-success-500)]">{fmt(l.executed)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--data-warning-500)]">{l.committed > 0 ? fmt(l.committed) : "—"}</td>
                     <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.available >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(l.available)}</td>
@@ -270,10 +270,10 @@ export default function BudgetTab() {
               })}
             </tbody>
             {processed.length > 0 && (
-              <tfoot className="bg-[var(--surface-alt)] dark:bg-surface/50 border-t border-[var(--rule-base)] dark:border-card-border">
+              <tfoot className="bg-[var(--surface-alt)] dark:bg-surface/50 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 <tr>
                   <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-extrabold text-[var(--text-secondary)] dark:text-muted uppercase">Totales</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(stats.totalPlanned)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(stats.totalPlanned)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-success-500)]">{fmt(stats.totalExecuted)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-[var(--data-warning-500)]">{fmt(stats.totalCommitted)}</td>
                   <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", stats.available >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(stats.available)}</td>
@@ -287,8 +287,8 @@ export default function BudgetTab() {
       </div>
 
       {/* Department summary by bar chart */}
-      <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground text-sm mb-4">Ejecución por departamento</CardTitle>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
+        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm mb-4">Ejecución por departamento</CardTitle>
         <div className="space-y-3">
           {DEPARTMENTS.map(dept => {
             const deptLines = processed.filter(l => l.department === dept);
@@ -301,7 +301,7 @@ export default function BudgetTab() {
                 <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted w-28 shrink-0">{dept}</span>
                 <div className="flex-1 h-5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden relative">
                   <div className={cn("h-full rounded-full transition-all", pct > 100 ? "bg-[var(--data-error-500)]" : pct > 85 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]")} style={{ width: `${Math.min(pct, 100)}%` }} />
-                  <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-foreground">{fmtPct(pct)}</span>
+                  <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtPct(pct)}</span>
                 </div>
                 <span className="text-xs font-semibold text-[var(--text-secondary)] w-28 text-right">{fmt(executed)} / {fmt(planned)}</span>
               </div>
@@ -313,9 +313,9 @@ export default function BudgetTab() {
       {/* Detail modal */}
       {detail && (
         <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground text-sm">Detalle de partida</CardTitle>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle de partida</CardTitle>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2 text-sm">
@@ -329,7 +329,7 @@ export default function BudgetTab() {
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-[var(--text-secondary)] dark:text-muted">{k}</span>
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-foreground text-right">{v}</span>
+                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{v}</span>
                 </div>
               ))}
             </div>

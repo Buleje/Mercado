@@ -46,14 +46,14 @@ export default function ABCAnalysisTab() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <BarChart2 className="h-6 w-6 text-primary" /> Análisis ABC
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Clasificación de productos por impacto en ingresos (principio de Pareto)</p>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-card-border rounded-lg bg-white dark:bg-surface text-sm w-56" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm w-56" />
         </div>
       </div>
 
@@ -66,15 +66,15 @@ export default function ABCAnalysisTab() {
             className={cn(
               "text-left p-4 rounded-xl border-2 transition-all hover:shadow-[var(--shadow-sm)]",
               CLASS_STYLES[cls].border,
-              filter === cls ? "border-primary ring-2 ring-primary/20" : "border-[var(--rule-base)] dark:border-card-border",
+              filter === cls ? "border-primary ring-2 ring-primary/20" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]",
               CLASS_STYLES[cls].row
             )}
           >
             <div className="flex items-center justify-between mb-2">
               <StatusBadge variant={CLASS_STYLES[cls].variant} label={`Clase ${cls}`} />
-              <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-foreground">{counts[cls]} productos</span>
+              <span className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{counts[cls]} productos</span>
             </div>
-            <p className="text-xl font-mono font-extrabold text-[var(--text-primary)] dark:text-foreground">{fmt(revenue[cls])}</p>
+            <p className="text-xl font-mono font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(revenue[cls])}</p>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">{totalRevenue > 0 ? ((revenue[cls] / totalRevenue) * 100).toFixed(1) : 0}% del ingreso total -- {CLASS_STYLES[cls].label}</p>
           </button>
         ))}
@@ -82,17 +82,17 @@ export default function ABCAnalysisTab() {
 
       {/* Table */}
       {data.length === 0 ? (
-        <div className="bg-white dark:bg-card border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
+        <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
           <BarChart2 className="h-10 w-10 mx-auto mb-3" />
           <p className="font-semibold">Sin datos de ventas para analizar</p>
           <p className="text-xs mt-1">Registra ventas o pedidos para ver el análisis ABC</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-soft)] dark:border-card-border text-left">
+                <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
                   <th className="px-2 sm:px-4 py-2 sm:py-3 w-8 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">#</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Categoría</th>
@@ -106,9 +106,9 @@ export default function ABCAnalysisTab() {
                 {filtered.map((p) => (
                   <tr key={p.productId} className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors", CLASS_STYLES[p.class].row)}>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-tertiary)] dark:text-muted text-xs">{data.indexOf(p) + 1}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold text-[var(--text-primary)] dark:text-foreground">{p.name}</td>
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-secondary)] dark:text-muted text-xs hidden sm:table-cell">{p.category}</td>
-                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-foreground">{fmt(p.revenue)}</td>
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(p.revenue)}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{p.units}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-[var(--text-secondary)] dark:text-muted hidden md:table-cell">{p.cumulativePct}%</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-center">

@@ -488,12 +488,12 @@ export function AdminSidebar({
         };
       default: // light
         return {
-          bg: "bg-white dark:bg-card",
+          bg: "bg-[var(--surface-raised)]",
           text: "text-[var(--text-secondary)]",
           hover: "hover:bg-[var(--accent-soft)]/40 hover:text-[var(--text-primary)]",
-          border: "border-[var(--rule-soft)] dark:border-card-border",
+          border: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
           activeItem: "bg-[var(--accent-soft)] text-primary font-semibold shadow-[inset_0_0_0_1px_color-mix(in oklab, var(--accent) 20%, transparent)]",
-          headerBorder: "border-[var(--rule-soft)] dark:border-card-border",
+          headerBorder: "border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
         };
     }
   }, [sidebarTheme]);
@@ -762,7 +762,7 @@ export function AdminSidebar({
                   "font-bold text-sm leading-tight tracking-tight truncate flex-1 min-w-0",
                   isDarkTheme
                     ? "text-white"
-                    : "text-[var(--text-primary)] dark:text-foreground",
+                    : "text-[var(--text-primary)] dark:text-[var(--text-primary)]",
                 )}>
                   {verticalConfig.branding?.sidebarTitle ?? activeTenantName ?? "Buleje"}
                 </p>
@@ -1283,7 +1283,7 @@ export function AdminSidebar({
             style={{ position: "fixed", top: sidebarFlyout.top, left: 264, zIndex: 50 }}
             onMouseEnter={() => { if (flyoutTimerRef.current) clearTimeout(flyoutTimerRef.current); }}
             onMouseLeave={() => { flyoutTimerRef.current = setTimeout(() => onSidebarFlyoutChange(null), 150); }}
-            className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl py-2 w-60 max-h-[80vh] overflow-y-auto"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl py-2 w-60 max-h-[80vh] overflow-y-auto"
           >
             {catTabs.map(tabId => {
               const tabInfo = allTabs.find(t => t.id === tabId);
@@ -1297,7 +1297,7 @@ export function AdminSidebar({
                     "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors",
                     tab === tabId
                       ? "bg-primary/10 text-primary font-semibold"
-                      : "text-[var(--text-primary)] dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface font-medium"
+                      : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface font-medium"
                   )}
                 >
                   <FlyoutTabIcon className="h-4 w-4 shrink-0" />
@@ -1345,7 +1345,7 @@ export function AdminSidebar({
           onClick={() => setShowIndustryModal(false)}
         >
           <div
-            className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-[var(--rule-base)] dark:border-card-border w-full max-w-sm mx-4 p-6"
+            className="bg-[var(--surface-raised)] rounded-2xl shadow-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-sm mx-4 p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-base font-bold text-[var(--text-primary)] mb-1">

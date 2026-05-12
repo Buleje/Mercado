@@ -63,15 +63,15 @@ export default function SharedCalendarTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <CalendarDays className="h-6 w-6 text-[var(--text-secondary)]" /> Calendario Compartido
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Eventos, entregas, pagos y tareas del equipo</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-            <button onClick={() => setView("semana")} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold", view === "semana" ? "bg-[var(--text-primary)] text-white" : "bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted")}>Semana</button>
-            <button onClick={() => setView("lista")} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold", view === "lista" ? "bg-[var(--text-primary)] text-white" : "bg-white dark:bg-card text-[var(--text-secondary)] dark:text-muted")}>Lista</button>
+          <div className="flex rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
+            <button onClick={() => setView("semana")} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold", view === "semana" ? "bg-[var(--text-primary)] text-white" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted")}>Semana</button>
+            <button onClick={() => setView("lista")} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold", view === "lista" ? "bg-[var(--text-primary)] text-white" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted")}>Lista</button>
           </div>
           <button onClick={() => setShowForm(!showForm)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Nuevo Evento
@@ -86,9 +86,9 @@ export default function SharedCalendarTab() {
 
       {/* Type filter */}
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => setTypeFilter("todas")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", typeFilter === "todas" ? "bg-[var(--text-primary)] text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted")}>Todos</button>
+        <button onClick={() => setTypeFilter("todas")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", typeFilter === "todas" ? "bg-[var(--text-primary)] text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted")}>Todos</button>
         {Object.entries(TYPE_CONFIG).map(([k, v]) => (
-          <button key={k} onClick={() => setTypeFilter(k as EventType)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", typeFilter === k ? "bg-[var(--text-primary)] text-white" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted")}>
+          <button key={k} onClick={() => setTypeFilter(k as EventType)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", typeFilter === k ? "bg-[var(--text-primary)] text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted")}>
             {v.label}
           </button>
         ))}
@@ -96,17 +96,17 @@ export default function SharedCalendarTab() {
 
       {/* New event form */}
       {showForm && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-3 sm:p-5 space-y-4">
-          <CardTitle className="font-bold text-[var(--text-primary)] dark:text-foreground">Nuevo Evento</CardTitle>
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5 space-y-4">
+          <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nuevo Evento</CardTitle>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4">
-            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary md:col-span-2" />
-            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as EventType })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
+            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary md:col-span-2" />
+            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as EventType })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold outline-none focus:border-primary">
               {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
-            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-            <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-            <input value={form.assignee} onChange={e => setForm({ ...form, assignee: e.target.value })} placeholder="Responsable" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-            <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notas" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary md:col-span-3" />
+            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary" />
+            <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary" />
+            <input value={form.assignee} onChange={e => setForm({ ...form, assignee: e.target.value })} placeholder="Responsable" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary" />
+            <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notas" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary md:col-span-3" />
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
@@ -117,14 +117,14 @@ export default function SharedCalendarTab() {
 
       {/* Week View */}
       {view === "semana" && (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 border-b border-[var(--rule-soft)] dark:border-card-border">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             {weekDays.map((d, i) => {
               const isToday = toISO(d) === toISO(TODAY);
               return (
-                <div key={i} className={cn("p-3 text-center border-r border-[var(--rule-soft)] dark:border-card-border last:border-r-0", isToday && "bg-[var(--surface-sunken)]")}>
+                <div key={i} className={cn("p-3 text-center border-r border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-r-0", isToday && "bg-[var(--surface-sunken)]")}>
                   <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">{DAYS_ES[d.getDay()]}</p>
-                  <p className={cn("text-lg font-extrabold mt-0.5", isToday ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-[var(--text-primary)] dark:text-foreground")}>{d.getDate()}</p>
+                  <p className={cn("text-lg font-extrabold mt-0.5", isToday ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{d.getDate()}</p>
                 </div>
               );
             })}
@@ -134,7 +134,7 @@ export default function SharedCalendarTab() {
               const dayEvents = filteredEvents.filter(e => e.date === toISO(d)).sort((a, b) => a.time.localeCompare(b.time));
               const isToday = toISO(d) === toISO(TODAY);
               return (
-                <div key={i} className={cn("p-2 border-r border-[var(--rule-soft)] dark:border-card-border last:border-r-0 space-y-1", isToday && "bg-[var(--data-info-50)]/30 dark:bg-indigo-950/10")}>
+                <div key={i} className={cn("p-2 border-r border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-r-0 space-y-1", isToday && "bg-[var(--data-info-50)]/30 dark:bg-indigo-950/10")}>
                   {dayEvents.map(e => {
                     const tc = TYPE_CONFIG[e.type];
                     return (
@@ -158,16 +158,16 @@ export default function SharedCalendarTab() {
             const tc = TYPE_CONFIG[e.type];
             const d = new Date(e.date + "T00:00:00");
             return (
-              <div key={e.id} className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border p-4 flex flex-wrap items-center gap-2 sm:gap-4 hover:shadow-[var(--shadow-sm)] transition-shadow">
+              <div key={e.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 flex flex-wrap items-center gap-2 sm:gap-4 hover:shadow-[var(--shadow-sm)] transition-shadow">
                 <div className="text-center shrink-0 w-12">
                   <p className="text-xs font-bold text-[var(--text-tertiary)]">{DAYS_ES[d.getDay()]}</p>
-                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-foreground">{d.getDate()}</p>
+                  <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{d.getDate()}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{MONTHS_ES[d.getMonth()].slice(0, 3)}</p>
                 </div>
                 <div className={cn("w-1 h-10 rounded-full shrink-0", tc.color.split(" ")[0])} />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="font-bold text-[var(--text-primary)] dark:text-foreground truncate">{e.title}</h4>
+                    <h4 className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{e.title}</h4>
                     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full shrink-0", tc.color)}>{tc.label}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">

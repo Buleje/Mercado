@@ -62,7 +62,7 @@ export function AdminMobileBottomBar({
 
   return (
     <nav
-      className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white dark:bg-card border-t border-[var(--rule-base)] dark:border-card-border flex items-stretch"
+      className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-[var(--surface-raised)] border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] flex items-stretch"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 4px)" }}
       aria-label="Navegación rápida"
     >

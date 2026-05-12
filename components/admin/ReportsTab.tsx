@@ -601,7 +601,7 @@ export default function ReportsTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground flex flex-wrap items-center gap-2"><FileText className="h-6 w-6 text-primary" />Reportes</SectionTitle>
+      <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><FileText className="h-6 w-6 text-primary" />Reportes</SectionTitle>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
         {REPORTS.map(r => {
@@ -610,12 +610,12 @@ export default function ReportsTab() {
           const isFullMetrics = r.type === "metricas-completas";
           const isPdfOnly = r.pdfOnly;
           return (
-            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 flex flex-col" : "bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-3 sm:p-6 flex flex-col"}>
+            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 flex flex-col" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 flex flex-col"}>
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-[var(--accent-soft)]" : "p-2 rounded-xl bg-primary/10"}>
                   <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-[var(--data-success-500)]" : "h-6 w-6 text-primary"} />
                 </div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-foreground">{r.label}</CardTitle>
+                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.label}</CardTitle>
               </div>
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted flex-1">{r.desc}</p>
               <div className="mt-4 flex flex-wrap gap-2">
