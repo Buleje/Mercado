@@ -5,13 +5,22 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { invalidateAll } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { SuperadminTotpDB } from "@/lib/db/admin-totp.db";
+import { verifyTotpCode } from "@/lib/auth/totp";
 import { z } from "zod";
 
+// SECURITY 2026-05-12 (audit pentest N4): purga total requiere TOTP obligatorio.
+// Antes bastaba password (cookie de sesión) + confirm string trivialmente
+// automatizable. TOTP forzado eleva la barrera a posesión de un dispositivo
+// físico (TOTP app) — necesario para una operación que borra 104 tablas.
 const PurgeSchema = z.object({
   confirm: z
     .string()
     .regex(/^PURGE-PLATFORM$/, "Para confirmar, envía 'PURGE-PLATFORM' como `confirm`"),
   reason: z.string().min(10).max(500),
+  totpCode: z
+    .string()
+    .regex(/^\d{6}$/, "totpCode debe ser 6 dígitos de tu app TOTP"),
 });
 
 async function requirePlatform(req: NextRequest) {
@@ -69,7 +78,9 @@ const DATA_TABLES = [
 // BlockTemplate, ApiKey, PushSubscription, TenantInvitation, StorePermission
 
 export async function DELETE(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-purge"); if (_rl) return _rl;
+  // STRICT rate-limit — un superadmin comprometido no debería poder ejecutar
+  // purga en ráfaga aunque tenga credenciales + TOTP.
+  const _rl = await applyRateLimit(req, "STRICT", "superadmin-purge"); if (_rl) return _rl;
   const session = await requirePlatform(req);
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -83,7 +94,7 @@ export async function DELETE(req: NextRequest) {
       {
         error: "Confirmacion requerida",
         details: parsed.error.flatten(),
-        hint: "Envia { confirm: 'PURGE-PLATFORM', reason: '<motivo minimo 10 chars>' }",
+        hint: "Envia { confirm: 'PURGE-PLATFORM', reason: '<motivo minimo 10 chars>', totpCode: '<6 digitos>' }",
       },
       { status: 400 },
     );
@@ -94,6 +105,32 @@ export async function DELETE(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  // SECURITY 2026-05-12: TOTP obligatorio. Si el superadmin aun no enrolo
+  // 2FA, lo forzamos antes de permitir la operacion nuclear.
+  const totpRow = await SuperadminTotpDB.getByUsername(session.username);
+  if (!totpRow?.totpSecret || !totpRow.totpEnabledAt) {
+    return NextResponse.json(
+      {
+        error: "totp_required",
+        message:
+          "Esta operacion requiere 2FA. Habilita TOTP en /superadmin/security antes de purgar.",
+      },
+      { status: 412 },
+    );
+  }
+  const totpValid = verifyTotpCode(totpRow.totpSecret, parsed.data.totpCode);
+  if (!totpValid) {
+    logger.warn("[SuperAdmin] purge TOTP invalido", {
+      username: session.username,
+      ip: req.headers.get("x-forwarded-for") ?? null,
+    });
+    return NextResponse.json(
+      { error: "totp_invalid", message: "Codigo TOTP invalido o expirado." },
+      { status: 401 },
+    );
+  }
+
   const purgeReason = parsed.data.reason;
 
   try {
