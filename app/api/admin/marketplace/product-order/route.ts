@@ -6,6 +6,7 @@ import { getProductOrder, setProductOrder } from "@/lib/store-product-order";
 import { resolveStoreSlugForTenant } from "@/lib/store-tenant-bridge";
 import { logger } from "@/lib/logger";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET/PUT /api/admin/marketplace/product-order
@@ -43,6 +44,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "marketplace-product-order-put");
+  if (_rl) return _rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "manager"]);

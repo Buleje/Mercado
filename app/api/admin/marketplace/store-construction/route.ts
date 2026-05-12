@@ -6,6 +6,7 @@ import { getConstructionMode, setConstructionMode } from "@/lib/store-constructi
 import { resolveStoreSlugForTenant } from "@/lib/store-tenant-bridge";
 import { logger } from "@/lib/logger";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET/PUT /api/admin/marketplace/store-construction
@@ -45,6 +46,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "marketplace-store-construction-put");
+  if (_rl) return _rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "manager"]);

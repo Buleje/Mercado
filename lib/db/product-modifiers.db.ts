@@ -391,4 +391,19 @@ export const ProductModifiersDB = {
     });
     return options.map(mapOption);
   },
+
+  /**
+   * Lookup individual scoped por tenantId. A diferencia de `getOptionsByIds`,
+   * incluye opciones inactivas — útil para el PATCH del admin que puede
+   * reactivarlas. Devuelve null si no existe o pertenece a otro tenant.
+   */
+  async getOptionById(
+    tenantId: string,
+    optionId: string,
+  ): Promise<DbModifierOption | null> {
+    const row = await prisma.productModifierOption.findFirst({
+      where: { id: optionId, tenantId },
+    });
+    return row ? mapOption(row) : null;
+  },
 };
