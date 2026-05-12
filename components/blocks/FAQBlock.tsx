@@ -65,7 +65,7 @@ export default function FAQBlock(props: Partial<FAQBlockProps>) {
             <HelpCircle className="w-3.5 h-3.5" />
             {badge}
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             {titleParts[0]}
             {titleAccent && (
               <span className="relative inline-block text-primary">
@@ -100,7 +100,7 @@ export default function FAQBlock(props: Partial<FAQBlockProps>) {
             return (
               <div
                 key={i}
-                className={`rounded-2xl bg-white dark:bg-card overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${
+                className={`rounded-2xl bg-[var(--surface-raised)] overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 ${
                   isOpen ? "shadow-md ring-1 ring-primary/15" : ""
                 }`}
               >
@@ -123,7 +123,7 @@ export default function FAQBlock(props: Partial<FAQBlockProps>) {
                     )}
                     <span
                       className={`text-sm sm:text-base font-semibold transition-colors duration-200 ${
-                        isOpen ? "text-primary" : "text-foreground group-hover:text-primary"
+                        isOpen ? "text-primary" : "text-[var(--text-primary)] group-hover:text-primary"
                       }`}
                     >
                       {faq.question}

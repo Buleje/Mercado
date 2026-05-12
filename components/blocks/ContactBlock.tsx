@@ -78,7 +78,7 @@ subtitle,
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             {badge}
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             {title}
           </h2>
           {subtitle && (
@@ -103,7 +103,7 @@ subtitle,
                       {item.label}
                     </span>
                   </div>
-                  <p className={`font-semibold text-foreground ${item.href ? 'group-hover:text-primary' : ''} transition-colors`}>
+                  <p className={`font-semibold text-[var(--text-primary)] ${item.href ? 'group-hover:text-primary' : ''} transition-colors`}>
                     {item.value}
                   </p>
                 </>
@@ -115,12 +115,12 @@ subtitle,
                   href={item.href}
                   target={item.href.startsWith("http") ? "_blank" : undefined}
                   rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="block bg-white dark:bg-card rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all duration-300 group"
+                  className="block bg-[var(--surface-raised)] rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all duration-300 group"
                 >
                   {content}
                 </a>
               ) : (
-                <div key={i} className="bg-white dark:bg-card rounded-xl p-6 shadow-sm">
+                <div key={i} className="bg-[var(--surface-raised)] rounded-xl p-6 shadow-sm">
                   {content}
                 </div>
               );

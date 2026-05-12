@@ -79,7 +79,7 @@ export default function BenefitsBlock(props: Partial<BenefitsBlockProps>) {
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             {badge}
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             {title}
           </h2>
           {subtitle && (
@@ -95,7 +95,7 @@ export default function BenefitsBlock(props: Partial<BenefitsBlockProps>) {
             return (
               <div
                 key={i}
-                className="group relative bg-white dark:bg-card rounded-2xl sm:rounded-3xl p-7 sm:p-8 text-center shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+                className="group relative bg-[var(--surface-raised)] rounded-2xl sm:rounded-3xl p-7 sm:p-8 text-center shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
               >
                 <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 rounded-b-full ${benefit.iconBg} opacity-60`} />
 
@@ -105,7 +105,7 @@ export default function BenefitsBlock(props: Partial<BenefitsBlockProps>) {
                   >
                     <Icon className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">
+                  <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">
                     {benefit.title}
                   </h3>
                   <p className="text-sm text-muted leading-relaxed">

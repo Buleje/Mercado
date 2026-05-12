@@ -66,7 +66,7 @@ export function PaicheLoading({
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse at center, color-mix(in oklab, var(--accent) 10%, transparent) 0%, transparent 60%)",
+              "radial-gradient(ellipse at center, color-mix(in oklab, var(--accent) 12%, transparent) 0%, transparent 60%)",
           }}
         />
         {/* Ondas decorativas */}
@@ -74,6 +74,23 @@ export function PaicheLoading({
           <div className="paiche-wave paiche-wave-1" />
           <div className="paiche-wave paiche-wave-2" />
           <div className="paiche-wave paiche-wave-3" />
+          <div className="paiche-wave paiche-wave-4" />
+        </div>
+        {/* Particulas flotantes ambientales (10 burbujas dispersas) */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none paiche-particles">
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+            <span
+              key={i}
+              className="paiche-particle"
+              style={{
+                left: `${(i * 11.3 + 7) % 100}%`,
+                animationDelay: `${(i * 0.7) % 5}s`,
+                animationDuration: `${5 + (i % 4)}s`,
+                width: `${4 + (i % 3) * 2}px`,
+                height: `${4 + (i % 3) * 2}px`,
+              }}
+            />
+          ))}
         </div>
         {/* Paiche grande */}
         <div className="relative text-[var(--accent)] paiche-loader-mascot">
@@ -135,7 +152,7 @@ function PaicheLoaderStyles() {
           transform: scale(1);
         }
         50% {
-          filter: drop-shadow(0 0 24px color-mix(in oklab, var(--accent) 45%, transparent));
+          filter: drop-shadow(0 0 28px color-mix(in oklab, var(--accent) 55%, transparent));
           transform: scale(1.04);
         }
       }
@@ -150,13 +167,16 @@ function PaicheLoaderStyles() {
         border: 2px solid color-mix(in oklab, var(--accent) 35%, transparent);
         border-radius: 50%;
         opacity: 0;
-        animation: paiche-wave-expand 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+        animation: paiche-wave-expand 3.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
       }
       .paiche-wave-2 {
-        animation-delay: 1.05s;
+        animation-delay: 0.9s;
       }
       .paiche-wave-3 {
-        animation-delay: 2.1s;
+        animation-delay: 1.8s;
+      }
+      .paiche-wave-4 {
+        animation-delay: 2.7s;
       }
       @keyframes paiche-wave-expand {
         0% {
@@ -164,10 +184,38 @@ function PaicheLoaderStyles() {
           opacity: 0.7;
         }
         100% {
-          transform: scale(2.4);
+          transform: scale(2.6);
           opacity: 0;
         }
       }
+
+      /* Particulas ambientales — burbujas de fondo */
+      .paiche-particle {
+        position: absolute;
+        bottom: -10px;
+        border-radius: 9999px;
+        background: color-mix(in oklab, var(--accent) 30%, transparent);
+        opacity: 0;
+        animation: paiche-particle-rise 6s ease-out infinite;
+      }
+      @keyframes paiche-particle-rise {
+        0% {
+          transform: translateY(0) translateX(0) scale(0.6);
+          opacity: 0;
+        }
+        15% {
+          opacity: 0.5;
+        }
+        50% {
+          transform: translateY(-50vh) translateX(8px) scale(1);
+          opacity: 0.4;
+        }
+        100% {
+          transform: translateY(-95vh) translateX(-12px) scale(0.5);
+          opacity: 0;
+        }
+      }
+
       .paiche-loader-dot {
         display: inline-block;
         margin: 0 0.15em;
@@ -183,12 +231,13 @@ function PaicheLoaderStyles() {
         }
         40% {
           opacity: 1;
-          transform: translateY(-3px);
+          transform: translateY(-4px);
         }
       }
       @media (prefers-reduced-motion: reduce) {
         .paiche-loader-mascot,
         .paiche-wave,
+        .paiche-particle,
         .paiche-loader-dot {
           animation: none !important;
         }

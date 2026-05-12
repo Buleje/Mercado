@@ -31,7 +31,7 @@ const PLAN_STYLES: Record<
     ring: "ring-border",
     badge: "bg-muted/20 text-muted",
     button:
-      "border border-border text-foreground hover:bg-surface dark:hover:bg-card",
+      "border border-border text-[var(--text-primary)] hover:bg-surface dark:hover:bg-[var(--surface-raised)]",
     icon: "text-muted",
   },
   pro: {
@@ -128,7 +128,7 @@ export default function PricingTable({
       <div className="mb-10 flex items-center justify-center gap-3">
         <span
           className={`text-sm font-medium transition-colors ${
-            !yearly ? "text-foreground" : "text-muted"
+            !yearly ? "text-[var(--text-primary)]" : "text-muted"
           }`}
         >
           Mensual
@@ -151,7 +151,7 @@ export default function PricingTable({
         </button>
         <span
           className={`text-sm font-medium transition-colors ${
-            yearly ? "text-foreground" : "text-muted"
+            yearly ? "text-[var(--text-primary)]" : "text-muted"
           }`}
         >
           Anual
@@ -178,7 +178,7 @@ export default function PricingTable({
             <RevealOnScroll
               key={planId}
               delayMs={index * 70}
-              className={`relative flex flex-col rounded-2xl bg-card p-6 ring-1 dark:bg-card ${styles.ring} ${
+              className={`relative flex flex-col rounded-2xl bg-[var(--surface-raised)] p-6 ring-1 dark:bg-[var(--surface-raised)] ${styles.ring} ${
                 isSelected ? "ring-2" : ""
               } ${isPopular ? "ring-2 shadow-lg shadow-primary/10" : ""}`}
             >
@@ -195,7 +195,7 @@ export default function PricingTable({
 
               {/* Cabecera */}
               <div className="mb-4">
-                <h3 className="text-base font-bold text-foreground">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">
                   {plan.name}
                 </h3>
                 <p className="mt-1 text-sm text-muted leading-snug">
@@ -206,7 +206,7 @@ export default function PricingTable({
               {/* Precio */}
               <div className="mb-6">
                 <div className="flex items-end gap-1">
-                  <span className="text-3xl font-extrabold text-foreground tabular-nums">
+                  <span className="text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">
                     {priceDisplay}
                   </span>
                   {plan.priceMonthly > 0 && (
@@ -250,7 +250,7 @@ export default function PricingTable({
               {/* Lista de features */}
               <ul className="flex flex-col gap-2.5">
                 {features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm text-foreground/80">
+                  <li key={feature} className="flex items-start gap-2 text-sm text-[var(--text-primary)]/80">
                     <CheckIcon active={true} />
                     <span>{feature}</span>
                   </li>

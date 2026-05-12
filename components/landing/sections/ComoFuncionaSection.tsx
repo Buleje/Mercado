@@ -16,10 +16,10 @@ import {
 import T from "@/components/T";
 
 const PASOS = [
-  { num: "01", icon: Search,      keyTitle: "landing.how.step1.title", keyDesc: "landing.how.step1.desc", keyTag: "landing.how.step1.tag" },
-  { num: "02", icon: ShoppingBag, keyTitle: "landing.how.step2.title", keyDesc: "landing.how.step2.desc", keyTag: "landing.how.step2.tag" },
-  { num: "03", icon: CreditCard,  keyTitle: "landing.how.step3.title", keyDesc: "landing.how.step3.desc", keyTag: "landing.how.step3.tag" },
-  { num: "04", icon: Bike,        keyTitle: "landing.how.step4.title", keyDesc: "landing.how.step4.desc", keyTag: "landing.how.step4.tag" },
+  { num: "01", icon: Search,      keyTitle: "landing.how.step1.title", keyDesc: "landing.how.step1.desc", keyTag: "landing.how.step1.tag", time: "2 min" },
+  { num: "02", icon: ShoppingBag, keyTitle: "landing.how.step2.title", keyDesc: "landing.how.step2.desc", keyTag: "landing.how.step2.tag", time: "1 día" },
+  { num: "03", icon: CreditCard,  keyTitle: "landing.how.step3.title", keyDesc: "landing.how.step3.desc", keyTag: "landing.how.step3.tag", time: "Auto" },
+  { num: "04", icon: Bike,        keyTitle: "landing.how.step4.title", keyDesc: "landing.how.step4.desc", keyTag: "landing.how.step4.tag", time: "30 min" },
 ];
 
 export default function ComoFuncionaSection() {
@@ -64,55 +64,65 @@ export default function ComoFuncionaSection() {
           </p>
         </div>
 
-        {/* Grid de 4 pasos — asimétrico */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--rule-soft)] border border-[var(--rule-soft)] rounded-2xl overflow-hidden">
-          {PASOS.map(({ num, icon: Icon, keyTitle, keyDesc, keyTag }, idx) => (
-            <article
-              key={num}
-              className="group relative bg-[var(--surface-canvas)] p-8 lg:p-10 transition-colors hover:bg-[var(--surface-sunken)]"
-            >
-              {/* Número gigante de fondo */}
-              <span
-                aria-hidden
-                className="absolute top-6 right-6 text-[clamp(3rem,6vw,5rem)] font-black tabular-nums tracking-[-0.05em] text-[var(--text-primary)]/[0.04] leading-none select-none"
+        {/* Timeline visual: 4 cards con línea conectora horizontal entre pasos.
+            v2 (2026-05-10): antes era un grid pegado con número gris fantasma.
+            Ahora cada card flota separada, conectada por una línea punteada
+            accent + dot bullet, con badge de "tiempo estimado" para urgencia. */}
+        <div className="relative">
+          {/* Línea conectora horizontal (solo desktop, detrás de las cards) */}
+          <div
+            aria-hidden
+            className="hidden lg:block absolute top-[88px] left-[7%] right-[7%] h-[2px] bg-[repeating-linear-gradient(to_right,var(--accent)_0,var(--accent)_6px,transparent_6px,transparent_12px)] opacity-40 z-0"
+          />
+
+          <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6 z-10">
+            {PASOS.map(({ num, icon: Icon, keyTitle, keyDesc, keyTag, time }) => (
+              <article
+                key={num}
+                className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 lg:p-7 transition-all duration-300 hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
               >
-                {num}
-              </span>
-
-              {/* Icon box */}
-              <div className="relative mb-6">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                  <Icon className="h-6 w-6" strokeWidth={1.75} />
-                </span>
-              </div>
-
-              {/* Tag numérico */}
-              <div className="relative flex items-center gap-2 mb-3">
-                <span className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                  <T k="landing.how.step" fallback="Paso" /> {num}
-                </span>
-                <span className="h-px flex-1 bg-[var(--rule-soft)]" />
-                <span className="text-[length:var(--ts-xs)] font-semibold uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
-                  <T k={keyTag} />
-                </span>
-              </div>
-
-              <h3 className="relative text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
-                <T k={keyTitle} />
-              </h3>
-              <p className="relative mt-3 text-sm text-[var(--text-secondary)] leading-relaxed">
-                <T k={keyDesc} />
-              </p>
-
-              {/* Linker visual entre pasos (solo desktop, no último) */}
-              {idx < PASOS.length - 1 && (
+                {/* Número grande en esquina top-right como elemento de jerarquía. */}
                 <span
                   aria-hidden
-                  className="hidden lg:block absolute top-1/2 -right-[6px] h-3 w-3 rounded-full bg-[var(--accent)] ring-4 ring-[var(--surface-raised)] z-10"
-                />
-              )}
-            </article>
-          ))}
+                  className="absolute top-5 right-5 text-3xl font-black tabular-nums tracking-[-0.04em] text-[var(--rule-base)] leading-none select-none transition-colors group-hover:text-[var(--accent)]/30"
+                >
+                  {num}
+                </span>
+
+                {/* Icon box bigger + accent solid on hover */}
+                <div className="relative mb-5">
+                  <span
+                    aria-hidden
+                    className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] transition-all duration-300 group-hover:bg-[var(--accent)] group-hover:text-white group-hover:scale-105 shadow-sm"
+                  >
+                    <Icon className="h-6 w-6" strokeWidth={2} />
+                  </span>
+                </div>
+
+                {/* Step label + tiempo */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                    <T k="landing.how.step" fallback="Paso" /> {num}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
+                    {time}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
+                  <T k={keyTitle} />
+                </h3>
+                <p className="mt-2.5 text-sm text-[var(--text-secondary)] leading-relaxed">
+                  <T k={keyDesc} />
+                </p>
+
+                {/* Tag mini bottom */}
+                <p className="mt-4 inline-flex items-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <T k={keyTag} />
+                </p>
+              </article>
+            ))}
+          </div>
         </div>
 
         {/* Stats de soporte + CTA */}

@@ -128,7 +128,7 @@ export default function CierrePaso3Compartir({
           className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${
             saved
               ? "border-emerald-300 dark:border-[var(--data-success-700)] bg-emerald-50 dark:bg-emerald-950/30"
-              : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-primary"
+              : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary"
           }`}
         >
           {saved ? (
@@ -141,7 +141,7 @@ export default function CierrePaso3Compartir({
             </div>
           )}
           <div className="text-left flex-1">
-            <p className="font-bold text-gray-900 dark:text-foreground text-sm">
+            <p className="font-bold text-gray-900 dark:text-[var(--text-primary)] text-sm">
               {saved ? "Reporte guardado" : "Guardar reporte"}
             </p>
             <p className="text-xs text-gray-500 dark:text-muted">
@@ -155,13 +155,13 @@ export default function CierrePaso3Compartir({
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
           onClick={handlePrint}
-          className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-emerald-400 transition-all"
+          className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-emerald-400 transition-all"
         >
           <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
             <Printer className="h-5 w-5 text-[var(--data-success-600)] dark:text-emerald-400" />
           </div>
           <div className="text-left flex-1">
-            <p className="font-bold text-gray-900 dark:text-foreground text-sm">Imprimir</p>
+            <p className="font-bold text-gray-900 dark:text-[var(--text-primary)] text-sm">Imprimir</p>
             <p className="text-xs text-gray-500 dark:text-muted">Imprime el resumen del día</p>
           </div>
         </motion.button>
@@ -171,13 +171,13 @@ export default function CierrePaso3Compartir({
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleWhatsApp}
-          className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-green-400 transition-all"
+          className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-green-400 transition-all"
         >
           <div className="h-10 w-10 rounded-xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center">
             <MessageCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
           </div>
           <div className="text-left flex-1">
-            <p className="font-bold text-gray-900 dark:text-foreground text-sm">Enviar a WhatsApp</p>
+            <p className="font-bold text-gray-900 dark:text-[var(--text-primary)] text-sm">Enviar a WhatsApp</p>
             <p className="text-xs text-gray-500 dark:text-muted">Comparte el resumen por WhatsApp</p>
           </div>
         </motion.button>
@@ -185,7 +185,7 @@ export default function CierrePaso3Compartir({
 
       {/* Notes */}
       <div className="print:hidden">
-        <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-2">
+        <label className="block text-sm font-semibold text-gray-700 dark:text-[var(--text-primary)] mb-2">
           Notas del día (opcional)
         </label>
         <textarea
@@ -193,7 +193,7 @@ export default function CierrePaso3Compartir({
           onChange={(e) => setNotas(e.target.value)}
           placeholder="Ej: Se acab\u00f3 el arroz a las 5pm, falt\u00f3 cambio..."
           rows={3}
-          className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card px-4 py-3 text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-sm text-gray-900 dark:text-[var(--text-primary)] placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary resize-none"
         />
       </div>
 

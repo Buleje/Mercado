@@ -78,9 +78,9 @@ export default function CierreDiarioModal({ open, onClose }: Props) {
         className="fixed right-0 top-0 bottom-0 w-full sm:w-[500px] md:w-[560px] bg-gray-50 dark:bg-background shadow-2xl flex flex-col print:static print:w-full print:shadow-none"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-card-border bg-white dark:bg-card print:hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] print:hidden">
           <div>
-            <h1 className="text-lg font-extrabold text-gray-900 dark:text-foreground">
+            <h1 className="text-lg font-extrabold text-gray-900 dark:text-[var(--text-primary)]">
               Cierre del Día
             </h1>
             <p className="text-xs text-gray-400 dark:text-muted">
@@ -89,14 +89,14 @@ export default function CierreDiarioModal({ open, onClose }: Props) {
           </div>
           <button
             onClick={handleClose}
-            className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Progress dots */}
-        <div className="flex items-center justify-center gap-3 py-3 bg-white dark:bg-card border-b border-gray-100 dark:border-card-border print:hidden">
+        <div className="flex items-center justify-center gap-3 py-3 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] print:hidden">
           {PASO_LABELS.map((label, i) => {
             const step = (i + 1) as 1 | 2 | 3;
             const isActive = cierre.paso === step;
@@ -112,7 +112,7 @@ export default function CierreDiarioModal({ open, onClose }: Props) {
                     isDone ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
                   }`} />
                   <span className={`text-xs font-semibold ${
-                    isActive ? "text-primary" : isDone ? "text-gray-600 dark:text-foreground" : "text-gray-400 dark:text-muted"
+                    isActive ? "text-primary" : isDone ? "text-gray-600 dark:text-[var(--text-primary)]" : "text-gray-400 dark:text-muted"
                   }`}>{label}</span>
                 </div>
               </div>
@@ -188,9 +188,9 @@ export default function CierreDiarioModal({ open, onClose }: Props) {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border p-6 w-80 z-10"
+            className="relative bg-[var(--surface-raised)] rounded-2xl shadow-2xl border border-[var(--rule-base)] p-6 w-80 z-10"
           >
-            <h3 className="text-base font-bold text-gray-900 dark:text-foreground">
+            <h3 className="text-base font-bold text-gray-900 dark:text-[var(--text-primary)]">
               ¿Cerrar sin guardar?
             </h3>
             <p className="text-sm text-gray-500 dark:text-muted mt-2">
