@@ -468,6 +468,10 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
 function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () => void }) {
   const meta = STATUS_META[order.status];
   const Icon = meta.icon;
+  // PERF (audit React Compiler 2026-05-12): cache-buster fijo al mount del drawer
+  // via useState lazy init (pure capture de Date.now()). Sigue forzando refresh
+  // del panel admin del tenant porque el modal se monta cada vez que se abre.
+  const [cacheBust] = useState(() => Date.now());
   return (
     <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
@@ -614,7 +618,7 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
 
           {/* CTA → entrar al admin del tenant */}
           <a
-            href={`/t/${order.tenant.slug}/admin?tab=pedidos&_fresh=${Date.now()}`}
+            href={`/t/${order.tenant.slug}/admin?tab=pedidos&_fresh=${cacheBust}`}
             target="_blank"
             rel="noopener noreferrer"
             className="block w-full text-center px-5 py-3 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent-600)] transition-colors"

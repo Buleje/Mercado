@@ -232,26 +232,30 @@ export default function DocumentosModule() {
   const usagePct = Math.min(100, (totalSize / MAX_STORAGE) * 100);
   const lastUpload = docs[0]?.uploadedAt;
 
+  // PERF (audit React Compiler 2026-05-12): cutoff fijo al mount del módulo
+  // via useState lazy initializer (única forma pura de capturar Date.now()).
+  // Si se necesita refresh, hay un refresh button. No requiere update por minuto.
+  const [sevenDaysAgo] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000);
+
   const counts = useMemo(() => {
     const c: Record<DocCategory, number> = {
       all: docs.length, favorites: 0, recent: 0,
       contratos: 0, facturas: 0, manuales: 0, fotos: 0, personal: 0, otros: 0,
     };
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    // sevenDaysAgo from useState lazy init above
     for (const d of docs) {
       if (d.favorite) c.favorites++;
       if (new Date(d.uploadedAt).getTime() > sevenDaysAgo) c.recent++;
       if (d.category !== "all" && d.category !== "favorites" && d.category !== "recent") c[d.category]++;
     }
     return c;
-  }, [docs]);
+  }, [docs, sevenDaysAgo]);
 
   const filtered = useMemo(() => {
     let list = docs;
     if (category === "favorites") list = list.filter((d) => d.favorite);
     else if (category === "recent") {
-      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      list = list.filter((d) => new Date(d.uploadedAt).getTime() > cutoff);
+      list = list.filter((d) => new Date(d.uploadedAt).getTime() > sevenDaysAgo);
     } else if (category !== "all") {
       list = list.filter((d) => d.category === category);
     }
@@ -264,7 +268,7 @@ export default function DocumentosModule() {
       );
     }
     return list;
-  }, [docs, category, search]);
+  }, [docs, category, search, sevenDaysAgo]);
 
   return (
     <div
