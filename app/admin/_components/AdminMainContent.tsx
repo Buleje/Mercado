@@ -59,9 +59,9 @@ export function AdminMainContent({
             ? "max-w-[1920px]" /* en compact modo, usar casi todo el viewport */
             : "max-w-[1600px]",
         compactMode && !presentationMode
-          ? "px-2 sm:px-4 py-2 sm:py-4"
+          ? "px-3 sm:px-4 py-3 sm:py-4"
           : !presentationMode
-            ? "px-3 sm:px-6 py-4 sm:py-8"
+            ? "px-4 sm:px-6 py-5 sm:py-8"
             : "",
       )}
       {...swipeHandlers}

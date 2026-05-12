@@ -124,10 +124,11 @@ export function AdminMobileDrawer({
         />
       )}
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — ancho fluido para celulares (85vw deja franja
+          minima clicable para cerrar) con cap en sm+ para tabletas chicas. */}
       <aside
         className={cn(
-          "fixed top-0 left-0 bottom-0 w-72 z-50 bg-[var(--surface-raised)] flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden",
+          "fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-50 bg-[var(--surface-raised)] flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >

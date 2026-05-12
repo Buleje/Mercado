@@ -134,7 +134,7 @@ export function AdminTopHeader({
         <AdminTooltip content="Abrir menú" side="bottom">
           <button
             onClick={onOpenMobileNav}
-            className="sm:hidden p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors shrink-0"
+            className="sm:hidden inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors shrink-0"
             aria-label="Menú"
           >
             <Menu className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
@@ -145,7 +145,7 @@ export function AdminTopHeader({
           onClick={onOpenSearch}
           aria-label="Búsqueda global (atajo Ctrl+K)"
           className={cn(
-            "group flex items-center gap-2.5 px-3.5 h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all border",
+            "group flex items-center gap-2.5 px-3.5 h-11 sm:h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all border",
             isBulejeTheme
               ? "bg-white/[0.04] border-[color-mix(in oklab, var(--accent) 15%, transparent)] hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] hover:bg-white/[0.07]"
               : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-white dark:hover:bg-[var(--surface-raised)] hover:shadow-[var(--shadow-sm)]"
