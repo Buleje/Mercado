@@ -46,7 +46,7 @@ export default function PaymentMethods() {
             <ShieldCheck className="w-3.5 h-3.5" />
             Pagos seguros
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             Métodos de{" "}
             <span className="text-primary relative">
               pago
@@ -65,7 +65,7 @@ export default function PaymentMethods() {
           {METHODS.map((method, i) => (
             <div
               key={method.name}
-              className={`group relative flex flex-col items-center text-center bg-white dark:bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-500 overflow-hidden shadow-[var(--shadow-sm)] ${
+              className={`group relative flex flex-col items-center text-center bg-[var(--surface-raised)] rounded-2xl sm:rounded-3xl p-6 sm:p-8 hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-500 overflow-hidden shadow-[var(--shadow-sm)] ${
                 inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
               }`}
               style={{ transitionDelay: inView ? `${i * 100}ms` : "0ms" }}
@@ -80,7 +80,7 @@ export default function PaymentMethods() {
                 <div className={`${method.iconBg} rounded-2xl p-4 mb-5 shadow-[var(--shadow-lg)] group-hover:scale-110 transition-transform duration-300`}>
                   <method.icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-foreground">{method.name}</h3>
+                <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">{method.name}</h3>
                 <p className="text-xs sm:text-sm text-muted mt-1">{method.desc}</p>
               </div>
             </div>

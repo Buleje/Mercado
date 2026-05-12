@@ -62,7 +62,7 @@ export default function ProductsPreview() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-12">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] animate-pulse">
+              <div key={i} className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] animate-pulse">
                 <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
                 <div className="p-3 space-y-2">
                   <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
@@ -82,7 +82,7 @@ export default function ProductsPreview() {
       <section className="py-20 sm:py-28 bg-surface relative overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Package className="h-16 w-16 text-primary/20 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Cargando productos...</h2>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Cargando productos...</h2>
           <p className="text-muted text-sm mb-6">Estamos preparando nuestro catálogo para ti</p>
           <Link href="/tienda" className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm rounded-xl px-6 py-3 hover:bg-primary-dark transition-colors">
             <ShoppingCart className="h-5 w-5" />
@@ -108,7 +108,7 @@ export default function ProductsPreview() {
             <Sparkles className="h-3.5 w-3.5" />
             {hp.previewBadge}
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             {hp.previewTitle}{" "}
             <span className="text-primary relative">
               {hp.previewTitleAccent}
@@ -128,7 +128,7 @@ export default function ProductsPreview() {
             <Link
               key={cat.id}
               href="/tienda"
-              className="group inline-flex items-center gap-2 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)]"
+              className="group inline-flex items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-full px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)]"
             >
               <span className="text-base">{cat.emoji}</span>
               <span>{cat.label}</span>
@@ -150,7 +150,7 @@ export default function ProductsPreview() {
               key={product.id}
               href="/tienda"
               onClick={() => trackProductView({ id: product.id, name: product.name, category: product.category, price: product.price })}
-              className={`group relative bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300 ${
+              className={`group relative bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300 ${
                 inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
               }`}
               style={inView ? { animationDelay: `${150 + i * 80}ms` } : undefined}
@@ -176,7 +176,7 @@ export default function ProductsPreview() {
 
               {/* Info */}
               <div className="p-3">
-                <h3 className="text-xs sm:text-sm font-bold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] leading-snug line-clamp-2 group-hover:text-primary transition-colors">
                   {product.name}
                 </h3>
                 <div className="flex items-center gap-1 mt-1.5">

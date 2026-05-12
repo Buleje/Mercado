@@ -8,7 +8,8 @@ import {
   Search, Clock, Users, ChefHat, ShoppingCart, Flame,
   X, Sparkles, ArrowRight, Star, Eye, LayoutGrid, List,
   Send, Utensils, Salad, Soup, Cake, GlassWater, Zap,
-  Trophy, MapPin, type LucideIcon,
+  Trophy, MapPin, CheckCircle2, AlertTriangle,
+  type LucideIcon,
 } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -21,13 +22,20 @@ import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
 type Ingrediente = {
   id?: string;
   productoId?: number | null;
+  storeProductId?: string | null;
   nombre: string;
   cantidad: number;
   unidad: string;
   precio: number;
   imagen?: string | null;
   stock: number;
-  categoria?: string;
+  categoria?: string | null;
+  essential?: boolean;
+  // Resuelto cross-marketplace (endpoint /api/marketplace/recetas)
+  availableInStores?: number;
+  bestPrice?: number | null;
+  bestStoreSlug?: string | null;
+  bestStoreName?: string | null;
 };
 
 type Receta = {
@@ -46,6 +54,10 @@ type Receta = {
   ingredientes: Ingrediente[];
   totalIngredientes: number;
   pasos?: string[];
+  // Cocinabilidad cross-marketplace
+  cookable?: boolean;
+  availableCount?: number;
+  missingEssentials?: string[];
 };
 
 // ── Constants ──────────────────────────────────────────────
@@ -122,6 +134,10 @@ function RecetaCard({
   const dif = DIFICULTAD_LABELS[receta.dificultad || ""] || null;
   // Aspect ratio square — consistente con UnifiedProductCard del marketplace
   const aspectClass = "aspect-square";
+  const cookable = receta.cookable !== false; // default true si endpoint legacy
+  const missing = receta.missingEssentials ?? [];
+  const totalIngs = receta.ingredientes.length;
+  const availIngs = receta.availableCount ?? totalIngs;
 
   return (
     <motion.div
@@ -132,7 +148,33 @@ function RecetaCard({
       whileHover={{ y: -4 }}
       className="group"
     >
-      <div className="rounded-xl overflow-hidden bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:border-[var(--accent)]/40 hover:shadow-md transition-[border-color,box-shadow,transform] duration-200">
+      <div className={cn(
+        "rounded-xl overflow-hidden bg-[var(--surface-raised)] border transition-[border-color,box-shadow,transform] duration-200",
+        cookable
+          ? "border-[var(--rule-soft)] hover:border-[var(--accent)]/40 hover:shadow-md"
+          : "border-[var(--data-warning-200,#fde68a)]/60 hover:shadow-md"
+      )}>
+        {/* Banda superior de cocinabilidad — siempre visible */}
+        <div className={cn(
+          "px-4 py-2 flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
+          cookable
+            ? "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] dark:bg-emerald-950/40 dark:text-emerald-300"
+            : "bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] dark:bg-amber-950/40 dark:text-amber-300"
+        )}>
+          {cookable ? (
+            <>
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+              <span className="truncate">Listo para cocinar hoy</span>
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+              <span className="truncate">
+                Falta: {missing.slice(0, 2).join(", ")}{missing.length > 2 ? ` +${missing.length - 2}` : ""}
+              </span>
+            </>
+          )}
+        </div>
         {/* Image area — click abre modal preview en lugar de navegar */}
         <button
           type="button"
@@ -223,11 +265,11 @@ function RecetaCard({
             </p>
           )}
 
-          {/* Bottom row: ingredientes count + precio destacado */}
+          {/* Bottom row: precio + ingredientes disponibles */}
           <div className="flex items-end justify-between gap-3 pt-3 border-t border-[var(--rule-soft)]">
             <div className="min-w-0">
               <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
-                Total
+                Costo aprox.
               </p>
               <p className="text-xl sm:text-2xl font-black text-[var(--text-primary)] tabular-nums leading-none">
                 S/ {Number(receta.totalIngredientes).toFixed(2)}
@@ -237,8 +279,11 @@ function RecetaCard({
               <p className="text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
                 Ingredientes
               </p>
-              <p className="text-base font-bold text-[var(--text-secondary)] tabular-nums">
-                {receta.ingredientes.length}
+              <p className={cn(
+                "text-base font-bold tabular-nums",
+                cookable ? "text-[var(--text-primary)]" : "text-[var(--data-warning-700,#b45309)]"
+              )}>
+                {availIngs}<span className="text-[var(--text-tertiary)] font-medium">/{totalIngs}</span>
               </p>
             </div>
           </div>
@@ -294,6 +339,10 @@ export default function RecetarioClient() {
   const [catFilter, setCatFilter] = useState("todas");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [suggestion, setSuggestion] = useState("");
+  // Filtro de cocinabilidad — solo mostrar recetas que se pueden cocinar HOY
+  // (todos los ingredientes esenciales tienen stock en al menos 1 tienda).
+  // Default ON: el cliente quiere ver lo que puede pedir ya.
+  const [cookableOnly, setCookableOnly] = useState(true);
   // Vista previa de receta — reemplaza la pagina dedicada /recetas/[id]
   const [previewRecipe, setPreviewRecipe] = useState<Receta | null>(null);
   const { addItem } = useCart();
@@ -301,10 +350,16 @@ export default function RecetarioClient() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/recetas/publicas")
+    // Endpoint nuevo /api/marketplace/recetas resuelve ingredientes contra
+    // el catalogo cross-store (con stock real) y devuelve cocinabilidad.
+    fetch("/api/marketplace/recetas")
       .then(r => r.json())
-      .then((data: Receta[]) => {
-        if (!cancelled) setRecetas(Array.isArray(data) ? data : []);
+      .then((data: { recetas?: Receta[] } | Receta[]) => {
+        if (cancelled) return;
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.recetas) ? data.recetas : [];
+        setRecetas(list);
       })
       .catch(() => { if (!cancelled) { setRecetas([]); setError(true); } })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -332,8 +387,21 @@ export default function RecetarioClient() {
       }
     }
 
+    // Filtro de cocinabilidad: si el endpoint marca `cookable: false` quiere
+    // decir que algun ingrediente esencial no esta en stock en ninguna tienda.
+    // Cuando alguna tienda lo reabastezca, el cache (5 min) lo desbloquea solo.
+    if (cookableOnly) {
+      list = list.filter(r => r.cookable !== false);
+    }
+
     return list;
-  }, [recetas, search, catFilter]);
+  }, [recetas, search, catFilter, cookableOnly]);
+
+  // Conteo total de no-cocinables para el toggle (independiente de filtros)
+  const hiddenByCookability = useMemo(
+    () => recetas.filter(r => r.cookable === false).length,
+    [recetas],
+  );
 
   // Category counts for the highlight section
   const categoryCounts = useMemo(() => {
@@ -383,9 +451,14 @@ export default function RecetarioClient() {
   const handleRetry = useCallback(() => {
     setError(false);
     setLoading(true);
-    fetch("/api/recetas/publicas")
+    fetch("/api/marketplace/recetas")
       .then(r => r.json())
-      .then((data: Receta[]) => setRecetas(Array.isArray(data) ? data : []))
+      .then((data: { recetas?: Receta[] } | Receta[]) => {
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.recetas) ? data.recetas : [];
+        setRecetas(list);
+      })
       .catch(() => { setRecetas([]); setError(true); })
       .finally(() => setLoading(false));
   }, []);
@@ -395,15 +468,77 @@ export default function RecetarioClient() {
       {/* Banner promocional rotativo (3 slides cada 8s) */}
       <PromoBannerCarousel slot="recetas" />
 
-      {/* Hero culinario eliminado 2026-04-20: el PromoBannerCarousel cubre el rol.
-          Search bar movida al filter bar sticky abajo. */}
+      {/* ═══════════════════ HERO INTRO ═══════════════════ */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-6">
+        <div className="flex items-start gap-4 flex-wrap">
+          <div className="hidden sm:inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+            <ChefHat className="h-7 w-7" strokeWidth={1.75} aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+              Recetario peruano
+            </p>
+            <h1 className="mt-1 font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+              Cocina rico con lo que hay en tu bodega
+            </h1>
+            <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] max-w-2xl">
+              Te mostramos solo las recetas que <strong className="text-[var(--text-primary)]">puedes
+              preparar hoy</strong>. Si un ingrediente esencial falta en todas
+              las tiendas, escondemos el plato hasta que vuelva a haber stock.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* ═══════════════════════ FILTER BAR ═══════════════════════ */}
-      <div className="sticky top-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-[var(--rule-base)] shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center justify-between gap-4">
-            {/* Category pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide flex-1">
+      <div className="sticky top-0 z-30 bg-[var(--surface-raised)]/95 dark:bg-gray-900/95 backdrop-blur-md border-y border-[var(--rule-base)] shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 space-y-3">
+          {/* Row 1: Search + view toggle + count */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none"
+                strokeWidth={1.75}
+              />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar receta o ingrediente..."
+                aria-label="Buscar recetas"
+                className="w-full h-11 pl-10 pr-3 rounded-xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] text-base font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              />
+            </div>
+            <span className="hidden sm:inline text-sm text-[var(--text-tertiary)] whitespace-nowrap tabular-nums">
+              {filtered.length} receta{filtered.length !== 1 ? "s" : ""}
+            </span>
+            <div className="hidden sm:flex items-center rounded-lg border border-[var(--rule-base)] overflow-hidden">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={cn(
+                  "p-2 transition-colors",
+                  viewMode === "grid" ? "bg-[var(--accent)] text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                )}
+                aria-label="Vista de galeria"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "p-2 transition-colors",
+                  viewMode === "list" ? "bg-[var(--accent)] text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                )}
+                aria-label="Vista de lista"
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Row 2: Categorias + cocinabilidad toggle */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide flex-1 min-w-0">
               {CATEGORIAS.map(cat => {
                 const CIcon = cat.Icon;
                 return (
@@ -411,10 +546,10 @@ export default function RecetarioClient() {
                   key={cat.id}
                   onClick={() => setCatFilter(cat.id)}
                   className={cn(
-                    "px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-[var(--dur-base)] flex items-center gap-1.5 border",
+                    "px-3.5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-[var(--dur-base)] flex items-center gap-1.5 border",
                     catFilter === cat.id
-                      ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white"
-                      : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-gray-400"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
+                      : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-tertiary)]"
                   )}
                 >
                   <CIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -424,41 +559,60 @@ export default function RecetarioClient() {
               })}
             </div>
 
-            {/* View toggle + count */}
-            <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
-              <span className="text-sm text-[var(--text-tertiary)] whitespace-nowrap">
-                {filtered.length} receta{filtered.length !== 1 ? "s" : ""}
+            {/* Toggle cocinables — derecha, siempre visible */}
+            <label
+              className={cn(
+                "shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-full border-2 cursor-pointer transition-all select-none",
+                cookableOnly
+                  ? "border-[var(--data-success-500,#10b981)] bg-[var(--data-success-50,#ecfdf5)] dark:bg-emerald-950/40"
+                  : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--text-tertiary)]"
+              )}
+              title={
+                cookableOnly
+                  ? "Mostrando solo recetas con todos los esenciales en stock"
+                  : "Mostrando todas las recetas (incluyendo las que faltan ingredientes)"
+              }
+            >
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={cookableOnly}
+                onChange={(e) => setCookableOnly(e.target.checked)}
+              />
+              <CheckCircle2
+                className={cn(
+                  "h-4 w-4 transition-colors",
+                  cookableOnly ? "text-[var(--data-success-600,#059669)]" : "text-[var(--text-tertiary)]"
+                )}
+                strokeWidth={2.25}
+              />
+              <span className={cn(
+                "text-sm font-bold whitespace-nowrap",
+                cookableOnly ? "text-[var(--data-success-700,#047857)] dark:text-emerald-300" : "text-[var(--text-secondary)]"
+              )}>
+                Solo cocinables hoy
+                {hiddenByCookability > 0 && !cookableOnly && (
+                  <span className="ml-1.5 text-[var(--text-tertiary)] tabular-nums">
+                    · {hiddenByCookability} ocultas
+                  </span>
+                )}
               </span>
-              <div className="flex items-center rounded-lg border border-[var(--rule-base)] overflow-hidden">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={cn(
-                    "p-2 transition-colors",
-                    viewMode === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-                  )}
-                  aria-label="Vista de galeria"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={cn(
-                    "p-2 transition-colors",
-                    viewMode === "list" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-                  )}
-                  aria-label="Vista de lista"
-                >
-                  <List className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+            </label>
           </div>
 
           {/* Mobile count */}
-          <div className="sm:hidden mt-2 flex items-center justify-between">
-            <span className="text-sm text-[var(--text-tertiary)]">
+          <div className="sm:hidden flex items-center justify-between text-sm">
+            <span className="text-[var(--text-tertiary)] tabular-nums">
               {filtered.length} receta{filtered.length !== 1 ? "s" : ""}
             </span>
+            {hiddenByCookability > 0 && cookableOnly && (
+              <button
+                onClick={() => setCookableOnly(false)}
+                className="text-[var(--accent)] font-semibold"
+              >
+                Ver {hiddenByCookability} ocultas
+              </button>
+            )}
           </div>
         </div>
       </div>

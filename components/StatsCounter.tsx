@@ -96,7 +96,7 @@ export default function StatsCounter() {
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Nuestros números
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             La confianza de nuestros clientes en{" "}
             <span className="text-primary relative">
               números
@@ -115,7 +115,7 @@ export default function StatsCounter() {
             <div
               key={stat.label}
               style={started ? { animationDelay: `${i * 120}ms` } : undefined}
-              className={`relative group rounded-2xl p-6 sm:p-8 text-center bg-white dark:bg-card border border-gray-100/80 dark:border-card-border hover:border-primary/25 hover:shadow-[0_8px_32px_rgba(45,106,79,0.12)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${
+              className={`relative group rounded-2xl p-6 sm:p-8 text-center bg-[var(--surface-raised)] border border-gray-100/80 dark:border-[var(--rule-base)] hover:border-primary/25 hover:shadow-[0_8px_32px_rgba(45,106,79,0.12)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${
                 started ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
               }`}
             >
@@ -129,7 +129,7 @@ export default function StatsCounter() {
                 >
                   <stat.icon className="h-5.5 w-5.5" />
                 </div>
-                <div className="text-4xl sm:text-5xl font-black text-foreground mb-1.5 font-mono tabular-nums tracking-tighter">
+                <div className="text-4xl sm:text-5xl font-black text-[var(--text-primary)] mb-1.5 font-mono tabular-nums tracking-tighter">
                   <AnimatedNumber target={stat.value} decimals={stat.decimals} started={started} />
                   <span style={{ color: stat.accent }}>{stat.suffix}</span>
                 </div>

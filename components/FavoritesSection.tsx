@@ -76,7 +76,7 @@ export default function FavoritesSection() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Heart className="h-6 w-6 text-[var(--data-error-500)] fill-[var(--data-error-500)]" />
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)]">
               Mis Favoritos
             </h2>
             <span className="bg-red-100 dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-600)] dark:text-red-400 text-xs font-bold px-2.5 py-1 rounded-full">
@@ -106,7 +106,7 @@ export default function FavoritesSection() {
             {/* Y2: Copy to clipboard */}
             <button
               onClick={exportFavorites}
-              className="flex items-center gap-2 bg-gray-100 dark:bg-accent text-foreground rounded-xl px-4 py-2.5 text-sm font-bold hover:bg-gray-200 dark:hover:bg-surface active:scale-95 transition-all"
+              className="flex items-center gap-2 bg-gray-100 dark:bg-accent text-[var(--text-primary)] rounded-xl px-4 py-2.5 text-sm font-bold hover:bg-gray-200 dark:hover:bg-surface active:scale-95 transition-all"
             >
               <ClipboardList className="h-4 w-4" />
               <span className="hidden sm:inline">{copied ? "¡Copiado!" : "Copiar lista"}</span>
@@ -124,7 +124,7 @@ export default function FavoritesSection() {
           {favProducts.map((product) => (
             <div
               key={product.id}
-              className="group relative bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-[var(--shadow-lg)] transition-all duration-300 flex flex-col"
+              className="group relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden border border-[var(--rule-base)] hover:shadow-[var(--shadow-lg)] transition-all duration-300 flex flex-col"
             >
               <button
                 onClick={() => toggle(String(product.id))}
@@ -141,7 +141,7 @@ export default function FavoritesSection() {
                 )}
               </div>
               <div className="p-3 flex flex-col gap-1.5 flex-1">
-                <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 flex-1">{product.name}</h3>
+                <h3 className="font-semibold text-[var(--text-primary)] text-sm leading-tight line-clamp-2 flex-1">{product.name}</h3>
                 <div className="flex items-end justify-between gap-2">
                   <span className="text-base font-extrabold text-primary">S/{Number(product.price).toFixed(2)}</span>
                   {(() => { const qty = cartItems.find(i => i.id === product.id)?.quantity ?? 0; return qty > 0 ? (

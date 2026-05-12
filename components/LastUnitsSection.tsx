@@ -63,7 +63,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
           <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold tracking-wider uppercase rounded-full bg-[var(--accent-soft)] text-[var(--accent)] mb-4">
             Disponibilidad limitada
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)]">
             Últimas unidades
           </h2>
           <p className="text-muted text-sm mt-2">
@@ -81,7 +81,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
             return (
               <div
                 key={product.id}
-                className={`group relative rounded-2xl bg-white dark:bg-card border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-300 ${
+                className={`group relative rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden transition-all duration-300 ${
                   inView
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-4"
@@ -121,7 +121,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
 
                 {/* Info */}
                 <div className="p-3 sm:p-4">
-                  <h3 className="font-semibold text-sm text-foreground line-clamp-2 leading-snug mb-1">
+                  <h3 className="font-semibold text-sm text-[var(--text-primary)] line-clamp-2 leading-snug mb-1">
                     {product.name}
                   </h3>
 
@@ -133,7 +133,7 @@ export default function LastUnitsSection({ serverProducts, showEmpty = false, em
                   {qty > 0 ? (
                     <div className="flex items-center justify-between gap-2 bg-primary/10 dark:bg-primary/20 rounded-xl px-2 py-1.5">
                       <button
-                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-white dark:bg-card text-primary shadow-[var(--shadow-sm)] hover:bg-gray-50 transition-colors"
+                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-[var(--surface-raised)] text-primary shadow-[var(--shadow-sm)] hover:bg-gray-50 transition-colors"
                         onClick={() => updateQty(product.id, qty - 1)}
                         aria-label="Quitar uno"
                       >

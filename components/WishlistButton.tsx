@@ -42,7 +42,7 @@ export default function WishlistButton({ productId, className, size = "md" }: Wi
         size === "md" ? "h-11 w-11" : "h-9 w-9",
         inList
           ? "bg-[var(--data-error-500)] text-white shadow-md scale-110"
-          : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-[var(--data-error-500)] hover:bg-white dark:hover:bg-card shadow-sm",
+          : "bg-white/80 dark:bg-[var(--surface-raised)]/80 text-gray-400 hover:text-[var(--data-error-500)] hover:bg-white dark:hover:bg-[var(--surface-raised)] shadow-sm",
         className
       )}
     >

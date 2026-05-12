@@ -90,7 +90,7 @@ export default function RecipeSuggestions() {
             <Sparkles className="w-3.5 h-3.5" />
             Inspiración
           </span>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)]">
             Ideas para{" "}
             <span className="relative inline-block text-primary">
               cocinar
@@ -115,7 +115,7 @@ export default function RecipeSuggestions() {
             return (
               <div
                 key={recipe.name}
-                className={`group bg-card rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col ${
+                className={`group bg-[var(--surface-raised)] rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col ${
                   inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
                 style={{ transitionDelay: inView ? `${i * 120}ms` : "0ms" }}
@@ -169,7 +169,7 @@ export default function RecipeSuggestions() {
                           }
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
+                          <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{p.name}</p>
                           <p className="text-xs text-muted font-medium">S/{(p.price * multiplier).toFixed(2)}</p>
                         </div>
                       </div>

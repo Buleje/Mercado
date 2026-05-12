@@ -25,25 +25,25 @@ export default function About() {
             <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-6">
               Nuestra Historia
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight mb-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] leading-tight mb-6">
               Tu tienda virtual de
               <br />
               <span className="text-primary">abarrotes a tu puerta</span>
             </h2>
-            <p className="text-lg text-foreground/70 leading-relaxed mb-6">
+            <p className="text-lg text-[var(--text-primary)]/70 leading-relaxed mb-6">
               Desde 2011, Buleje ha sido el corazón del barrio.
               Comenzamos como un pequeño negocio familiar con la visión de
               ofrecer productos de primera calidad a precios accesibles, con delivery rápido
               y pago fácil por Yape o efectivo.
             </p>
-            <p className="text-lg text-foreground/70 leading-relaxed mb-4">
+            <p className="text-lg text-[var(--text-primary)]/70 leading-relaxed mb-4">
               Hoy somos una tienda de consumo masivo con entrega a domicilio.
               Vendemos abarrotes, bebidas, golosinas, carne, pollo, productos de limpieza
               y artículos para el hogar. Seleccionamos cuidadosamente cada producto
               para que tú y tu familia disfruten siempre lo mejor. Compra desde casa,
               pedidos online las 24 horas.
             </p>
-            <p className="text-lg text-foreground/70 leading-relaxed mb-8">
+            <p className="text-lg text-[var(--text-primary)]/70 leading-relaxed mb-8">
               Nuestro compromiso: si recibes un producto en mal estado, te lo cambiamos
               o devolvemos tu dinero. Trabajamos con proveedores locales de Ucayali
               para garantizar frescura y los mejores precios de la zona.
@@ -52,19 +52,19 @@ export default function About() {
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-2 bg-muted rounded-full px-5 py-2.5">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-sm font-medium text-[var(--text-primary)]">
                   Delivery a domicilio
                 </span>
               </div>
               <div className="flex items-center gap-2 bg-muted rounded-full px-5 py-2.5">
                 <div className="h-2 w-2 rounded-full bg-secondary" />
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-sm font-medium text-[var(--text-primary)]">
                   Pago con Yape
                 </span>
               </div>
               <div className="flex items-center gap-2 bg-muted rounded-full px-5 py-2.5">
                 <div className="h-2 w-2 rounded-full bg-primary-light" />
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-sm font-medium text-[var(--text-primary)]">
                   Productos Frescos
                 </span>
               </div>
@@ -108,10 +108,10 @@ export default function About() {
                   className={`rounded-2xl bg-muted p-5 text-center hover:shadow-[var(--shadow-md)] transition-shadow ${isInView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"}`}
                 >
                   <stat.icon className="h-6 w-6 text-primary mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-2xl font-bold text-[var(--text-primary)]">
                     {stat.value}
                   </p>
-                  <p className="text-xs text-foreground/60 mt-1">
+                  <p className="text-xs text-[var(--text-primary)]/60 mt-1">
                     {stat.label}
                   </p>
                 </div>

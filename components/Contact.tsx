@@ -103,7 +103,7 @@ export default function Contact() {
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Contacto
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             Delivery de Abarrotes en{" "}
             <span className="text-primary relative">
               tu zona
@@ -131,7 +131,7 @@ export default function Contact() {
                     href={item.href}
                     target={item.href.startsWith("http") ? "_blank" : undefined}
                     rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="block bg-white dark:bg-card rounded-xl p-6 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] hover:border-primary/20 transition-all duration-300 group"
+                    className="block bg-[var(--surface-raised)] rounded-xl p-6 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] hover:border-primary/20 transition-all duration-300 group"
                   >
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
@@ -141,12 +141,12 @@ export default function Contact() {
                         {item.label}
                       </span>
                     </div>
-                    <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                    <p className="font-semibold text-[var(--text-primary)] group-hover:text-primary transition-colors">
                       {item.value}
                     </p>
                   </a>
                 ) : (
-                  <div className="bg-white dark:bg-card rounded-xl p-6 shadow-[var(--shadow-sm)]">
+                  <div className="bg-[var(--surface-raised)] rounded-xl p-6 shadow-[var(--shadow-sm)]">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <item.icon className="h-5 w-5" />
@@ -155,7 +155,7 @@ export default function Contact() {
                         {item.label}
                       </span>
                     </div>
-                    <p className="font-semibold text-foreground">{item.value}</p>
+                    <p className="font-semibold text-[var(--text-primary)]">{item.value}</p>
                     {"badge" in item && item.badge && (
                       <span className={`inline-flex items-center gap-1 mt-2 text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full ${
                         item.badge.status === "open"

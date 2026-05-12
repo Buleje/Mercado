@@ -78,7 +78,7 @@ export default function Benefits() {
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Nuestras ventajas
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             ¿Por qué{" "}
             <span className="text-primary relative">
               elegirnos
@@ -147,7 +147,7 @@ export default function Benefits() {
                     >
                       <benefit.icon className="h-6 w-6" />
                     </div>
-                    <h3 className="text-base font-bold text-foreground mb-2">{benefit.title}</h3>
+                    <h3 className="text-base font-bold text-[var(--text-primary)] mb-2">{benefit.title}</h3>
                     <p className="text-sm text-muted leading-relaxed">{benefit.description}</p>
                     <p className="text-[length:var(--ts-2xs)] text-muted/60 mt-3 font-medium">Pasa el cursor para ver más →</p>
                   </div>
@@ -159,7 +159,7 @@ export default function Benefits() {
                     >
                       <benefit.icon className="h-6 w-6" />
                     </div>
-                    <h3 className="text-base font-bold text-foreground mb-2">{benefit.title}</h3>
+                    <h3 className="text-base font-bold text-[var(--text-primary)] mb-2">{benefit.title}</h3>
                     <p className="text-sm text-muted leading-relaxed">{benefit.description}</p>
                   </div>
                 </div>

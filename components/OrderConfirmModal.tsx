@@ -140,7 +140,7 @@ export default function OrderConfirmModal() {
                 </div>
 
                 <div className="text-center space-y-1.5">
-                  <p className="text-lg font-bold text-foreground leading-tight">
+                  <p className="text-lg font-bold text-[var(--text-primary)] leading-tight">
                     ¿Ya recibiste tu pedido?
                   </p>
                   {shortId && (
@@ -153,23 +153,23 @@ export default function OrderConfirmModal() {
 
                 {/* Order summary */}
                 {lastOrder && lastOrder.items.length > 0 && (
-                  <div className="rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-surface/50 border-b border-gray-100 dark:border-card-border">
+                  <div className="rounded-xl border border-[var(--rule-base)] overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)]">
                       <ShoppingBag className="h-3.5 w-3.5 text-muted" />
                       <p className="text-[length:var(--ts-2xs)] font-bold text-muted uppercase tracking-wider">Resumen del pedido</p>
                     </div>
                     <div className="divide-y divide-gray-50 dark:divide-card-border max-h-32 overflow-y-auto">
                       {lastOrder.items.map((item, i) => (
                         <div key={i} className="flex items-center justify-between px-3 py-1.5">
-                          <p className="text-xs text-foreground truncate flex-1 mr-2">
+                          <p className="text-xs text-[var(--text-primary)] truncate flex-1 mr-2">
                             {item.name} <span className="text-muted">×{item.qty}</span>
                           </p>
-                          <p className="text-xs font-semibold text-foreground shrink-0">S/{(item.price * item.qty).toFixed(2)}</p>
+                          <p className="text-xs font-semibold text-[var(--text-primary)] shrink-0">S/{(item.price * item.qty).toFixed(2)}</p>
                         </div>
                       ))}
                     </div>
-                    <div className="flex items-center justify-between px-3 py-2 bg-primary/5 border-t border-gray-100 dark:border-card-border">
-                      <p className="text-xs font-bold text-foreground">Total</p>
+                    <div className="flex items-center justify-between px-3 py-2 bg-primary/5 border-t border-[var(--rule-base)]">
+                      <p className="text-xs font-bold text-[var(--text-primary)]">Total</p>
                       <p className="text-sm font-extrabold text-primary">S/{Number(lastOrder.total).toFixed(2)}</p>
                     </div>
                   </div>
@@ -203,7 +203,7 @@ export default function OrderConfirmModal() {
                   {!confirmFromCheckout && (
                     <button
                       onClick={handleNotSent}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-muted hover:text-foreground hover:border-gray-300 hover:bg-gray-50 transition-all"
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-muted hover:text-[var(--text-primary)] hover:border-gray-300 hover:bg-gray-50 transition-all"
                     >
                       <MessageCircleOff className="h-4 w-4 shrink-0" />
                       No envie el mensaje por WhatsApp (Cerrar)
@@ -213,7 +213,7 @@ export default function OrderConfirmModal() {
                   {/* Simple close */}
                   <button
                     onClick={closeConfirmModal}
-                    className="w-full text-center text-sm text-muted hover:text-foreground transition-colors py-1"
+                    className="w-full text-center text-sm text-muted hover:text-[var(--text-primary)] transition-colors py-1"
                   >
                     Cerrar — confirmare despues
                   </button>

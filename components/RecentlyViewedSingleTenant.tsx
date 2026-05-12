@@ -126,25 +126,25 @@ export default function RecentlyViewed() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-primary" />
-            <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">Vistos recientemente</h2>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">Vistos recientemente</h2>
             <span className="text-xs text-muted font-medium">({items.length})</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setScrollIdx(i => Math.max(0, i - 1))}
               disabled={scrollIdx === 0}
-              className="h-8 w-8 rounded-full bg-surface border border-gray-200 dark:border-card-border flex items-center justify-center hover:bg-gray-100 dark:hover:bg-card transition-colors disabled:opacity-30"
+              className="h-8 w-8 rounded-full bg-surface border border-[var(--rule-base)] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[var(--surface-raised)] transition-colors disabled:opacity-30"
               aria-label="Anterior"
             >
-              <ChevronLeft className="h-4 w-4 text-foreground" />
+              <ChevronLeft className="h-4 w-4 text-[var(--text-primary)]" />
             </button>
             <button
               onClick={() => setScrollIdx(i => Math.min(maxScroll, i + 1))}
               disabled={scrollIdx >= maxScroll}
-              className="h-8 w-8 rounded-full bg-surface border border-gray-200 dark:border-card-border flex items-center justify-center hover:bg-gray-100 dark:hover:bg-card transition-colors disabled:opacity-30"
+              className="h-8 w-8 rounded-full bg-surface border border-[var(--rule-base)] flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[var(--surface-raised)] transition-colors disabled:opacity-30"
               aria-label="Siguiente"
             >
-              <ChevronRight className="h-4 w-4 text-foreground" />
+              <ChevronRight className="h-4 w-4 text-[var(--text-primary)]" />
             </button>
             <button
               onClick={clearAll}
@@ -165,7 +165,7 @@ export default function RecentlyViewed() {
                 key={product.id}
                 className="shrink-0 w-[calc(33.333%-6px)] sm:w-[calc(25%-6px)] lg:w-[calc(16.666%-7px)]"
               >
-                <div className="group relative bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-200">
+                <div className="group relative bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-200">
                   {/* Remove button */}
                   <button
                     onClick={() => removeItem(product.id)}
@@ -191,7 +191,7 @@ export default function RecentlyViewed() {
                     )}
                   </div>
                   <div className="p-2">
-                    <h3 className="text-xs font-medium text-foreground line-clamp-2 mb-1.5">{product.name}</h3>
+                    <h3 className="text-xs font-medium text-[var(--text-primary)] line-clamp-2 mb-1.5">{product.name}</h3>
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-sm font-extrabold text-primary">S/{Number(product.price).toFixed(2)}</span>
                       {(() => { const qty = cartItems.find(i => i.id === product.id)?.quantity ?? 0; return qty > 0 ? (

@@ -43,7 +43,7 @@ export default function BrandStory() {
         {/* Header */}
         <div className={`text-center mb-12 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="text-sm font-bold text-primary uppercase tracking-wider">Nuestra historia</span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground mt-2">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] mt-2">
             De la esquina del barrio a tu puerta
           </h2>
           <p className="text-sm text-muted mt-2 max-w-lg mx-auto">
@@ -77,7 +77,7 @@ export default function BrandStory() {
                     {isLeft && (
                       <div>
                         <span className="text-xs font-extrabold text-primary">{m.year}</span>
-                        <h3 className="text-base font-bold text-foreground mt-0.5">{m.title}</h3>
+                        <h3 className="text-base font-bold text-[var(--text-primary)] mt-0.5">{m.title}</h3>
                         <p className="text-sm text-muted mt-1">{m.desc}</p>
                       </div>
                     )}
@@ -93,14 +93,14 @@ export default function BrandStory() {
                     {/* Always show on mobile */}
                     <div className="sm:hidden">
                       <span className="text-xs font-extrabold text-primary">{m.year}</span>
-                      <h3 className="text-base font-bold text-foreground mt-0.5">{m.title}</h3>
+                      <h3 className="text-base font-bold text-[var(--text-primary)] mt-0.5">{m.title}</h3>
                       <p className="text-sm text-muted mt-1">{m.desc}</p>
                     </div>
                     {/* Desktop right side */}
                     {!isLeft && (
                       <div className="hidden sm:block">
                         <span className="text-xs font-extrabold text-primary">{m.year}</span>
-                        <h3 className="text-base font-bold text-foreground mt-0.5">{m.title}</h3>
+                        <h3 className="text-base font-bold text-[var(--text-primary)] mt-0.5">{m.title}</h3>
                         <p className="text-sm text-muted mt-1">{m.desc}</p>
                       </div>
                     )}

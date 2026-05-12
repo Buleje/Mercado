@@ -57,7 +57,7 @@ function FullMapModal({
           <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
-              <span className="font-bold text-foreground text-sm sm:text-base">
+              <span className="font-bold text-[var(--text-primary)] text-sm sm:text-base">
                 {onPick ? "Toca el mapa para seleccionar tu ubicación" : "Mapa completo"}
               </span>
             </div>
@@ -147,7 +147,7 @@ function LocationForm({
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="cm-location" className="block text-sm font-semibold text-foreground mb-1.5">
+          <label htmlFor="cm-location" className="block text-sm font-semibold text-[var(--text-primary)] mb-1.5">
             Dirección / Ubicación
           </label>
           <div className="relative">
@@ -159,7 +159,7 @@ function LocationForm({
               value={location}
               onChange={(e) => handleLocationChange(e.target.value)}
               placeholder="Ej: Jr. Ucayali 450"
-              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-[var(--text-primary)] placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
 
@@ -196,7 +196,7 @@ function LocationForm({
         </div>
 
         <div>
-          <label htmlFor="cm-reference" className="block text-sm font-semibold text-foreground mb-1.5">Referencia</label>
+          <label htmlFor="cm-reference" className="block text-sm font-semibold text-[var(--text-primary)] mb-1.5">Referencia</label>
           <div className="relative">
             <Home className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
             <input
@@ -206,14 +206,14 @@ function LocationForm({
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               placeholder="Ej: Frente al parque, casa azul"
-              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-[var(--text-primary)] placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-foreground/60 flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-[var(--text-primary)]/60 flex items-center gap-1.5">
               <MapPin className="h-3 w-3" /> Toca el mapa para elegir ubicación
             </p>
             <button
@@ -241,7 +241,7 @@ function LocationForm({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-foreground hover:bg-gray-50 transition-colors"
+            className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-[var(--text-primary)] hover:bg-gray-50 transition-colors"
           >
             Cancelar
           </button>
@@ -433,7 +433,7 @@ export default function CustomerModal() {
                     </button>
                   )}
                   <div>
-                    <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <h2 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
                       {view === "profile" && <><User className="h-4 w-4 text-primary" aria-hidden /> Mi perfil</>}
                       {view === "phone-lookup" && <><Smartphone className="h-4 w-4 text-primary" aria-hidden /> Identificarte</>}
                       {view === "edit-info" && (customer ? <><Pencil className="h-4 w-4 text-primary" aria-hidden /> Editar información</> : <><CheckCircle2 className="h-4 w-4 text-primary" aria-hidden /> Datos de entrega</>)}
@@ -462,7 +462,7 @@ export default function CustomerModal() {
                   {view === "phone-lookup" && (
                     <m.div key="phone-lookup" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="space-y-5">
                       <div>
-                        <label htmlFor="cm-phone-lookup" className="block text-sm font-semibold text-foreground mb-1.5">Número de celular</label>
+                        <label htmlFor="cm-phone-lookup" className="block text-sm font-semibold text-[var(--text-primary)] mb-1.5">Número de celular</label>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
                             <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
@@ -474,7 +474,7 @@ export default function CustomerModal() {
                               onKeyDown={(e) => e.key === "Enter" && handlePhoneLookup()}
                               placeholder="Ej: 987654321"
                               maxLength={15}
-                              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-[var(--text-primary)] placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                             />
                           </div>
                           <button
@@ -529,7 +529,7 @@ export default function CustomerModal() {
                           </div>
                           <div>
                             <p className="text-xs text-muted font-medium">Nombre</p>
-                            <p className="font-bold text-foreground">{customer.name}</p>
+                            <p className="font-bold text-[var(--text-primary)]">{customer.name}</p>
                           </div>
                         </div>
                         <button
@@ -548,7 +548,7 @@ export default function CustomerModal() {
                           </div>
                           <div>
                             <p className="text-xs text-muted font-medium">Teléfono</p>
-                            <p className="font-bold text-foreground">{customer.phone}</p>
+                            <p className="font-bold text-[var(--text-primary)]">{customer.phone}</p>
                           </div>
                         </div>
                       )}
@@ -556,7 +556,7 @@ export default function CustomerModal() {
                       {/* Locations */}
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <p className="text-sm font-bold text-foreground">Mis direcciones</p>
+                          <p className="text-sm font-bold text-[var(--text-primary)]">Mis direcciones</p>
                           <button
                             onClick={() => setView("add-loc")}
                             className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-dark bg-primary/8 hover:bg-primary/15 px-3 py-1.5 rounded-lg transition-all"
@@ -588,7 +588,7 @@ export default function CustomerModal() {
                                     <MapPin className="h-3 w-3 shrink-0" aria-hidden />
                                     {loc.id === "default" ? "Dirección principal" : `Dirección ${locations.indexOf(loc) + 1}`}
                                   </p>
-                                  <p className={cn("text-sm font-semibold truncate", isActive ? "text-primary" : "text-foreground")}>{loc.location}</p>
+                                  <p className={cn("text-sm font-semibold truncate", isActive ? "text-primary" : "text-[var(--text-primary)]")}>{loc.location}</p>
                                   <p className="text-xs text-muted mt-0.5 flex items-center gap-1"><Home className="h-3 w-3 shrink-0" /> Ref: {loc.reference}</p>
                                   <div className="mt-2 rounded-lg overflow-hidden border border-gray-200" style={{ height: 90 }}>
                                     <iframe src={mapEmbedSrc(coords.lat, coords.lon, 0.008)} width="100%" height="100%" style={{ border: 0, display: "block", pointerEvents: "none" }} title="mapa" />
@@ -637,7 +637,7 @@ export default function CustomerModal() {
                     <m.div key="edit-info" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                       <form onSubmit={handleSaveInfo} className="space-y-5">
                         <div>
-                          <label htmlFor={`${idPrefix}-name`} className="block text-sm font-semibold text-foreground mb-1.5">
+                          <label htmlFor={`${idPrefix}-name`} className="block text-sm font-semibold text-[var(--text-primary)] mb-1.5">
                             Nombre Completo
                           </label>
                           <div className="relative">
@@ -649,12 +649,12 @@ export default function CustomerModal() {
                               value={name}
                               onChange={(e) => setName(e.target.value)}
                               placeholder="Ej: María García"
-                              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-[var(--text-primary)] placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                             />
                           </div>
                         </div>
                         <div>
-                          <label htmlFor="cm-edit-phone" className="block text-sm font-semibold text-foreground mb-1.5">Teléfono (opcional)</label>
+                          <label htmlFor="cm-edit-phone" className="block text-sm font-semibold text-[var(--text-primary)] mb-1.5">Teléfono (opcional)</label>
                           <div className="relative">
                             <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
                             <input
@@ -664,25 +664,25 @@ export default function CustomerModal() {
                               onChange={(e) => setPhone(e.target.value)}
                               placeholder="Ej: 987654321"
                               maxLength={15}
-                              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-[var(--text-primary)] placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                             />
                           </div>
                         </div>
                         {/* T2: Birthday field */}
                         <div>
-                          <label htmlFor="cm-edit-birthday" className="block text-sm font-semibold text-foreground mb-1.5">Cumpleaños (opcional)</label>
+                          <label htmlFor="cm-edit-birthday" className="block text-sm font-semibold text-[var(--text-primary)] mb-1.5">Cumpleaños (opcional)</label>
                           <input
                             id="cm-edit-birthday"
                             type="date"
                             value={birthday ? `2000-${birthday}` : ""}
                             onChange={(e) => { const v = e.target.value; if (v) setBirthday(v.slice(5)); else setBirthday(""); }}
-                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-[var(--text-primary)] placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                           />
                           <p className="text-[length:var(--ts-2xs)] text-muted mt-1 flex items-center gap-1"><Gift className="h-3 w-3 shrink-0" aria-hidden /> Te daremos un 10% de descuento en tu cumpleaños</p>
                         </div>
                         <div className="flex gap-3">
                           {customer && (
-                            <button type="button" onClick={() => setView("profile")} className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-foreground hover:bg-gray-50 transition-colors">
+                            <button type="button" onClick={() => setView("profile")} className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-[var(--text-primary)] hover:bg-gray-50 transition-colors">
                               Cancelar
                             </button>
                           )}

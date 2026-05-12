@@ -82,9 +82,9 @@ export default function DailyDeal() {
 
   if (loading) {
     return (
-      <section className="py-10 sm:py-16 bg-white dark:bg-card">
+      <section className="py-10 sm:py-16 bg-[var(--surface-raised)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl border-2 border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface p-6 sm:p-10 animate-pulse">
+          <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-gray-50 dark:bg-surface p-6 sm:p-10 animate-pulse">
             <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
               <div className="w-40 h-40 sm:w-56 sm:h-56 rounded-2xl bg-gray-200 dark:bg-gray-700 shrink-0" />
               <div className="flex-1 space-y-4 w-full">
@@ -103,7 +103,7 @@ export default function DailyDeal() {
   if (!product) return null;
 
   return (
-    <section className="py-10 sm:py-16 bg-white dark:bg-card">
+    <section className="py-10 sm:py-16 bg-[var(--surface-raised)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-3xl border-2 border-secondary/30 bg-linear-to-br from-secondary/8 via-white to-primary/8 dark:from-secondary/15 dark:via-card dark:to-primary/15 p-6 sm:p-10 shadow-[var(--shadow-lg)] shadow-secondary/5">
           {/* Badge */}
@@ -134,7 +134,7 @@ export default function DailyDeal() {
 
             {/* Details */}
             <div className="flex-1 text-center sm:text-left">
-              <h3 className="text-xl sm:text-2xl font-extrabold text-foreground mb-2">
+              <h3 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] mb-2">
                 {product.name}
               </h3>
               <p className="text-sm text-muted mb-3">
@@ -152,7 +152,7 @@ export default function DailyDeal() {
               {/* Countdown */}
               <div className="flex items-center gap-2 justify-center sm:justify-start mb-5">
                 <Clock className="w-4 h-4 text-secondary" aria-hidden="true" />
-                <span className="text-sm font-semibold text-foreground">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">
                   Oferta v\u00e1lida por{" "}
                   <span
                     className="text-secondary font-bold tabular-nums"

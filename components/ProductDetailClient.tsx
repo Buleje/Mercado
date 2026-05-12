@@ -324,7 +324,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               <ChevronRight className="h-3.5 w-3.5 shrink-0" />
             </>
           )}
-          <li className="text-foreground font-medium truncate max-w-50">
+          <li className="text-[var(--text-primary)] font-medium truncate max-w-50">
             {product.name}
           </li>
         </ol>
@@ -358,7 +358,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   <ProductBadges badges={productBadges} />
                 </div>
               )}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground leading-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)] leading-tight">
                 {product.name}
               </h1>
               {/* Mejora 11: Social proof — personas viendo */}
@@ -383,7 +383,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     className="flex items-center gap-1 text-sm hover:text-primary transition-colors"
                   >
                     <Star className="h-4 w-4 text-[var(--data-warning-500)] fill-[var(--data-warning-500)]" />
-                    <span className="font-semibold text-foreground">
+                    <span className="font-semibold text-[var(--text-primary)]">
                       {avgRating.toFixed(1)}
                     </span>
                     <span className="text-muted">({reviews.length} reseñas)</span>
@@ -393,7 +393,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             </div>
 
             {/* Price */}
-            <div className="bg-gray-50 dark:bg-surface rounded-2xl p-5 border border-gray-100 dark:border-card-border">
+            <div className="bg-gray-50 dark:bg-surface rounded-2xl p-5 border border-[var(--rule-base)]">
               <div className="flex items-end gap-2">
                 <span className="text-3xl sm:text-4xl font-extrabold text-primary">
                   S/{Number(product.price).toFixed(2)}
@@ -449,7 +449,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                         value={restockPhone}
                         onChange={e => setRestockPhone(e.target.value)}
                         placeholder="Tu WhatsApp (ej: 961234567)"
-                        className="flex-1 px-3 py-2.5 rounded-xl text-sm border border-amber-300 dark:border-[var(--data-warning-600)] bg-white dark:bg-surface text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="flex-1 px-3 py-2.5 rounded-xl text-sm border border-amber-300 dark:border-[var(--data-warning-600)] bg-white dark:bg-surface text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
                       />
                       <button
                         onClick={handleRestockNotify}
@@ -480,11 +480,11 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                           <Link
                             key={alt.id}
                             href={`/tienda/producto/${getProductSlug(alt)}`}
-                            className="flex items-center gap-3 bg-white dark:bg-surface rounded-xl p-2.5 border border-emerald-100 dark:border-card-border hover:border-primary/40 transition-colors group"
+                            className="flex items-center gap-3 bg-white dark:bg-surface rounded-xl p-2.5 border border-emerald-100 dark:border-[var(--rule-base)] hover:border-primary/40 transition-colors group"
                           >
                             <Image src={alt.image} alt={alt.name} width={48} height={48} className="rounded-lg object-cover shrink-0" />
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">{alt.name}</p>
+                              <p className="text-xs font-bold text-[var(--text-primary)] truncate group-hover:text-primary transition-colors">{alt.name}</p>
                               <p className="text-xs font-semibold text-primary">S/{Number(alt.price).toFixed(2)}</p>
                             </div>
                           </Link>
@@ -516,7 +516,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                           "text-center rounded-xl p-2.5 border transition-all",
                           isActive
                             ? "bg-primary/10 border-primary/40 ring-1 ring-primary/20"
-                            : "bg-white dark:bg-surface border-gray-200 dark:border-card-border"
+                            : "bg-white dark:bg-surface border-[var(--rule-base)]"
                         )}
                       >
                         <p className="text-xs font-bold text-muted">{tier.minQty}+ unidades</p>
@@ -612,7 +612,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   "h-12 w-12 rounded-xl flex items-center justify-center border-2 transition-all shrink-0",
                   fav
                     ? "bg-red-50 border-red-200 text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/10 dark:border-[var(--data-error-500)]/30"
-                    : "border-gray-200 dark:border-card-border text-gray-400 hover:text-[var(--data-error-500)] hover:border-red-200",
+                    : "border-[var(--rule-base)] text-gray-400 hover:text-[var(--data-error-500)] hover:border-red-200",
                 )}
                 aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
               >
@@ -626,7 +626,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   "h-12 w-12 rounded-xl flex items-center justify-center border-2 transition-all shrink-0",
                   compare
                     ? "bg-primary/10 border-primary/30 text-primary"
-                    : "border-gray-200 dark:border-card-border text-gray-400 hover:text-primary hover:border-primary/30",
+                    : "border-[var(--rule-base)] text-gray-400 hover:text-primary hover:border-primary/30",
                 )}
                 aria-label={compare ? "Quitar de comparar" : "Comparar"}
               >
@@ -634,7 +634,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               </button>
               <button
                 onClick={handleShare}
-                className="h-12 w-12 rounded-xl flex items-center justify-center border-2 border-gray-200 dark:border-card-border text-gray-400 hover:text-primary hover:border-primary/30 transition-all shrink-0 relative"
+                className="h-12 w-12 rounded-xl flex items-center justify-center border-2 border-[var(--rule-base)] text-gray-400 hover:text-primary hover:border-primary/30 transition-all shrink-0 relative"
                 aria-label="Compartir"
               >
                 <Share2 className="h-5 w-5" />
@@ -656,10 +656,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               ].map((b, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl p-3 border border-gray-100 dark:border-card-border"
+                  className="flex items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)]"
                 >
                   <b.icon className={cn("h-5 w-5 shrink-0", b.color)} />
-                  <span className="text-sm font-medium text-foreground">{b.text}</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">{b.text}</span>
                 </div>
               ))}
             </div>
@@ -677,7 +677,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 .map((p, i) => `${i * 40},${50 - ((p - min) / range) * 42}`)
                 .join(" ");
               return (
-                <div className="bg-white dark:bg-card rounded-xl p-4 border border-gray-100 dark:border-card-border">
+                <div className="bg-[var(--surface-raised)] rounded-xl p-4 border border-[var(--rule-base)]">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-xs font-semibold text-muted inline-flex items-center gap-1.5">
                       <TrendingUp className="h-3.5 w-3.5" aria-hidden /> Historial de precios
@@ -768,7 +768,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               );
             })()}
             {priceHistory.length === 1 && (
-              <div className="bg-white dark:bg-card rounded-xl p-3 border border-gray-100 dark:border-card-border">
+              <div className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-base)]">
                 <p className="text-xs text-gray-400 text-center flex items-center justify-center gap-1"><TrendingUp className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> Precio estable — sin variaciones recientes</p>
               </div>
             )}
@@ -779,7 +779,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         <div id="resenas" className="mt-12 lg:mt-16">
           <ProductReviewsSection productId={product.id} productName={product.name} />
           {reviewsDetailed && (
-            <div className="mt-8 bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6">
+            <div className="mt-8 bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
                 Resenas detalladas
               </h3>
@@ -797,7 +797,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         {/* Related products */}
         {relatedProducts.length > 0 && (
           <div className="mt-12 lg:mt-16">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-foreground mb-6">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] mb-6">
               Productos relacionados
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -805,7 +805,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 <Link
                   key={rp.id}
                   href={`/tienda/${getProductSlug(rp)}`}
-                  className="group bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden hover:shadow-lg transition-all"
+                  className="group bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden hover:shadow-lg transition-all"
                 >
                   <div className="relative aspect-square bg-gray-50 dark:bg-surface">
                     {rp.image && (
@@ -824,7 +824,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     )}
                   </div>
                   <div className="p-3">
-                    <p className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                    <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-1 group-hover:text-primary transition-colors">
                       {rp.name}
                     </p>
                     <div className="flex items-center justify-between mt-1.5">

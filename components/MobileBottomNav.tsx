@@ -47,8 +47,8 @@ export default function MobileBottomNav() {
     <nav
       className={cn(
         "fixed bottom-0 inset-x-0 z-40 sm:hidden",
-        "bg-white/97 dark:bg-card/97 backdrop-blur-xl",
-        "border-t border-gray-100 dark:border-card-border",
+        "bg-white/97 dark:bg-[var(--surface-raised)]/97 backdrop-blur-xl",
+        "border-t border-[var(--rule-base)]",
         "shadow-[0_-4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.3)]",
         "animate-in slide-in-from-bottom-4 duration-300",
       )}

@@ -62,13 +62,13 @@ export default function ReferralBanner() {
             <Users className="w-3.5 h-3.5" />
             Programa de referidos
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground leading-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] leading-tight">
             Invita amigos,{" "}
             <span className="text-primary">gana puntos</span>
           </h2>
           <p className="mt-3 text-muted text-base max-w-md leading-relaxed">
             Comparte tu cÃ³digo y por cada amigo que haga su primer pedido,
-            ambos ganan <strong className="text-foreground">50 puntos</strong> de lealtad.
+            ambos ganan <strong className="text-[var(--text-primary)]">50 puntos</strong> de lealtad.
           </p>
         </div>
 

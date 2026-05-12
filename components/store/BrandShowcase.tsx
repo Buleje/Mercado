@@ -45,13 +45,13 @@ export default function BrandShowcase() {
   if (brands.length < 2) return null;
 
   return (
-    <section className="py-10 sm:py-14 bg-white dark:bg-card">
+    <section className="py-10 sm:py-14 bg-[var(--surface-raised)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-6">
           <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-3">
             Marcas
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)]">
             Compra por <span className="text-primary">marca</span>
           </h2>
         </div>
@@ -63,7 +63,7 @@ export default function BrandShowcase() {
               href={`/tienda?marca=${encodeURIComponent(brand.name)}`}
               className={cn(
                 "snap-start shrink-0 flex flex-col items-center gap-2 px-5 py-4 rounded-2xl",
-                "border border-[var(--rule-soft)] dark:border-card-border",
+                "border border-[var(--rule-soft)] dark:border-[var(--rule-base)]",
                 "hover:shadow-lg hover:scale-105 transition-all duration-[var(--dur-base)] cursor-pointer",
                 "min-w-[100px]"
               )}
@@ -77,7 +77,7 @@ export default function BrandShowcase() {
                 {brand.name.charAt(0)}
               </div>
               <div className="text-center">
-                <p className="text-xs font-bold text-gray-900 dark:text-foreground whitespace-nowrap">{brand.name}</p>
+                <p className="text-xs font-bold text-gray-900 dark:text-[var(--text-primary)] whitespace-nowrap">{brand.name}</p>
                 <p className="text-[length:var(--ts-2xs)] text-gray-500">{brand.count} producto{brand.count !== 1 ? "s" : ""}</p>
               </div>
             </Link>

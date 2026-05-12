@@ -18,12 +18,12 @@ export default function CompareBar() {
       <div
         role="region"
         aria-label="Comparar productos"
-        className="fixed bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-[var(--shadow-xl)] px-4 py-3 flex items-center gap-3 animate-[fadeUp_0.3s_ease-out_both]"
+        className="fixed bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-xl)] px-4 py-3 flex items-center gap-3 animate-[fadeUp_0.3s_ease-out_both]"
       >
         <GitCompareArrows className="h-5 w-5 text-primary shrink-0" />
         <div className="flex items-center gap-2">
           {items.map(p => (
-            <div key={p.id} className="relative h-10 w-10 rounded-lg overflow-hidden border border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface shrink-0">
+            <div key={p.id} className="relative h-10 w-10 rounded-lg overflow-hidden border border-[var(--rule-base)] bg-gray-50 dark:bg-surface shrink-0">
               {p.image ? (
                 <Image src={p.image} alt={p.name} fill className="object-cover" sizes="40px" />
               ) : (
@@ -35,7 +35,7 @@ export default function CompareBar() {
             </div>
           ))}
           {items.length < 3 && (
-            <div className="h-10 w-10 rounded-lg border-2 border-dashed border-gray-300 dark:border-card-border flex items-center justify-center text-gray-300">
+            <div className="h-10 w-10 rounded-lg border-2 border-dashed border-[var(--rule-base)] flex items-center justify-center text-gray-300">
               <Plus className="h-4 w-4" />
             </div>
           )}
@@ -86,12 +86,12 @@ function CompareModal() {
         role="dialog"
         aria-modal="true"
         aria-label="Comparar productos"
-        className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] max-w-2xl w-full max-h-[80vh] overflow-auto border border-gray-200 dark:border-card-border"
+        className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] max-w-2xl w-full max-h-[80vh] overflow-auto border border-[var(--rule-base)]"
         onClick={e => e.stopPropagation()}
         aria-hidden="false"
       >
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-card-border">
-          <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--rule-base)]">
+          <h2 className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2">
             <GitCompareArrows className="h-5 w-5 text-primary" /> Comparar productos
           </h2>
           <button onClick={() => setOpen(false)} aria-label="Cerrar comparación" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -111,7 +111,7 @@ function CompareModal() {
                   <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-8 w-8" /></div>
                 )}
               </div>
-              <h3 className="font-bold text-foreground text-sm leading-tight line-clamp-2">{p.name}</h3>
+              <h3 className="font-bold text-[var(--text-primary)] text-sm leading-tight line-clamp-2">{p.name}</h3>
             </div>
           ))}
 
@@ -126,7 +126,7 @@ function CompareModal() {
                 return (
                   <div
                     key={`${row.label}-${i}`}
-                    className={`text-sm font-semibold text-center text-foreground ${isBestPrice ? "text-[var(--data-success-600)] dark:text-emerald-400" : ""} ${isBestRating ? "text-[var(--data-warning-600)] dark:text-amber-400" : ""} ${isOutOfStock ? "text-[var(--data-error-500)]" : ""}`}
+                    className={`text-sm font-semibold text-center text-[var(--text-primary)] ${isBestPrice ? "text-[var(--data-success-600)] dark:text-emerald-400" : ""} ${isBestRating ? "text-[var(--data-warning-600)] dark:text-amber-400" : ""} ${isOutOfStock ? "text-[var(--data-error-500)]" : ""}`}
                   >
                     {row.type === "rating" && (items[i].rating ?? 0) > 0 && (
                       <div className="flex items-center justify-center gap-0.5 mb-0.5">

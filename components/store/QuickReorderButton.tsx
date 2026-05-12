@@ -184,14 +184,14 @@ export default function QuickReorderButton() {
             </div>
             <button
               onClick={() => setExpanded(false)}
-              className="rounded-lg p-1.5 text-muted hover:bg-[var(--surface-sunken)] hover:text-foreground transition-colors"
+              className="rounded-lg p-1.5 text-muted hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
               aria-label="Cerrar"
             >
               <X className="h-4 w-4" strokeWidth={2.25} />
             </button>
           </div>
           <div className="px-5 py-4">
-            <p className="text-sm text-foreground leading-snug">
+            <p className="text-sm text-[var(--text-primary)] leading-snug">
               <strong className="font-extrabold">{preview}</strong>
               {moreCount > 0 ? ` y ${moreCount} más` : ""}
             </p>
@@ -217,7 +217,7 @@ export default function QuickReorderButton() {
               </button>
               <button
                 onClick={handleDismiss}
-                className="h-12 px-4 rounded-2xl text-sm font-bold text-muted hover:text-foreground hover:bg-[var(--surface-sunken)] transition-colors"
+                className="h-12 px-4 rounded-2xl text-sm font-bold text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 No
               </button>

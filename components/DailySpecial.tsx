@@ -126,7 +126,7 @@ export default function DailySpecial({ serverProducts, showEmpty = false, emptyV
                 <p className="text-xs font-semibold text-[var(--accent)] uppercase tracking-wider mb-1">
                   Oferta especial de hoy
                 </p>
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground leading-tight">
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)] leading-tight">
                   {product.name}
                 </h3>
                 <p className="text-sm text-muted mt-1 capitalize">

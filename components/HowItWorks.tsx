@@ -92,7 +92,7 @@ function StepCard({ step, cardRef }: { step: typeof STEPS[0]; cardRef: React.Ref
         </div>
       </div>
 
-      <h3 className="text-lg sm:text-xl font-bold text-foreground mb-2">
+      <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-2">
         {step.title}
       </h3>
       <p className="text-sm text-muted leading-relaxed max-w-xs">
@@ -163,7 +163,7 @@ export default function HowItWorks() {
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Así de fácil
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             ¿Cómo{" "}
             <span className="text-primary relative">
               funciona

@@ -145,7 +145,7 @@ export default function AlsoBoughtSection({
       <div className={cn("mt-12 lg:mt-16", className)}>
         <div className="flex items-center gap-2 mb-6">
           <TrendingUp className="h-5 w-5 text-primary" />
-          <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">
             Compran juntos
           </h2>
         </div>
@@ -162,7 +162,7 @@ export default function AlsoBoughtSection({
     <div className={cn("mt-12 lg:mt-16", className)}>
       <div className="flex items-center gap-2 mb-6">
         <TrendingUp className="h-5 w-5 text-primary" />
-        <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">
           Compran juntos
         </h2>
       </div>
@@ -170,7 +170,7 @@ export default function AlsoBoughtSection({
         {suggestions.map((product) => (
           <div
             key={product.id}
-            className="group bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden hover:shadow-[var(--shadow-lg)] transition-all"
+            className="group bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden hover:shadow-[var(--shadow-lg)] transition-all"
           >
             <div className="relative aspect-square bg-gray-50 dark:bg-surface">
               {product.image && (
@@ -184,7 +184,7 @@ export default function AlsoBoughtSection({
               )}
             </div>
             <div className="p-3">
-              <p className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+              <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-1 group-hover:text-primary transition-colors">
                 {product.name}
               </p>
               {product.reason && (

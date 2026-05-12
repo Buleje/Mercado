@@ -43,7 +43,7 @@ export default function NotificationPrompt() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="notif-prompt-title"
-      className="fixed bottom-44 left-4 right-4 sm:left-auto sm:bottom-20 sm:right-4 sm:max-w-sm z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-[var(--shadow-xl)] p-4 animate-[fadeUp_0.4s_ease-out_both]"
+      className="fixed bottom-44 left-4 right-4 sm:left-auto sm:bottom-20 sm:right-4 sm:max-w-sm z-50 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-xl)] p-4 animate-[fadeUp_0.4s_ease-out_both]"
     >
       <button onClick={handleDismiss} aria-label="Cerrar notificación" className="absolute top-2 right-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
         <X className="h-4 w-4 text-gray-400" />
@@ -53,7 +53,7 @@ export default function NotificationPrompt() {
           <Bell className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h4 id="notif-prompt-title" className="font-bold text-foreground text-sm">¿Activar notificaciones?</h4>
+          <h4 id="notif-prompt-title" className="font-bold text-[var(--text-primary)] text-sm">¿Activar notificaciones?</h4>
           <p className="text-xs text-muted mt-0.5">Recibe avisos de ofertas y el estado de tus pedidos.</p>
           <div className="flex gap-2 mt-3">
             <button onClick={handleAllow} aria-label="Activar notificaciones del sitio" className="bg-primary text-white text-xs font-bold rounded-lg px-3 py-1.5 hover:bg-primary-dark active:scale-95 transition-all">

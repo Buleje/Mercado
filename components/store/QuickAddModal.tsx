@@ -247,7 +247,7 @@ export default function QuickAddModal() {
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 340, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-2xl mx-0 sm:mx-4 max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-[28px] bg-white shadow-[0_25px_60px_-12px_rgba(0,0,0,0.35)] dark:bg-card border border-[var(--rule-base)]"
+            className="relative w-full max-w-2xl mx-0 sm:mx-4 max-h-[94vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-[28px] bg-white shadow-[0_25px_60px_-12px_rgba(0,0,0,0.35)] dark:bg-[var(--surface-raised)] border border-[var(--rule-base)]"
           >
             {/* Botón cerrar flotante (sobre la imagen) */}
             <button
@@ -468,7 +468,7 @@ export default function QuickAddModal() {
             </div>{/* /body row */}
 
             {/* Footer sticky con stepper + total + CTA */}
-            <div className="shrink-0 border-t border-[var(--rule-soft)] bg-white px-5 py-4 dark:bg-card">
+            <div className="shrink-0 border-t border-[var(--rule-soft)] bg-white px-5 py-4 dark:bg-[var(--surface-raised)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex items-center rounded-xl border border-[var(--rule-base)]">
                   <button

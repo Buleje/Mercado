@@ -39,11 +39,11 @@ export default function VolumeDiscount() {
     <>
       {/* ── Mobile: compact dismissible pill ─────────────────────────────── */}
       <div className="sm:hidden fixed bottom-24 left-4 z-40 animate-[fadeUp_0.4s_ease-out] max-w-[calc(100vw-7rem)]">
-        <div className="flex items-center gap-2 bg-white dark:bg-card rounded-full shadow-[var(--shadow-lg)] border border-gray-100 dark:border-card-border pl-2.5 pr-1.5 py-1.5">
+        <div className="flex items-center gap-2 bg-[var(--surface-raised)] rounded-full shadow-[var(--shadow-lg)] border border-[var(--rule-base)] pl-2.5 pr-1.5 py-1.5">
           <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 shrink-0">
             <Percent className="h-3.5 w-3.5 text-primary" />
           </span>
-          <p className="text-xs font-bold text-foreground leading-tight">
+          <p className="text-xs font-bold text-[var(--text-primary)] leading-tight">
             {currentTier ? (
               <><span className="text-primary">{currentTier.label}</span> por volumen{nextTier ? ` · +${nextTier.min - totalQty} para ${nextTier.label}` : "✓"}</>
             ) : (
@@ -62,7 +62,7 @@ export default function VolumeDiscount() {
 
       {/* ── Desktop: full card ────────────────────────────────────────────── */}
       <div className="hidden sm:block fixed bottom-24 right-4 w-80 z-40 animate-[fadeUp_0.4s_ease-out]">
-        <div className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] border border-gray-100 dark:border-card-border p-4 relative">
+        <div className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] p-4 relative">
           <button
             onClick={() => { setDismissed(true); sessionStorage.setItem("buleje-vd-dismissed", "1"); }}
             className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-surface transition-colors text-muted"
@@ -78,7 +78,7 @@ export default function VolumeDiscount() {
             <div className="min-w-0 flex-1">
               {currentTier ? (
                 <>
-                  <p className="text-sm font-bold text-foreground">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">
                     ¡Tienes <span className="text-primary">{currentTier.label}</span> por volumen!
                   </p>
                   <p className="text-xs text-muted">
@@ -90,7 +90,7 @@ export default function VolumeDiscount() {
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-bold text-foreground">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">
                     ¡Casi llegas al descuento!
                   </p>
                   <p className="text-xs text-muted">

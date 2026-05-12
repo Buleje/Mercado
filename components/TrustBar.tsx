@@ -67,7 +67,7 @@ export default function TrustBar() {
 
   return (
     <div
-      className="bg-white dark:bg-card border-y border-gray-100 dark:border-card-border py-4 overflow-hidden"
+      className="bg-[var(--surface-raised)] border-y border-[var(--rule-base)] py-4 overflow-hidden"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -87,7 +87,7 @@ export default function TrustBar() {
             <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg shrink-0 transition-transform group-hover:scale-110")} style={item.bgStyle}>
               <item.icon className={cn("h-4 w-4 shrink-0", item.color)} />
             </span>
-            <span className="text-xs sm:text-sm font-semibold text-foreground">
+            <span className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">
               {item.text}
             </span>
           </div>

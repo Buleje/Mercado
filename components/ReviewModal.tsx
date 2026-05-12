@@ -201,7 +201,7 @@ export default function ReviewModal() {
                 <>
                   {/* Stars */}
                   <div>
-                    <p className="text-sm font-semibold text-foreground mb-2">Tu calificación</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">Tu calificación</p>
                     <div className="flex items-center gap-2">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <m.button
@@ -237,7 +237,7 @@ export default function ReviewModal() {
 
                   {/* Preset messages — slide in/out when tier changes */}
                   <div>
-                    <p className="text-sm font-semibold text-foreground mb-2">
+                    <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">
                       Selecciona un mensaje o escribe el tuyo
                     </p>
                     <AnimatePresence mode="wait">
@@ -258,7 +258,7 @@ export default function ReviewModal() {
                             className={`w-full text-left text-sm px-4 py-3 rounded-xl border transition-all leading-relaxed ${
                               selectedPreset === idx
                                 ? selectedStyle
-                                : "border-gray-200 hover:border-primary/40 hover:bg-primary/4 text-foreground"
+                                : "border-gray-200 hover:border-primary/40 hover:bg-primary/4 text-[var(--text-primary)]"
                             }`}
                           >
                             {msg}
@@ -271,7 +271,7 @@ export default function ReviewModal() {
                   {/* Custom text — animated to attract attention */}
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <p className="text-sm font-semibold text-foreground">O escribe tu propio mensaje</p>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">O escribe tu propio mensaje</p>
                       <AnimatePresence>
                         {promptPulse && (
                           <m.span
@@ -320,7 +320,7 @@ export default function ReviewModal() {
                         placeholder="Cuéntanos tu experiencia con Buleje…"
                         rows={3}
                         maxLength={240}
-                        className={`w-full rounded-xl border px-4 py-3 text-sm text-foreground resize-none outline-none transition-all leading-relaxed ${
+                        className={`w-full rounded-xl border px-4 py-3 text-sm text-[var(--text-primary)] resize-none outline-none transition-all leading-relaxed ${
                           textareaFocused
                             ? "border-primary ring-2 ring-primary/20 shadow-[var(--shadow-sm)]"
                             : selectedPreset === null && customText
@@ -336,9 +336,9 @@ export default function ReviewModal() {
 
                   {/* Photo upload */}
                   <div>
-                    <p className="text-sm font-semibold text-foreground mb-2">Agrega una foto (opcional)</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] mb-2">Agrega una foto (opcional)</p>
                     <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm font-medium text-foreground cursor-pointer hover:border-primary/40 transition-colors">
+                      <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm font-medium text-[var(--text-primary)] cursor-pointer hover:border-primary/40 transition-colors">
                         <Camera className="h-4 w-4 text-primary" />
                         {photoBase64 ? "Cambiar foto" : "Subir foto"}
                         <input
@@ -399,7 +399,7 @@ export default function ReviewModal() {
                       className="rounded-xl bg-primary/5 border border-primary/15 px-4 py-3 space-y-1.5"
                     >
                       <p className="text-xs font-bold text-primary uppercase tracking-wide">Vista previa</p>
-                      <p className="text-sm text-foreground leading-relaxed">{activeText.trim()}</p>
+                      <p className="text-sm text-[var(--text-primary)] leading-relaxed">{activeText.trim()}</p>
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((n) => (
                           <Star key={n} className="h-3.5 w-3.5" fill={n <= rating ? "#FBBF24" : "none"} color={n <= rating ? "#FBBF24" : "#D1D5DB"} />

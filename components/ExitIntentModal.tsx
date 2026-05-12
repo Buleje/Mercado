@@ -109,7 +109,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeDown_0.25s_ease-out]">
-      <div role="dialog" aria-modal="true" aria-label="Oferta antes de irte" className="relative bg-white dark:bg-card rounded-3xl shadow-[var(--shadow-xl)] max-w-lg w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
+      <div role="dialog" aria-modal="true" aria-label="Oferta antes de irte" className="relative bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] max-w-lg w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
         {/* Close button */}
         <button
           onClick={handleClose}
@@ -135,7 +135,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
         <div className="p-8 text-center">
           {hasCartItems ? (
             <>
-              <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-3">
+              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] mb-3">
                 ¡No olvides tu carrito!
               </h2>
               <p className="text-muted text-base mb-2">
@@ -162,7 +162,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
                 </button>
                 <button
                   onClick={handleClose}
-                  className="text-sm text-muted hover:text-foreground transition-colors"
+                  className="text-sm text-muted hover:text-[var(--text-primary)] transition-colors"
                 >
                   Seguir comprando
                 </button>
@@ -170,7 +170,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
             </>
           ) : (
             <>
-              <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-3 inline-flex items-center gap-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] mb-3 inline-flex items-center gap-2">
                 ¡Espera! <Gift className="h-7 w-7 text-primary" aria-hidden />
               </h2>
               <p className="text-muted text-base mb-6">
@@ -195,7 +195,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
                 </Link>
                 <button
                   onClick={handleClose}
-                  className="text-sm text-muted hover:text-foreground transition-colors"
+                  className="text-sm text-muted hover:text-[var(--text-primary)] transition-colors"
                 >
                   No, gracias
                 </button>

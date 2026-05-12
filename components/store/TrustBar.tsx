@@ -53,7 +53,7 @@ export default function TrustBar() {
             return (
               <li
                 key={item.label}
-                className="group relative flex flex-col items-start gap-4 p-5 sm:p-6 rounded-3xl bg-white dark:bg-card border-2 border-[var(--rule-soft)] dark:border-card-border hover:border-[var(--color-primary)]/40 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.12)] transition-all duration-300"
+                className="group relative flex flex-col items-start gap-4 p-5 sm:p-6 rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-[var(--color-primary)]/40 hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.12)] transition-all duration-300"
                 style={{ animationDelay: `${idx * 60}ms` }}
               >
                 {/* Número de orden, decorativo */}

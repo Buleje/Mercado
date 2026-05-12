@@ -31,7 +31,7 @@ interface RecommendedProductsProps {
 
 function SkeletonCard() {
   return (
-    <div className="snap-start shrink-0 w-[140px] rounded-xl bg-white dark:bg-card border border-gray-100 dark:border-white/5 overflow-hidden shadow-sm animate-pulse">
+    <div className="snap-start shrink-0 w-[140px] rounded-xl bg-[var(--surface-raised)] border border-gray-100 dark:border-white/5 overflow-hidden shadow-sm animate-pulse">
       <div className="aspect-square bg-gray-100 dark:bg-white/5" />
       <div className="p-2.5 space-y-2">
         <div className="h-3 bg-gray-100 dark:bg-white/5 rounded-full w-4/5" />
@@ -56,7 +56,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
   return (
     <div
       className={cn(
-        "snap-start shrink-0 w-[140px] rounded-xl bg-white dark:bg-card",
+        "snap-start shrink-0 w-[140px] rounded-xl bg-[var(--surface-raised)]",
         "border border-gray-100 dark:border-white/5",
         "shadow-sm hover:shadow-md transition-all duration-200",
         "overflow-hidden group",
@@ -87,7 +87,7 @@ function ProductCard({ product, onAdd, justAdded }: ProductCardProps) {
 
       {/* Info */}
       <div className="p-2.5 space-y-1.5">
-        <p className="text-[12px] font-semibold text-gray-900 dark:text-foreground line-clamp-2 leading-tight">
+        <p className="text-[12px] font-semibold text-gray-900 dark:text-[var(--text-primary)] line-clamp-2 leading-tight">
           {product.name}
         </p>
 
@@ -281,7 +281,7 @@ export default function RecommendedProducts({
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="h-4 w-4 text-secondary shrink-0" aria-hidden="true" />
-        <h3 className="text-sm font-bold text-gray-800 dark:text-foreground tracking-tight">
+        <h3 className="text-sm font-bold text-gray-800 dark:text-[var(--text-primary)] tracking-tight">
           También te puede interesar
         </h3>
         <ShoppingCart

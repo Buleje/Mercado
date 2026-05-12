@@ -67,7 +67,7 @@ export default function BetaFeedbackWidget() {
       {open && (
         <div
           ref={panelRef}
-          className="w-[min(18rem,calc(100vw-1rem))] rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border shadow-2xl overflow-hidden animate-[fadeDown_0.2s_ease-out] sm:w-72"
+          className="w-[min(18rem,calc(100vw-1rem))] rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl overflow-hidden animate-[fadeDown_0.2s_ease-out] sm:w-72"
           role="dialog"
           aria-modal="true"
           aria-label="Widget de feedback beta"
@@ -92,14 +92,14 @@ export default function BetaFeedbackWidget() {
             /* Thank you state */
             <div className="px-4 py-8 flex flex-col items-center gap-3 text-center">
               <CheckCircle2 className="h-10 w-10 text-[var(--data-success-500)]" />
-              <p className="font-bold text-foreground">¡Gracias por tu feedback!</p>
+              <p className="font-bold text-[var(--text-primary)]">¡Gracias por tu feedback!</p>
               <p className="text-xs text-muted">Tu opinión ayuda a mejorar el proyecto.</p>
             </div>
           ) : (
             /* Form */
             <div className="px-4 py-4 space-y-4">
               <div>
-                <p className="text-sm font-semibold text-foreground mb-1">¿Cómo calificarías la experiencia?</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">¿Cómo calificarías la experiencia?</p>
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -127,7 +127,7 @@ export default function BetaFeedbackWidget() {
               </div>
 
               <div>
-                <label htmlFor="beta-feedback-comment" className="text-sm font-semibold text-foreground block mb-1">
+                <label htmlFor="beta-feedback-comment" className="text-sm font-semibold text-[var(--text-primary)] block mb-1">
                   Comentario (opcional)
                 </label>
                 <textarea
@@ -137,7 +137,7 @@ export default function BetaFeedbackWidget() {
                   rows={3}
                   maxLength={300}
                   placeholder="¿Qué mejorarías o qué te gustó?"
-                  className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-xl border border-[var(--rule-base)] bg-gray-50 dark:bg-surface px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
 

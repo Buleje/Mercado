@@ -42,7 +42,7 @@ export default function StoreStats() {
               <div
                 key={i}
                 className={cn(
-                  "flex items-center gap-3 bg-white dark:bg-card rounded-xl p-4 border border-gray-100 dark:border-card-border shadow-[var(--shadow-sm)]",
+                  "flex items-center gap-3 bg-[var(--surface-raised)] rounded-xl p-4 border border-[var(--rule-base)] shadow-[var(--shadow-sm)]",
                   animated
                     ? "animate-[fadeUp_0.5s_ease-out_both]"
                     : "opacity-0"
@@ -53,7 +53,7 @@ export default function StoreStats() {
                   <Icon className={cn("h-5 w-5", stat.color)} />
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl font-extrabold text-foreground leading-none">
+                  <p className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-none">
                     {stat.value}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] sm:text-xs text-muted leading-tight mt-0.5">

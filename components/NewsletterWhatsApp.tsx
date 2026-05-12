@@ -114,18 +114,18 @@ export default function NewsletterWhatsApp() {
 
           {/* Right — Card with form */}
           <div className="w-full lg:w-96 shrink-0">
-            <div className="bg-white dark:bg-card rounded-3xl p-7 sm:p-8 shadow-[var(--shadow-xl)] shadow-black/20 border border-white/20">
+            <div className="bg-[var(--surface-raised)] rounded-3xl p-7 sm:p-8 shadow-[var(--shadow-xl)] shadow-black/20 border border-white/20">
               {sent ? (
                 <div className="flex flex-col items-center gap-4 text-center py-6">
                   <div className="w-16 h-16 rounded-full bg-[#25D366]/10 flex items-center justify-center animate-[scaleIn_0.4s_ease-out]">
                     <CheckCircle className="w-8 h-8 text-[#25D366]" />
                   </div>
-                  <h4 className="font-extrabold text-foreground text-xl">
+                  <h4 className="font-extrabold text-[var(--text-primary)] text-xl">
                     ¡Listo! Te avisaremos
                   </h4>
                   <p className="text-muted text-sm leading-relaxed">
                     Recibirás nuestras ofertas por WhatsApp al{" "}
-                    <strong className="text-foreground">{phone}</strong>
+                    <strong className="text-[var(--text-primary)]">{phone}</strong>
                   </p>
                   <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#25D366] font-bold bg-[#25D366]/8 rounded-full px-3 py-1.5">
                     <MessageCircle className="w-3.5 h-3.5" />
@@ -139,7 +139,7 @@ export default function NewsletterWhatsApp() {
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#25D366]/10 mb-3">
                       <MessageCircle className="w-6 h-6 text-[#25D366]" />
                     </div>
-                    <h4 className="font-extrabold text-foreground text-lg">
+                    <h4 className="font-extrabold text-[var(--text-primary)] text-lg">
                       Suscríbete gratis
                     </h4>
                     <p className="text-muted text-sm mt-1">
@@ -151,12 +151,12 @@ export default function NewsletterWhatsApp() {
                   <div>
                     <label
                       htmlFor="newsletter-phone"
-                      className="block text-sm font-semibold text-foreground mb-2"
+                      className="block text-sm font-semibold text-[var(--text-primary)] mb-2"
                     >
                       Tu número de celular
                     </label>
                     <div className="flex gap-2">
-                      <span className="flex items-center px-3.5 bg-gray-50 dark:bg-surface rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-muted">
+                      <span className="flex items-center px-3.5 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-muted">
                         +51
                       </span>
                       <input
@@ -169,10 +169,10 @@ export default function NewsletterWhatsApp() {
                         onChange={(e) => setPhone(e.target.value.replace(/[^\d\s-]/g, ""))}
                         placeholder="9XX XXX XXX"
                         className={cn(
-                          "flex-1 px-4 py-3.5 rounded-xl border text-sm font-medium bg-white dark:bg-surface text-foreground placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-[#25D366]/50 focus:border-[#25D366] transition",
+                          "flex-1 px-4 py-3.5 rounded-xl border text-sm font-medium bg-white dark:bg-surface text-[var(--text-primary)] placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-[#25D366]/50 focus:border-[#25D366] transition",
                           error
                             ? "border-red-400 focus:ring-red-300"
-                            : "border-gray-200 dark:border-card-border"
+                            : "border-[var(--rule-base)]"
                         )}
                       />
                     </div>

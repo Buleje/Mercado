@@ -81,7 +81,7 @@ export default function BackInStock() {
 
   return (
     <div className="fixed bottom-20 sm:bottom-6 left-4 z-40 max-w-xs w-full animate-[slideUp_0.4s_ease-out]">
-      <div className="bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] border border-border rounded-2xl shadow-xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border-b border-border">
           <div className="flex items-center gap-2">
@@ -102,7 +102,7 @@ export default function BackInStock() {
             }
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground line-clamp-1">{product.name}</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-1">{product.name}</p>
             <p className="text-xs text-muted">{product.unit}</p>
             <p className="text-sm font-extrabold text-primary mt-0.5">S/{Number(product.price).toFixed(2)}</p>
           </div>

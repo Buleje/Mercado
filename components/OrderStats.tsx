@@ -99,7 +99,7 @@ export function OrderStats({
     <div className="space-y-3">
       {periodLabel && (
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground/80">{periodLabel}</h3>
+          <h3 className="text-sm font-bold text-gray-700 dark:text-[var(--text-primary)]/80">{periodLabel}</h3>
         </div>
       )}
       
@@ -115,7 +115,7 @@ export function OrderStats({
           return (
             <div
               key={stat.label}
-              className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3.5 sm:p-4 transition-all hover:shadow-[var(--shadow-md)] hover:border-primary/20 dark:hover:border-primary/30"
+              className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3.5 sm:p-4 transition-all hover:shadow-[var(--shadow-md)] hover:border-primary/20 dark:hover:border-primary/30"
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className={cn("p-2 rounded-lg", stat.bgColor)}>
@@ -133,7 +133,7 @@ export function OrderStats({
                   </div>
                 )}
               </div>
-              <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mb-0.5">
+              <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-[var(--text-primary)] mb-0.5">
                 {stat.value}
               </p>
               <p className="text-xs font-medium text-gray-500 dark:text-muted">
@@ -161,7 +161,7 @@ export function OrderStatsLoading({ compact = false }: { compact?: boolean }) {
         {Array.from({ length: count }).map((_, i) => (
           <div
             key={i}
-            className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-xl p-3.5 sm:p-4 animate-pulse"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3.5 sm:p-4 animate-pulse"
           >
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="h-8 w-8 bg-gray-200 dark:bg-surface rounded-lg" />

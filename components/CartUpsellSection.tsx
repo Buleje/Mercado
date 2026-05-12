@@ -114,7 +114,7 @@ export default function CartUpsellSection({
               <button
                 key={p.id}
                 onClick={() => onAddItem(resolveProduct(p))}
-                className="flex items-center gap-3 w-full bg-white dark:bg-card rounded-lg px-3 py-2 border border-emerald-100 dark:border-emerald-800/20 hover:border-emerald-300 hover:shadow-[var(--shadow-sm)] transition-all text-left group"
+                className="flex items-center gap-3 w-full bg-[var(--surface-raised)] rounded-lg px-3 py-2 border border-emerald-100 dark:border-emerald-800/20 hover:border-emerald-300 hover:shadow-[var(--shadow-sm)] transition-all text-left group"
               >
                 <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-gray-50 shrink-0">
                   {p.image ? (
@@ -126,7 +126,7 @@ export default function CartUpsellSection({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                  <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{p.name}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-600)] dark:text-emerald-400 font-medium">
                     S/{Number(p.price).toFixed(2)} — ¡alcanzas delivery gratis!
                   </p>
@@ -149,7 +149,7 @@ export default function CartUpsellSection({
           </div>
           <button
             onClick={() => onAddItem(combo.product)}
-            className="flex items-center gap-3 w-full bg-white dark:bg-card rounded-lg px-3 py-2 border border-amber-100 dark:border-amber-800/20 hover:border-amber-300 hover:shadow-[var(--shadow-sm)] transition-all text-left group"
+            className="flex items-center gap-3 w-full bg-[var(--surface-raised)] rounded-lg px-3 py-2 border border-amber-100 dark:border-amber-800/20 hover:border-amber-300 hover:shadow-[var(--shadow-sm)] transition-all text-left group"
           >
             <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-gray-50 shrink-0">
               {combo.product.image ? (
@@ -161,7 +161,7 @@ export default function CartUpsellSection({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-foreground truncate">{combo.product.name}</p>
+              <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{combo.product.name}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-600)] font-bold">S/{Number(combo.product.price).toFixed(2)}/{combo.product.unit}</p>
             </div>
             <div className="h-7 w-7 rounded-lg bg-[var(--data-warning-500)] text-white flex items-center justify-center shrink-0 group-hover:bg-[var(--data-warning-600)] transition-colors">
@@ -186,9 +186,9 @@ export default function CartUpsellSection({
               return (
                 <div
                   key={s.id}
-                  className="bg-gray-50 dark:bg-accent/50 rounded-xl border border-gray-100 dark:border-card-border overflow-hidden hover:border-primary/30 transition-all group"
+                  className="bg-gray-50 dark:bg-accent/50 rounded-xl border border-[var(--rule-base)] overflow-hidden hover:border-primary/30 transition-all group"
                 >
-                  <div className="relative aspect-4/3 bg-white dark:bg-card">
+                  <div className="relative aspect-4/3 bg-[var(--surface-raised)]">
                     {s.image ? (
                       <Image src={s.image} alt={s.name} fill className="object-cover" sizes="150px" />
                     ) : (
@@ -199,11 +199,11 @@ export default function CartUpsellSection({
                   </div>
                   <div className="p-2.5">
                     {slug ? (
-                      <Link href={`/tienda/${slug}`} className="text-[length:var(--ts-2xs)] font-semibold text-foreground line-clamp-1 hover:text-primary transition-colors">
+                      <Link href={`/tienda/${slug}`} className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] line-clamp-1 hover:text-primary transition-colors">
                         {s.name}
                       </Link>
                     ) : (
-                      <p className="text-[length:var(--ts-2xs)] font-semibold text-foreground line-clamp-1">{s.name}</p>
+                      <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-primary)] line-clamp-1">{s.name}</p>
                     )}
                     <div className="flex items-center justify-between mt-1.5">
                       <span className="text-xs font-extrabold text-primary">S/{Number(s.price).toFixed(2)}</span>

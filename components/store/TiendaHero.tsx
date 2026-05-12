@@ -48,6 +48,32 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
   const originBadge = (storeTheme as { heroOriginBadge?: string } | null | undefined)?.heroOriginBadge?.trim()
     || "Hecho en Pucallpa";
 
+  // ── Paleta dinámica según heroBg ──────────────────────────────────────────
+  // Con imagen → overlay oscuro + texto blanco. Sin imagen → tokens del DS
+  // (responde a light/dark global). Brandon decisión 2026-05-09: el default
+  // del proyecto es light, entonces sin heroBg el hero se pinta claro.
+  const palette = heroBg
+    ? {
+        title: "text-white",
+        subtitle: "text-white/70",
+        meta: "text-white/50",
+        dot: "bg-white/25",
+        secondaryBtn:
+          "border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white",
+        card: "bg-white/[0.04] border border-white/10",
+        illust: "text-white/90",
+      }
+    : {
+        title: "text-[var(--text-primary)]",
+        subtitle: "text-[var(--text-secondary)]",
+        meta: "text-[var(--text-tertiary)]",
+        dot: "bg-[var(--text-tertiary)]/40",
+        secondaryBtn:
+          "border border-[var(--rule-base)] hover:border-[var(--color-primary)]/50 bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+        card: "bg-[var(--surface-raised)] border border-[var(--rule-base)]",
+        illust: "text-[var(--text-primary)]/85",
+      };
+
   // ── Destino del CTA primario ──────────────────────────────────────────────
   // heroLink puede ser "tienda" | "whatsapp" | "categorias" | "custom".
   const ctaHref = (() => {
@@ -64,12 +90,13 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
 
   return (
     <section
-      className="relative overflow-hidden border-b border-[var(--rule-soft)]"
+      className="relative overflow-hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] data-[bg=image]:bg-transparent"
       style={
         heroBg
           ? { backgroundImage: `linear-gradient(to bottom, rgba(6,10,13,0.78), rgba(6,10,13,0.92)), url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }
-          : { background: "#060a0d" }
+          : undefined
       }
+      data-bg={heroBg ? "image" : "solid"}
       aria-label="Bienvenida a la tienda"
     >
       {/* Ambient glows — solo cuando NO hay imagen de fondo (para no competir). */}
@@ -87,10 +114,10 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)] mb-5">
               {badge}
             </span>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-[1.08] tracking-tight">
+            <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-extrabold ${palette.title} leading-[1.08] tracking-tight`}>
               {title}
             </h1>
-            <p className="mt-5 text-base sm:text-lg text-white/70 leading-relaxed max-w-xl lg:max-w-none mx-auto lg:mx-0">
+            <p className={`mt-5 text-base sm:text-lg ${palette.subtitle} leading-relaxed max-w-xl lg:max-w-none mx-auto lg:mx-0`}>
               {subtitle}
             </p>
 
@@ -108,7 +135,7 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
               <button
                 type="button"
                 onClick={openCart}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white font-semibold text-sm transition-all w-full sm:w-auto"
+                className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl ${palette.secondaryBtn} font-semibold text-sm transition-all w-full sm:w-auto`}
               >
                 <ShoppingCart className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
                 <span>Mi carrito{count > 0 ? ` (${count})` : ""}</span>
@@ -116,15 +143,15 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
             </div>
 
             {/* Meta stats — compact */}
-            <div className="mt-7 flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/50 tabular-nums">
+            <div className={`mt-7 flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider ${palette.meta} tabular-nums`}>
               <span>
                 {productCount > 0
                   ? `${productCount} producto${productCount !== 1 ? "s" : ""}`
                   : "Proximamente"}
               </span>
-              <span className="h-1 w-1 rounded-full bg-white/25" aria-hidden="true" />
+              <span className={`h-1 w-1 rounded-full ${palette.dot}`} aria-hidden="true" />
               <span>Delivery 25 min</span>
-              <span className="h-1 w-1 rounded-full bg-white/25" aria-hidden="true" />
+              <span className={`h-1 w-1 rounded-full ${palette.dot}`} aria-hidden="true" />
               <span>Yape · Plin · Efectivo</span>
             </div>
           </div>
@@ -140,13 +167,13 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
                 />
                 {/* Card contenedora sutil */}
                 <div
-                  className="relative rounded-3xl bg-white/[0.04] border border-white/10 p-6 sm:p-8 backdrop-blur-sm"
+                  className={`relative rounded-3xl ${palette.card} p-6 sm:p-8 backdrop-blur-sm`}
                   aria-hidden="true"
                 >
                   <DoniaElena
                     size={260}
                     strokeWidth={1.5}
-                    className="text-white/90"
+                    className={palette.illust}
                   />
                 </div>
                 {/* Micro-badge identidad */}

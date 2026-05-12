@@ -96,22 +96,22 @@ function ReviewCard({ review }: { review: Review }) {
   });
 
   return (
-    <article className="rounded-xl border border-border bg-card p-4 dark:bg-card dark:border-border">
+    <article className="rounded-xl border border-border bg-[var(--surface-raised)] p-4 dark:bg-[var(--surface-raised)] dark:border-border">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-foreground dark:text-foreground">
+          <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {review.name || "Anonimo"}
           </p>
           {review.location && (
-            <p className="text-xs text-muted-foreground dark:text-muted">{review.location}</p>
+            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{review.location}</p>
           )}
         </div>
         <StarRating value={review.rating} />
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-foreground dark:text-foreground">
+      <p className="mt-2 text-sm leading-relaxed text-[var(--text-primary)] dark:text-[var(--text-primary)]">
         {review.text}
       </p>
-      <p className="mt-2 text-xs text-muted-foreground dark:text-muted">{formatted}</p>
+      <p className="mt-2 text-xs text-[var(--text-secondary)] dark:text-muted">{formatted}</p>
     </article>
   );
 }
@@ -125,12 +125,12 @@ function RatingSummary({ reviews }: { reviews: Review[] }) {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-4xl font-bold text-foreground dark:text-foreground">
+      <span className="text-4xl font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
         {avg.toFixed(1)}
       </span>
       <div>
         <StarRating value={Math.round(avg)} size={20} />
-        <p className="mt-1 text-xs text-muted-foreground dark:text-muted">
+        <p className="mt-1 text-xs text-[var(--text-secondary)] dark:text-muted">
           {reviews.length} {reviews.length === 1 ? "resena" : "resenas"}
         </p>
       </div>
@@ -209,14 +209,14 @@ function ReviewForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-card p-5 dark:bg-card dark:border-border">
-      <p className="text-sm font-semibold text-foreground dark:text-foreground">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-[var(--surface-raised)] p-5 dark:bg-[var(--surface-raised)] dark:border-border">
+      <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
         Deja tu opinion
       </p>
 
       {/* name */}
       <div className="space-y-1">
-        <label htmlFor={`${uid}-name`} className="text-xs font-medium text-muted-foreground dark:text-muted">
+        <label htmlFor={`${uid}-name`} className="text-xs font-medium text-[var(--text-secondary)] dark:text-muted">
           Nombre (opcional)
         </label>
         <input
@@ -227,22 +227,22 @@ function ReviewForm({
           placeholder="Tu nombre"
           maxLength={60}
           className={cn(
-            "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
-            "dark:bg-background dark:border-border dark:text-foreground dark:placeholder:text-muted",
+            "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-[var(--text-primary)]",
+            "placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
+            "dark:bg-background dark:border-border dark:text-[var(--text-primary)] dark:placeholder:text-muted",
           )}
         />
       </div>
 
       {/* rating */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground dark:text-muted">Calificacion</p>
+        <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-muted">Calificacion</p>
         <StarPicker id={`${uid}-rating`} value={rating} onChange={setRating} />
       </div>
 
       {/* comment */}
       <div className="space-y-1">
-        <label htmlFor={`${uid}-text`} className="text-xs font-medium text-muted-foreground dark:text-muted">
+        <label htmlFor={`${uid}-text`} className="text-xs font-medium text-[var(--text-secondary)] dark:text-muted">
           Comentario
         </label>
         <textarea
@@ -254,12 +254,12 @@ function ReviewForm({
           maxLength={500}
           required
           className={cn(
-            "w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
-            "dark:bg-background dark:border-border dark:text-foreground dark:placeholder:text-muted",
+            "w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-[var(--text-primary)]",
+            "placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]",
+            "dark:bg-background dark:border-border dark:text-[var(--text-primary)] dark:placeholder:text-muted",
           )}
         />
-        <p className="text-right text-xs text-muted-foreground dark:text-muted">{text.length}/500</p>
+        <p className="text-right text-xs text-[var(--text-secondary)] dark:text-muted">{text.length}/500</p>
       </div>
 
       {formError && (
@@ -316,7 +316,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
 
   return (
     <section aria-labelledby="reviews-title" className="space-y-6">
-      <h2 id="reviews-title" className="text-lg font-bold text-foreground dark:text-foreground">
+      <h2 id="reviews-title" className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
         Resenas del producto
       </h2>
 
@@ -337,7 +337,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
           <RatingSummary reviews={reviews} />
 
           {reviews.length === 0 ? (
-            <p className="text-sm text-muted-foreground dark:text-muted">
+            <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               Se el primero en opinar sobre este producto.
             </p>
           ) : (

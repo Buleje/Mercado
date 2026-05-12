@@ -588,7 +588,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             #{o.id.slice(-6).toUpperCase()}
                           </span>
                         </div>
-                        <p className="text-sm font-bold text-foreground">
+                        <p className="text-sm font-bold text-[var(--text-primary)]">
                           {itemCount}{" "}
                           {itemCount === 1 ? "producto" : "productos"}
                         </p>
@@ -754,7 +754,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             >
                               Llega en
                             </p>
-                            <p className="text-xl font-extrabold text-foreground tabular-nums leading-none mt-0.5">
+                            <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none mt-0.5">
                               {ETA[order.status]}
                             </p>
                           </div>
@@ -917,7 +917,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                             </div>
 
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-foreground truncate leading-tight">
+                              <p className="text-sm font-bold text-[var(--text-primary)] truncate leading-tight">
                                 {item.name}
                               </p>
                               <p className="text-xs text-muted mt-0.5 tabular-nums">
@@ -1046,7 +1046,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           </div>
                           <div>
                             <p className="text-xs text-muted">Nombre</p>
-                            <p className="text-sm font-bold text-foreground">{order.customer.name}</p>
+                            <p className="text-sm font-bold text-[var(--text-primary)]">{order.customer.name}</p>
                           </div>
                         </div>
                       )}
@@ -1067,7 +1067,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-muted">Teléfono</p>
-                            <p className="text-sm font-bold text-foreground tabular-nums">
+                            <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
                               {order.customer.phone}
                             </p>
                           </div>
@@ -1100,7 +1100,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-muted">Dirección</p>
-                            <p className="text-sm font-bold text-foreground leading-snug">
+                            <p className="text-sm font-bold text-[var(--text-primary)] leading-snug">
                               {order.customer.location}
                             </p>
                             {order.customer.reference && (
@@ -1125,7 +1125,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                     <div className="w-20 h-20 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-4">
                       <X className="w-10 h-10 text-[var(--data-error-500)]" />
                     </div>
-                    <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">Pedido cancelado</p>
+                    <p className="text-xl font-extrabold text-gray-900 dark:text-[var(--text-primary)]">Pedido cancelado</p>
                     <p className="text-sm text-gray-500 dark:text-muted mt-2 max-w-xs">Este pedido fue cancelado. Si tienes dudas, escríbenos por WhatsApp.</p>
                   </>
                 ) : order?.status === "entregado" ? (
@@ -1158,16 +1158,16 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                     </p>
                     {order.items && order.items.length > 0 && (
                       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                        className="mt-5 w-full max-w-xs text-left rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden"
+                        className="mt-5 w-full max-w-xs text-left rounded-2xl border border-[var(--rule-base)] overflow-hidden"
                       >
-                        <div className="px-3 py-2 bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
+                        <div className="px-3 py-2 bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)]">
                           <p className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Resumen de entrega</p>
                         </div>
                         <div className="divide-y divide-gray-100 dark:divide-card-border/50">
                           {order.items.slice(0, 4).map((item, i) => (
                             <div key={i} className="flex items-center justify-between px-3 py-2">
                               <span className="text-xs text-gray-600 dark:text-gray-300 truncate flex-1">{item.name} ×{(item.quantity ?? item.qty ?? 0)}</span>
-                              <span className="text-xs font-bold text-gray-800 dark:text-foreground ml-2 shrink-0">S/{(item.price * (item.quantity ?? item.qty ?? 0)).toFixed(2)}</span>
+                              <span className="text-xs font-bold text-gray-800 dark:text-[var(--text-primary)] ml-2 shrink-0">S/{(item.price * (item.quantity ?? item.qty ?? 0)).toFixed(2)}</span>
                             </div>
                           ))}
                           {order.items.length > 4 && <div className="px-3 py-1.5 text-center text-[length:var(--ts-2xs)] text-gray-400">+{order.items.length - 4} más</div>}
@@ -1195,7 +1195,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                     <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-surface flex items-center justify-center mb-4">
                       <ShoppingBag className="w-10 h-10 text-gray-400" />
                     </div>
-                    <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">Sin pedidos activos</p>
+                    <p className="text-lg font-extrabold text-gray-900 dark:text-[var(--text-primary)]">Sin pedidos activos</p>
                     <p className="text-sm text-gray-500 dark:text-muted mt-2">Haz un pedido y podrás seguirlo aquí en tiempo real</p>
                   </>
                 )}

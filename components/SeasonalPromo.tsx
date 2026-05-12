@@ -268,7 +268,7 @@ export default function SeasonalPromo({ serverProducts, showEmpty = false, empty
                 key={sp.category}
                 type="button"
                 onClick={() => setIdx((safeIdx + 1 + i) % PROMOS.length)}
-                className="group flex-1 sm:flex-none text-left bg-white dark:bg-card rounded-2xl border-2 border-[var(--rule-soft)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 px-5 py-5 transition-all sm:flex-1 relative overflow-hidden"
+                className="group flex-1 sm:flex-none text-left bg-[var(--surface-raised)] rounded-2xl border-2 border-[var(--rule-soft)] hover:border-[var(--color-primary)]/40 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 px-5 py-5 transition-all sm:flex-1 relative overflow-hidden"
               >
                 {/* Acento decorativo */}
                 <span className="absolute top-0 right-0 h-16 w-16 rounded-full bg-[var(--color-primary)]/8 blur-2xl group-hover:bg-[var(--color-primary)]/15 transition-colors" aria-hidden="true" />

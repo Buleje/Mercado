@@ -90,7 +90,7 @@ function KeyBadge({ children }: { children: string }) {
       "bg-gray-100 dark:bg-surface",
       "border border-gray-300 dark:border-gray-600",
       "rounded-md shadow-[var(--shadow-sm)]",
-      "text-gray-700 dark:text-foreground"
+      "text-gray-700 dark:text-[var(--text-primary)]"
     )}>
       {children}
     </kbd>
@@ -174,7 +174,7 @@ export function KeyboardShortcutsModal({
                   >
                     <div className="flex items-center gap-3">
                       <shortcut.icon className="h-4 w-4 text-gray-400 dark:text-muted" />
-                      <span className="text-sm text-gray-700 dark:text-foreground">
+                      <span className="text-sm text-gray-700 dark:text-[var(--text-primary)]">
                         {shortcut.description}
                       </span>
                     </div>
@@ -217,8 +217,8 @@ export function KeyboardShortcutHint() {
         className={cn(
           "fixed bottom-4 right-4 z-30",
           "flex items-center gap-2 px-3 py-2",
-          "bg-white dark:bg-card",
-          "border border-gray-200 dark:border-card-border",
+          "bg-[var(--surface-raised)]",
+          "border border-[var(--rule-base)]",
           "rounded-full shadow-[var(--shadow-lg)]",
           "text-xs text-gray-600 dark:text-muted",
           "hover:shadow-[var(--shadow-xl)] hover:scale-105",
@@ -235,7 +235,7 @@ export function KeyboardShortcutHint() {
             e.stopPropagation();
             setIsHintVisible(false);
           }}
-          className="ml-1 text-gray-400 hover:text-gray-600 dark:hover:text-foreground"
+          className="ml-1 text-gray-400 hover:text-gray-600 dark:hover:text-[var(--text-primary)]"
           aria-label="Cerrar hint"
         >
           ×

@@ -23,7 +23,7 @@ export default function DeliveryZoneMap() {
             <Truck className="w-3.5 h-3.5" />
             Delivery
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             Zonas de{" "}
             <span className="text-primary relative">
               entrega
@@ -43,14 +43,14 @@ export default function DeliveryZoneMap() {
             {ZONES.map((zone, i) => (
               <div
                 key={zone.name}
-                className={`group flex items-center gap-4 bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl px-5 py-4 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 transition-all duration-500 ${
+                className={`group flex items-center gap-4 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl px-5 py-4 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 transition-all duration-500 ${
                   inView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"
                 }`}
                 style={{ transitionDelay: inView ? `${i * 80}ms` : "0ms" }}
               >
                 <div className={`w-4 h-4 rounded-full ${zone.color} shrink-0 ring-4 ${zone.ring}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground">{zone.name}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{zone.name}</p>
                   <p className="flex items-center gap-1 text-xs text-muted mt-0.5">
                     <Clock className="w-3 h-3" />
                     {zone.time}
@@ -61,14 +61,14 @@ export default function DeliveryZoneMap() {
                     <CheckCircle2 className="w-3.5 h-3.5" /> Gratis
                   </span>
                 ) : (
-                  <span className="text-sm font-bold text-foreground bg-gray-100 dark:bg-surface px-3 py-1.5 rounded-full">{zone.price}</span>
+                  <span className="text-sm font-bold text-[var(--text-primary)] bg-gray-100 dark:bg-surface px-3 py-1.5 rounded-full">{zone.price}</span>
                 )}
               </div>
             ))}
 
             {/* CTA */}
             <div className="mt-4 p-4 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/10">
-              <p className="text-sm text-foreground font-semibold">
+              <p className="text-sm text-[var(--text-primary)] font-semibold">
                 🚚 <strong className="text-primary">Delivery gratis</strong> en compras mayores a S/50 para Centro y San Fernando
               </p>
             </div>
@@ -103,7 +103,7 @@ export default function DeliveryZoneMap() {
                 <div className="bg-primary text-white rounded-full p-3 shadow-[var(--shadow-xl)] shadow-primary/30 ring-4 ring-primary/20">
                   <MapPin className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-primary mt-2 whitespace-nowrap bg-white dark:bg-card px-2 py-0.5 rounded-full shadow-[var(--shadow-sm)]">Buleje</span>
+                <span className="text-xs font-bold text-primary mt-2 whitespace-nowrap bg-[var(--surface-raised)] px-2 py-0.5 rounded-full shadow-[var(--shadow-sm)]">Buleje</span>
               </div>
             </div>
 

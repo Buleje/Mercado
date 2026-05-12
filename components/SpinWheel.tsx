@@ -272,7 +272,7 @@ export default function SpinWheel() {
           aria-label="Cerrar"
           className="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur shadow-md hover:scale-110 hover:bg-white transition-all"
         >
-          <X className="w-4.5 h-4.5 text-foreground" strokeWidth={2.5} />
+          <X className="w-4.5 h-4.5 text-[var(--text-primary)]" strokeWidth={2.5} />
         </button>
 
         {!result ? (
@@ -287,7 +287,7 @@ export default function SpinWheel() {
                 {/* Sparkle overlay */}
                 <Sparkles className="absolute -top-2 -right-2 w-5 h-5 text-amber-400 animate-pulse" strokeWidth={2} />
               </div>
-              <h3 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight">
+              <h3 className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
                 ¡Gira y gana!
               </h3>
               <p className="text-sm sm:text-base text-muted mt-2 leading-relaxed max-w-xs mx-auto">
@@ -402,7 +402,7 @@ export default function SpinWheel() {
                 )}
               </div>
 
-              <h3 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight mb-2">
+              <h3 className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] tracking-tight leading-tight mb-2">
                 {result.value === -1 ? "¡Casi lo lográs!" : "¡Felicidades!"}
               </h3>
               <p className="text-sm sm:text-base text-muted leading-relaxed max-w-xs mx-auto mb-5">

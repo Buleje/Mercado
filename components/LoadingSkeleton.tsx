@@ -27,7 +27,7 @@ export function Skeleton({ className }: SkeletonProps) {
 
 export function ProductCardSkeleton() {
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden">
+    <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden">
       {/* Image — 1:1 aspect ratio matching ProductCard */}
       <Skeleton className="aspect-square w-full" />
 
@@ -59,7 +59,7 @@ export function ProductListSkeleton({ count = 6 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 p-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border"
+          className="flex items-center gap-3 p-3 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)]"
         >
           {/* Thumbnail */}
           <Skeleton className="h-[60px] w-[60px] rounded-lg shrink-0" />
@@ -119,7 +119,7 @@ export function ProductDetailSkeleton() {
               <Skeleton className="h-4 w-20" />
             </div>
             {/* Price box */}
-            <div className="bg-gray-50 dark:bg-surface rounded-2xl p-5 border border-gray-100 dark:border-card-border space-y-3">
+            <div className="bg-gray-50 dark:bg-surface rounded-2xl p-5 border border-[var(--rule-base)] space-y-3">
               <Skeleton className="h-10 w-32" />
               <Skeleton className="h-5 w-20 rounded-full" />
             </div>
@@ -133,7 +133,7 @@ export function ProductDetailSkeleton() {
             {/* Benefits grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl p-3 border border-gray-100 dark:border-card-border">
+                <div key={i} className="flex items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)]">
                   <Skeleton className="h-5 w-5 rounded shrink-0" />
                   <Skeleton className="h-4 w-full" />
                 </div>
@@ -179,7 +179,7 @@ export function SectionSkeleton() {
 
 export function CategorySectionSkeleton() {
   return (
-    <div className="rounded-2xl p-5 sm:p-6 bg-white dark:bg-card border border-gray-100 dark:border-card-border">
+    <div className="rounded-2xl p-5 sm:p-6 bg-[var(--surface-raised)] border border-[var(--rule-base)]">
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
         <Skeleton className="h-9 w-9 rounded-full" />
@@ -217,7 +217,7 @@ export function TextBlockSkeleton({ lines = 3 }: { lines?: number }) {
 
 export function CardSkeleton() {
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6 space-y-4">
+    <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 space-y-4">
       <Skeleton className="h-6 w-1/3" />
       <TextBlockSkeleton lines={3} />
     </div>
@@ -263,7 +263,7 @@ export function StatsSkeleton() {
 
 export function TestimonialSkeleton() {
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6 space-y-4">
+    <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 space-y-4">
       <div className="flex items-center gap-3">
         <Skeleton className="h-12 w-12 rounded-full" />
         <div className="flex-1 space-y-2">
@@ -284,7 +284,7 @@ export function FAQSkeleton() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-5"
+          className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-5"
         >
           <Skeleton className="h-5 w-3/4" />
         </div>
@@ -299,7 +299,7 @@ export function PageLoadingSkeleton() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <div className="bg-white dark:bg-card border-b border-gray-100 dark:border-card-border">
+      <div className="bg-[var(--surface-raised)] border-b border-[var(--rule-base)]">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-10 w-32" />

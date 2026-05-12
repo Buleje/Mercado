@@ -379,7 +379,7 @@ export default function CartSidebar() {
                     <ShoppingCart className="h-9 w-9 text-primary/40" />
                   </div>
                   <div>
-                    <p className="text-base font-bold text-foreground">Tu carrito está vacío</p>
+                    <p className="text-base font-bold text-[var(--text-primary)]">Tu carrito está vacío</p>
                     <p className="text-sm text-muted mt-1">Agrega productos para hacer tu pedido</p>
                   </div>
                   <div className="w-full space-y-3">
@@ -439,7 +439,7 @@ export default function CartSidebar() {
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className={`flex gap-3 bg-gray-50 dark:bg-card rounded-xl p-2.5 relative${(item as { stock?: number }).stock === 0 ? " opacity-50" : ""}`}
+                    className={`flex gap-3 bg-gray-50 dark:bg-[var(--surface-raised)] rounded-xl p-2.5 relative${(item as { stock?: number }).stock === 0 ? " opacity-50" : ""}`}
                   >
                     {/* Out of stock overlay */}
                     {(item as { stock?: number }).stock === 0 && (
@@ -454,7 +454,7 @@ export default function CartSidebar() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm text-foreground leading-tight line-clamp-2">
+                      <h3 className="font-semibold text-sm text-[var(--text-primary)] leading-tight line-clamp-2">
                         {item.name}
                       </h3>
                       {(() => {
@@ -544,7 +544,7 @@ export default function CartSidebar() {
                         onChange={e => setItemNote(item.id, e.target.value)}
                         placeholder="Nota: ej. sin cebolla, bien maduro…"
                         maxLength={80}
-                        className="mt-1.5 w-full text-[length:var(--ts-2xs)] text-gray-600 dark:text-muted placeholder:text-gray-300 bg-white dark:bg-surface border border-gray-100 dark:border-card-border rounded-lg px-2.5 py-1.5 outline-none focus:border-primary/40 transition-colors"
+                        className="mt-1.5 w-full text-[length:var(--ts-2xs)] text-gray-600 dark:text-muted placeholder:text-gray-300 bg-white dark:bg-surface border border-[var(--rule-base)] rounded-lg px-2.5 py-1.5 outline-none focus:border-primary/40 transition-colors"
                       />
                     </div>
                   </div>
@@ -555,7 +555,7 @@ export default function CartSidebar() {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="border-t dark:border-card-border px-4 sm:px-6 py-3 pb-safe space-y-2 bg-white dark:bg-background shrink-0">
+              <div className="border-t dark:border-[var(--rule-base)] px-4 sm:px-6 py-3 pb-safe space-y-2 bg-white dark:bg-background shrink-0">
 
             {/* AB2: Cart reservation timer */}
                 {reserveTime && (
@@ -690,7 +690,7 @@ export default function CartSidebar() {
                       value={loadCartCode}
                       onChange={e => { setLoadCartCode(e.target.value); setLoadCartMsg(""); }}
                       placeholder="Codigo lista..."
-                      className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-[length:var(--ts-2xs)] text-gray-700 dark:text-foreground outline-none focus:border-primary/40"
+                      className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-[length:var(--ts-2xs)] text-gray-700 dark:text-[var(--text-primary)] outline-none focus:border-primary/40"
                     />
                     <button
                       onClick={loadSavedCart}
@@ -712,7 +712,7 @@ export default function CartSidebar() {
                   return (
                     <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-muted py-1">
                       <Truck className="h-3.5 w-3.5 shrink-0" />
-                      <span>Entrega estimada: <span className="font-bold text-gray-700 dark:text-foreground">{estimado}</span></span>
+                      <span>Entrega estimada: <span className="font-bold text-gray-700 dark:text-[var(--text-primary)]">{estimado}</span></span>
                     </div>
                   );
                 })()}
@@ -891,19 +891,19 @@ export default function CartSidebar() {
                         {sendResult === "shared" && (
                           <>
                             <p className="text-sm font-bold text-[#157c3c]">¡Imagen enviada!</p>
-                            <p className="text-xs text-foreground/70 mt-0.5">Selecciona el chat de Buleje en WhatsApp para enviar tu pedido.</p>
+                            <p className="text-xs text-[var(--text-primary)]/70 mt-0.5">Selecciona el chat de Buleje en WhatsApp para enviar tu pedido.</p>
                           </>
                         )}
                         {sendResult === "clipboard" && (
                           <>
                             <p className="text-sm font-bold text-primary">Imagen copiada al portapapeles</p>
-                            <p className="text-xs text-foreground/70 mt-0.5 leading-relaxed">WhatsApp se abrió con el texto del pedido. <strong>Pega la imagen con Ctrl+V</strong> en el chat antes de enviar.</p>
+                            <p className="text-xs text-[var(--text-primary)]/70 mt-0.5 leading-relaxed">WhatsApp se abrió con el texto del pedido. <strong>Pega la imagen con Ctrl+V</strong> en el chat antes de enviar.</p>
                           </>
                         )}
                         {sendResult === "fallback" && (
                           <>
                             <p className="text-sm font-bold text-[var(--data-warning-600)]">Imagen descargada</p>
-                            <p className="text-xs text-foreground/70 mt-0.5">Adjunta el archivo PNG en el chat de WhatsApp antes de enviar el mensaje.</p>
+                            <p className="text-xs text-[var(--text-primary)]/70 mt-0.5">Adjunta el archivo PNG en el chat de WhatsApp antes de enviar el mensaje.</p>
                           </>
                         )}
                       </div>
@@ -920,7 +920,7 @@ export default function CartSidebar() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 6 }}
                       onClick={() => { clearPendingOrder(); setSendResult(null); }}
-                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-muted hover:text-foreground hover:border-gray-300 hover:bg-gray-50 transition-all"
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-muted hover:text-[var(--text-primary)] hover:border-gray-300 hover:bg-gray-50 transition-all"
                     >
                       <MessageCircleOff className="h-4 w-4 shrink-0" />
                       No envie el mensaje por WhatsApp (Cerrar)
@@ -943,7 +943,7 @@ export default function CartSidebar() {
               <m.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-sm p-6 space-y-4"
+                className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-sm p-6 space-y-4"
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center gap-3">
@@ -951,7 +951,7 @@ export default function CartSidebar() {
                     <CheckCircle2 className="h-5 w-5 text-[var(--data-success-600)]" />
                   </div>
                   <div>
-                    <p className="text-base font-bold text-gray-900 dark:text-foreground">Lista guardada</p>
+                    <p className="text-base font-bold text-gray-900 dark:text-[var(--text-primary)]">Lista guardada</p>
                     <p className="text-xs text-gray-500 dark:text-muted">Valida por 7 dias</p>
                   </div>
                 </div>
@@ -965,7 +965,7 @@ export default function CartSidebar() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowSavedModal(false)}
-                    className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 transition-colors"
+                    className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 transition-colors"
                   >
                     Cerrar
                   </button>

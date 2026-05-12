@@ -249,9 +249,9 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          "relative bg-white dark:bg-card w-full",
+          "relative bg-[var(--surface-raised)] w-full",
           "rounded-t-3xl sm:rounded-2xl shadow-[var(--shadow-xl)]",
-          "border border-gray-200 dark:border-card-border",
+          "border border-[var(--rule-base)]",
           "max-h-[95vh] sm:max-h-[90vh] overflow-y-auto",
           "pb-[env(safe-area-inset-bottom)]", // Safe area bottom
           SIZE_CLASSES[size],
@@ -268,7 +268,7 @@ export function Modal({
               "absolute top-3 right-3 z-10",
               "p-2 rounded-lg",
               "bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-gray-700",
-              "text-gray-600 dark:text-muted hover:text-gray-900 dark:hover:text-foreground",
+              "text-gray-600 dark:text-muted hover:text-gray-900 dark:hover:text-[var(--text-primary)]",
               "transition-colors",
               "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             )}
@@ -287,7 +287,7 @@ export function Modal({
         {title && (
           <h2
             id="modal-title"
-            className="text-xl font-bold text-foreground px-6 sm:pt-6 pt-2 pb-2"
+            className="text-xl font-bold text-[var(--text-primary)] px-6 sm:pt-6 pt-2 pb-2"
           >
             {title}
           </h2>
@@ -312,7 +312,7 @@ export function Modal({
  */
 export function ModalHeader({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("border-b border-gray-200 dark:border-card-border pb-4 mb-4", className)}>
+    <div className={cn("border-b border-[var(--rule-base)] pb-4 mb-4", className)}>
       {children}
     </div>
   );
@@ -323,7 +323,7 @@ export function ModalHeader({ children, className }: { children: ReactNode; clas
  */
 export function ModalFooter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("border-t border-gray-200 dark:border-card-border pt-4 mt-4 flex gap-2 justify-end", className)}>
+    <div className={cn("border-t border-[var(--rule-base)] pt-4 mt-4 flex gap-2 justify-end", className)}>
       {children}
     </div>
   );

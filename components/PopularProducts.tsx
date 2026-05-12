@@ -82,7 +82,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
             <TrendingUp className="w-3.5 h-3.5" />
             Esta semana
           </span>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[var(--text-primary)]">
             Más{" "}
             <span className="relative inline-block text-primary">
               vendidos
@@ -106,7 +106,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
             return (
               <div
                 key={product.id}
-                className={`group relative bg-card rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300 ${
+                className={`group relative bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-sm)] overflow-hidden hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 transition-all duration-300 ${
                   inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
                 style={{ transitionDelay: inView ? `${i * 80}ms` : "0ms" }}
@@ -142,7 +142,7 @@ export default function PopularProducts({ serverProducts, showEmpty = false, emp
 
                 {/* Info */}
                 <div className="p-4">
-                  <h3 className="text-sm sm:text-base font-semibold text-foreground line-clamp-2 leading-tight mb-2.5">
+                  <h3 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] line-clamp-2 leading-tight mb-2.5">
                     {product.name}
                   </h3>
                   <div className="flex items-center justify-between gap-1">

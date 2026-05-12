@@ -39,14 +39,14 @@ export default function UserAccountModal() {
 
   return (
     <div className="fixed inset-0 z-7500 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
-      <div role="dialog" aria-modal="true" aria-label="Mi cuenta" className="bg-white dark:bg-card rounded-2xl shadow-[var(--shadow-xl)] max-w-md w-full overflow-hidden animate-[scaleIn_0.2s_ease-out]">
+      <div role="dialog" aria-modal="true" aria-label="Mi cuenta" className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] max-w-md w-full overflow-hidden animate-[scaleIn_0.2s_ease-out]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border bg-primary/5">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] bg-primary/5">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center">
               <User className="h-5 w-5 text-primary" />
             </div>
-            <h2 className="text-xl font-bold text-foreground">Mi Cuenta</h2>
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">Mi Cuenta</h2>
           </div>
           <button
             onClick={closeAccountModal}
@@ -65,7 +65,7 @@ export default function UserAccountModal() {
                 <User className="h-5 w-5 text-primary mt-0.5" />
                 <div>
                   <p className="text-xs text-muted">Nombre</p>
-                  <p className="text-sm font-semibold text-foreground">{customer.name}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{customer.name}</p>
                 </div>
               </div>
 
@@ -73,7 +73,7 @@ export default function UserAccountModal() {
                 <Phone className="h-5 w-5 text-primary mt-0.5" />
                 <div>
                   <p className="text-xs text-muted">Teléfono</p>
-                  <p className="text-sm font-semibold text-foreground">{customer.phone}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{customer.phone}</p>
                 </div>
               </div>
 
@@ -81,7 +81,7 @@ export default function UserAccountModal() {
                 <MapPin className="h-5 w-5 text-primary mt-0.5" />
                 <div>
                   <p className="text-xs text-muted">Ubicación</p>
-                  <p className="text-sm font-semibold text-foreground">{customer.location}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{customer.location}</p>
                   {customer.reference && (
                     <p className="text-xs text-muted mt-0.5">{customer.reference}</p>
                   )}
@@ -90,7 +90,7 @@ export default function UserAccountModal() {
 
               {/* Loyalty info */}
               {loyalty && (
-                <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-card-border">
+                <div className="space-y-2 pt-2 border-t border-[var(--rule-base)]">
                   <div className="flex items-center gap-3">
                     <Star className="h-5 w-5 text-[var(--data-warning-500)] mt-0.5" />
                     <div>
@@ -128,7 +128,7 @@ export default function UserAccountModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border space-y-2">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-surface border-t border-[var(--rule-base)] space-y-2">
           <button
             onClick={() => {
               closeAccountModal();

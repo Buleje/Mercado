@@ -28,7 +28,7 @@ export default function PopularCategories() {
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Categorías
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
             Explora por{" "}
             <span className="text-primary relative">
               categoría
@@ -50,7 +50,7 @@ export default function PopularCategories() {
               <Link
                 key={cat.id}
                 href={`/tienda?categoria=${cat.id}`}
-                className={`group relative flex flex-col items-center gap-3 sm:gap-4 p-5 sm:p-7 rounded-2xl bg-linear-to-b ${cat.gradient} bg-white dark:bg-card border ${cat.border} ${cat.hoverBg} hover:shadow-[var(--shadow-xl)] hover:shadow-primary/8 hover:-translate-y-1.5 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden ${
+                className={`group relative flex flex-col items-center gap-3 sm:gap-4 p-5 sm:p-7 rounded-2xl bg-linear-to-b ${cat.gradient} bg-[var(--surface-raised)] border ${cat.border} ${cat.hoverBg} hover:shadow-[var(--shadow-xl)] hover:shadow-primary/8 hover:-translate-y-1.5 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden ${
                   inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
                 }`}
                 style={inView ? { animationDelay: `${100 + i * 70}ms` } : undefined}
@@ -63,7 +63,7 @@ export default function PopularCategories() {
                   className="text-[var(--text-secondary)] group-hover:scale-115 group-hover:text-[var(--accent)] transition-all duration-300 relative z-10 sm:h-20 sm:w-20"
                 />
                 <div className="text-center relative z-10">
-                  <p className="text-xs sm:text-sm font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-300">
+                  <p className="text-xs sm:text-sm font-bold text-[var(--text-primary)] leading-tight group-hover:text-primary transition-colors duration-300">
                     {cat.name}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] sm:text-xs text-muted mt-1 font-medium">
