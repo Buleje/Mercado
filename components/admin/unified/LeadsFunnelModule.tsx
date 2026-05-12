@@ -27,6 +27,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import KPICard from "@/components/admin/shared/KPICard";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 interface FunnelStats {
@@ -232,9 +233,7 @@ export default function LeadsFunnelModule() {
           {/* Distribution */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl p-5">
-              <h3 className="text-base font-semibold text-[var(--text-primary)] mb-4">
-                Por canal (source)
-              </h3>
+              <SectionTitle as="h3" className="mb-4">Por canal (source)</SectionTitle>
               {sourceEntries.length === 0 ? (
                 <div className="text-sm text-[var(--text-secondary)]">Sin datos</div>
               ) : (
@@ -259,9 +258,7 @@ export default function LeadsFunnelModule() {
             </div>
 
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl p-5">
-              <h3 className="text-base font-semibold text-[var(--text-primary)] mb-4">
-                Por tipo de negocio
-              </h3>
+              <SectionTitle as="h3" className="mb-4">Por tipo de negocio</SectionTitle>
               {businessTypeEntries.length === 0 ? (
                 <div className="text-sm text-[var(--text-secondary)]">Sin datos</div>
               ) : (
