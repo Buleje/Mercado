@@ -584,6 +584,10 @@ export const MarketplacePublicDB = {
     // Round 7 fix: cache key estable. El bucket `Math.floor(now/120_000)` mezclado
     // con TTL 120s generaba una key nueva por bucket sin desalojar la anterior →
     // memory leak en getOrSet. El TTL solo ya garantiza refresh cada 120s.
+    //
+    // @cross-tenant intentional — agrega ventas de TODOS los tenants para el
+    // feed "Top del día" del marketplace global. NO incluye tenantId en la key
+    // a propósito (audit P1-2 fix 2026-05-11). Ver ADR-082.
     const cacheKey = `marketplace:top-today:v1:${limit}`;
 
     return getOrSet(cacheKey, 120, async () => {
@@ -838,6 +842,9 @@ export const MarketplacePublicDB = {
     activeStores: number;
     avgDeliveryMin: number;
   }> {
+    // @cross-tenant intentional — KPIs públicos del marketplace global
+    // (órdenes today, shoppers, stores activos). Sin tenantId en la key
+    // a propósito (audit P1-2 fix 2026-05-11). Ver ADR-082.
     return getOrSet("marketplace:live-stats:v2", 60, async () => {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
       // Round 21 P0-1 fix (Bug Hunter): KPIs públicos contaban órdenes POS
