@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ProductAnalyticsDB } from "@/lib/db/product-analytics.db";
 import { checkEdgeRateLimit } from "@/lib/middleware-utils";
 import { logger } from "@/lib/logger";
+import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 
 /**
  * POST /api/marketplace/analytics/track-batch
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const tenantId = req.headers.get("x-tenant-id") ?? "main";
+  const tenantId = resolveMarketplaceTenant(req, { context: "marketplace/analytics/track-batch" });
   const { events } = parsed.data;
 
   // Persistir en paralelo. Errores individuales se logean pero no rompen el batch.

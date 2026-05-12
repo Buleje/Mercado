@@ -9,6 +9,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { isAllowedImageUrl } from "@/lib/url-allowlist";
+import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 
 const PostSchema = z.object({
   // F6: validar URL contra allowlist para prevenir SSRF
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     // F1+F9: tenantId desde header; cache key incluye tenantId para aislamiento
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    const tenantId = resolveMarketplaceTenant(req, { context: "marketplace/products/X/images" });
     const cacheKey = `marketplace:product:${tenantId}:${productId}:images`;
 
     const images = await getOrSet(cacheKey, 300, () =>

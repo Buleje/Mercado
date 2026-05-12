@@ -3,6 +3,7 @@ import { ProductAnalyticsDB } from "@/lib/db/product-analytics.db";
 import { checkEdgeRateLimit } from "@/lib/middleware-utils";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 
 const BodySchema = z.object({
   metric: z.enum(["view", "click", "addToCart", "conversion"]),
@@ -39,7 +40,7 @@ export async function POST(
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
-  const tenantId = req.headers.get("x-tenant-id") ?? "main";
+  const tenantId = resolveMarketplaceTenant(req, { context: "marketplace/products/X/analytics/track" });
   const { metric, revenue } = parsed.data;
 
   // Fire-and-forget
