@@ -12,17 +12,21 @@
  *
  * ADR-107 followup — Compliance gap detectado: dashboard centralizado.
  * Permite al admin del tenant ver su postura Ley 29733 en 1 vista.
+ *
+ * SECURITY 2026-05-12 (Code Reviewer P0):
+ * - `force-dynamic` evita cache cross-tenant
+ * - Uso de `ComplianceDB.getKpis()` en vez de prisma.* directo (regla #1)
+ * - Guard explícito tenantId vacío al inicio
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { prisma } from "@/lib/prisma";
+import { ComplianceDB } from "@/lib/db/compliance.db";
 import { logger } from "@/lib/logger";
 
-// SECURITY 2026-05-12 (audit code-reviewer P0-2): force-dynamic obligatorio.
-// Sin esto, Next 16 puede cachear el response RSC entre tenants distintos
-// (un admin del tenant A vería data del tenant B en cache).
+// SECURITY (Code Reviewer P0-2): force-dynamic obligatorio.
+// Sin esto, Next 16 puede cachear el response RSC entre tenants distintos.
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
@@ -32,9 +36,8 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
-  // SECURITY 2026-05-12 (pentest N3 audit): guard explícito contra tenantId
-  // undefined/falsy. Si auth.tenantId fuese null por sesión rota, `where:
-  // {tenantId: null}` retornaría TODOS los tenants (data leak cross-tenant).
+  // Guard explícito: si tenantId fuese null, where:{tenantId:null} retornaría
+  // TODOS los tenants (data leak cross-tenant). 403 fail-loud.
   const tenantId = auth.tenantId;
   if (!tenantId || typeof tenantId !== "string" || tenantId.length === 0) {
     logger.error("[compliance-dashboard] tenantId vacio post-requireAdmin", { user: auth.username });
@@ -43,65 +46,37 @@ export async function GET(req: NextRequest) {
       { status: 403 },
     );
   }
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
   try {
-    // Múltiples queries en paralelo (evita N+1)
-    const [
-      auditLog30d,
-      auditLogTotal,
-      auditLogOldest,
-      customersTotal,
-      customersWithConsent,
-      activeBreaches,
-    ] = await Promise.all([
-      // 1. Audit log entries últimos 30 días
-      prisma.activityLog.count({
-        where: { tenantId, createdAt: { gte: thirtyDaysAgo } },
-      }),
-      // 2. Total audit entries (volumen total)
-      prisma.activityLog.count({
-        where: { tenantId },
-      }),
-      // 3. Entry más antigua (verificar retention)
-      prisma.activityLog.findFirst({
-        where: { tenantId },
-        orderBy: { createdAt: "asc" },
-        select: { createdAt: true },
-      }),
-      // 4. Customers total
-      prisma.customer.count({ where: { tenantId } }),
-      // 5. Customers con consentimiento explícito (placeholder — el field
-      //    acceptsMarketing aún no existe en Customer schema. Cuando se agregue
-      //    via migration, descomentar la query real. Por ahora retorna 0.)
-      Promise.resolve(0),
-      // 6. Brechas activas — placeholder hasta que Note tenga columna tags
-      //    (actualmente tags se almacena como string JSON en Note.detail).
-      Promise.resolve(0),
-    ]);
+    // Usa wrapper ComplianceDB (regla #1 CLAUDE.md): cache + audit + tenantId enforced.
+    const kpis = await ComplianceDB.getKpis(tenantId);
 
-    const auditCoverageDays = auditLogOldest
-      ? Math.floor((now.getTime() - auditLogOldest.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+    const now = new Date();
+    const auditCoverageDays = kpis.auditLogOldestDate
+      ? Math.floor((now.getTime() - kpis.auditLogOldestDate.getTime()) / (1000 * 60 * 60 * 24))
       : 0;
 
-    const consentCoveragePct = customersTotal > 0
-      ? Math.round((customersWithConsent / customersTotal) * 1000) / 10
+    // Placeholders hasta que las migrations agreguen los campos:
+    //   - Customer.acceptsMarketing (consent_coverage)
+    //   - Note.tags array column (active_breaches)
+    const customersWithConsent = 0;
+    const activeBreaches = 0;
+    const consentCoveragePct = kpis.customersTotal > 0
+      ? Math.round((customersWithConsent / kpis.customersTotal) * 1000) / 10
       : 0;
 
     // Score Ley 29733 (0-100)
     let score = 100;
-    if (auditLog30d < 10) score -= 20; // log activity bajo
-    if (auditCoverageDays < 90) score -= 15; // retention <90 días
-    if (consentCoveragePct < 50) score -= 25; // <50% consentimiento
-    if (activeBreaches > 0) score -= 40; // brechas pendientes
+    if (kpis.auditLog30d < 10) score -= 20;
+    if (auditCoverageDays < 90) score -= 15;
+    if (consentCoveragePct < 50) score -= 25;
+    if (activeBreaches > 0) score -= 40;
     score = Math.max(0, score);
 
     const checks = {
       audit_log_active: {
-        ok: auditLog30d >= 10,
-        value: auditLog30d,
+        ok: kpis.auditLog30d >= 10,
+        value: kpis.auditLog30d,
         target: 10,
         label: "Audit log activo (≥10 entries últimos 30d)",
       },
@@ -115,13 +90,13 @@ export async function GET(req: NextRequest) {
         ok: consentCoveragePct >= 50,
         value: `${consentCoveragePct}%`,
         target: "≥50%",
-        label: "Cobertura consentimientos marketing",
+        label: "Cobertura consentimientos marketing (PLACEHOLDER hasta migration)",
       },
       no_active_breaches: {
         ok: activeBreaches === 0,
         value: activeBreaches,
         target: 0,
-        label: "Brechas activas pendientes",
+        label: "Brechas activas pendientes (PLACEHOLDER hasta migration)",
       },
     };
 
@@ -131,10 +106,10 @@ export async function GET(req: NextRequest) {
       grade: score >= 90 ? "A" : score >= 70 ? "B" : score >= 50 ? "C" : "D",
       checks,
       stats: {
-        auditLog30d,
-        auditLogTotal,
+        auditLog30d: kpis.auditLog30d,
+        auditLogTotal: kpis.auditLogTotal,
         auditCoverageDays,
-        customersTotal,
+        customersTotal: kpis.customersTotal,
         customersWithConsent,
         consentCoveragePct,
         activeBreaches,

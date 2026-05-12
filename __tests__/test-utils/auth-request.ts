@@ -83,7 +83,8 @@ export function makeAuthReq(
     finalHeaders.cookie = cookieEntries.join("; ");
   }
 
-  const requestInit: RequestInit = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const requestInit: any = {
     method,
     headers: finalHeaders,
   };
