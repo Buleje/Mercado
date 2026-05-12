@@ -72,6 +72,8 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-tenants-X-purge"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const session = await requirePlatform(req);
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

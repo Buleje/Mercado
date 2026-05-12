@@ -18,6 +18,8 @@ export async function PATCH(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-tenants-X"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   try {
     const session = await requirePlatform(req);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

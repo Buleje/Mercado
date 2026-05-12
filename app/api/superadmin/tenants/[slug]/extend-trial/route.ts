@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
 import { invalidateByPrefix } from "@/lib/cache";
 
@@ -36,6 +37,8 @@ export async function POST(
 ) {
   const rateLimited = applyRateLimit(req, "MODERATE", "sa-extend-trial");
   if (rateLimited) return rateLimited;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
 
   const session = await requirePlatform(req);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

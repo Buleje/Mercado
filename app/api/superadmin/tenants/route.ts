@@ -228,6 +228,8 @@ const CreateTenantSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-tenants"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   try {
     const session = await requirePlatform(req);
     if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
