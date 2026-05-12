@@ -107,6 +107,10 @@ export default function TenantTiendaClient({
           sombras coloreadas y transitions consistentes. */}
       <StoreBaseTheme />
 
+      {/* TenantTopNav removido — la tienda ya tiene su propio navbar global
+          (Header.tsx con buscador, carrito, mi cuenta). Mi nav sticky solo
+          en el landing /t/[slug] que NO tiene navbar global. */}
+
       {/* Barra de anuncios (respeta config admin — se oculta sola si disabled). */}
       <AnnouncementBar />
 

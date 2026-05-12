@@ -24,11 +24,11 @@ export default async function PublicTrackingPage({ params }: PageProps) {
   if (!verified) {
     return (
       <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-8 text-center">
+        <div className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
           <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-muted">
             Seguimiento
           </span>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground mt-2">
+          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)] mt-2">
             Link no válido o expiró
           </h1>
           <p className="mt-3 text-sm text-muted leading-relaxed">
@@ -54,8 +54,8 @@ export default async function PublicTrackingPage({ params }: PageProps) {
   if (!snapshot) {
     return (
       <div className="min-h-screen bg-[var(--surface-sunken)] dark:bg-background flex items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-2xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-8 text-center">
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+        <div className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Pedido no encontrado
           </h1>
           <p className="mt-3 text-sm text-muted">
@@ -97,12 +97,12 @@ export default async function PublicTrackingPage({ params }: PageProps) {
         <PublicTrackingClient initialSnapshot={publicSnapshot} token={token} />
       </main>
 
-      <footer className="border-t border-gray-100 dark:border-card-border mt-12 py-8">
+      <footer className="border-t border-[var(--rule-base)] mt-12 py-8">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center text-[length:var(--ts-2xs)] text-muted">
           Este link vive 72 horas y permite ver el estado del pedido sin login.
           <br />
           Hecho con{" "}
-          <Link href="/" className="text-foreground font-semibold hover:text-primary">
+          <Link href="/" className="text-[var(--text-primary)] font-semibold hover:text-primary">
             Buleje
           </Link>
           .
