@@ -137,6 +137,9 @@ export function validateCsrfToken(request: NextRequest): boolean {
     // CSP, sin cookies de sesión ni X-CSRF-Token. El endpoint rate-limit
     // STRICT + dedupe in-memory + solo loggea (no persiste a DB).
     "/api/csp-report",
+    // Lead capture público desde /demo landing — prospect anónimo sin sesión.
+    // El endpoint usa rate-limit MODERATE + Zod safeParse + WhatsApp regex.
+    "/api/lead/capture",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;
