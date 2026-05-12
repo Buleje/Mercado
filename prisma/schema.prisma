@@ -1297,7 +1297,7 @@ model PageHero {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, pageSlug, sortOrder])
   @@index([tenantId, pageSlug])
@@ -1951,7 +1951,7 @@ model DailySummary {
   notas            String?
   creadoPor        String
   createdAt        DateTime @default(now())
-  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, fecha])
   @@index([tenantId])
@@ -1979,8 +1979,8 @@ model Fiado {
   fechaVence  DateTime?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  tenant      Tenant       @relation(fields: [tenantId], references: [id])
-  customer    Customer     @relation(fields: [customerId], references: [phone])
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer    Customer     @relation(fields: [customerId], references: [phone], onDelete: Restrict)
   cuotas      FiadoCuota[]
 
   @@index([tenantId, status])
@@ -2023,8 +2023,8 @@ model Turno {
   cerroEn        DateTime?
   notas          String?
   createdAt      DateTime    @default(now())
-  tenant         Tenant      @relation(fields: [tenantId], references: [id])
-  adminUser      AdminUser   @relation(fields: [adminUserId], references: [id])
+  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  adminUser      AdminUser   @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
 
   @@index([tenantId, status])
   @@index([adminUserId])
@@ -2052,8 +2052,8 @@ model Receta {
   imageUrl      String?
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
-  tenant        Tenant              @relation(fields: [tenantId], references: [id])
-  producto      Product?            @relation("RecetaProducto", fields: [productoId], references: [id])
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  producto      Product?            @relation("RecetaProducto", fields: [productoId], references: [id], onDelete: Restrict)
   ingredientes  RecetaIngrediente[]
   producciones  ProduccionLote[]
 
@@ -2067,7 +2067,7 @@ model RecetaIngrediente {
   cantidad   Decimal @db.Decimal(10, 3)
   unidad     String  @default("unidad")
   receta     Receta  @relation(fields: [recetaId], references: [id], onDelete: Cascade)
-  producto   Product @relation("IngredienteProducto", fields: [productoId], references: [id])
+  producto   Product @relation("IngredienteProducto", fields: [productoId], references: [id], onDelete: Restrict)
 
   @@index([recetaId])
 }
@@ -2080,8 +2080,8 @@ model ProduccionLote {
   costoReal   Decimal  @default(0) @db.Decimal(10, 2)
   notas       String?
   producidoEn DateTime @default(now())
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  receta      Receta   @relation(fields: [recetaId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  receta      Receta   @relation(fields: [recetaId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([recetaId])
@@ -2156,8 +2156,8 @@ model Prestamo {
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
   // ── Relations ──
-  tenant              Tenant                      @relation(fields: [tenantId], references: [id])
-  customer            Customer?                   @relation(fields: [customerId], references: [phone])
+  tenant              Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer            Customer?                   @relation(fields: [customerId], references: [phone], onDelete: SetNull)
   cuotas              PrestamoCuota[]
   documentos          PrestamoDocumento[]
 
@@ -2243,7 +2243,7 @@ model TreasuryCuenta {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
 
-  tenant                Tenant                  @relation(fields: [tenantId], references: [id])
+  tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   movimientos           TreasuryMovimiento[]
   transferenciasOrigen  TreasuryTransferencia[] @relation("TransferenciaOrigen")
   transferenciasDestino TreasuryTransferencia[] @relation("TransferenciaDestino")
@@ -2266,7 +2266,7 @@ model TreasuryMovimiento {
   categoria      String? // Para agrupar: "ventas", "nómina", etc.
   createdAt      DateTime                 @default(now())
 
-  tenant Tenant         @relation(fields: [tenantId], references: [id])
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   cuenta TreasuryCuenta @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, createdAt])
@@ -2283,9 +2283,9 @@ model TreasuryTransferencia {
   descripcion String   @default("")
   createdAt   DateTime @default(now())
 
-  tenant  Tenant         @relation(fields: [tenantId], references: [id])
-  origen  TreasuryCuenta @relation("TransferenciaOrigen", fields: [origenId], references: [id])
-  destino TreasuryCuenta @relation("TransferenciaDestino", fields: [destinoId], references: [id])
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  origen  TreasuryCuenta @relation("TransferenciaOrigen", fields: [origenId], references: [id], onDelete: Restrict)
+  destino TreasuryCuenta @relation("TransferenciaDestino", fields: [destinoId], references: [id], onDelete: Restrict)
 
   @@index([tenantId, createdAt])
 }
@@ -2319,8 +2319,8 @@ model Cotizacion {
   createdBy     String
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  tenant        Tenant           @relation(fields: [tenantId], references: [id])
-  customer      Customer?        @relation(fields: [customerId], references: [phone])
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer      Customer?        @relation(fields: [customerId], references: [phone], onDelete: SetNull)
   items         CotizacionItem[]
 
   @@index([tenantId, status])
@@ -2379,8 +2379,8 @@ model GuiaRemision {
   createdBy             String
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
-  tenant                Tenant             @relation(fields: [tenantId], references: [id])
-  order                 Order?             @relation(fields: [orderId], references: [id])
+  tenant                Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order                 Order?             @relation(fields: [orderId], references: [id], onDelete: Cascade)
   items                 GuiaRemisionItem[]
 
   @@index([tenantId, status])
@@ -2426,8 +2426,8 @@ model NotaCredito {
   createdBy    String
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
-  tenant       Tenant            @relation(fields: [tenantId], references: [id])
-  order        Order?            @relation(fields: [orderId], references: [id])
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  order        Order?            @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
   @@index([numero])
@@ -2449,7 +2449,7 @@ model Notification {
   entityId    String?
   readAt      DateTime?
   createdAt   DateTime  @default(now())
-  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, readAt])
   @@index([tenantId, createdAt])
@@ -2468,7 +2468,7 @@ model ConteoFisico {
   fechaInicio DateTime           @default(now())
   fechaCierre DateTime?
   items       ConteoFisicoItem[]
-  tenant      Tenant             @relation(fields: [tenantId], references: [id])
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
 }
@@ -2585,7 +2585,7 @@ model CustomKpi {
 model Store {
   id                  String               @id @default(cuid())
   tenantId            String
-  tenant              Tenant               @relation(fields: [tenantId], references: [id])
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   slug                String               @unique
   name                String
   description         String?
@@ -2641,9 +2641,9 @@ model StoreBanner {
 model StoreProduct {
   id                  String               @id @default(cuid())
   storeId             String
-  store               Store                @relation(fields: [storeId], references: [id])
+  store               Store                @relation(fields: [storeId], references: [id], onDelete: Cascade)
   productId           Int
-  product             Product              @relation(fields: [productId], references: [id])
+  product             Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
   retailPrice         Decimal              @db.Decimal(12, 2)
   wholesalePrice      Decimal?             @db.Decimal(12, 2)
   minOrderQty         Int                  @default(1)
@@ -2724,9 +2724,9 @@ model DeliveryOffer {
 model DeliveryAssignment {
   id             String          @id @default(cuid())
   orderId        String          @unique
-  order          Order           @relation(fields: [orderId], references: [id])
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   partnerId      String
-  partner        DeliveryPartner @relation(fields: [partnerId], references: [id])
+  partner        DeliveryPartner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
   status         String          @default("assigned")
   fee            Decimal         @db.Decimal(12, 2)
   tipAmount      Decimal         @default(0) @db.Decimal(12, 2)
@@ -2844,7 +2844,7 @@ model DeliveryRouteStop {
   updatedAt          DateTime  @updatedAt
 
   route DeliveryRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  order Order         @relation(fields: [orderId], references: [id])
+  order Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@unique([routeId, sequence])
   @@index([tenantId])
@@ -2927,7 +2927,7 @@ model WholesaleOrder {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
   items          WholesaleOrderItem[]
-  tenant         Tenant?              @relation("WholesaleOrderTenant", fields: [tenantId], references: [id])
+  tenant         Tenant?              @relation("WholesaleOrderTenant", fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([buyerTenantId])
   @@index([sellerTenantId])
@@ -2937,7 +2937,7 @@ model WholesaleOrder {
 model WholesaleOrderItem {
   id               String         @id @default(cuid())
   wholesaleOrderId String
-  order            WholesaleOrder @relation(fields: [wholesaleOrderId], references: [id])
+  order            WholesaleOrder @relation(fields: [wholesaleOrderId], references: [id], onDelete: Cascade)
   productId        Int
   name             String
   quantity         Int
@@ -2952,7 +2952,7 @@ model WholesaleOrderItem {
 model StorePermission {
   id          String   @id @default(cuid())
   storeId     String
-  store       Store    @relation(fields: [storeId], references: [id])
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   userId      String
   userType    String
   permissions String
@@ -2987,7 +2987,7 @@ model CommissionLedger {
 model SupplierPortal {
   id          String   @id @default(cuid())
   supplierId  String   @unique
-  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   apiKey      String   @unique @default(cuid())
   isActive    Boolean  @default(true)
   autoPublish Boolean  @default(true)
@@ -3068,7 +3068,7 @@ model SunatInvoice {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  config TenantSunatConfig? @relation(fields: [tenantId], references: [tenantId])
+  config TenantSunatConfig? @relation(fields: [tenantId], references: [tenantId], onDelete: Cascade)
 
   @@unique([tenantId, series, number])
   @@index([tenantId])
@@ -3179,7 +3179,7 @@ model CreditInstallment {
   nextDueDate       DateTime
   createdAt         DateTime @default(now())
 
-  creditProfile CreditProfile @relation(fields: [creditProfileId], references: [id])
+  creditProfile CreditProfile @relation(fields: [creditProfileId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([creditProfileId])
@@ -3208,7 +3208,7 @@ model CreditScoreHistory {
   trigger                     String   @default("manual") // manual | weekly_recalc | payment | fiado_close
   createdAt                   DateTime @default(now())
 
-  creditProfile CreditProfile @relation(fields: [creditProfileId], references: [id])
+  creditProfile CreditProfile @relation(fields: [creditProfileId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, customerId])
   @@index([creditProfileId, createdAt])
@@ -3395,8 +3395,8 @@ model StockoutPrediction {
   expiresAt               DateTime // cuándo caduca esta predicción
 
   store        Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  product      Product      @relation(fields: [productId], references: [id])
-  storeProduct StoreProduct @relation(fields: [storeProductId], references: [id])
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  storeProduct StoreProduct @relation(fields: [storeProductId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([storeId])
@@ -3451,7 +3451,7 @@ model SponsoredBoost {
   updatedAt        DateTime @updatedAt
 
   store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
   @@index([storeId])
@@ -3525,7 +3525,7 @@ model TenantFeatureFlag {
   enabled   Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, flagKey])
   @@index([tenantId])
@@ -4271,7 +4271,7 @@ model Document {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  folder    DocumentFolder?    @relation(fields: [folderId], references: [id])
+  folder    DocumentFolder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
   versions  DocumentVersion[]
   shares    DocumentShare[]
   auditLogs DocumentAuditLog[]
@@ -4292,7 +4292,7 @@ model DocumentFolder {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  parent    DocumentFolder?  @relation("DocumentFolderTree", fields: [parentId], references: [id])
+  parent    DocumentFolder?  @relation("DocumentFolderTree", fields: [parentId], references: [id], onDelete: Cascade)
   children  DocumentFolder[] @relation("DocumentFolderTree")
   documents Document[]
 

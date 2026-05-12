@@ -57,7 +57,8 @@ export type Tab =
   | "subscriptions"          // Bodega al Mes
   | "gift-cards-admin"       // Gift cards gestión
   | "socio-members"          // Socio Buleje
-  | "lives-admin";           // Transmisiones en vivo
+  | "lives-admin"            // Transmisiones en vivo
+  | "leads-funnel";          // Funnel de leads outbound/inbound (CEO dashboard)
 
 /**
  * Subconjunto de Tabs cuya navegación directa por URL/hash/localStorage
@@ -103,4 +104,5 @@ export const VALID_TABS: readonly Tab[] = [
   "gift-cards-admin",
   "socio-members",
   "lives-admin",
+  "leads-funnel",
 ] as const;

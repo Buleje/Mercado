@@ -1,6 +1,6 @@
 # ADR-111: Auditoría onDelete en relaciones Prisma (45 sin política explícita)
 
-**Status:** Proposed
+**Status:** Fase 2 aplicada al schema (2026-05-12) · Migration pendiente
 **Date:** 2026-05-12
 **Decisión-makers:** Brandon Buleje
 **Context:** Audit Code Reviewer detectó 45 relaciones en `prisma/schema.prisma` que dependen del default `onDelete: NoAction` (= bloqueante si hay rows hijas). Esto es seguro pero puede generar errores opacos en producción al intentar borrar (`P2003 Foreign key constraint`).
@@ -29,15 +29,21 @@ Aplicar política explícita por categoría de relación:
 
 ## Plan de aplicación
 
-1. **Fase 1 (read-only audit, hoy 2026-05-12):** este ADR documenta el plan.
-2. **Fase 2 (schema edit + migration, próximo sprint):**
-   - Editar `prisma/schema.prisma` agregando `onDelete:` a las 45 relaciones.
-   - DANGER ZONE: skill bloquea — requiere override consciente con `--accept-danger`.
-   - Generar migration: `prisma migrate dev --create-only --name add-ondelete-policies`.
-3. **Fase 3 (verificación staging):**
-   - Smoke test borrado de tenant en staging.
+1. **Fase 1 (read-only audit, 2026-05-12):** ✅ ADR documentado.
+2. **Fase 2 (schema edit, 2026-05-12 sprint #12):** ✅ COMPLETADO.
+   - Script `scripts/apply-ondelete.mjs` aplicó `onDelete:` a 45 relaciones.
+   - 3 fix manual: Fiado.customer · Turno.adminUser · DeliveryAssignment.partner.
+     SetNull→Restrict porque las FK son NOT NULL (Prisma warning).
+   - `prisma validate` ✅ schema valid sin warnings.
+3. **Fase 3 (generar migration .sql, próximo sprint):**
+   - WSL DNS no llega al pooler de Supabase desde esta sesión.
+   - Comando: `npx prisma migrate dev --create-only --name add_ondelete_policies`.
+   - Genera SQL incremental con ALTER TABLE … REFERENCES … ON DELETE ….
+4. **Fase 4 (verificación staging):**
+   - Smoke test borrado de tenant en staging (cascada).
    - Smoke test rechazo de borrado de producto con orders activas.
-4. **Fase 4 (deploy producción):** canary 5% → 25% → 100%.
+   - Smoke test rechazo de borrado de customer con fiados activos.
+5. **Fase 5 (deploy producción):** canary 5% → 25% → 100%.
 
 ---
 
@@ -70,6 +76,9 @@ Total: 45 relaciones. Líneas 1300, 1954, 1982, 1983, 2026, 2027, 2055, 2056, 20
 
 ## Notas
 
-- ADR documenta el plan SIN tocar el schema (regla DANGER ZONE).
-- Próximo sprint: aplicar Fase 2 con override consciente.
+- 2026-05-12 sprint #12: Fase 2 aplicada vía script `/tmp/apply-ondelete.mjs`.
+- `prisma validate` ✅ schema valido, 45 nuevas politicas + 80 ya existentes.
+- 3 fixes manual (SetNull→Restrict en FK required): documentados arriba.
+- Migration .sql pendiente — proxima sesion con DB conectada (`prisma migrate dev`).
 - No requiere cambio de código en `lib/db/*.db.ts` — Prisma maneja la cascada a nivel DB.
+- Antes de prod deploy: smoke test en staging con borrado real de tenant + customer + product.

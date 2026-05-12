@@ -46,6 +46,7 @@ import {
   PackagePlus,
   MessageCircle,
   Archive as FolderArchive,
+  UserPlus,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -62,6 +63,7 @@ export const ALL_TABS = [
   { id: "compras" as Tab,             label: "Compras",             icon: PackagePlus },
   { id: "plata" as Tab,               label: "Mi Plata",            icon: Wallet },
   { id: "clientes" as Tab,            label: "Mis Clientes",        icon: Heart },
+  { id: "leads-funnel" as Tab,        label: "Funnel de Leads",     icon: UserPlus },
   // — OPERACIONES —
   { id: "config" as Tab,              label: "Configuración",       icon: SlidersHorizontal },
   { id: "pedidos" as Tab,             label: "Pedidos",             icon: ClipboardCheck },

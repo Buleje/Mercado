@@ -30,6 +30,7 @@ const POSCajaModule           = dynamic(() => import("@/components/admin/unified
 const ComprasModule           = dynamic(() => import("@/components/admin/unified/ComprasModule"),           { loading: TabSpinner });
 const FinanzasModule          = dynamic(() => import("@/components/admin/unified/FinanzasModule"),          { loading: TabSpinner });
 const CRMClientesModule       = dynamic(() => import("@/components/admin/unified/CRMClientesModule"),       { loading: TabSpinner });
+const LeadsFunnelModule       = dynamic(() => import("@/components/admin/unified/LeadsFunnelModule"),       { loading: TabSpinner });
 const AICommandModule         = dynamic(() => import("@/components/admin/unified/AICommandModule"),         { loading: TabSpinner });
 const SugerenciasIAModule     = dynamic(() => import("@/components/admin/unified/SugerenciasIAModule"),     { loading: TabSpinner });
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
@@ -197,6 +198,8 @@ export function TabRouter({
 
   // ── 7. Mis Clientes ──
   if (tab === "clientes") return <CRMClientesModule />;
+
+  if (tab === "leads-funnel") return <LeadsFunnelModule />;
 
   // ── Módulos adicionales ──
   if (tab === "fiados")    return <FiadosModule />;
