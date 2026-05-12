@@ -225,15 +225,14 @@ async function DynamicHeadContent() {
           __html: `!function(){"use strict";var e=console.error;console.error=function(){for(var o=[],r=0;r<arguments.length;r++)o[r]=arguments[r];var n=o.join(" ");n.includes("bootstrap-autofill")||n.includes("extension")||n.includes("chrome-extension")||n.includes("Cache")||e.apply(console,o)};var o=function(e){if(!e)return!1;var o=e.toString?e.toString():"",r=e.filename||"",n=e.stack||"",t=e.message||"";return r.includes("extension")||r.includes("bootstrap-autofill")||r.includes("chrome-extension")||r.includes("moz-extension")||o.includes("extension")||o.includes("Cache")||n.includes("extension")||n.includes("bootstrap-autofill")||n.includes("chrome-extension")||n.includes("Cache")||t.includes("extension")||t.includes("Cache")};window.addEventListener("error",(function(e){if(o(e))return e.preventDefault(),e.stopImmediatePropagation(),!0}),!0),window.addEventListener("unhandledrejection",(function(e){if(o(e.reason))return e.preventDefault(),e.stopImmediatePropagation(),console.log("[Filtrado] Error de extensión bloqueado"),!0}),!0)}();`,
         }}
       />
-      {/* Brandon decisión 2026-05-09: theme automático por horario LOCAL del usuario.
-          Light: 7:00am — 6:00pm
-          Dark : 6:01pm — 6:59am
+      {/* Brandon decisión 2026-05-09 (rev): theme por defecto LIGHT siempre.
+          Solo aplica `dark` si el usuario lo activó explícitamente (sessionStorage).
           Sin flash: corre antes de hidratar React. ThemeProvider usa misma lógica. */}
       <script
         nonce={nonce}
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: `(function(){try{var d=new Date();var m=d.getHours()*60+d.getMinutes();var isDark=(m<420)||(m>1080);if(isDark)document.documentElement.classList.add("dark");document.documentElement.style.colorScheme=isDark?"dark":"light"}catch(e){}})()`,
+          __html: `(function(){try{window.sessionStorage.removeItem("buleje-theme-session");window.sessionStorage.removeItem("buleje-theme-session-v2");window.localStorage.removeItem("buleje-theme-session");document.documentElement.classList.remove("dark");document.documentElement.style.colorScheme="light"}catch(e){}})()`,
         }}
       />
     </>

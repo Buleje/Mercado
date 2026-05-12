@@ -19,15 +19,19 @@ async function requirePlatform(req: NextRequest) {
  * platform-wide se renueva con escalas de horas, no minutos. Invalidable
  * con invalidate("superadmin:analytics") tras eventos relevantes.
  */
-async function getAnalyticsData() {
+async function getAnalyticsData(fromISO?: string, toISO?: string) {
   "use cache";
   cacheLife({ revalidate: 300, stale: 30, expire: 1800 });
   cacheTag("superadmin:analytics");
 
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  // Si vienen from/to, usar esos como "periodo actual"; sino fallback al mes en curso.
+  const periodStart = fromISO ? new Date(fromISO) : new Date(now.getFullYear(), now.getMonth(), 1);
+  const periodEnd = toISO ? new Date(toISO) : now;
+  const periodMs = Math.max(periodEnd.getTime() - periodStart.getTime(), 86_400_000);
+  // Periodo anterior de misma duración para comparación de growth
+  const prevEnd = new Date(periodStart.getTime() - 1);
+  const prevStart = new Date(prevEnd.getTime() - periodMs);
 
   const PLAN_PRICES = await getAllPlanPrices();
 
@@ -49,11 +53,11 @@ async function getAnalyticsData() {
         stripeCustomerId: true, ownerEmail: true,
       },
     }),
-    prisma.tenant.count({ where: { createdAt: { gte: startOfMonth } } }),
-    prisma.tenant.count({ where: { createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
+    prisma.tenant.count({ where: { createdAt: { gte: periodStart, lte: periodEnd } } }),
+    prisma.tenant.count({ where: { createdAt: { gte: prevStart, lte: prevEnd } } }),
     prisma.order.count(),
-    prisma.order.count({ where: { createdAt: { gte: startOfMonth } } }),
-    prisma.order.count({ where: { createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
+    prisma.order.count({ where: { createdAt: { gte: periodStart, lte: periodEnd } } }),
+    prisma.order.count({ where: { createdAt: { gte: prevStart, lte: prevEnd } } }),
     prisma.product.count(),
     prisma.adminUser.count(),
     prisma.activityLog.findMany({
@@ -93,7 +97,7 @@ async function getAnalyticsData() {
     (t) => t.cancelAtPeriodEnd || (t.trialEndsAt && new Date(t.trialEndsAt) < now),
   );
 
-  // Monthly signups for the last 6 months
+  // Monthly signups for the last 6 months (legacy — sigue presente para retro-compat)
   const monthlySignups: { month: string; count: number }[] = [];
   for (let i = 5; i >= 0; i--) {
     const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -105,12 +109,11 @@ async function getAnalyticsData() {
     monthlySignups.push({ month: label, count });
   }
 
-  // Monthly revenue (estimated) for the last 6 months
+  // Monthly revenue (estimated) for the last 6 months (legacy)
   const monthlyRevenue: { month: string; revenue: number }[] = [];
   for (let i = 5; i >= 0; i--) {
     const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
     const label = end.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
-    // Estimate by counting active paid tenants created before end of month
     const revenue = allTenants
       .filter((t) => new Date(t.createdAt) <= end && t.active)
       .reduce(
@@ -118,6 +121,125 @@ async function getAnalyticsData() {
         0,
       );
     monthlyRevenue.push({ month: label, revenue });
+  }
+
+  // Series adaptativas según el rango from/to:
+  //  - 0-2 días → hourly (24-48 buckets)
+  //  - 3-90 días → daily
+  //  - 91-730 días → monthly
+  //  - 731+ días → yearly
+  const durationDays = Math.max(
+    1,
+    Math.ceil((periodEnd.getTime() - periodStart.getTime()) / 86_400_000),
+  );
+  const granularity: "hour" | "day" | "month" | "year" =
+    durationDays <= 2 ? "hour" : durationDays <= 90 ? "day" : durationDays <= 730 ? "month" : "year";
+
+  const periodSignups: { bucket: string; count: number; iso: string }[] = [];
+  const periodRevenue: { bucket: string; revenue: number; iso: string }[] = [];
+  const periodOrders: { bucket: string; count: number; iso: string }[] = [];
+
+  // Pre-fetch orders en el rango (para serie de pedidos)
+  const ordersInPeriod = await prisma.order.findMany({
+    where: { createdAt: { gte: periodStart, lte: periodEnd } },
+    select: { id: true, createdAt: true },
+  });
+
+  const stepMs = {
+    hour: 3_600_000,
+    day: 86_400_000,
+    month: 0, // calendar-aware
+    year: 0, // calendar-aware
+  };
+
+  if (granularity === "hour" || granularity === "day") {
+    const step = stepMs[granularity];
+    for (let t = periodStart.getTime(); t < periodEnd.getTime(); t += step) {
+      const bStart = new Date(t);
+      const bEnd = new Date(Math.min(t + step - 1, periodEnd.getTime()));
+      const label =
+        granularity === "hour"
+          ? bStart.toLocaleTimeString("es-PE", { hour: "2-digit" })
+          : bStart.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+      const iso = bStart.toISOString();
+      periodSignups.push({
+        bucket: label,
+        iso,
+        count: allTenants.filter(
+          (t2) => new Date(t2.createdAt) >= bStart && new Date(t2.createdAt) <= bEnd,
+        ).length,
+      });
+      periodOrders.push({
+        bucket: label,
+        iso,
+        count: ordersInPeriod.filter(
+          (o) => o.createdAt >= bStart && o.createdAt <= bEnd,
+        ).length,
+      });
+      periodRevenue.push({
+        bucket: label,
+        iso,
+        revenue: allTenants
+          .filter((t2) => new Date(t2.createdAt) <= bEnd && t2.active)
+          .reduce(
+            (s, t2) => s + (PLAN_PRICES[t2.plan as keyof typeof PLAN_PRICES] ?? 0),
+            0,
+          ),
+      });
+    }
+  } else {
+    // month / year — calendar-aware buckets
+    const startYear = periodStart.getFullYear();
+    const startUnit =
+      granularity === "month" ? periodStart.getMonth() : periodStart.getFullYear();
+    const endYear = periodEnd.getFullYear();
+    const endUnit =
+      granularity === "month" ? periodEnd.getMonth() : periodEnd.getFullYear();
+    const totalUnits =
+      granularity === "month"
+        ? (endYear - startYear) * 12 + (endUnit - startUnit) + 1
+        : endUnit - startUnit + 1;
+
+    for (let i = 0; i < totalUnits; i++) {
+      let bStart: Date;
+      let bEnd: Date;
+      if (granularity === "month") {
+        bStart = new Date(startYear, startUnit + i, 1, 0, 0, 0, 0);
+        bEnd = new Date(startYear, startUnit + i + 1, 0, 23, 59, 59, 999);
+      } else {
+        bStart = new Date(startYear + i, 0, 1, 0, 0, 0, 0);
+        bEnd = new Date(startYear + i, 11, 31, 23, 59, 59, 999);
+      }
+      const label =
+        granularity === "month"
+          ? bStart.toLocaleDateString("es-PE", { month: "short", year: "2-digit" })
+          : String(bStart.getFullYear());
+      const iso = bStart.toISOString();
+      periodSignups.push({
+        bucket: label,
+        iso,
+        count: allTenants.filter(
+          (t2) => new Date(t2.createdAt) >= bStart && new Date(t2.createdAt) <= bEnd,
+        ).length,
+      });
+      periodOrders.push({
+        bucket: label,
+        iso,
+        count: ordersInPeriod.filter(
+          (o) => o.createdAt >= bStart && o.createdAt <= bEnd,
+        ).length,
+      });
+      periodRevenue.push({
+        bucket: label,
+        iso,
+        revenue: allTenants
+          .filter((t2) => new Date(t2.createdAt) <= bEnd && t2.active)
+          .reduce(
+            (s, t2) => s + (PLAN_PRICES[t2.plan as keyof typeof PLAN_PRICES] ?? 0),
+            0,
+          ),
+      });
+    }
   }
 
   // MRR growth: comparar el último mes vs el anterior usando monthlyRevenue.
@@ -179,6 +301,16 @@ async function getAnalyticsData() {
     atRiskCount: atRisk.length,
     monthlySignups,
     monthlyRevenue,
+    // Nuevas series adaptativas según from/to
+    period: {
+      from: periodStart.toISOString(),
+      to: periodEnd.toISOString(),
+      granularity,
+      durationDays,
+      signups: periodSignups,
+      revenue: periodRevenue,
+      orders: periodOrders,
+    },
     recentActivity,
   };
 }
@@ -192,6 +324,9 @@ export async function GET(req: NextRequest) {
   const session = await requirePlatform(req);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const data = await getAnalyticsData();
+  // Acepta from/to (YYYY-MM-DD) para filtrar el periodo. Si no vienen, fallback al mes en curso.
+  const from = req.nextUrl.searchParams.get("from") ?? undefined;
+  const to = req.nextUrl.searchParams.get("to") ?? undefined;
+  const data = await getAnalyticsData(from, to);
   return NextResponse.json(data);
 }

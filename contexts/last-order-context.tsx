@@ -142,10 +142,21 @@ export function LastOrderProvider({ children }: { children: ReactNode }) {
   return <LastOrderContext.Provider value={value}>{children}</LastOrderContext.Provider>;
 }
 
+const NOOP_LAST_ORDER: LastOrderValue = {
+  order: null,
+  hydrated: true,
+  modalOpen: false,
+  openModal: () => {},
+  closeModal: () => {},
+  clear: () => {},
+};
+
 export function useLastOrder(): LastOrderValue {
+  // MarketplaceNavbar (que monta OrderTrackerNavBadge + OrderSuccessModal) se
+  // renderiza tambien en rutas (store)/* que usan StoreProviders — donde no
+  // hay LastOrderProvider montado. Antes lanzabamos un Error y la ErrorBoundary
+  // tumbaba el navbar entero. Ahora devolvemos defaults inertes: el badge se
+  // oculta (order=null) y el modal nunca se abre.
   const ctx = useContext(LastOrderContext);
-  if (!ctx) {
-    throw new Error("useLastOrder debe usarse dentro de <LastOrderProvider>");
-  }
-  return ctx;
+  return ctx ?? NOOP_LAST_ORDER;
 }

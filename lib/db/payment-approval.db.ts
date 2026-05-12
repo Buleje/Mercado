@@ -18,8 +18,9 @@
  * en `prisma/migrations/20260502120000_add_payment_approval/` para
  * cuando se pueda correr `migrate deploy` en una red estable.
  *
- * NO TENANT: PaymentApproval es global del SaaS. La IA cruza tenants y
- * el equipo Buleje revisa todas las dudas en un solo dashboard.
+ * MULTI-TENANT: expand phase (ccfffa33) agregó tenantId NULLABLE. Contract
+ * phase (multi-tenant-contract-audit) lo convirtió a NOT NULL. El dashboard
+ * superadmin /superadmin/pagos-yape pasa tenantId: null para vista global.
  */
 
 import "server-only";
@@ -38,9 +39,13 @@ export interface PaymentApproval {
   id: string;
   /**
    * tenantId del tenant dueño de la conversación que generó esta approval.
+<<<<<<< Updated upstream
    * CONTRACT PHASE (2026-05-11): la columna es NOT NULL en DB tras 0 rows
    * legacy. Todos los callers pasan tenantId obligatorio desde
    * Conversation.tenantId.
+=======
+   * Contract phase completada (multi-tenant-contract-audit): NOT NULL en DB.
+>>>>>>> Stashed changes
    */
   tenantId: string;
   conversationId: string | null;

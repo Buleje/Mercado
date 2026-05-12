@@ -112,7 +112,14 @@ export async function POST(
   // 3) WhatsApp de bienvenida — fire-and-forget
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
   const adminUrl = `${baseUrl}/admin/login`;
-  const planLabel = proof.planTier === "basico" ? "Estándar" : proof.planTier;
+  // Labels alineados con lib/billing/plan-tiers.ts (mayo 2026 v2)
+  const PLAN_LABELS: Record<string, string> = {
+    basico: "Free",
+    pro: "Starter",
+    enterprise: "Pro",
+    max: "Business",
+  };
+  const planLabel = PLAN_LABELS[proof.planTier] ?? proof.planTier;
   const defaultMsg = [
     `🎉 ¡Bienvenido a Buleje, ${proof.ownerName}!`,
     "",

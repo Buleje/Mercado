@@ -10,8 +10,9 @@ import {
   type ReactNode,
 } from "react";
 
-// "system" en este proyecto significa "auto-por-horario-local" (no
-// prefers-color-scheme del SO). Brandon decisión 2026-05-09.
+// "system" en este proyecto significa "default light" (Brandon decisión
+// 2026-05-09 rev: el modo claro es el default permanente). El usuario
+// puede activar dark explícitamente y queda guardado en sessionStorage.
 type Theme = "light" | "dark" | "system";
 type Resolved = "light" | "dark";
 
@@ -24,19 +25,15 @@ interface ThemeCtx {
 
 const ThemeContext = createContext<ThemeCtx | null>(null);
 
-// Brandon decisión 2026-05-09: theme automático por horario LOCAL del usuario.
-// - Light: 7:00am — 6:00pm
-// - Dark : 6:01pm — 6:59am
-// El toggle manual es OVERRIDE para esa pestaña (sessionStorage). En hard
-// reload o nueva pestaña vuelve al horario.
-const SESSION_KEY = "buleje-theme-session";
+// Brandon decisión 2026-05-09 (rev): light por defecto siempre.
+// El toggle manual es override que se guarda en sessionStorage de esa pestaña.
+// Bumped a v2 cuando Brandon volvió a default light (2026-05-09 rev). Invalida
+// cualquier valor de sesión anterior que pudiera tener "dark"/"system" pegado.
+const SESSION_KEY = "buleje-theme-session-v2";
 
-/** Light entre 7:00am y 6:00pm; dark fuera. Se usa en script inline + acá. */
+/** Resuelve "system" → "light" siempre (regla actual del proyecto). */
 function getThemeByTime(): Resolved {
-  const d = new Date();
-  const minutes = d.getHours() * 60 + d.getMinutes();
-  // 7:00am = 420 min · 6:00pm = 1080 min (incl)
-  return minutes < 420 || minutes > 1080 ? "dark" : "light";
+  return "light";
 }
 
 function applyDom(resolved: Resolved) {
@@ -52,41 +49,26 @@ function applyDom(resolved: Resolved) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>("light");
   const [resolved, setResolved] = useState<Resolved>("light");
   const intervalRef = useRef<number | null>(null);
 
-  // Hydrate: si hay override en sessionStorage usalo; sino auto por horario.
+  // Hydrate: light fijo. Brandon decisión 2026-05-09 rev: el modo claro es
+  // permanente por defecto en toda la plataforma. Ignoramos cualquier
+  // sessionStorage previo y removemos la clase `.dark` defensivamente.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let stored: Theme = "system";
-    try {
-      const raw = window.sessionStorage.getItem(SESSION_KEY);
-      if (raw === "light" || raw === "dark" || raw === "system") stored = raw;
-    } catch {
-      /* ignore */
-    }
-    setThemeState(stored);
-    const r: Resolved = stored === "system" ? getThemeByTime() : stored;
-    setResolved(r);
-    applyDom(r);
+    setThemeState("light");
+    setResolved("light");
+    applyDom("light");
   }, []);
 
-  // En modo "system" chequeo cada minuto si el horario cambió → toggle automático.
+  // Cleanup: si quedó un interval de la version time-based anterior, limpiarlo.
   useEffect(() => {
-    if (theme !== "system" || typeof window === "undefined") return;
-    const tick = () => {
-      const r = getThemeByTime();
-      setResolved((prev) => {
-        if (prev !== r) applyDom(r);
-        return r;
-      });
-    };
-    intervalRef.current = window.setInterval(tick, 60_000);
     return () => {
       if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
     };
-  }, [theme]);
+  }, []);
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);

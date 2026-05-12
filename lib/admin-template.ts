@@ -14,7 +14,19 @@
  * Patrón clonado de `lib/nav-visibility.ts` (mismo enfoque, distinto dominio).
  */
 
-export type AdminPlan = "free" | "pro" | "enterprise";
+/**
+ * AdminPlan — alineado 1:1 con `PlanTier` de lib/billing/plan-tiers.ts.
+ *
+ * IDs internos (no se ven en UI):
+ *   basico     → label "Free"      S/ 0
+ *   pro        → label "Starter"   S/ 89
+ *   enterprise → label "Pro"       S/ 179  (badge "Mas elegido")
+ *   max        → label "Business"  S/ 349
+ *
+ * Antes era `free | pro | enterprise` (3 tiers desincronizados del pricing).
+ * Ahora hay 1 sola fuente de verdad: los 4 IDs de PlanTier.
+ */
+export type AdminPlan = "basico" | "pro" | "enterprise" | "max";
 
 export interface AdminModuleEntry {
   /** Tab id (debe coincidir con `Tab` en `app/admin/admin-types.ts`). */
@@ -38,49 +50,58 @@ export interface AdminModuleEntry {
  * Mantener sincronizado con `VALID_TABS` de `app/admin/admin-types.ts`.
  */
 export const ADMIN_MODULE_CATALOG: AdminModuleEntry[] = [
-  // ── Core / Operaciones ────────────────────────────────────────────
-  { id: "asistente-ia",   defaultLabel: "Asistente IA",       category: "Inteligencia",  defaultVisible: true,  defaultPlan: "free",       description: "Dashboard IA y chat con asistente." },
-  { id: "ventas-caja",    defaultLabel: "Ventas y Caja",      category: "Operaciones",   defaultVisible: true,  defaultPlan: "free",       description: "POS, turnos y cierre de caja." },
-  { id: "pedidos",        defaultLabel: "Pedidos",            category: "Operaciones",   defaultVisible: true,  defaultPlan: "free",       description: "Gestión de pedidos y delivery." },
-  { id: "inventario",     defaultLabel: "Inventario",         category: "Inventario",    defaultVisible: true,  defaultPlan: "free",       description: "Stock, kardex, vencimientos y mermas." },
-  { id: "productos",      defaultLabel: "Productos",          category: "Catálogo",      defaultVisible: true,  defaultPlan: "free",       description: "Catálogo, categorías y precios." },
-  { id: "compras",        defaultLabel: "Compras",            category: "Operaciones",   defaultVisible: true,  defaultPlan: "free",       description: "Pedidos a proveedor y recepción." },
-  { id: "plata",          defaultLabel: "Mi Plata",           category: "Finanzas",      defaultVisible: true,  defaultPlan: "free",       description: "Ingresos, egresos, ganancias y reportes." },
-  { id: "clientes",       defaultLabel: "Clientes",           category: "CRM",           defaultVisible: true,  defaultPlan: "free",       description: "CRM, fidelización y segmentación." },
+  // ── Free (basico) — solo lo basico para arrancar ─────────────────
+  { id: "asistente-ia",   defaultLabel: "Asistente IA",       category: "Inteligencia",  defaultVisible: true,  defaultPlan: "basico",     description: "Dashboard IA y chat con asistente." },
+  { id: "ventas-caja",    defaultLabel: "Ventas y Caja",      category: "Operaciones",   defaultVisible: true,  defaultPlan: "basico",     description: "POS basico (limite 30 ventas/mes en Free)." },
+  { id: "pedidos",        defaultLabel: "Pedidos",            category: "Operaciones",   defaultVisible: true,  defaultPlan: "basico",     description: "Gestion de pedidos y delivery." },
+  { id: "productos",      defaultLabel: "Productos",          category: "Catálogo",      defaultVisible: true,  defaultPlan: "basico",     description: "Catalogo (limite 20 productos en Free)." },
+  { id: "store-customizer",   defaultLabel: "Personalizar tienda",category: "Marketplace",defaultVisible: false, defaultPlan: "basico",     description: "Editor visual de la tienda online." },
 
-  // ── Crédito / Confianza ───────────────────────────────────────────
-  { id: "fiados",         defaultLabel: "Fiados",             category: "CRM",           defaultVisible: true,  defaultPlan: "free",       description: "Créditos informales y saldos pendientes." },
-  { id: "prestamos",      defaultLabel: "Préstamos",          category: "Finanzas",      defaultVisible: false, defaultPlan: "pro",        description: "Préstamos a clientes con cuotas e interés." },
-  { id: "scoring",        defaultLabel: "Scoring crediticio", category: "Finanzas",      defaultVisible: false, defaultPlan: "pro",        description: "Puntaje crediticio por cliente." },
+  // ── Starter (pro) — bodega con flujo diario, S/ 89 ──────────────
+  { id: "inventario",     defaultLabel: "Inventario",         category: "Inventario",    defaultVisible: true,  defaultPlan: "pro",        description: "Stock, kardex, vencimientos y mermas." },
+  { id: "clientes",       defaultLabel: "Clientes",           category: "CRM",           defaultVisible: true,  defaultPlan: "pro",        description: "CRM, fidelizacion y segmentacion." },
+  { id: "fiados",         defaultLabel: "Fiados",             category: "CRM",           defaultVisible: true,  defaultPlan: "pro",        description: "Creditos informales y saldos pendientes." },
+  { id: "plata",          defaultLabel: "Mi Plata",           category: "Finanzas",      defaultVisible: true,  defaultPlan: "pro",        description: "Ingresos, egresos, ganancias y reportes basicos." },
+  { id: "turnos",         defaultLabel: "Turnos",             category: "Operaciones",   defaultVisible: false, defaultPlan: "pro",        description: "Apertura/cierre de turnos con conteo." },
+  { id: "metas-logros",   defaultLabel: "Metas y logros",     category: "CRM",           defaultVisible: false, defaultPlan: "pro",        description: "Gamificacion y metas comerciales." },
+  { id: "documentos",     defaultLabel: "Documentos",         category: "Documentos",    defaultVisible: true,  defaultPlan: "pro",        description: "Boletas internas y comprobantes simples." },
 
-  // ── Producción ────────────────────────────────────────────────────
-  { id: "recetas",        defaultLabel: "Recetas",            category: "Producción",    defaultVisible: false, defaultPlan: "pro",        description: "Recetas con ingredientes y costos." },
-  { id: "turnos",         defaultLabel: "Turnos",             category: "Operaciones",   defaultVisible: false, defaultPlan: "free",       description: "Apertura/cierre de turnos con conteo." },
+  // ── Pro (enterprise) — bodega establecida, S/ 179, badge "Mas elegido" ──
+  { id: "compras",                defaultLabel: "Compras",            category: "Operaciones", defaultVisible: true,  defaultPlan: "enterprise", description: "Pedidos a proveedor y recepcion." },
+  { id: "contratos",              defaultLabel: "Contratos",          category: "Documentos",  defaultVisible: false, defaultPlan: "enterprise", description: "Contratos comerciales." },
+  { id: "devoluciones-proveedor", defaultLabel: "Devoluciones",       category: "Operaciones", defaultVisible: false, defaultPlan: "enterprise", description: "Devoluciones a proveedor." },
+  { id: "cotizaciones",           defaultLabel: "Cotizaciones",       category: "Documentos",  defaultVisible: false, defaultPlan: "enterprise", description: "Cotizaciones a clientes." },
+  { id: "guias-remision",         defaultLabel: "Guias de remision",  category: "Documentos",  defaultVisible: false, defaultPlan: "enterprise", description: "Guias de transporte SUNAT." },
+  { id: "notas-credito",          defaultLabel: "Notas de credito",   category: "Documentos",  defaultVisible: false, defaultPlan: "enterprise", description: "Notas de credito SUNAT." },
+  { id: "facturacion",            defaultLabel: "Facturacion SUNAT",  category: "Documentos",  defaultVisible: true,  defaultPlan: "enterprise", description: "Facturacion electronica SUNAT." },
+  { id: "promociones",            defaultLabel: "Promociones",        category: "Marketing",   defaultVisible: false, defaultPlan: "enterprise", description: "Cupones, descuentos y combos." },
+  { id: "prestamos",              defaultLabel: "Prestamos",          category: "Finanzas",    defaultVisible: false, defaultPlan: "enterprise", description: "Prestamos a clientes con cuotas e interes." },
+  { id: "scoring",                defaultLabel: "Scoring crediticio", category: "Finanzas",    defaultVisible: false, defaultPlan: "enterprise", description: "Puntaje crediticio por cliente." },
+  { id: "recetas",                defaultLabel: "Recetas",            category: "Producción",  defaultVisible: false, defaultPlan: "enterprise", description: "Recetas con ingredientes y costos." },
+  { id: "tesoreria",              defaultLabel: "Tesoreria",          category: "Finanzas",    defaultVisible: false, defaultPlan: "enterprise", description: "Flujo de caja y reportes financieros." },
+  { id: "marketplace",            defaultLabel: "Marketplace",        category: "Marketplace", defaultVisible: false, defaultPlan: "enterprise", description: "Vender destacado en el marketplace cross-tenant." },
+  { id: "marketplace-chat",       defaultLabel: "Chat marketplace",   category: "Marketplace", defaultVisible: false, defaultPlan: "enterprise", description: "Conversaciones cross-vendor." },
+  { id: "delivery-partners",      defaultLabel: "Repartidores",       category: "Marketplace", defaultVisible: false, defaultPlan: "enterprise", description: "Red de repartidores propia." },
+  { id: "analytics-pro",          defaultLabel: "Analytics Pro",      category: "Inteligencia",defaultVisible: false, defaultPlan: "enterprise", description: "Analytics con cohortes." },
+  { id: "support-inbox",          defaultLabel: "Soporte clientes",   category: "CRM",         defaultVisible: false, defaultPlan: "enterprise", description: "Inbox de tickets de tus clientes." },
 
-  // ── Documentos ────────────────────────────────────────────────────
-  { id: "cotizaciones",          defaultLabel: "Cotizaciones",       category: "Documentos",    defaultVisible: false, defaultPlan: "pro",        description: "Cotizaciones a clientes." },
-  { id: "guias-remision",        defaultLabel: "Guías de remisión",  category: "Documentos",    defaultVisible: false, defaultPlan: "pro",        description: "Guías de transporte SUNAT." },
-  { id: "notas-credito",         defaultLabel: "Notas de crédito",   category: "Documentos",    defaultVisible: false, defaultPlan: "pro",        description: "Notas de crédito SUNAT." },
-  { id: "contratos",             defaultLabel: "Contratos",          category: "Documentos",    defaultVisible: false, defaultPlan: "pro",        description: "Contratos comerciales." },
-  { id: "devoluciones-proveedor", defaultLabel: "Devoluciones",      category: "Operaciones",   defaultVisible: false, defaultPlan: "pro",        description: "Devoluciones a proveedor." },
+  // ── Business (max) — cadenas premium, S/ 349 ─────────────────────
+  { id: "ai-command",         defaultLabel: "Centro de IA",       category: "Inteligencia",  defaultVisible: false, defaultPlan: "max",        description: "Comandos y prompts personalizados." },
+  { id: "sugerencias-ia",     defaultLabel: "Sugerencias IA",     category: "Inteligencia",  defaultVisible: false, defaultPlan: "max",        description: "Recomendaciones automaticas para tu negocio." },
+  { id: "forecasting",        defaultLabel: "Forecasting",        category: "Inteligencia",  defaultVisible: false, defaultPlan: "max",        description: "Pronostico de ventas con IA." },
+  { id: "rendimiento",        defaultLabel: "Rendimiento",        category: "Sistema",       defaultVisible: false, defaultPlan: "max",        description: "Performance + auditoria del panel." },
+  { id: "auditoria",          defaultLabel: "Auditoria",          category: "Sistema",       defaultVisible: false, defaultPlan: "max",        description: "Log auditable de acciones del staff." },
+  { id: "colas",              defaultLabel: "Colas y workers",    category: "Sistema",       defaultVisible: false, defaultPlan: "max",        description: "Monitoreo de jobs en background." },
+  { id: "delivery-live",      defaultLabel: "Delivery en vivo",   category: "Marketplace",   defaultVisible: false, defaultPlan: "max",        description: "Mapa GPS de motorizados." },
+  { id: "lives-admin",        defaultLabel: "Lives streaming",    category: "Marketplace",   defaultVisible: false, defaultPlan: "max",        description: "Ventas en vivo por streaming." },
+  { id: "subscriptions",      defaultLabel: "Suscripciones",      category: "Marketplace",   defaultVisible: false, defaultPlan: "max",        description: "Bodega al Mes y planes recurrentes." },
+  { id: "gift-cards-admin",   defaultLabel: "Gift cards",         category: "Marketplace",   defaultVisible: false, defaultPlan: "max",        description: "Vender y canjear gift cards." },
+  { id: "socio-members",      defaultLabel: "Socio Buleje",       category: "Marketplace",   defaultVisible: false, defaultPlan: "max",        description: "Programa de socios premium." },
 
-  // ── Marketing & Marketplace ──────────────────────────────────────
-  { id: "marketplace",        defaultLabel: "Marketplace",        category: "Marketplace",   defaultVisible: false, defaultPlan: "pro",        description: "Vender en el marketplace cross-tenant." },
-  { id: "delivery-partners",  defaultLabel: "Repartidores",       category: "Marketplace",   defaultVisible: false, defaultPlan: "pro",        description: "Red de repartidores propia." },
-  { id: "delivery-live",      defaultLabel: "Delivery en vivo",   category: "Marketplace",   defaultVisible: false, defaultPlan: "pro",        description: "Mapa GPS de motorizados." },
-  { id: "marketplace-chat",   defaultLabel: "Chat marketplace",   category: "Marketplace",   defaultVisible: false, defaultPlan: "pro",        description: "Conversaciones cross-vendor." },
-  { id: "store-customizer",   defaultLabel: "Personalizar tienda",category: "Marketplace",   defaultVisible: false, defaultPlan: "free",       description: "Editor visual de la tienda online." },
-  { id: "sugerencias-ia",     defaultLabel: "Sugerencias IA",     category: "Inteligencia",  defaultVisible: false, defaultPlan: "pro",        description: "Recomendaciones automáticas para tu negocio." },
-  { id: "metas-logros",       defaultLabel: "Metas y logros",     category: "CRM",           defaultVisible: false, defaultPlan: "free",       description: "Gamificación y metas comerciales." },
-
-  // ── Avanzado / Enterprise ─────────────────────────────────────────
-  { id: "analytics-pro",      defaultLabel: "Analytics Pro",      category: "Inteligencia",  defaultVisible: false, defaultPlan: "enterprise", description: "Analytics avanzado con cohortes y forecasting." },
-  { id: "ai-command",         defaultLabel: "Centro de IA",       category: "Inteligencia",  defaultVisible: false, defaultPlan: "enterprise", description: "Comandos y prompts personalizados." },
-  { id: "colas",              defaultLabel: "Colas y workers",    category: "Sistema",       defaultVisible: false, defaultPlan: "enterprise", description: "Monitoreo de jobs en background." },
-
-  // ── Sistema (siempre core) ────────────────────────────────────────
-  { id: "config",             defaultLabel: "Configuración",      category: "Sistema",       defaultVisible: true,  defaultPlan: "free",       description: "Usuarios, permisos y configuración general." },
-  { id: "plan",               defaultLabel: "Mi plan",            category: "Sistema",       defaultVisible: true,  defaultPlan: "free",       description: "Plan actual y opciones de upgrade." },
+  // ── Sistema (siempre core, free y arriba) ─────────────────────────
+  { id: "config",             defaultLabel: "Configuracion",      category: "Sistema",       defaultVisible: true,  defaultPlan: "basico",     description: "Usuarios, permisos y configuracion general." },
+  { id: "plan",               defaultLabel: "Mi plan",            category: "Sistema",       defaultVisible: true,  defaultPlan: "basico",     description: "Plan actual y opciones de upgrade." },
+  { id: "mi-perfil",          defaultLabel: "Mi perfil",          category: "Sistema",       defaultVisible: true,  defaultPlan: "basico",     description: "Datos del bodeguero." },
 ];
 
 /** Categorías ordenadas tal como aparecen en la UI del superadmin. */
@@ -91,6 +112,7 @@ export const ADMIN_MODULE_CATEGORIES = [
   "Catálogo",
   "Finanzas",
   "CRM",
+  "Marketing",
   "Producción",
   "Documentos",
   "Marketplace",
