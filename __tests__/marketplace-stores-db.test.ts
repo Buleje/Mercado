@@ -14,7 +14,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockFindUnique = vi.fn();
 const mockFindFirst = vi.fn();
 // getOrSet pasthrough: solo ejecuta el computeFn, no cachea
-const mockGetOrSet = vi.fn(async (_key: string, _ttl: number, fn: () => unknown) => fn());
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockGetOrSet = vi.fn(async (...args: any[]) => {
+  const fn = args[args.length - 1] as () => unknown;
+  return typeof fn === "function" ? fn() : null;
+});
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -26,7 +30,8 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
-  getOrSet: (...args: unknown[]) => mockGetOrSet(...args),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getOrSet: (...args: any[]) => mockGetOrSet(...args),
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),
 }));

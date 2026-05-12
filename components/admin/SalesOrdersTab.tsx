@@ -1467,6 +1467,13 @@ function OrdersEmptyChart({ message }: { message: string }) {
 function OrdersDashboard({ orders }: { orders: Order[] }) {
   const today = new Date().toISOString().split('T')[0];
   const nowHour = new Date().getHours();
+  // PERF (audit React Compiler 2026-05-12): nowMs lazy state + interval 60s
+  // para que alertas "sin atender >1h" actualicen sin recargar.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   // Mejora 1: Period selector
   const [ordPeriod, setOrdPeriod] = useState<"today" | "7d" | "30d" | "month">("today");
   // Mejora 13: Expand chart

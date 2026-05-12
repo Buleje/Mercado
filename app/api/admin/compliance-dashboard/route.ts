@@ -68,19 +68,13 @@ export async function GET(req: NextRequest) {
       }),
       // 4. Customers total
       prisma.customer.count({ where: { tenantId } }),
-      // 5. Customers con consentimiento explícito
-      //    (asumiendo campo `acceptsMarketing` o similar — usar el que exista)
-      prisma.customer
-        .count({
-          where: { tenantId, acceptsMarketing: true },
-        })
-        .catch(() => 0), // graceful si el campo no existe
-      // 6. Brechas activas (notas con tag "compliance" pending)
-      prisma.note
-        .count({
-          where: { tenantId, tags: { has: "compliance-breach" } },
-        })
-        .catch(() => 0),
+      // 5. Customers con consentimiento explícito (placeholder — el field
+      //    acceptsMarketing aún no existe en Customer schema. Cuando se agregue
+      //    via migration, descomentar la query real. Por ahora retorna 0.)
+      Promise.resolve(0),
+      // 6. Brechas activas — placeholder hasta que Note tenga columna tags
+      //    (actualmente tags se almacena como string JSON en Note.detail).
+      Promise.resolve(0),
     ]);
 
     const auditCoverageDays = auditLogOldest
