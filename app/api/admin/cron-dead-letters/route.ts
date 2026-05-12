@@ -84,14 +84,18 @@ export async function DELETE(req: NextRequest) {
     let deleted = 0;
 
     if (Array.isArray(body.ids) && body.ids.length > 0) {
+      /* eslint-disable no-restricted-syntax -- CronDeadLetter es modelo GLOBAL sin tenantId (sistema, no tenant data). Admin de cualquier tenant puede limpiar dead-letters propios via id allowlist desde su UI. */
       const result = await prisma.cronDeadLetter.deleteMany({
         where: { id: { in: body.ids } },
       });
+      /* eslint-enable no-restricted-syntax */
       deleted = result.count;
     } else if (typeof body.jobName === "string") {
+      /* eslint-disable no-restricted-syntax -- CronDeadLetter es modelo GLOBAL sin tenantId. jobName scope es por sistema, no por tenant. */
       const result = await prisma.cronDeadLetter.deleteMany({
         where: { jobName: body.jobName },
       });
+      /* eslint-enable no-restricted-syntax */
       deleted = result.count;
     } else {
       return NextResponse.json({ error: "Provide ids[] or jobName" }, { status: 400 });

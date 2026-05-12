@@ -163,10 +163,12 @@ export const MarketplaceStoreProductsDB = {
    * Desactivar (soft-delete) un producto de la tienda.
    */
   async deactivate(storeId: string, productId: number): Promise<void> {
+    /* eslint-disable no-restricted-syntax -- storeId implica tenantId (Store.tenantId 1:1). storeId pre-validado por el caller (admin del owning store). */
     await prisma.storeProduct.updateMany({
       where:  { storeId, productId },
       data:   { isActive: false },
     });
+    /* eslint-enable no-restricted-syntax */
     invalidateByPrefix(`marketplace:store-products:{"storeId":"${storeId}`);
   },
 

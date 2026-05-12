@@ -158,11 +158,13 @@ export async function updateBlock(
   data: Partial<BlockInput>,
   tenantId: string
 ) {
+  /* eslint-disable no-restricted-syntax -- pageBlock indirecto (ADR-101): tenantId via FK page. */
   const result = await prisma.pageBlock.updateMany({
     where: { id: blockId, pageId, page: { tenantId } },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: data as any,
   });
+  /* eslint-enable no-restricted-syntax */
   if (result.count === 0) return null;
   return await prisma.pageBlock.findUnique({ where: { id: blockId } });
 }
@@ -172,9 +174,11 @@ export async function deleteBlock(
   blockId: string,
   tenantId: string
 ) {
+  /* eslint-disable no-restricted-syntax -- pageBlock indirecto (ADR-101): tenantId via FK page. */
   const result = await prisma.pageBlock.deleteMany({
     where: { id: blockId, pageId, page: { tenantId } },
   });
+  /* eslint-enable no-restricted-syntax */
   if (result.count === 0) return null;
   return { deleted: true };
 }
@@ -182,6 +186,7 @@ export async function deleteBlock(
 export async function reorderBlocks(pageId: string, blockOrders: { id: string; order: number }[]) {
   // SECURITY 2026-05-06 (audit CMS #5): updateMany compuesto `id + pageId`
   // evita reordenar bloques de OTRA página (IDOR).
+  /* eslint-disable no-restricted-syntax -- pageBlock indirecto (ADR-101): pageId pre-validado por el caller del reorder (SECURITY 2026-05-06 audit CMS #5). */
   return await prisma.$transaction(
     blockOrders.map((item) =>
       prisma.pageBlock.updateMany({
@@ -190,6 +195,7 @@ export async function reorderBlocks(pageId: string, blockOrders: { id: string; o
       })
     )
   );
+  /* eslint-enable no-restricted-syntax */
 }
 
 export async function duplicateBlock(id: string, pageId: string) {
@@ -248,9 +254,11 @@ export async function restorePageVersion(versionId: string, tenantId: string) {
   }
 
   // Delete current blocks
+  /* eslint-disable no-restricted-syntax -- pageBlock indirecto (ADR-101): pageId pre-validado al tenant via findFirst arriba. */
   await prisma.pageBlock.deleteMany({
     where: { pageId: version.pageId },
   });
+  /* eslint-enable no-restricted-syntax */
 
   // Restore blocks from version
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma JSON field type

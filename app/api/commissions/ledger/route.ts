@@ -127,8 +127,11 @@ export async function PATCH(req: NextRequest) {
     const { ids } = parsed.data;
     const settledAt = new Date();
 
+    // CRITICAL FIX 2026-05-11 (audit P0): settle por IDs sin tenantId
+    // permitía marcar comisiones de OTRO tenant como pagadas. Ahora
+    // scoped al auth.tenantId.
     const result = await prisma.commissionLedger.updateMany({
-      where: { id: { in: ids }, status: "pending" },
+      where: { id: { in: ids }, status: "pending", tenantId: auth.tenantId },
       data: { status: "settled", settledAt },
     });
 

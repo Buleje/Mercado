@@ -135,9 +135,11 @@ async function deleteHandler(
     deletedData.push("Customer: nombre, email, dirección, teléfono secundario, notas, ubicación GPS");
 
     // 2. Delete saved locations
+    /* eslint-disable no-restricted-syntax -- SavedLocation no tiene tenantId (TD-040 phase pending). Customer.phone es @unique global, así que el scope efectivo es por phone. TODO: agregar tenantId a SavedLocation y refactor. */
     const deletedLocations = await prisma.savedLocation.deleteMany({
       where: { customerPhone: customer.phone },
     });
+    /* eslint-enable no-restricted-syntax */
     deletedData.push(`SavedLocation: ${deletedLocations.count} ubicaciones guardadas`);
 
     // 3. Delete customer notifications

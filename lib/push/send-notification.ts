@@ -81,11 +81,11 @@ export async function sendPushNotification(
         const statusCode = (err as { statusCode?: number })?.statusCode;
         // 410 Gone or 404 Not Found = subscription expired, clean up
         if (statusCode === 410 || statusCode === 404) {
+          /* eslint-disable no-restricted-syntax -- cleanup de subscription expirada por endpoint (único globalmente, scope efectivo). */
           await prisma.pushSubscription
             .deleteMany({ where: { endpoint: sub.endpoint } })
-            .catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+            .catch((err) => logger.error("[push] cleanup failed", { err: String(err) }));
+          /* eslint-enable no-restricted-syntax */
           logger.debug("[PUSH] Removed expired subscription", { endpoint: sub.endpoint.slice(0, 60) });
         }
         failed++;
@@ -145,11 +145,11 @@ export async function broadcastPushToTenant(
       } catch (err: unknown) {
         const statusCode = (err as { statusCode?: number })?.statusCode;
         if (statusCode === 410 || statusCode === 404) {
+          /* eslint-disable no-restricted-syntax -- cleanup de subscription expirada por endpoint (único globalmente, scope efectivo). */
           await prisma.pushSubscription
             .deleteMany({ where: { endpoint: sub.endpoint } })
-            .catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
-    });
+            .catch((err) => logger.error("[push] cleanup failed", { err: String(err) }));
+          /* eslint-enable no-restricted-syntax */
         }
         failed++;
       }

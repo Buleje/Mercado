@@ -211,10 +211,12 @@ export async function processCascadeTick(): Promise<{
   const now = new Date();
 
   // 1. Marcar pending vencidas como expired.
+  /* eslint-disable no-restricted-syntax -- cron platform-level: expira ofertas vencidas en TODOS los tenants. cross-tenant intencional. */
   const expired = await prisma.deliveryOffer.updateMany({
     where: { status: "pending", expiresAt: { lt: now } },
     data: { status: "expired" },
   });
+  /* eslint-enable no-restricted-syntax */
 
   // 2. Para cada orderId con offer recién expirada y SIN assignment:
   //    crear próxima offer.

@@ -42,6 +42,7 @@ export const ABTestDB = {
   },
 
   async delete(id: string): Promise<void> {
+    // eslint-disable-next-line no-restricted-syntax -- ABTestEvent indirecto (ADR-101) FK→ABTest. Caller (app/api/ab-tests POST) ya hace IDOR check con tenantId.
     await prisma.aBTestEvent.deleteMany({ where: { testId: id } });
     await prisma.aBTest.delete({ where: { id } });
   },

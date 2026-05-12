@@ -385,6 +385,7 @@ export const ShoppingListsDB = {
     const existing = await prisma.shoppingList.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     if (data.items) {
+      // eslint-disable-next-line no-restricted-syntax -- ShoppingListItem indirecto (ADR-101) FK→ShoppingList. shoppingListId pre-validado via findFirst con tenantId arriba.
       await prisma.shoppingListItem.deleteMany({ where: { shoppingListId: id } });
       await prisma.shoppingListItem.createMany({ data: data.items.map(i => ({ shoppingListId: id, productId: i.productId, quantity: i.quantity })) });
     }

@@ -58,16 +58,22 @@ export async function POST(req: NextRequest) {
   try {
     let updated = 0;
 
+    // CRITICAL FIX 2026-05-11 (audit P0): bulk update DEBE scopear por
+    // auth.tenantId. Antes un admin con IDs de productos de OTRO tenant
+    // podía modificarlos (cross-tenant write masivo).
     if (fields.priceAdjust !== undefined) {
       // Percentage-based price adjustment requires per-product update
       // TD-018: p.price es Decimal
       const products = await prisma.product.findMany({
-        where: { id: { in: ids } },
+        where: { id: { in: ids }, tenantId: auth.tenantId },
         select: { id: true, price: true },
       });
       for (const p of products) {
         const newPrice = Math.max(0.01, +(toNumOrZero(p.price) * (1 + fields.priceAdjust / 100)).toFixed(2));
-        await prisma.product.update({ where: { id: p.id }, data: { price: newPrice } });
+        await prisma.product.updateMany({
+          where: { id: p.id, tenantId: auth.tenantId },
+          data: { price: newPrice },
+        });
         updated++;
       }
     } else {
@@ -84,7 +90,7 @@ export async function POST(req: NextRequest) {
       if (fields.image !== undefined) data.image = fields.image ?? "";
 
       const result = await prisma.product.updateMany({
-        where: { id: { in: ids } },
+        where: { id: { in: ids }, tenantId: auth.tenantId },
         data,
       });
       updated = result.count;

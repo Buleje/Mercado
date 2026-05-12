@@ -22,6 +22,7 @@ export const PushSubscriptionsStore = {
   },
 
   async remove(endpoint: string): Promise<void> {
+    // eslint-disable-next-line no-restricted-syntax -- endpoint es @unique global; cleanup de subscription expirada/revocada por su URL.
     await prisma.pushSubscription.deleteMany({ where: { endpoint } });
   },
 

@@ -187,10 +187,11 @@ const eslintConfig = defineConfig([
   // es legítimamente cross-tenant (cron global, superadmin platform), el
   // path debe estar en `ignores`.
   //
-  // STATUS 2026-05-11: 34 violaciones detectadas en codebase legacy. Mantener
-  // como `warn` hasta llegar a 0 — entonces subir a `error` para enforce.
-  // Plan de cleanup: lock-and-progress (mismo patrón que PRISMA_DIRECT_LEGACY).
-  // Nuevos PRs no deberían agregar más violaciones (CI muestra warning).
+  // STATUS 2026-05-11: 0 violaciones tras cleanup completo del codebase.
+  // Rule SUBIDA A ERROR global — zero-tolerance forward. Cualquier nuevo
+  // deleteMany/updateMany sin tenantId bloquea CI. Casos legítimos (modelos
+  // indirectos via FK, cron platform-level, cleanups por @unique global)
+  // requieren /* eslint-disable no-restricted-syntax */ con comment + ADR-101.
   // ────────────────────────────────────────────────────────────────────────────
   {
     files: ["app/**/*.ts", "app/**/*.tsx", "lib/**/*.ts", "components/**/*.ts"],
@@ -212,13 +213,13 @@ const eslintConfig = defineConfig([
     ],
     rules: {
       "no-restricted-syntax": [
-        "warn",
+        "error",
         {
           // Match: prisma.X.deleteMany({ where: { ... } }) donde el where no tiene tenantId
           selector:
             "CallExpression[callee.object.object.name='prisma'][callee.property.name=/^(deleteMany|updateMany)$/] > ObjectExpression > Property[key.name='where'] > ObjectExpression:not(:has(> Property[key.name='tenantId']))",
           message:
-            "MULTI-TENANT (CRIT-1 zone): deleteMany/updateMany debe incluir `tenantId` literal en el WHERE. Sin ese guard, una sola query puede borrar rows de TODOS los tenants. Si la query ES legítimamente cross-tenant (cron platform, webhook), añadir el archivo a `ignores` en eslint.config.mjs con justificación.",
+            "MULTI-TENANT (CRIT-1 zone): deleteMany/updateMany debe incluir `tenantId` literal en el WHERE. Sin ese guard, una sola query puede borrar rows de TODOS los tenants. Si la query ES legítimamente cross-tenant (cron platform, webhook), añadir el archivo a `ignores` en eslint.config.mjs con justificación o usar /* eslint-disable no-restricted-syntax */ con comment + ADR-101.",
         },
       ],
     },

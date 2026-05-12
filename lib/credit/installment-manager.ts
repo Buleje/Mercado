@@ -288,19 +288,23 @@ export async function checkOverdue(tenantId: string): Promise<number> {
   let updated = 0;
 
   if (overdueActive.length > 0) {
+    /* eslint-disable no-restricted-syntax -- IDs pre-filtrados por tenantId en findMany arriba (línea 261). */
     await prisma.creditInstallment.updateMany({
       where: { id: { in: overdueActive.map((p) => p.id) } },
       data: { status: "overdue" },
     });
+    /* eslint-enable no-restricted-syntax */
     updated += overdueActive.length;
   }
 
   if (overdueToDefault.length > 0) {
     await prisma.$transaction([
+      /* eslint-disable no-restricted-syntax -- IDs pre-filtrados por tenantId en findMany arriba (línea 276). */
       prisma.creditInstallment.updateMany({
         where: { id: { in: overdueToDefault.map((p) => p.id) } },
         data: { status: "defaulted" },
       }),
+      /* eslint-enable no-restricted-syntax */
       // Incrementar contador de impagos en el perfil
       ...overdueToDefault.map((p) =>
         prisma.creditProfile.update({

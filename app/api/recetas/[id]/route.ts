@@ -113,7 +113,7 @@ export async function PATCH(
 
     // Replace ingredientes if provided
     if (parsed.data.ingredientes) {
-      // eslint-disable-next-line no-restricted-properties -- RecetaIngrediente es indirecto (FK→Receta), tenantId del padre ya validado arriba.
+      // eslint-disable-next-line no-restricted-properties, no-restricted-syntax -- RecetaIngrediente indirecto (ADR-101): FK→Receta. recetaId pre-validado en findFirst arriba.
       await prisma.recetaIngrediente.deleteMany({ where: { recetaId: id } });
       // eslint-disable-next-line no-restricted-properties -- RecetaIngrediente createMany scoped por recetaId del tenant.
       await prisma.recetaIngrediente.createMany({
