@@ -5,6 +5,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { getConstructionMode, setConstructionMode } from "@/lib/store-construction-mode";
 import { resolveStoreSlugForTenant } from "@/lib/store-tenant-bridge";
 import { logger } from "@/lib/logger";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * GET/PUT /api/admin/marketplace/store-construction
@@ -44,6 +45,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 

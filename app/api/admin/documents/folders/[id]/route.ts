@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 
 const PatchBody = z.object({
@@ -17,6 +18,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function PATCH(req: NextRequest, ctx: Ctx) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:folders:patch");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -40,6 +43,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 export async function DELETE(req: NextRequest, ctx: Ctx) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:folders:delete");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

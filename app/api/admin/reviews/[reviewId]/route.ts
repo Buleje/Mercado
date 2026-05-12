@@ -5,6 +5,7 @@ import { ReviewsMarketplaceDB, type ReviewStatus } from "@/lib/db/reviews.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * PATCH /api/admin/reviews/[reviewId]
@@ -37,6 +38,8 @@ export async function PATCH(
   { params }: { params: Promise<{ reviewId: string }> },
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-reviews-X"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

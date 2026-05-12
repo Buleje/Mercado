@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { getSignedUrl, deleteFromStorage } from "@/lib/documents/storage";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 
 const PatchBody = z.object({
@@ -21,6 +22,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function GET(req: NextRequest, ctx: Ctx) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:get");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -42,6 +45,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 export async function PATCH(req: NextRequest, ctx: Ctx) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:patch");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -96,6 +101,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 export async function DELETE(req: NextRequest, ctx: Ctx) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:delete");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

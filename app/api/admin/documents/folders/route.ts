@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 
 const CreateBody = z.object({
@@ -15,6 +16,8 @@ const CreateBody = z.object({
 export async function GET(req: NextRequest) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:folders:list");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -25,6 +28,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:folders:create");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

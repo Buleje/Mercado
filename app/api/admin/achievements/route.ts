@@ -21,6 +21,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { logger } from "@/lib/logger";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const PutBodySchema = z.object({
   achievements: z.record(z.string(), z.string()),
@@ -29,6 +30,8 @@ const PutBodySchema = z.object({
 export async function GET(req: NextRequest) {
   const _rl = applyRateLimit(req, "GENEROUS", "achievements-get");
   if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
 
   const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;
@@ -52,6 +55,8 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const _rl = applyRateLimit(req, "MODERATE", "achievements-put");
   if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
 
   const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;

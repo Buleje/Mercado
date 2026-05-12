@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * GET /api/admin/cron-dead-letters
@@ -68,6 +69,8 @@ export async function GET(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-cron-dead-letters"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   // BUG-FIX (audit 2026-05-05): SUPERADMIN-ONLY — ver comentario en GET
   const auth = await requireAdmin(req, ["superadmin"]);
   if (auth instanceof NextResponse) return auth;

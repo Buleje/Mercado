@@ -3,6 +3,7 @@ import { logger } from "@/lib/logger";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 
 type Ctx = { params: Promise<{ shareId: string }> };
@@ -10,6 +11,8 @@ type Ctx = { params: Promise<{ shareId: string }> };
 export async function DELETE(req: NextRequest, ctx: Ctx) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:share:revoke");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

@@ -9,6 +9,7 @@ import {
   uploadToStorage,
 } from "@/lib/documents/storage";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -16,6 +17,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function GET(req: NextRequest, ctx: Ctx) {
   const rl = await applyRateLimit(req, "MODERATE", "documents:versions:list");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -27,6 +30,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 export async function POST(req: NextRequest, ctx: Ctx) {
   const rl = await applyRateLimit(req, "STRICT", "documents:version:upload");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

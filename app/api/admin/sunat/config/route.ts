@@ -5,12 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 // ── GET /api/admin/sunat/config — obtener config SUNAT del tenant ──────────
 
 export async function GET(req: NextRequest) {
   const rateLimitResponse = applyRateLimit(req, "MODERATE", "sunat-config");
   if (rateLimitResponse) return rateLimitResponse;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
 
   const traceId = newTraceId();
   try {
@@ -60,6 +63,8 @@ const ConfigSchema = z.object({
 export async function PUT(req: NextRequest) {
   const rateLimitResponse = applyRateLimit(req, "MODERATE", "sunat-config");
   if (rateLimitResponse) return rateLimitResponse;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
 
   const traceId = newTraceId();
   try {

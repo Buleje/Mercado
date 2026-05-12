@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { DeliveryTrackingDB, type DeliveryStatus, type DeliveryActorType } from "@/lib/db/delivery.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const StatusSchema = z.enum([
   "preparing",
@@ -38,6 +39,8 @@ const AddBody = z.object({
  * Roles: admin, cajero, delivery, almacenero.
  */
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero", "delivery", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 

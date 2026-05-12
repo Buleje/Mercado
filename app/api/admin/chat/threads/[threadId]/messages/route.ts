@@ -5,6 +5,7 @@ import { ChatMessagesDB, type MessageType } from "@/lib/db/chat.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const MessageTypeSchema = z.enum([
   "text",
@@ -30,6 +31,8 @@ export async function POST(
   { params }: { params: Promise<{ threadId: string }> },
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-chat-threads-X-messages"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

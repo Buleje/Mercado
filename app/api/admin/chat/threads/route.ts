@@ -5,6 +5,7 @@ import { ChatThreadsDB, type ThreadStatus } from "@/lib/db/chat.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const StatusSchema = z.enum(["open", "closed", "archived", "blocked"]);
 
@@ -60,6 +61,8 @@ export async function GET(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-chat-threads"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 

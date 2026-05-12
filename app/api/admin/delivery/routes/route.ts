@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { DeliveryRoutesDB, type RouteStatus } from "@/lib/db/delivery.db";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const RouteStatusSchema = z.enum(["planned", "in_progress", "completed", "cancelled"]);
 
@@ -28,6 +29,8 @@ const PatchBody = z.object({
  * Crear una ruta del día para un repartidor.
  */
 export async function POST(req: NextRequest) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -112,6 +115,8 @@ export async function GET(req: NextRequest) {
  * Cambiar el status de una ruta existente.
  */
 export async function PATCH(req: NextRequest) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "cajero", "delivery"]);
   if (auth instanceof NextResponse) return auth;
 

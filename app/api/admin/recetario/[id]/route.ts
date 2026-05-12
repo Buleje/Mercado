@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const IngredienteSchema = z.object({
   nombre: z.string().min(1),
@@ -56,6 +57,8 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
 // PATCH: update a recetario recipe
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-recetario-X"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   
@@ -120,6 +123,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 // DELETE: delete a recetario recipe (marks inactive or hard delete)
 export async function DELETE(_req: NextRequest, { params }: RouteParams) {
   const _rl = await applyRateLimit(_req, "MODERATE", "admin-recetario-X"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(_req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(_req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
   

@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const LogErrorSchema = z.object({
   error: z.string().max(2000),
@@ -18,6 +19,8 @@ const LogErrorSchema = z.object({
 
 export async function POST(req: Request) {
   const _rl = await applyRateLimit(req, "STRICT", "admin-log-error"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   try {
     const body = await req.json().catch(() => ({}));
     const parsed = LogErrorSchema.safeParse(body);

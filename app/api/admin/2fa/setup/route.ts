@@ -19,11 +19,14 @@ import { generateTotpSecret, buildOtpauthUri } from "@/lib/auth/totp";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const ISSUER = "Buleje";
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-2fa-setup"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   // 1. Auth — solo rol "admin" puede configurar su propio 2FA
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

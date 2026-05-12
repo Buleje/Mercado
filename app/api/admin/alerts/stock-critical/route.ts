@@ -5,6 +5,7 @@ import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 const bodySchema = z.object({
   /** fuerza recorrer todos los productos aunque no estén críticos */
@@ -27,6 +28,8 @@ const bodySchema = z.object({
  */
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "admin-alerts-stock-critical"); if (_rl) return _rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   try {
     const admin = await requireAdmin(req, ["owner", "admin", "manager"]);
     if (admin instanceof NextResponse) return admin;

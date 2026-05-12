@@ -5,6 +5,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { getCategoryOrder, setCategoryOrder } from "@/lib/store-category-order";
 import { resolveStoreSlugForTenant } from "@/lib/store-tenant-bridge";
 import { logger } from "@/lib/logger";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 /**
  * GET/PUT /api/admin/marketplace/category-order
@@ -37,6 +38,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 

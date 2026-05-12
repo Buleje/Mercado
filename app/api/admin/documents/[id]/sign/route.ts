@@ -10,6 +10,7 @@ import {
   uploadToStorage,
 } from "@/lib/documents/storage";
 import { signPdfVisually } from "@/lib/documents/pdf-signer";
+import { assertCsrf } from "@/lib/auth/csrf";
 
 
 const SignBody = z.object({
@@ -23,6 +24,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function POST(req: NextRequest, ctx: Ctx) {
   const rl = await applyRateLimit(req, "STRICT", "documents:sign");
   if (rl) return rl;
+  const csrfFail = assertCsrf(req);
+  if (csrfFail) return csrfFail;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
