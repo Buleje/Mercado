@@ -186,6 +186,11 @@ const eslintConfig = defineConfig([
   // key.name === "tenantId" en el ObjectExpression del where. Si la query
   // es legítimamente cross-tenant (cron global, superadmin platform), el
   // path debe estar en `ignores`.
+  //
+  // STATUS 2026-05-11: 34 violaciones detectadas en codebase legacy. Mantener
+  // como `warn` hasta llegar a 0 — entonces subir a `error` para enforce.
+  // Plan de cleanup: lock-and-progress (mismo patrón que PRISMA_DIRECT_LEGACY).
+  // Nuevos PRs no deberían agregar más violaciones (CI muestra warning).
   // ────────────────────────────────────────────────────────────────────────────
   {
     files: ["app/**/*.ts", "app/**/*.tsx", "lib/**/*.ts", "components/**/*.ts"],
@@ -214,6 +219,30 @@ const eslintConfig = defineConfig([
             "CallExpression[callee.object.object.name='prisma'][callee.property.name=/^(deleteMany|updateMany)$/] > ObjectExpression > Property[key.name='where'] > ObjectExpression:not(:has(> Property[key.name='tenantId']))",
           message:
             "MULTI-TENANT (CRIT-1 zone): deleteMany/updateMany debe incluir `tenantId` literal en el WHERE. Sin ese guard, una sola query puede borrar rows de TODOS los tenants. Si la query ES legítimamente cross-tenant (cron platform, webhook), añadir el archivo a `ignores` en eslint.config.mjs con justificación.",
+        },
+      ],
+    },
+  },
+  // Critical zone — admin endpoints destructivos: la regla SUBE A ERROR
+  // (zero-tolerance). Estos paths SON los que reventaron en CRIT-1.
+  // Si querés agregar un nuevo deleteMany/updateMany acá sin tenantId,
+  // debe ir con eslint-disable + comment justificando con ADR-101.
+  //
+  // STATUS 2026-05-11:
+  //   - demo-products: clean (cerrado por audit CRIT-1)
+  //   - clear-data, import-data, seed-data: ~20 deleteMany legacy sin
+  //     tenantId. Pendiente cleanup en sprint próximo. Mantener fuera de
+  //     la error-zone hasta entonces para no romper CI.
+  {
+    files: ["app/api/admin/demo-products/**"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.object.object.name='prisma'][callee.property.name=/^(deleteMany|updateMany)$/] > ObjectExpression > Property[key.name='where'] > ObjectExpression:not(:has(> Property[key.name='tenantId']))",
+          message:
+            "CRITICAL ZONE (CRIT-1): deleteMany/updateMany sin tenantId en este path PROHIBIDO. Estos endpoints son destrucción de datos masiva — el guard tenantId es zero-tolerance. Si necesitas borrar modelos indirectos (ADR-101), pre-filtrar los IDs por tenant primero y agregar eslint-disable-next-line con justificación + referencia al ADR.",
         },
       ],
     },
