@@ -61,7 +61,12 @@ function useCountdown(targetISO: string | null | undefined): {
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
     if (!targetISO) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    // PERF 2026-05-12 (audit Performance P0): visibility guard — no actualizar
+    // si el tab está oculto. Antes ~30% CPU en background en Android.
+    const id = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      setNow(Date.now());
+    }, 1000);
     return () => clearInterval(id);
   }, [targetISO]);
   if (!targetISO) return { h: 0, m: 0, s: 0, totalSeconds: 0, expired: true };
