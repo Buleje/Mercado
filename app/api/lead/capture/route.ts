@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { LeadsDB } from "@/lib/db/leads.db";
 
 const LeadSchema = z.object({
   name: z.string().min(2).max(80),
@@ -92,8 +93,25 @@ export async function POST(req: NextRequest) {
       }).catch((err) => logger.warn("[lead-capture] telegram notify failed", { err: String(err) }));
     }
 
-    // Persistir en DB cuando exista Lead model — placeholder por ahora
-    // TODO: prisma.lead.create con el schema cuando se agregue la migration
+    // Persistir lead via LeadsDB (CEO funnel tracking 2026-05-12).
+    // Wrapper cumple regla #1 CLAUDE.md (no prisma.* directo en routes).
+    // Fire-and-forget — si falla, el lead aún llega por Telegram + log estructurado.
+    LeadsDB.capture("main", {
+      name: lead.name,
+      whatsapp: lead.whatsapp,
+      businessType: lead.businessType,
+      businessName: lead.businessName,
+      city: lead.city,
+      monthlyRevenue: lead.monthlyRevenuePEN,
+      painPoint: lead.painPoint,
+      preferredDemoTime: lead.preferredDemoTime,
+      source: lead.source,
+      ref: lead.ref,
+      ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+      userAgent: req.headers.get("user-agent") ?? null,
+    }).catch(() => {
+      /* LeadsDB.capture catches internally; this is just defense in depth */
+    });
 
     return NextResponse.json({
       ok: true,

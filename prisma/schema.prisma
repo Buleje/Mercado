@@ -4228,13 +4228,13 @@ model EventDeadLetter {
 // Permite que el panel admin se especialice por tipo de negocio.
 // Default: bodega — todos los tenants actuales quedan en este valor.
 enum Industry {
-  bodega      // minimarket / abarrotes — default
+  bodega // minimarket / abarrotes — default
   restaurante // mesas, cocina, comanda
-  madereria   // pietaje, cubicación, GuiaRemision SUNAT
-  farmacia    // batch FEFO estricto, recetas médicas
-  ferreteria  // catálogo extenso, ventas B2B
-  panaderia   // produccion lote, recetas
-  otro        // genérico / custom
+  madereria // pietaje, cubicación, GuiaRemision SUNAT
+  farmacia // batch FEFO estricto, recetas médicas
+  ferreteria // catálogo extenso, ventas B2B
+  panaderia // produccion lote, recetas
+  otro // genérico / custom
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
