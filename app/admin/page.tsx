@@ -257,8 +257,9 @@ function AdminPage() {
       {/* ADR-084: cuenta regresiva del trial — visible solo si plan=free + trial activo */}
       <TrialCountdownBannerLoader />
 
-      {/* ADR-087: alertas operativas (solicitudes pendientes, pedidos sin partner) */}
-      <AdminAlertsBanner />
+      {/* AdminAlertsBanner se renderiza DENTRO del shell con margin sidebar
+          (más abajo) para que respete el ancho del contenido y no quede
+          tapado por el sidebar fixed de 260px. */}
 
       {/* AdminImpersonationBanner removido — el chip tenant del topbar
           ya indica el negocio administrado. Salir de impersonation se
@@ -313,6 +314,10 @@ function AdminPage() {
           : sidebarConfigMode ? "sm:ml-[660px]"
           : "sm:ml-[260px]",
       )}>
+        {/* ADR-087: alertas operativas — adentro del shell para respetar
+            el margin del sidebar fixed (260px / 60px compact / 660px config). */}
+        <AdminAlertsBanner />
+
         <AdminTopHeader
           presentationMode={presentationMode}
           isSuperAdminImpersonating={isSuperAdminImpersonating}

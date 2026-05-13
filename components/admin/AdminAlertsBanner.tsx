@@ -193,7 +193,7 @@ export default function AdminAlertsBanner() {
           : "bg-[var(--data-warning-50)]/95 border-[var(--data-warning-200,#fde68a)]",
       )}
     >
-      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5">
+      <div className="px-4 sm:px-6 py-3 sm:py-3.5">
         {/* Header strip */}
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="inline-flex items-center gap-2 min-w-0">
