@@ -26,6 +26,8 @@ import {
   Bike,
   Users,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
   X,
   Bell,
   type LucideIcon,
@@ -85,6 +87,7 @@ export default function AdminAlertsBanner() {
   const router = useRouter();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState(false);
 
   // Hidratar dismissed desde localStorage en mount
   useEffect(() => {
@@ -182,90 +185,153 @@ export default function AdminAlertsBanner() {
   const urgentCount = alerts.filter((a) => a.severity === "urgent").length;
   const headerTone = urgentCount > 0 ? "urgent" : "warning";
 
+  const first = alerts[0];
+  const FirstIcon = first.icon;
+  const toneFg =
+    headerTone === "urgent"
+      ? "text-[var(--data-error-700,#b91c1c)]"
+      : "text-[var(--data-warning-700)]";
+  const toneBg =
+    headerTone === "urgent"
+      ? "bg-[var(--data-error-50,#fef2f2)] border-[var(--data-error-200,#fecaca)]"
+      : "bg-[var(--data-warning-50)] border-[var(--data-warning-200,#fde68a)]";
+  const ctaCls =
+    headerTone === "urgent"
+      ? "bg-[var(--data-error-600,#dc2626)] hover:bg-[var(--data-error-700,#b91c1c)] text-white"
+      : "bg-[var(--data-warning-600,var(--data-warning-500))] hover:bg-[var(--data-warning-700)] text-white";
+
   return (
     <div
       role="region"
       aria-label="Alertas del administrador"
-      className={cn(
-        "sticky top-0 z-40 backdrop-blur-md border-b",
-        headerTone === "urgent"
-          ? "bg-[var(--data-error-50,#fef2f2)]/95 border-[var(--data-error-200,#fecaca)]"
-          : "bg-[var(--data-warning-50)]/95 border-[var(--data-warning-200,#fde68a)]",
-      )}
+      className={cn("border-b", toneBg)}
     >
-      <div className="px-4 sm:px-6 py-3 sm:py-3.5">
-        {/* Header strip */}
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="inline-flex items-center gap-2 min-w-0">
-            <span
-              aria-hidden
-              className={cn(
-                "relative inline-flex h-2.5 w-2.5",
-                headerTone === "urgent" ? "" : "opacity-90",
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute inline-flex h-full w-full rounded-full opacity-70 animate-ping",
-                  headerTone === "urgent"
-                    ? "bg-[var(--data-error-500,#ef4444)]"
-                    : "bg-[var(--data-warning-500)]",
-                )}
+      {/* Fila compacta — misma altura aprox que AdminTopHeader (h-10 ~ 40px) */}
+      <div className="px-4 sm:px-6 h-10 flex items-center gap-2 sm:gap-3 min-w-0">
+        {/* Dot animado + bell — micro indicador */}
+        <span aria-hidden className="relative inline-flex h-2 w-2 shrink-0">
+          <span
+            className={cn(
+              "absolute inline-flex h-full w-full rounded-full opacity-70 animate-ping",
+              headerTone === "urgent"
+                ? "bg-[var(--data-error-500,#ef4444)]"
+                : "bg-[var(--data-warning-500)]",
+            )}
+          />
+          <span
+            className={cn(
+              "relative inline-flex h-2 w-2 rounded-full",
+              headerTone === "urgent"
+                ? "bg-[var(--data-error-600,#dc2626)]"
+                : "bg-[var(--data-warning-600,var(--data-warning-500))]",
+            )}
+          />
+        </span>
+        <Bell className={cn("h-4 w-4 shrink-0", toneFg)} strokeWidth={2.5} />
+
+        {/* Counter pill */}
+        <span
+          className={cn(
+            "text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0",
+            toneFg,
+          )}
+        >
+          {alerts.length} {alerts.length === 1 ? "alerta" : "alertas"}
+        </span>
+
+        {/* Separador + primera alerta inline (resumen) */}
+        <span aria-hidden className={cn("hidden sm:inline shrink-0 opacity-50", toneFg)}>
+          ·
+        </span>
+        <FirstIcon
+          className={cn("hidden sm:inline-block h-3.5 w-3.5 shrink-0", toneFg)}
+          strokeWidth={2.25}
+        />
+        <p
+          className={cn(
+            "hidden sm:block text-sm font-semibold truncate min-w-0 flex-1",
+            toneFg,
+          )}
+          title={first.label}
+        >
+          {first.label}
+        </p>
+
+        {/* CTA primera alerta */}
+        <button
+          type="button"
+          onClick={() => router.push(first.href)}
+          className={cn(
+            "shrink-0 inline-flex items-center gap-1 h-7 px-3 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider transition-all hover:gap-1.5",
+            ctaCls,
+          )}
+        >
+          {first.cta}
+          <ArrowRight className="h-3 w-3" strokeWidth={2.75} aria-hidden />
+        </button>
+
+        {/* Expandir si hay más alertas */}
+        {alerts.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider border transition-colors",
+              headerTone === "urgent"
+                ? "border-[var(--data-error-300,#fca5a5)] text-[var(--data-error-700,#b91c1c)] hover:bg-[var(--data-error-100,#fee2e2)]"
+                : "border-[var(--data-warning-300,#fcd34d)] text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",
+            )}
+          >
+            +{alerts.length - 1}
+            {expanded ? (
+              <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
+            ) : (
+              <ChevronDown className="h-3 w-3" strokeWidth={2.5} />
+            )}
+          </button>
+        )}
+
+        {/* Close primera alerta */}
+        <button
+          type="button"
+          onClick={() => handleDismiss(first.id)}
+          aria-label={`Descartar: ${first.label}`}
+          className={cn(
+            "shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+            headerTone === "urgent"
+              ? "text-[var(--data-error-700,#b91c1c)] hover:bg-[var(--data-error-100,#fee2e2)]"
+              : "text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",
+          )}
+        >
+          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </button>
+      </div>
+
+      {/* Expandido: resto de alertas como cards compactas (drawer dentro del banner) */}
+      {expanded && alerts.length > 1 && (
+        <div className="px-4 sm:px-6 pb-3">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {alerts.slice(1).map((a) => (
+              <AlertCard
+                key={a.id}
+                alert={a}
+                onAction={() => router.push(a.href)}
+                onDismiss={() => handleDismiss(a.id)}
               />
-              <span
-                className={cn(
-                  "relative inline-flex h-2.5 w-2.5 rounded-full",
-                  headerTone === "urgent"
-                    ? "bg-[var(--data-error-600,#dc2626)]"
-                    : "bg-[var(--data-warning-600,var(--data-warning-500))]",
-                )}
-              />
-            </span>
-            <Bell
-              className={cn(
-                "h-4 w-4 shrink-0",
-                headerTone === "urgent"
-                  ? "text-[var(--data-error-700,#b91c1c)]"
-                  : "text-[var(--data-warning-700)]",
-              )}
-              strokeWidth={2.5}
-            />
-            <p
-              className={cn(
-                "text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] truncate",
-                headerTone === "urgent"
-                  ? "text-[var(--data-error-700,#b91c1c)]"
-                  : "text-[var(--data-warning-700)]",
-              )}
-            >
-              Necesita tu atención · {alerts.length}{" "}
-              {alerts.length === 1 ? "alerta" : "alertas"}
-            </p>
-          </div>
-          {alerts.length > 1 && (
+            ))}
+          </ul>
+          {alerts.length > 2 && (
             <button
               type="button"
               onClick={() => alerts.forEach((a) => handleDismiss(a.id))}
-              className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors uppercase tracking-wider"
-              aria-label="Descartar todas las alertas"
+              className="mt-2 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors uppercase tracking-wider"
             >
               Descartar todas
             </button>
           )}
         </div>
-
-        {/* Lista de alertas — cards independientes */}
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-          {alerts.map((a) => (
-            <AlertCard
-              key={a.id}
-              alert={a}
-              onAction={() => router.push(a.href)}
-              onDismiss={() => handleDismiss(a.id)}
-            />
-          ))}
-        </ul>
-      </div>
+      )}
     </div>
   );
 }
