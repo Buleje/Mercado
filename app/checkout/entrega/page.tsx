@@ -13,7 +13,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,6 +21,7 @@ import {
   StickyNote,
   Wallet,
   Smartphone,
+  Landmark,
   CheckCircle2,
   Tag,
   Sparkles,
@@ -36,6 +37,11 @@ import PaymentMethodCard from "@/components/marketplace/checkout/PaymentMethodCa
 import AddressPicker from "@/components/marketplace/checkout/AddressPicker";
 import { LocationConfirmModal } from "@/components/checkout/parts/LocationConfirmModal";
 import {
+  PaymentProofModal,
+  type PaymentProofMethod,
+  type PaymentProofModalConfig,
+} from "@/components/checkout/PaymentProofModal";
+import {
   CheckoutTransitionOverlay,
   useCheckoutTransition,
 } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
@@ -50,7 +56,7 @@ type UbigeoEntry = { code: string; nombre: string };
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
-type PaymentMethod = "efectivo" | "yape" | "plin";
+type PaymentMethod = "efectivo" | "yape" | "plin" | "transfer";
 
 const PAYMENT_METHODS: Array<{
   key: PaymentMethod;
@@ -79,7 +85,33 @@ const PAYMENT_METHODS: Array<{
     Icon: Smartphone,
     brandColor: "#1f86c7",
   },
+  {
+    key: "transfer",
+    label: "Transferencia",
+    hint: "Bancaria · sube tu voucher",
+    Icon: Landmark,
+    brandColor: "#059669",
+  },
 ];
+
+// ── Config pública de pagos por tienda ─────────────────────────────────────
+// Devuelto por GET /api/marketplace/storefront/payment-config?stores=...
+type StorePaymentMethodEntry = {
+  key: PaymentMethod;
+  enabled: boolean;
+  yape?: { image?: string; name?: string; phone?: string };
+  plin?: { image?: string; name?: string; phone?: string };
+  transfer?: {
+    bankName?: string;
+    accountNumber?: string;
+    accountHolder?: string;
+  };
+};
+type StorePaymentConfig = {
+  storeSlug: string;
+  storeName?: string;
+  methods: StorePaymentMethodEntry[];
+};
 
 // ── Labels y pills compartidos ─────────────────────────────────────────────
 function Label({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
@@ -155,10 +187,12 @@ export default function CheckoutEntregaPage() {
     payment,
     coupons,
     loyalty,
+    paymentProofs,
     setAddress,
     setPayment,
     setCouponForStore,
     setLoyalty,
+    setStoreProof,
     isAddressValid,
     isCustomerValid,
     couponDiscountTotal,
@@ -191,6 +225,18 @@ export default function CheckoutEntregaPage() {
   const [departamentos, setDepartamentos] = useState<UbigeoEntry[]>([]);
   const [provincias, setProvincias] = useState<UbigeoEntry[]>([]);
   const [distritos, setDistritos] = useState<UbigeoEntry[]>([]);
+
+  // ── Config de pagos por tienda (multi-vendor) ──────────────────────
+  // Cargada al montar desde /api/marketplace/storefront/payment-config.
+  // Cada tienda del carrito tiene sus propios métodos habilitados +
+  // datos públicos (QR/cuenta). El cliente elige UN método global; el
+  // modal de comprobante se abre por cada tienda no-efectivo.
+  const [paymentConfigs, setPaymentConfigs] = useState<Record<string, StorePaymentConfig>>({});
+  const [paymentConfigsLoading, setPaymentConfigsLoading] = useState(false);
+  const [activeProofModal, setActiveProofModal] = useState<{
+    storeSlug: string;
+    method: PaymentProofMethod;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -240,6 +286,41 @@ export default function CheckoutEntregaPage() {
       });
     return () => { cancelled = true; };
   }, [address.departmentCode, address.provinceCode]);
+
+  // Fetch de config de pago por tienda. Se dispara al hidratar el carrito.
+  const storeSlugsCsv = Object.values(byStore)
+    .map((g) => g.storeSlug)
+    .filter(Boolean)
+    .sort()
+    .join(",");
+
+  useEffect(() => {
+    if (!storeSlugsCsv) {
+      setPaymentConfigs({});
+      return;
+    }
+    let cancelled = false;
+    setPaymentConfigsLoading(true);
+    fetch(
+      `/api/marketplace/storefront/payment-config?stores=${encodeURIComponent(storeSlugsCsv)}`,
+    )
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data: { stores: StorePaymentConfig[] }) => {
+        if (cancelled) return;
+        const map: Record<string, StorePaymentConfig> = {};
+        for (const s of data.stores ?? []) map[s.storeSlug] = s;
+        setPaymentConfigs(map);
+      })
+      .catch(() => {
+        if (!cancelled) setPaymentConfigs({});
+      })
+      .finally(() => {
+        if (!cancelled) setPaymentConfigsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [storeSlugsCsv]);
 
   // Multi-address picker: direcciones guardadas de compras anteriores
   const { addresses: savedAddresses, removeAddress } = useSavedAddresses();
@@ -572,14 +653,107 @@ export default function CheckoutEntregaPage() {
     return () => ctrl.abort();
   }, [customer.phone]);
 
+  // ── Métodos de pago disponibles (intersección de tiendas) ──────────
+  // Un método aparece como "elegible" si AL MENOS una tienda del carrito
+  // lo tiene habilitado. Si el cliente elige un método que solo está
+  // disponible en N de las M tiendas, las M-N restantes deberán pagar
+  // contra-entrega (efectivo) — esto se visualiza en un aviso por tienda.
+  const availableMethods = useMemo<PaymentMethod[]>(() => {
+    if (Object.keys(paymentConfigs).length === 0) {
+      // Fallback: si aún no se cargó la config, mostramos todos.
+      return PAYMENT_METHODS.map((m) => m.key);
+    }
+    const set = new Set<PaymentMethod>();
+    for (const cfg of Object.values(paymentConfigs)) {
+      for (const m of cfg.methods) {
+        if (m.enabled) set.add(m.key);
+      }
+    }
+    // Efectivo siempre disponible como fallback
+    set.add("efectivo");
+    return PAYMENT_METHODS.filter((m) => set.has(m.key)).map((m) => m.key);
+  }, [paymentConfigs]);
+
+  // Tiendas que requieren comprobante para el método elegido (no efectivo).
+  const storesNeedingProof = useMemo(() => {
+    if (payment.method === "efectivo") return [] as Array<{
+      storeSlug: string;
+      storeName: string;
+      amount: number;
+      methodAvailable: boolean;
+    }>;
+    return Object.entries(byStore).map(([sid, g]) => {
+      const cfg = paymentConfigs[g.storeSlug];
+      const methodEntry = cfg?.methods.find(
+        (m) => m.key === payment.method && m.enabled,
+      );
+      return {
+        storeSlug: g.storeSlug,
+        storeName: g.storeName,
+        amount: totalByStore[sid]?.total ?? 0,
+        methodAvailable: Boolean(methodEntry),
+      };
+    });
+  }, [byStore, totalByStore, paymentConfigs, payment.method]);
+
+  const allProofsReady =
+    payment.method === "efectivo" ||
+    storesNeedingProof.every((s) =>
+      !s.methodAvailable ? true : Boolean(paymentProofs[s.storeSlug]),
+    );
+
+  const handleProofConfirmed = useCallback(
+    (
+      storeSlug: string,
+      method: PaymentProofMethod,
+      data: { proofUrl: string; proofToken: string; reference?: string },
+    ) => {
+      setStoreProof(storeSlug, {
+        method,
+        proofUrl: data.proofUrl,
+        proofToken: data.proofToken,
+        reference: data.reference,
+      });
+      setActiveProofModal(null);
+    },
+    [setStoreProof],
+  );
+
+  // Si el cliente cambia el método global, los proofs subidos para el
+  // método anterior dejan de ser válidos. Los limpiamos para evitar
+  // confusiones (el token del proof está atado al método).
+  useEffect(() => {
+    for (const [slug, p] of Object.entries(paymentProofs)) {
+      if (p.method !== payment.method) {
+        setStoreProof(slug, null);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payment.method]);
+
+  const buildProofModalConfig = useCallback(
+    (storeSlug: string): PaymentProofModalConfig => {
+      const cfg = paymentConfigs[storeSlug];
+      const entry = cfg?.methods.find((m) => m.key === payment.method);
+      if (!entry) return {};
+      return {
+        yape: entry.yape,
+        plin: entry.plin,
+        transfer: entry.transfer,
+      };
+    },
+    [paymentConfigs, payment.method],
+  );
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       setTouched(true);
       if (!isAddressValid) return;
+      if (!allProofsReady) return;
       navigateTo("/checkout/confirmar", "Preparando tu resumen");
     },
-    [isAddressValid, navigateTo],
+    [isAddressValid, allProofsReady, navigateTo],
   );
 
   const validateCoupon = useCallback(
@@ -886,20 +1060,48 @@ export default function CheckoutEntregaPage() {
 
           {/* ── PAGO ──────────────────────────────────────────────── */}
           <SectionBox kicker="Método de pago" title="¿Cómo te queda más cómodo?" icon={Wallet}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {PAYMENT_METHODS.map(({ key, label, hint, Icon, brandColor }) => (
-                <PaymentMethodCard
-                  key={key}
-                  id={key}
-                  name={label}
-                  subtitle={hint}
-                  icon={Icon}
-                  brandColor={brandColor}
-                  selected={payment.method === key}
-                  onSelect={() => setPayment({ method: key })}
-                />
-              ))}
-            </div>
+            {paymentConfigsLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-24 rounded-2xl bg-[var(--surface-sunken)] animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "grid grid-cols-1 gap-3",
+                  availableMethods.length === 1 && "sm:grid-cols-1",
+                  availableMethods.length === 2 && "sm:grid-cols-2",
+                  availableMethods.length === 3 && "sm:grid-cols-3",
+                  availableMethods.length >= 4 && "sm:grid-cols-2 lg:grid-cols-4",
+                )}
+              >
+                {PAYMENT_METHODS.filter((m) => availableMethods.includes(m.key)).map(
+                  ({ key, label, hint, Icon, brandColor }) => (
+                    <PaymentMethodCard
+                      key={key}
+                      id={key}
+                      name={label}
+                      subtitle={hint}
+                      icon={Icon}
+                      brandColor={brandColor}
+                      selected={payment.method === key}
+                      onSelect={() => setPayment({ method: key })}
+                    />
+                  ),
+                )}
+              </div>
+            )}
+
+            {!paymentConfigsLoading && availableMethods.length === 1 && (
+              <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                Las tiendas de tu carrito solo aceptan efectivo contra-entrega
+                por ahora.
+              </p>
+            )}
 
             {payment.method === "efectivo" && (
               <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5 space-y-3">
@@ -946,16 +1148,98 @@ export default function CheckoutEntregaPage() {
               </div>
             )}
 
-            {(payment.method === "yape" || payment.method === "plin") && (
-              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-relaxed">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
-                  ¿Cómo funciona?
+            {payment.method !== "efectivo" && storesNeedingProof.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  Comprobante por tienda
                 </p>
-                <ol className="list-decimal pl-5 space-y-1 marker:text-[var(--accent)] marker:font-bold">
-                  <li>Confirmá tu pedido en la siguiente página.</li>
-                  <li>El vendedor te enviará su número de {payment.method === "yape" ? "Yape" : "Plin"} por WhatsApp.</li>
-                  <li>Transferí el monto exacto y manda el comprobante.</li>
-                </ol>
+                {storesNeedingProof.map((s) => {
+                  const proof = paymentProofs[s.storeSlug];
+                  const cfg = paymentConfigs[s.storeSlug];
+                  const methodLabel =
+                    payment.method === "yape"
+                      ? "Yape"
+                      : payment.method === "plin"
+                        ? "Plin"
+                        : "Transferencia";
+                  if (!s.methodAvailable) {
+                    return (
+                      <div
+                        key={s.storeSlug}
+                        className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warn-500)]/30 bg-[var(--data-warn-500)]/10 p-4"
+                      >
+                        <AlertCircle
+                          className="h-5 w-5 text-[var(--data-warn-500)] shrink-0 mt-0.5"
+                          strokeWidth={2}
+                        />
+                        <div className="text-sm text-[var(--text-primary)]">
+                          <p className="font-bold">{s.storeName}</p>
+                          <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mt-1">
+                            Esta tienda no acepta {methodLabel}. Va a quedar
+                            como efectivo contra-entrega.
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <button
+                      key={s.storeSlug}
+                      type="button"
+                      onClick={() =>
+                        setActiveProofModal({
+                          storeSlug: s.storeSlug,
+                          method: payment.method as PaymentProofMethod,
+                        })
+                      }
+                      className={cn(
+                        "w-full flex items-center justify-between gap-3 rounded-2xl border-2 p-4 text-left transition-all",
+                        proof
+                          ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5 hover:border-[var(--data-success-500)]"
+                          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                      )}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span
+                          className={cn(
+                            "shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-xl",
+                            proof
+                              ? "bg-[var(--data-success-500)] text-white"
+                              : "bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-tertiary)]",
+                          )}
+                        >
+                          {proof ? (
+                            <CheckCircle2 className="h-5 w-5" strokeWidth={2.5} />
+                          ) : payment.method === "transfer" ? (
+                            <Landmark className="h-5 w-5" strokeWidth={2} />
+                          ) : (
+                            <Smartphone className="h-5 w-5" strokeWidth={2} />
+                          )}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-base font-bold text-[var(--text-primary)] truncate">
+                            {s.storeName}
+                          </p>
+                          <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
+                            {proof
+                              ? `Pagado · ${methodLabel} · ${fmt(s.amount)}`
+                              : `${methodLabel} · ${fmt(s.amount)} — subir comprobante`}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={cn(
+                          "shrink-0 text-[length:var(--ts-xs)] font-bold px-3 py-1.5 rounded-full",
+                          proof
+                            ? "bg-[var(--data-success-500)] text-white"
+                            : "bg-[var(--accent)] text-white",
+                        )}
+                      >
+                        {proof ? "Cambiar" : "Pagar ahora"}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </SectionBox>
@@ -1191,7 +1475,7 @@ export default function CheckoutEntregaPage() {
           <div className="lg:hidden pt-2">
             <button
               type="submit"
-              disabled={!isAddressValid}
+              disabled={!isAddressValid || !allProofsReady}
               className={cn(
                 "group inline-flex w-full items-center justify-center gap-2 rounded-full px-6 h-12",
                 "text-[length:var(--ts-sm)] font-bold tracking-[var(--ls-tight)] transition-all duration-200",
@@ -1200,23 +1484,28 @@ export default function CheckoutEntregaPage() {
                 "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
               )}
             >
-              Revisar pedido
+              {!allProofsReady ? "Subí los comprobantes" : "Revisar pedido"}
               <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
             </button>
           </div>
         </form>
 
         <CheckoutSummary
-          ctaLabel="Revisar pedido"
+          ctaLabel={!allProofsReady ? "Subí los comprobantes" : "Revisar pedido"}
           onCtaClick={() => {
             setTouched(true);
-            if (isAddressValid) navigateTo("/checkout/confirmar", "Preparando tu resumen");
+            if (isAddressValid && allProofsReady)
+              navigateTo("/checkout/confirmar", "Preparando tu resumen");
           }}
-          ctaDisabled={!isAddressValid}
+          ctaDisabled={!isAddressValid || !allProofsReady}
           couponDiscount={couponDiscountTotal}
           loyaltyDiscount={loyaltyDiscountTotal}
           showItems
-          helperText="Un paso más para confirmar"
+          helperText={
+            !allProofsReady
+              ? "Falta subir el comprobante de pago"
+              : "Un paso más para confirmar"
+          }
         />
       </div>
       <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
@@ -1229,6 +1518,36 @@ export default function CheckoutEntregaPage() {
           initialAddress={mapInitial.address}
           loading={mapLoading}
           onConfirm={handleMapConfirm}
+        />
+      )}
+      {activeProofModal && (
+        <PaymentProofModal
+          open
+          storeSlug={activeProofModal.storeSlug}
+          storeName={
+            byStore[
+              Object.keys(byStore).find(
+                (id) => byStore[id]?.storeSlug === activeProofModal.storeSlug,
+              ) ?? ""
+            ]?.storeName ?? activeProofModal.storeSlug
+          }
+          method={activeProofModal.method}
+          amount={
+            storesNeedingProof.find(
+              (s) => s.storeSlug === activeProofModal.storeSlug,
+            )?.amount ?? 0
+          }
+          config={buildProofModalConfig(activeProofModal.storeSlug)}
+          initialProofUrl={paymentProofs[activeProofModal.storeSlug]?.proofUrl}
+          initialReference={paymentProofs[activeProofModal.storeSlug]?.reference}
+          onConfirm={(data) =>
+            handleProofConfirmed(
+              activeProofModal.storeSlug,
+              activeProofModal.method,
+              data,
+            )
+          }
+          onClose={() => setActiveProofModal(null)}
         />
       )}
     </>

@@ -69,6 +69,7 @@ export default function CheckoutConfirmarPage() {
     payment,
     coupons,
     loyalty,
+    paymentProofs,
     isCustomerValid,
     isAddressValid,
     couponDiscountTotal,
@@ -140,6 +141,8 @@ export default function CheckoutConfirmarPage() {
         const g = byStore[sid];
         const couponEntry = coupons[g.storeSlug];
         const redeemForThisStore = idx === 0 ? loyalty.redeemPoints || 0 : 0;
+        const storeProof = paymentProofs[g.storeSlug];
+        const storeSubtotal = totalByStore[sid]?.total ?? 0;
         const requestBody = {
           storeSlug: g.storeSlug,
           customerName: customer.name.trim(),
@@ -157,6 +160,16 @@ export default function CheckoutConfirmarPage() {
             retailPrice: i.price,
             unit: i.unit ?? "unidad",
           })),
+          ...(storeProof
+            ? {
+                paymentProof: {
+                  proofUrl: storeProof.proofUrl,
+                  proofToken: storeProof.proofToken,
+                  reference: storeProof.reference,
+                  amountPEN: storeSubtotal,
+                },
+              }
+            : {}),
         };
         return fetch("/api/marketplace/orders", {
           method: "POST",

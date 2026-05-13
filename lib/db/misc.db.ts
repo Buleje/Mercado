@@ -97,8 +97,10 @@ export type DbOrder = {
   totalCogs?: number;
   status: OrderStatus;
   notes?: string;
-  paymentMethod?: "yape" | "efectivo";
+  paymentMethod?: "yape" | "plin" | "transfer" | "efectivo";
   yapeOperationNumber?: string;
+  /** FK opcional a PaymentApproval — contiene la captura del Yape/Plin/Transferencia. */
+  paymentApprovalId?: string | null;
   /** true = efectivo order with pending debt (not yet collected) */
   deuda?: boolean;
   appliedCouponCode?: string;

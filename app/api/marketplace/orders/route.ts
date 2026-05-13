@@ -18,6 +18,12 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { cacheStore } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { verifyProofToken } from "@/app/api/marketplace/checkout/payment-proof/route";
+import {
+  getCustomerPayload,
+  CUSTOMER_SESSION,
+} from "@/lib/auth/customer-session";
+import { randomBytes } from "crypto";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -98,6 +104,13 @@ const CartItemSchema = z.object({
   unit:           z.string().max(20).optional().default("unidad"),
 });
 
+const PaymentProofSchema = z.object({
+  proofUrl: z.string().url().max(500),
+  proofToken: z.string().min(20).max(300),
+  reference: z.string().max(40).optional(),
+  amountPEN: z.number().min(0).max(100000),
+});
+
 const CheckoutBodySchema = z.object({
   storeSlug:       z.string().min(1).max(100),
   customerName:    z.string().min(2).max(100),
@@ -112,6 +125,12 @@ const CheckoutBodySchema = z.object({
   /** ISO timestamp opcional para reservar la entrega cuando la tienda
    *  está cerrada. Validado contra hoursJson de la tienda. Max 7 días futuro. */
   scheduledFor:    z.string().datetime().optional(),
+  /** Comprobante de pago (Yape/Plin/Transferencia). Cuando el cliente
+   *  paga manualmente, el frontend sube la captura via
+   *  /api/marketplace/checkout/payment-proof y recibe { proofUrl, proofToken }.
+   *  El token va firmado con HMAC para anti-tampering. Persistimos en
+   *  PaymentApproval.imageUrl y linkamos Order.paymentApprovalId. */
+  paymentProof:    PaymentProofSchema.optional(),
 });
 
 // ── POST /api/marketplace/orders — checkout del carrito del marketplace ─────────
@@ -166,7 +185,50 @@ export async function POST(req: NextRequest) {
       loyaltyRedeemPoints,
       items,
       scheduledFor,
+      paymentProof,
     } = parsed.data;
+
+    // ── Validación de comprobante (Yape/Plin/Transfer) ───────────────
+    // Si el cliente envió un paymentProof, requiere sesión de customer
+    // + token HMAC válido emitido por /api/marketplace/checkout/payment-proof.
+    // Sin esto, un atacante podría reusar un proofUrl ajeno.
+    let proofCustomerId: string | null = null;
+    if (paymentProof) {
+      const token = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+      const session = token ? await getCustomerPayload(token) : null;
+      if (!session) {
+        return NextResponse.json(
+          { error: "Necesitas iniciar sesión para subir un comprobante" },
+          { status: 401 },
+        );
+      }
+      proofCustomerId = session.customerId ?? session.email;
+      const method = (paymentMethod ?? "").toLowerCase();
+      if (method !== "yape" && method !== "plin" && method !== "transfer") {
+        return NextResponse.json(
+          { error: "paymentMethod debe ser yape/plin/transfer cuando se envía comprobante" },
+          { status: 400 },
+        );
+      }
+      const expectedCents = Math.round(paymentProof.amountPEN * 100);
+      const verify = verifyProofToken(paymentProof.proofToken, {
+        customerId: proofCustomerId,
+        storeSlug,
+        method,
+        amountCents: expectedCents,
+      });
+      if (!verify.ok) {
+        logger.warn("[marketplace/orders] proof token invalid", {
+          reason: verify.reason,
+          customerId: proofCustomerId,
+          storeSlug,
+        });
+        return NextResponse.json(
+          { error: "Comprobante inválido. Sube la captura nuevamente." },
+          { status: 400 },
+        );
+      }
+    }
 
     // F2: Idempotency-Key — revisar caché antes de procesar para evitar doble pedido.
     // Round 21 P0-3 fix (Bug Hunter): cubrir también pedidos anónimos.
@@ -254,6 +316,43 @@ export async function POST(req: NextRequest) {
           items,
         }),
     );
+
+    // ── Persistir PaymentApproval con la captura del comprobante ─────
+    // Yape/Plin/Transfer pagos manuales: el cliente subió la foto antes
+    // de confirmar. Acá la asociamos a la Order recién creada. El admin
+    // la revisa en /admin?tab=pedidos / /admin?tab=marketplace / superadmin.
+    if (paymentProof) {
+      try {
+        const method = (paymentMethod ?? "").toLowerCase();
+        const approvalId = `pa_${Date.now()}_${randomBytes(6).toString("hex")}`;
+        await prisma.paymentApproval.create({
+          data: {
+            id: approvalId,
+            tenantId: order.sellerTenantId,
+            customerPhone: order.customerPhone ?? customerPhone,
+            expectedAmount: order.total,
+            imageUrl: paymentProof.proofUrl,
+            yapeOpCode:
+              method === "yape" || method === "plin"
+                ? (paymentProof.reference ?? null)
+                : null,
+            status: "pending",
+          },
+        });
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { paymentApprovalId: approvalId },
+        });
+      } catch (err) {
+        // No bloqueamos la orden — el pago manual igual quedó como
+        // "pendiente" y el admin puede verlo en el detalle. Logueamos
+        // duro para que el equipo Buleje lo cierre manualmente.
+        logger.error("[marketplace/orders] paymentApproval persist failed", {
+          error: String(err),
+          orderId: order.id,
+        });
+      }
+    }
 
     // F2: persistir idempotency en cache — doble-click en los próximos 300s devuelve este orderId.
     // Round 21 P0-3 fix (Bug Hunter): el guard exigía phone, lo que dejaba
