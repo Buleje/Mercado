@@ -185,3 +185,8 @@ reports/forecasting/
 # Lighthouse Chrome temp dirs (Windows path leaked into WSL)
 C:*lighthouse.*
 lighthouse.*
+
+# Runtime data JSONs (analytics, clicks) — generados por endpoints en disco,
+# no son código. Schemas y seeds iniciales sí se versionan.
+lib/data/marketplace-category-clicks.json
+lib/data/*-runtime.json
