@@ -25,6 +25,7 @@ import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
 import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useTenant } from "@/contexts/tenant-context";
+import { SIDEBAR_STYLE_PRESETS } from "@/lib/admin-template";
 import {
   getVerticalConfig,
   filterTabsForVertical,
@@ -230,7 +231,7 @@ export function AdminSidebar({
   // Plantilla del superadmin — overlay reactivo que oculta módulos y reescribe labels.
   // Se actualiza solo cuando se dispara el evento custom buleje:admin-template-changed
   // o el storage event de otra pestaña.
-  const { resolveLabel, isHiddenByTemplate } = useAdminTemplateOverlay();
+  const { resolveLabel, isHiddenByTemplate, template } = useAdminTemplateOverlay();
 
   const [sidebarTheme, setSidebarTheme] = React.useState<SidebarTheme>(() => {
     if (typeof window === "undefined") return "buleje";
@@ -292,6 +293,57 @@ export function AdminSidebar({
       );
     } catch { /* ignore */ }
   }, [applyToHeader, sidebarTheme, accent]);
+
+  // ── Estilo default del sidebar heredado del superadmin (plantilla) ──
+  // El superadmin elige en /superadmin/plantilla un estilo (buleje / ejecutivo
+  // / sereno / vibrante / personalizado). Cuando cambia, el sidebar del tenant
+  // refleja el nuevo theme + accent — salvo que el estilo sea "personalizado",
+  // que respeta lo que el dueño haya configurado localmente.
+  React.useEffect(() => {
+    const style = template.defaultSidebarStyle ?? "buleje";
+    if (style === "personalizado") return;
+    const preset = SIDEBAR_STYLE_PRESETS[style];
+    if (!preset) return;
+    if (sidebarTheme !== preset.theme) {
+      setSidebarTheme(preset.theme);
+      try { localStorage.setItem("admin-sidebar-theme", preset.theme); } catch { /* ignore */ }
+    }
+    if (accent !== preset.accent) {
+      setAccent(preset.accent);
+      try { localStorage.setItem("admin-sidebar-accent", preset.accent); } catch { /* ignore */ }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo reaccionamos a cambios del template
+  }, [template.defaultSidebarStyle]);
+
+  // ── Sincronizar --accent en :root cuando cambia el accent local ──
+  // El sidebar (y el shell entero) usa var(--accent) masivamente. Cambiar
+  // solo el state interno no muta la variable CSS, así que el "ejecutivo"
+  // ámbar solo se veía en la barra activa pero no en bordes/halos. Idéntico
+  // patrón a SuperAdminShell:317 — un solo punto de verdad para tinte.
+  React.useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    const ACCENT_VARS: Record<AccentColor, string> = {
+      teal: "var(--accent-buleje, #00B4A6)",
+      emerald: "#10B981",
+      sky: "#0EA5E9",
+      violet: "#8B5CF6",
+      amber: "#F59E0B",
+      rose: "#F43F5E",
+    };
+    const hex = ACCENT_VARS[accent];
+    // teal usa el accent original del tema → limpiar overrides para que
+    // herede del theme global; las otras opciones sobreescriben.
+    if (accent === "teal") {
+      root.style.removeProperty("--accent");
+      root.style.removeProperty("--accent-soft");
+      root.style.removeProperty("--accent-600");
+    } else {
+      root.style.setProperty("--accent", hex);
+      root.style.setProperty("--accent-soft", `${hex}26`);
+      root.style.setProperty("--accent-600", hex);
+    }
+  }, [accent]);
 
   // ── Hidden categories (persisted in localStorage) ──
   const [hiddenCategories, setHiddenCategories] = React.useState<Set<string>>(() => {

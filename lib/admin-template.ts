@@ -134,6 +134,32 @@ export type AdminTemplateOverrides = Record<string, ModuleOverride>;
 /** Estilo por defecto del sidebar que hereda cada tenant nuevo. */
 export type DefaultSidebarStyle = "buleje" | "ejecutivo" | "sereno" | "vibrante" | "personalizado";
 
+/**
+ * Mapeo de DefaultSidebarStyle → preset visual aplicado al AdminSidebar
+ * de cada tenant. El SidebarConfigurator del tenant usa los mismos pares
+ * (theme + accent), así que persistir esto en localStorage del tenant es
+ * compatible con su UI de personalización.
+ *
+ * "personalizado" se omite intencionalmente — significa "respetá la
+ * config local del cliente".
+ */
+export interface SidebarStylePreset {
+  /** SidebarTheme — debe coincidir con valores de @/components/admin/shared/SidebarConfigurator. */
+  theme: "buleje" | "light" | "dark";
+  /** AccentColor — uno de los 6 colores predefinidos del configurador. */
+  accent: "teal" | "amber" | "sky" | "rose" | "emerald" | "violet";
+}
+
+export const SIDEBAR_STYLE_PRESETS: Record<
+  Exclude<DefaultSidebarStyle, "personalizado">,
+  SidebarStylePreset
+> = {
+  buleje: { theme: "buleje", accent: "teal" },
+  ejecutivo: { theme: "dark", accent: "amber" },
+  sereno: { theme: "light", accent: "sky" },
+  vibrante: { theme: "light", accent: "rose" },
+};
+
 export interface AdminTemplate {
   /** Override por módulo. */
   overrides: AdminTemplateOverrides;
