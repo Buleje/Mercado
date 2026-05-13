@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AdminTabShell } from "../_components/_shared";
+import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 
 type OrderStatus = "pendiente" | "confirmado" | "preparando" | "en_camino" | "entregado" | "cancelado";
 
@@ -615,6 +616,13 @@ function OrderDetailDrawer({ order, onClose }: { order: OrderRow; onClose: () =>
               {order.notes && <Field label="Notas" value={order.notes} />}
             </dl>
           </section>
+
+          {/* Comprobante de pago (Yape/Plin/Transfer). Retorna null si la
+              Order es efectivo o no tiene PaymentApproval. */}
+          <PaymentProofViewer
+            orderId={order.id}
+            isCash={order.paymentMethod === "efectivo"}
+          />
 
           {/* CTA → entrar al admin del tenant */}
           <a

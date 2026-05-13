@@ -19,6 +19,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { MarketplaceOrder } from "./types";
+import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 
 // Mapa lazy — Leaflet no debe cargarse hasta que se abra el drawer
 const OrderMiniMap = dynamic(() => import("./OrderMiniMap"), {
@@ -258,7 +259,7 @@ export default function OrderDetailDrawer({
               </p>
               <h2
                 id="order-modal-title"
-                className="text-lg sm:text-xl font-black tracking-[-0.02em] text-[var(--text-primary)] truncate leading-tight"
+                className="text-lg sm:text-xl font-black tracking-tight text-[var(--text-primary)] truncate leading-tight"
               >
                 {orderSeed.customerName}
               </h2>
@@ -433,6 +434,11 @@ export default function OrderDetailDrawer({
                 </div>
               </Section>
 
+              {/* Comprobante de pago (Yape/Plin/Transfer). El componente
+                  retorna null si la Order no tiene PaymentApproval — su
+                  propio header dice "COMPROBANTE · método". */}
+              <PaymentProofViewer orderId={orderSeed.id} />
+
               {/* Asignar delivery */}
               <Section
                 icon={<Bike className="h-4 w-4" strokeWidth={2.5} />}
@@ -598,7 +604,7 @@ function Field({
   if (!value) return null;
   return (
     <div>
-      <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
         {label}
       </p>
       <p
