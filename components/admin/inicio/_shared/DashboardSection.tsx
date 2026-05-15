@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { useChartRegistration } from "@/lib/admin/charts-visibility";
 
 export interface SectionKPI {
   label: string;
@@ -23,6 +24,18 @@ interface Props {
    * de texto descriptivo arriba. KPIs y rightSlot se siguen mostrando.
    */
   hideHeader?: boolean;
+  /**
+   * Brandon mayo 2026: id único del chart en su módulo. Si está presente,
+   * el chart se registra en ChartsVisibilityProvider y puede ser togglado
+   * por el usuario desde el botón "Gráficos".
+   */
+  chartId?: string;
+  /**
+   * Indica si el chart tiene datos suficientes. Si false, se oculta por
+   * default (el user puede mostrarlo manualmente desde el modal). Solo
+   * aplica si `chartId` está presente.
+   */
+  hasData?: boolean;
 }
 
 /**
@@ -37,7 +50,15 @@ interface Props {
  *
  * Se usa en Resumen, Ventas base y Ventas advanced para consistencia total.
  */
-export function DashboardSection({ kicker, title, kpis, rightSlot, children, className, hideHeader }: Props) {
+export function DashboardSection({ kicker, title, kpis, rightSlot, children, className, hideHeader, chartId, hasData = true }: Props) {
+  // Si el chart se registró con un id, consultar visibility. Si no tiene
+  // chartId, siempre visible (back-compat con secciones legacy).
+  const { visible } = useChartRegistration(chartId ?? "__none__", {
+    label: title,
+    hasData,
+  });
+  if (chartId && !visible) return null;
+
   return (
     <section
       className={

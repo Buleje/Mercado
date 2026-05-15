@@ -85,7 +85,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "top-10-clientes",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="clientes.top-10-clientes"
+          hasData={true}
           kicker="Ranking · top 10 clientes del periodo"
           title="Quién más te compra"
           kpis={[
@@ -113,7 +114,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "retencion-6m",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="clientes.retencion-6m"
+          hasData={true}
           kicker="Retención · rango activo"
           title="Nuevos vs recurrentes por mes"
           kpis={[
@@ -184,7 +186,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "distribucion-gasto",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="clientes.distribucion-gasto"
+          hasData={true}
           kicker="Distribución · gasto histórico"
           title="Cuántos clientes en cada rango de gasto"
           kpis={[
@@ -229,7 +232,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "frecuencia-compra",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="clientes.frecuencia-compra"
+          hasData={true}
           kicker="Frecuencia · en el periodo"
           title="Cuántas veces compran tus clientes"
           kpis={[
@@ -266,7 +270,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       id: "ticket-por-cliente",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="clientes.ticket-por-cliente"
+          hasData={true}
           kicker="Ticket promedio · top clientes"
           title="Cuánto gastan por visita"
           kpis={[

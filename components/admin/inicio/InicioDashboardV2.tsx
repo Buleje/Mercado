@@ -6,6 +6,7 @@ import { useDashboardData } from "@/contexts/dashboard-data-context";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { CardTitle } from "@buleje/design-system";
 import { DashboardAlertsList } from "@/components/admin/hoy/TodayHub";
+import { useChartRegistration } from "@/lib/admin/charts-visibility";
 // BulejeMetricHeroCard removido (duplicado con TodayHub). Re-importar si se
 // restaura el hero en esta pantalla.
 import { SkeletonEditorial } from "@/components/ui-system";
@@ -281,40 +282,8 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
         <DashboardAlertsList dateRange={dateRange} />
       </div>
 
-      {/* ── Row 2: Compound chart — 3 series correlacionadas (ventas + pedidos + clientes)
-          Brandon mayo 2026 v2: header restaurado con título plain-spanish para
-          que el dueño de la bodega entienda de un vistazo qué mide el gráfico. */}
-      <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
-        <header className="mb-5">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-            Ventas · {rangeTxt}
-          </p>
-          <CardTitle className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
-            Cuánto vendiste, cuántos pedidos y cuántos clientes te compraron
-          </CardTitle>
-        </header>
-        <BulejeComposedChart
-          data={weeklyData}
-          xKey="day"
-          bars={[{ key: "ventas", label: "Ventas (S/)", color: "primary", yAxis: "left" }]}
-          lines={[{ key: "pedidos", label: "Pedidos", color: "accent", yAxis: "right" }]}
-          areas={[
-            { key: "clientes", label: "Clientes", color: "tertiary", yAxis: "right", opacity: 0.15 },
-          ]}
-          leftAxisFormat={(v) => `S/${v}`}
-          rightAxisFormat={(v) => v.toString()}
-          tooltipFormat={(v, name) => {
-            if (name?.toLowerCase().includes("ventas")) {
-              return `S/ ${Number(v).toLocaleString("es-PE")}`;
-            }
-            return Number(v).toLocaleString("es-PE");
-          }}
-          height={280}
-          minDataPoints={3}
-          showValues
-          valueFormat={(v) => (v >= 1000 ? `S/${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `S/${v}`)}
-        />
-      </section>
+      {/* ── Row 2: Compound chart — 3 series correlacionadas (ventas + pedidos + clientes) */}
+      <ResumenVentasSection weeklyData={weeklyData} rangeTxt={rangeTxt} />
 
       {/* ── Row 3: 5 gráficos multi-variable (caja, inventario, compras, clientes, productos) ── */}
       <InicioMultiCharts dateRange={dateRange} />
@@ -337,5 +306,58 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Row 2 extraído a componente con visibility registration ───────────────
+// Brandon mayo 2026: extraído para registrar el chart en el sistema de
+// visibility (botón "Gráficos"). Se oculta si el usuario lo apaga desde el
+// modal o si no tiene datos (todas las ventas son 0).
+
+interface ResumenVentasSectionProps {
+  weeklyData: Array<{ day: string; ventas: number; pedidos: number; clientes: number }>;
+  rangeTxt: string;
+}
+
+function ResumenVentasSection({ weeklyData, rangeTxt }: ResumenVentasSectionProps) {
+  const hasData = weeklyData.length >= 3 && weeklyData.some((d) => d.ventas > 0);
+  const { visible } = useChartRegistration("resumen.ventas-pedidos-clientes", {
+    label: "Cuánto vendiste, cuántos pedidos y cuántos clientes te compraron",
+    hasData,
+  });
+  if (!visible) return null;
+
+  return (
+    <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
+      <header className="mb-5">
+        <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+          Ventas · {rangeTxt}
+        </p>
+        <CardTitle className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+          Cuánto vendiste, cuántos pedidos y cuántos clientes te compraron
+        </CardTitle>
+      </header>
+      <BulejeComposedChart
+        data={weeklyData}
+        xKey="day"
+        bars={[{ key: "ventas", label: "Ventas (S/)", color: "primary", yAxis: "left" }]}
+        lines={[{ key: "pedidos", label: "Pedidos", color: "accent", yAxis: "right" }]}
+        areas={[
+          { key: "clientes", label: "Clientes", color: "tertiary", yAxis: "right", opacity: 0.15 },
+        ]}
+        leftAxisFormat={(v) => `S/${v}`}
+        rightAxisFormat={(v) => v.toString()}
+        tooltipFormat={(v, name) => {
+          if (name?.toLowerCase().includes("ventas")) {
+            return `S/ ${Number(v).toLocaleString("es-PE")}`;
+          }
+          return Number(v).toLocaleString("es-PE");
+        }}
+        height={300}
+        minDataPoints={3}
+        showValues
+        valueFormat={(v) => (v >= 1000 ? `S/${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `S/${v}`)}
+      />
+    </section>
   );
 }

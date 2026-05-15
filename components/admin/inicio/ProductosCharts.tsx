@@ -84,7 +84,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       id: "top-10-productos",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="productos.top-10-productos"
+          hasData={true}
           kicker="Rankings · top 10 del periodo"
           title="Los productos que más venden"
           kpis={[
@@ -145,7 +146,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       id: "ventas-categoria",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="productos.ventas-categoria"
+          hasData={true}
           kicker="Categorías · periodo"
           title="Ingresos por categoría"
           kpis={[
@@ -223,7 +225,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       id: "sin-movimiento",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="productos.sin-movimiento"
+          hasData={true}
           kicker="Dead stock · top 10 zombies"
           title="Productos sin movimiento · capital inmovilizado"
           kpis={[
@@ -255,7 +258,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       id: "afinidades",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="productos.afinidades"
+          hasData={true}
           kicker="Análisis de cesta · co-compra"
           title="Pares que se venden juntos"
           kpis={[

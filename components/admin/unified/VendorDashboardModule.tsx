@@ -19,6 +19,7 @@ import {
 } from "@buleje/design-system/icons";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import DashboardDateRange, { getDefaultRange, type DateRange } from "@/components/admin/inicio/DashboardDateRange";
+import { ChartsVisibilityProvider, ChartsVisibilityButton } from "@/lib/admin/charts-visibility";
 import dynamic from "next/dynamic";
 import { BulejeLoader } from "@/components/admin/inicio/_shared";
 import EmptyDateRangeState from "@/components/admin/inicio/EmptyDateRangeState";
@@ -155,6 +156,10 @@ export default function VendorDashboardModule() {
 
   return (
     <DashboardDataProvider>
+    {/* ChartsVisibilityProvider envuelve el módulo: cada tab tiene su propio
+        scope porque cambiamos moduleId con la tab activa. localStorage
+        persiste prefs por tab. */}
+    <ChartsVisibilityProvider moduleId={`vendor-dashboard:${tab}`} key={tab}>
     <div className="space-y-4">
       <AdminModuleHeader
         title="Inicio"
@@ -164,7 +169,10 @@ export default function VendorDashboardModule() {
         iconColorClass="text-[var(--data-success-500)]"
       >
         {tab !== "marketplace" && (
-          <DashboardDateRange value={dateRange} onChange={setDateRange} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <ChartsVisibilityButton />
+            <DashboardDateRange value={dateRange} onChange={setDateRange} />
+          </div>
         )}
         {tab === "marketplace" && (
           <button
@@ -261,6 +269,7 @@ export default function VendorDashboardModule() {
         )}
       </AdminTabBar>
     </div>
+    </ChartsVisibilityProvider>
     </DashboardDataProvider>
   );
 }

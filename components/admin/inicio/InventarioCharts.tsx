@@ -148,7 +148,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       id: "valor-categoria",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="inventario.valor-categoria"
+          hasData={true}
           kicker="Valor del inventario · por categoría"
           title="Cuánto vale y cuánto hay por categoría"
           kpis={[
@@ -226,7 +227,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       id: "top-salidas",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="inventario.top-salidas"
+          hasData={true}
           kicker="Productos · más rotación · periodo"
           title="Top 10 productos por unidades salidas"
           kpis={[
@@ -260,7 +262,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       id: "distribucion-stock",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="inventario.distribucion-stock"
+          hasData={true}
           kicker="Distribución · SKUs por rango de stock"
           title="Cuántos productos hay en cada rango"
           kpis={[
@@ -309,7 +312,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       id: "dias-cobertura",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="inventario.dias-cobertura"
+          hasData={true}
           kicker="Cobertura · días restantes top-10"
           title="Días de stock para los productos más expuestos"
           kpis={[

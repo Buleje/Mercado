@@ -482,6 +482,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "caja",
       render: () => (
         <DashboardSection
+          chartId="resumen.caja"
+          hasData={cajaChart.length >= 2 && cajaChart.some((r) => r.ingresos > 0 || r.egresos > 0)}
           kicker={`Caja · ${rangeLabel}`}
           title="Cuánta plata entró y salió cada día"
           kpis={[
@@ -518,6 +520,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "inventario",
       render: () => (
         <DashboardSection
+          chartId="resumen.inventario"
+          hasData={invChart.length > 0 && invChart.some((r) => r.stock > 0)}
           kicker="Inventario · top 7 categorías"
           title="Cuántas unidades tenés en cada categoría"
           kpis={[
@@ -554,6 +558,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "compras",
       render: () => (
         <DashboardSection
+          chartId="resumen.compras"
+          hasData={compChart.length > 0 && compChart.some((r) => r.monto > 0)}
           kicker={`Compras · top 7 proveedores · ${rangeLabel}`}
           title="Cuánto le compraste a cada proveedor"
           kpis={[
@@ -590,6 +596,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "clientes",
       render: () => (
         <DashboardSection
+          chartId="resumen.clientes"
+          hasData={cliChart.length >= 2 && cliChart.some((r) => (r.nuevos ?? 0) > 0 || (r.recurrentes ?? 0) > 0)}
           kicker={`Clientes · ${rangeLabel}`}
           title="Clientes nuevos vs clientes que volvieron"
           kpis={[
@@ -625,6 +633,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "productos",
       render: () => (
         <DashboardSection
+          chartId="resumen.productos"
+          hasData={prodChart.length > 0 && prodChart.some((r) => r.unidades > 0)}
           kicker={`Productos · top 7 · ${rangeLabel}`}
           title="Tus 7 productos más vendidos"
           kpis={[

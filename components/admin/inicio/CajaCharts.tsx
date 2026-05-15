@@ -104,7 +104,8 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "flujo-14d",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.flujo-diario"
+          hasData={(data.flujoDiario ?? []).some((d) => (d.ingresos ?? 0) > 0 || (d.egresos ?? 0) > 0)}
           kicker="Flujo diario · rango activo"
           title="Ingresos, egresos y balance"
           kpis={[
@@ -135,7 +136,8 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "tendencia-mensual",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.tendencia-mensual"
+          hasData={(data.flujoMensual ?? []).length > 0}
           kicker="Tendencia · rango activo"
           title="Ingresos y egresos por mes"
           kpis={[
@@ -164,7 +166,8 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "ingresos-por-hora",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.ingresos-por-hora"
+          hasData={true}
           kicker="Ingresos hoy · por hora"
           title="Distribución horaria de cobros"
           kpis={[
@@ -202,7 +205,8 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "metodo-pago",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.metodo-pago"
+          hasData={true}
           kicker="Cobros por método"
           title="Composición de ingresos"
           kpis={[
@@ -260,7 +264,8 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "ratio-liquido",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.ratio-liquido"
+          hasData={true}
           kicker="Salud financiera · periodo"
           title="Ratio líquido (balance / ingresos)"
           kpis={[
@@ -297,7 +302,8 @@ export default function CajaCharts({ data }: { data: CajaData }) {
       id: "waterfall-flujo",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="caja.waterfall-flujo"
+          hasData={true}
           kicker="Descomposición · periodo"
           title="De ventas a balance neto"
           kpis={[

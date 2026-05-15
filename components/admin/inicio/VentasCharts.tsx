@@ -80,7 +80,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "ventas-utilidad-14d",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="ventas.utilidad-promedio"
+          hasData={(data.ventasDiarias ?? []).length >= 3 && (data.ventasDiarias ?? []).some((d) => (d.ventas ?? 0) > 0)}
           kicker="Evolución · rango activo"
           title="Ventas, utilidad y promedio móvil"
           rightSlot={
@@ -124,7 +125,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "ventas-por-dia-semana",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="ventas.por-dia-semana"
+          hasData={(data.ventasPorDia ?? []).some((d) => (d.total ?? 0) > 0)}
           kicker="Día de la semana · periodo"
           title="Distribución por día · L a D"
           kpis={[
@@ -162,7 +164,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "ventas-por-hora",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="ventas.por-hora"
+          hasData={(data.ventasPorHora ?? []).some((d) => (d.monto ?? 0) > 0)}
           kicker="Horario · hoy"
           title="Volumen de tickets y monto por hora"
           kpis={[
@@ -198,7 +201,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "metodo-pago",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="ventas.metodo-pago"
+          hasData={(data.metodosPago ?? []).some((m) => (m.total ?? 0) > 0)}
           kicker="Distribución de cobros"
           title="Método de pago"
           kpis={[
@@ -256,7 +260,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "meta-periodo",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="ventas.meta-periodo"
+          hasData={(data.ventasNetas ?? 0) > 0}
           kicker="Objetivo vs real · periodo"
           title="Meta del periodo"
           kpis={[
@@ -295,7 +300,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
       id: "forecast-7d",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="ventas.forecast-7d"
+          hasData={(data.forecast7 ?? []).length > 0}
           kicker="Tendencia lineal · próximos 7 días"
           title="Pronóstico de ventas"
           kpis={[
