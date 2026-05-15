@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
   Tooltip,
   Legend,
+  LabelList,
 } from "recharts";
 import {
   CHART_GRID_STROKE,
@@ -71,7 +72,26 @@ interface Props {
   showGrid?: boolean;
   /** Cuando hay <3 puntos, muestra mensaje en vez de chart (evitar malinterpretación) */
   minDataPoints?: number;
+  /**
+   * Si true, muestra el valor de cada barra encima de la barra (data labels).
+   * Brandon mayo 2026: facilita lectura para dueños de bodega que no son
+   * lectores de gráficos — el número ya está en la barra, no hay que hacer
+   * hover ni leer ejes.
+   */
+  showValues?: boolean;
+  /**
+   * Formatter del label de la barra. Recibe el valor crudo y el key de la
+   * serie (útil para distinguir Soles vs Unidades). Default: número grande
+   * formateado como "1.2k" si >= 1000, sino el número directo.
+   */
+  valueFormat?: (value: number, seriesKey: string) => string;
   className?: string;
+}
+
+function defaultValueFormat(v: number): string {
+  if (v === 0) return "";
+  if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
 }
 
 function resolveColor(key?: ColorKey): string {
@@ -92,6 +112,8 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
   showLegend = true,
   showGrid = true,
   minDataPoints = 2,
+  showValues = false,
+  valueFormat,
   className,
 }: Props) {
   const hasRightAxis = [...bars, ...lines, ...areas].some((s) => s.yAxis === "right");
@@ -118,7 +140,17 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
   return (
     <div className={className}>
       <ResponsiveContainer width="100%" height={height} minWidth={0}>
-        <ComposedChart data={data} margin={{ top: 12, right: 16, bottom: 4, left: 0 }}>
+        <ComposedChart
+          data={data}
+          margin={{
+            // showValues activo: extra top headroom para que el LabelList encima
+            // de la barra más alta no se corte (visto en Inventario · Abarrotes).
+            top: showValues ? 28 : 12,
+            right: 16,
+            bottom: 4,
+            left: 0,
+          }}
+        >
           {showGrid && (
             <CartesianGrid
               stroke={CHART_GRID_STROKE}
@@ -214,7 +246,26 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
                 isAnimationActive={true}
                 animationDuration={600}
                 maxBarSize={40}
-              />
+              >
+                {showValues && (
+                  <LabelList
+                    dataKey={series.key}
+                    position="top"
+                    // Recharts LabelFormatter signature: (value, ..._args) => ReactNode
+                    formatter={((value: unknown) => {
+                      const num = Number(value);
+                      if (!Number.isFinite(num) || num === 0) return "";
+                      return valueFormat ? valueFormat(num, series.key) : defaultValueFormat(num);
+                    }) as never}
+                    style={{
+                      fill: CHART_AXIS_COLOR,
+                      fontSize: CHART_FONT.axisSize,
+                      fontWeight: 700,
+                      fontFamily: CHART_FONT.family,
+                    }}
+                  />
+                )}
+              </Bar>
             );
           })}
 

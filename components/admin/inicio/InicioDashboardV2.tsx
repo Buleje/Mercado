@@ -137,6 +137,12 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   }
 
   const presetKey = dateRange?.preset ?? "diario";
+  const rangeTxt =
+    presetKey === "diario" ? "hoy"
+    : presetKey === "semanal" ? "esta semana"
+    : presetKey === "mensual" ? "este mes"
+    : presetKey === "anual" ? "este año"
+    : "del período";
   // ticketAverage y heroDelta quedaron huerfanos tras remover el hero duplicado;
   // uniqueCustomers sigue en uso (weeklyData.clientes abajo).
   const { hero, contextual: { uniqueCustomers, criticalStock } } = data;
@@ -265,10 +271,18 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
         </div>
       </section>
 
-      {/* ── Row 2: Compound chart — 3 series correlacionadas ── */}
+      {/* ── Row 2: Compound chart — 3 series correlacionadas (ventas + pedidos + clientes)
+          Brandon mayo 2026 v2: header restaurado con título plain-spanish para
+          que el dueño de la bodega entienda de un vistazo qué mide el gráfico. */}
       <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
-        {/* Header removido 2026-04-24 para consistencia con el resto de
-            secciones (hideHeader pattern). */}
+        <header className="mb-5">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+            Ventas · {rangeTxt}
+          </p>
+          <h3 className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
+            Cuánto vendiste, cuántos pedidos y cuántos clientes te compraron
+          </h3>
+        </header>
         <BulejeComposedChart
           data={weeklyData}
           xKey="day"
@@ -287,6 +301,8 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
           }}
           height={280}
           minDataPoints={3}
+          showValues
+          valueFormat={(v) => (v >= 1000 ? `S/${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `S/${v}`)}
         />
       </section>
 

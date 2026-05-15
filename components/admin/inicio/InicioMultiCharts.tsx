@@ -161,7 +161,13 @@ const KPI_SUFFIX: Record<string, string> = {
 export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: { dateRange?: DateRange }) {
   const { data } = useDashboardData();
 
-  // Rango efectivo (default: rango activo si no se pasa)
+  // Rango efectivo (default: rango activo si no se pasa).
+  // Disable react-hooks/preserve-manual-memoization: React Compiler no puede
+  // optimizar este useMemo porque las deps incluyen dateRange?.from y
+  // dateRange?.to (acceso opcional) — la memoización manual es intencional
+  // para evitar re-renders en cascada cuando dateRange cambia de referencia
+  // pero no de valor real.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const { from: rangeFrom, to: rangeTo } = useMemo(() => {
     if (dateRange) return { from: dateRange.from, to: dateRange.to };
     return defaultLast7Range();
@@ -443,9 +449,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "caja",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker={`Flujo de caja · ${rangeLabel}`}
-          title="Ingresos, egresos y saldo neto"
+          kicker={`Caja · ${rangeLabel}`}
+          title="Cuánta plata entró y salió cada día"
           kpis={[
             { label: `Ingresos ${kpiSuffix}`, value: fmtPEN(cajaKpis.ingresos), tone: "success" },
             { label: `Egresos ${kpiSuffix}`, value: fmtPEN(cajaKpis.egresos), tone: "warning" },
@@ -470,6 +475,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
             height={300}
             minDataPoints={2}
+            showValues
+            valueFormat={(v) => (v >= 1000 ? `S/${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `S/${v}`)}
           />
         </DashboardSection>
       ),
@@ -478,9 +485,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "inventario",
       render: () => (
         <DashboardSection
-          hideHeader
           kicker="Inventario · top 7 categorías"
-          title="Stock, valor y SKUs por categoría"
+          title="Cuántas unidades tenés en cada categoría"
           kpis={[
             { label: "Valor total", value: fmtPEN(invKpis.valor), tone: "primary" },
             { label: "SKUs activos", value: String(invKpis.skus), tone: "neutral" },
@@ -505,6 +511,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             }
             height={300}
             minDataPoints={1}
+            showValues
+            valueFormat={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `${v}`)}
           />
         </DashboardSection>
       ),
@@ -513,9 +521,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "compras",
       render: () => (
         <DashboardSection
-          hideHeader
           kicker={`Compras · top 7 proveedores · ${rangeLabel}`}
-          title="Monto, órdenes y deuda por proveedor"
+          title="Cuánto le compraste a cada proveedor"
           kpis={[
             { label: `Compras ${kpiSuffix}`, value: fmtPEN(compKpis.total), tone: "primary" },
             { label: "Órdenes", value: String(compKpis.ordenes), tone: "neutral" },
@@ -540,6 +547,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             }
             height={300}
             minDataPoints={1}
+            showValues
+            valueFormat={(v) => (v >= 1000 ? `S/${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `S/${v}`)}
           />
         </DashboardSection>
       ),
@@ -548,9 +557,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "clientes",
       render: () => (
         <DashboardSection
-          hideHeader
           kicker={`Clientes · ${rangeLabel}`}
-          title="Nuevos, recurrentes y ticket promedio"
+          title="Clientes nuevos vs clientes que volvieron"
           kpis={[
             { label: "Total clientes", value: cliKpis.total.toLocaleString("es-PE"), tone: "primary" },
             { label: `Nuevos ${kpiSuffix}`, value: String(cliKpis.nuevosMes), tone: "success" },
@@ -575,6 +583,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             }
             height={300}
             minDataPoints={2}
+            showValues
           />
         </DashboardSection>
       ),
@@ -583,9 +592,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       id: "productos",
       render: () => (
         <DashboardSection
-          hideHeader
           kicker={`Productos · top 7 · ${rangeLabel}`}
-          title="Unidades, ingresos y margen por producto"
+          title="Tus 7 productos más vendidos"
           kpis={[
             { label: "SKUs activos", value: String(prodKpis.activos), tone: "neutral" },
             {
@@ -618,6 +626,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             }
             height={300}
             minDataPoints={1}
+            showValues
+            valueFormat={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1).replace(/\.0$/, "")}k` : `${v}`)}
           />
         </DashboardSection>
       ),
