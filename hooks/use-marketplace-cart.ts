@@ -292,5 +292,9 @@ export function useMarketplaceCart() {
     updateQuantity,
     clearStore,
     clearAll,
+    // Brandon mayo 15 v4 (audit QA #1): expone `hydrated` para que las
+    // pages del checkout NO usen setTimeout(250ms) como guard de hidratacion.
+    // Antes: race condition en redes lentas expulsaba al carrito mid-flow.
+    hydrated,
   };
 }

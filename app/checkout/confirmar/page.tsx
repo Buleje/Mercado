@@ -33,6 +33,7 @@ import { useCustomer, type Customer } from "@/contexts/customer-context";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
+import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
 import { CheckoutTransitionOverlay } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
@@ -62,7 +63,7 @@ type PerStoreResult = {
 
 export default function CheckoutConfirmarPage() {
   const router = useRouter();
-  const { byStore, totalByStore, itemCount, grandTotal, clearStore } = useMarketplaceCart();
+  const { byStore, totalByStore, itemCount, grandTotal, clearStore, hydrated: cartHydrated } = useMarketplaceCart();
   const {
     customer,
     address,
@@ -88,15 +89,12 @@ export default function CheckoutConfirmarPage() {
   const [toastOpen, setToastOpen] = useState(false);
   const [toastData, setToastData] = useState<{ title: string; subtitle: string } | null>(null);
 
-  // Espera a que el cart + checkout-data estén hidratados antes de redirigir
-  // (fix de la race que mandaba a /datos al avanzar desde /entrega).
-  const [cartReady, setCartReady] = useState(false);
+  // Brandon mayo 15 v4 (audit QA #1): reemplazado `setTimeout(250ms)` por
+  // los flags reales `hydrated` de ambos hooks. En redes lentas el cart no
+  // hidrataba a tiempo y el guard expulsaba al cliente mid-flow.
+  const cartReady = cartHydrated && hydrated;
   useEffect(() => {
-    const t = window.setTimeout(() => setCartReady(true), 250);
-    return () => window.clearTimeout(t);
-  }, []);
-  useEffect(() => {
-    if (!cartReady || !hydrated) return;
+    if (!cartReady) return;
     // CRÍTICO: si ya hay resultados (pedido confirmado), NO redirigir. El
     // flow de success se encarga del redirect a /tiendas. Sin este guard,
     // tras confirmar el reset() vacía customer/address y los redirects
@@ -106,7 +104,7 @@ export default function CheckoutConfirmarPage() {
     else if (!isCustomerValid) router.replace("/checkout/datos");
     else if (!isAddressValid) router.replace("/checkout/entrega");
   }, [
-    cartReady, hydrated, itemCount, isCustomerValid, isAddressValid,
+    cartReady, itemCount, isCustomerValid, isAddressValid,
     router, results.length, submitting,
   ]);
 
@@ -273,10 +271,25 @@ export default function CheckoutConfirmarPage() {
       if (group && firstSuccess.orderId !== undefined) {
         setLastOrder({
           orderId: String(firstSuccess.orderId),
+          storeId: sid,
           storeSlug: group.storeSlug,
           storeName: group.storeName,
           total: totalByStore[sid!]?.total ?? 0,
           itemsCount: group.items.reduce((s, i) => s + i.quantity, 0),
+          // Snapshot completo de items — REQUERIDO para que el modal de
+          // "Repetir tu compra" en /tiendas pueda mostrar la lista marcable.
+          // Sin esto, RepetirUltimoPedido cae al Link fallback y nunca abre
+          // el modal. Brandon, mayo 14 2026.
+          items: group.items.map((i) => ({
+            productId: i.productId,
+            storeProductId: i.storeProductId,
+            name: i.name,
+            imageUrl: i.image ?? null,
+            unit: i.unit ?? null,
+            price: i.price,
+            quantity: i.quantity,
+            category: i.category ?? null,
+          })),
           ts: Date.now(),
         });
       }
@@ -607,7 +620,7 @@ export default function CheckoutConfirmarPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
         <div className="space-y-5">
           {/* Auth gate editorial */}
           {showAuthBanner && (
@@ -862,44 +875,37 @@ export default function CheckoutConfirmarPage() {
             </div>
           )}
 
-          {/* Mobile sticky CTA (ronda 4: OrderSummaryCard compact con breakdown rapido) */}
-          <div className="lg:hidden space-y-3">
-            <OrderSummaryCard
-              variant="compact"
-              itemCount={itemCount}
-              savings={couponDiscountTotal + loyaltyDiscountTotal}
-              lines={[]}
-              total={grandTotal - couponDiscountTotal - loyaltyDiscountTotal}
-            />
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={submitting}
-              className={cn(
-                "group inline-flex w-full items-center justify-center gap-2 rounded-full px-6 h-14",
-                "text-[length:var(--ts-sm)] font-black tracking-[var(--ls-tight)] transition-all duration-200",
-                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
-                "shadow-[0_8px_24px_-10px_var(--accent)]",
-                "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
-              )}
-            >
-              <ShieldCheck className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-              {submitting ? "Procesando..." : `Confirmar pedido · ${fmt(grandTotal)}`}
-            </button>
-          </div>
+          {/* Brandon, mayo 14 2026: el CTA mobile vivia inline aca y rompia
+              la consistencia con /carrito /datos /entrega (todas usan
+              CheckoutMobileCtaBar sticky bottom). Removido — el bar global
+              cubre el confirmar abajo. */}
         </div>
 
-        <CheckoutSummary
-          ctaLabel={submitting ? "Procesando..." : "Confirmar pedido"}
-          onCtaClick={handleConfirm}
-          ctaLoading={submitting}
-          couponDiscount={couponDiscountTotal}
-          loyaltyDiscount={loyaltyDiscountTotal}
-          showItems
-          helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
-        />
+        {/* CheckoutSummary oculto en mobile — el cliente ya revisó todo en
+            los pasos previos, en confirmar solo necesita ver y aceptar */}
+        <div className="hidden lg:block">
+          <CheckoutSummary
+            ctaLabel={submitting ? "Procesando..." : "Confirmar pedido"}
+            onCtaClick={handleConfirm}
+            ctaLoading={submitting}
+            couponDiscount={couponDiscountTotal}
+            loyaltyDiscount={loyaltyDiscountTotal}
+            showItems
+            helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
+          />
+        </div>
         <AuthModal open={authModalOpen} onClose={closeAuthModal} />
       </div>
+
+      {/* Sticky bottom CTA mobile — consistente con /carrito /datos /entrega */}
+      <CheckoutMobileCtaBar
+        primaryLabel="Total"
+        total={Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal)}
+        ctaLabel={submitting ? "Procesando..." : "Confirmar pedido"}
+        ctaOnClick={handleConfirm}
+        ctaDisabled={submitting}
+        helperText="Al confirmar aceptás que cada bodega te contacte por WhatsApp"
+      />
 
       {/* Modal de detalle del pedido (abierto desde el botón ojo) */}
       <OrderDetailsModal

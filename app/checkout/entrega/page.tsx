@@ -13,7 +13,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -27,14 +27,18 @@ import {
   Sparkles,
   AlertCircle,
   Navigation,
+  Edit3,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCheckoutData } from "@/hooks/use-checkout-data";
 import { useCustomer } from "@/contexts/customer-context";
 import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
+import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import PaymentMethodCard from "@/components/marketplace/checkout/PaymentMethodCard";
 import AddressPicker from "@/components/marketplace/checkout/AddressPicker";
+import AddAddressFlowModal from "@/components/marketplace/checkout/AddAddressFlowModal";
+import CashChangeModal from "@/components/marketplace/checkout/CashChangeModal";
 import { LocationConfirmModal } from "@/components/checkout/parts/LocationConfirmModal";
 import {
   PaymentProofModal,
@@ -155,11 +159,13 @@ function SectionBox({
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  // Brandon, mayo 14 2026: padding mas compacto en mobile (p-4) para reducir
+  // scroll, kicker oculto en mobile, titulo mas chico, icono inline al titulo.
   return (
-    <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 sm:p-7 space-y-5">
+    <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-7 space-y-4 sm:space-y-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+        <div className="min-w-0">
+          <p className="hidden sm:inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
             <span
               aria-hidden
               className="inline-flex h-[3px] w-6 rounded-full bg-[var(--accent)]"
@@ -167,8 +173,14 @@ function SectionBox({
             <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />
             {kicker}
           </p>
-          <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            {title}
+          <h2 className="inline-flex items-center gap-2 text-base sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+            <span
+              aria-hidden
+              className="sm:hidden inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]"
+            >
+              <Icon className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+            <span className="truncate">{title}</span>
           </h2>
         </div>
         {action}
@@ -180,7 +192,7 @@ function SectionBox({
 
 export default function CheckoutEntregaPage() {
   const router = useRouter();
-  const { itemCount, grandTotal, byStore, totalByStore } = useMarketplaceCart();
+  const { itemCount, grandTotal, byStore, totalByStore, hydrated: cartHydrated } = useMarketplaceCart();
   const {
     customer,
     address,
@@ -326,6 +338,22 @@ export default function CheckoutEntregaPage() {
   const { addresses: savedAddresses, removeAddress } = useSavedAddresses();
   const [activeAddressId, setActiveAddressId] = useState<string | null>(null);
   const [useNewAddress, setUseNewAddress] = useState(false);
+  // Modo "ingresar manualmente" — opt-in para clientes que no quieren GPS.
+  // Brandon, mayo 14 2026: cuando hay direccion guardada, el form de calle/
+  // departamento/provincia/distrito queda oculto por default. "Usar otra
+  // dirección" dispara el GPS modal en lugar de mostrar el form. Solo si el
+  // cliente toca explicitamente "Llenar manualmente" aparece el form.
+  const [manualAddressEntry, setManualAddressEntry] = useState(false);
+  // Modal explicito "Agregar otra dirección" — flujo idle → GPS → mapa →
+  // guardar. Aislado del flow legacy del geo-CTA del form para que ambos
+  // caminos coexistan (cliente puede agregar desde el picker o desde el
+  // boton grande inline).
+  const [addAddressModalOpen, setAddAddressModalOpen] = useState(false);
+  // Modal calculadora de vuelto — se abre automaticamente al seleccionar
+  // "Efectivo" como metodo de pago (Brandon, mayo 14 2026). El cliente
+  // tambien puede reabrirlo tocando el chip "Configurar vuelto" del card
+  // de efectivo si quiere modificar el monto despues.
+  const [cashModalOpen, setCashModalOpen] = useState(false);
 
   // Auto-selecciona la más reciente al montar (una sola vez)
   useEffect(() => {
@@ -385,6 +413,15 @@ export default function CheckoutEntregaPage() {
       zone: "",
     });
   }, [setAddress]);
+
+  // Decide visibilidad de los campos manuales (calle, dep, prov, dist).
+  // Brandon mayo 15 v4: por DEFAULT los campos están ocultos siempre. Solo
+  // aparecen cuando:
+  //  a) el cliente toca "Ingresar Dirección Manualmente" → manualAddressEntry
+  //  b) el GPS+mapa rellenó los campos → address.address tiene valor
+  //  c) se está editando una dirección guardada con datos → useNewAddress
+  const showManualAddressFields =
+    manualAddressEntry || useNewAddress || address.address.trim().length > 0;
 
   const handleDepartmentChange = useCallback(
     (depCode: string) => {
@@ -591,18 +628,14 @@ export default function CheckoutEntregaPage() {
   const { isPending, pendingLabel, navigateTo } = useCheckoutTransition();
   const { hydrated } = useCheckoutData();
 
-  // Espera a que el carrito y los datos del checkout estén hidratados antes
-  // de decidir si redirige (fix de la race que mandaba a /datos).
-  const [cartReady, setCartReady] = useState(false);
+  // Brandon mayo 15 v4 (audit QA #1): flags reales `hydrated` en lugar de
+  // setTimeout(250). En redes lentas el guard antiguo expulsaba al cliente.
+  const cartReady = cartHydrated && hydrated;
   useEffect(() => {
-    const t = window.setTimeout(() => setCartReady(true), 250);
-    return () => window.clearTimeout(t);
-  }, []);
-  useEffect(() => {
-    if (!cartReady || !hydrated) return;
+    if (!cartReady) return;
     if (itemCount === 0) router.replace("/marketplace/carrito");
     else if (!isCustomerValid) router.replace("/checkout/datos");
-  }, [cartReady, hydrated, itemCount, isCustomerValid, router]);
+  }, [cartReady, itemCount, isCustomerValid, router]);
 
   // Prefetch del próximo paso (acelera la navegación a /confirmar)
   useEffect(() => {
@@ -731,6 +764,21 @@ export default function CheckoutEntregaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payment.method]);
 
+  // Auto-abrir el modal de calculadora de vuelto SOLO cuando el cliente
+  // CAMBIA explicitamente a efectivo (no en el mount inicial). Brandon mayo
+  // 14 2026: el efecto anterior se disparaba al hidratar el state, asi que
+  // entrar a /entrega con method=efectivo abria el modal sin pedirlo. Ahora
+  // trackeamos el metodo previo y solo abrimos si paso de !efectivo →
+  // efectivo via interaccion del cliente.
+  const prevPaymentMethodRef = useRef(payment.method);
+  useEffect(() => {
+    const prev = prevPaymentMethodRef.current;
+    if (prev !== "efectivo" && payment.method === "efectivo") {
+      setCashModalOpen(true);
+    }
+    prevPaymentMethodRef.current = payment.method;
+  }, [payment.method]);
+
   const buildProofModalConfig = useCallback(
     (storeSlug: string): PaymentProofModalConfig => {
       const cfg = paymentConfigs[storeSlug];
@@ -750,10 +798,12 @@ export default function CheckoutEntregaPage() {
       e.preventDefault();
       setTouched(true);
       if (!isAddressValid) return;
+      // Brandon mayo 15 v4: bloqueo submit si no eligió método de pago.
+      if (payment.method === "") return;
       if (!allProofsReady) return;
       navigateTo("/checkout/confirmar", "Preparando tu resumen");
     },
-    [isAddressValid, allProofsReady, navigateTo],
+    [isAddressValid, allProofsReady, navigateTo, payment.method],
   );
 
   const validateCoupon = useCallback(
@@ -769,6 +819,24 @@ export default function CheckoutEntregaPage() {
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ code, storeSlug, cartTotal }),
         });
+        // Brandon mayo 15 v4 (audit QA #5): chequear res.ok antes de .json().
+        // Si Vercel edge devuelve 4xx/5xx con body HTML, .json() rompe y
+        // el cliente veia "Error de conexión" cuando en realidad era un 429,
+        // 401 o 503. Ahora intentamos leer un mensaje del server primero.
+        if (!res.ok) {
+          let reason = "Cupón inválido";
+          try {
+            const body = await res.json();
+            if (body?.reason) reason = body.reason;
+            else if (res.status === 429) reason = "Demasiados intentos. Probá en un momento.";
+            else if (res.status >= 500) reason = "El servidor falló. Intentá de nuevo.";
+          } catch {
+            if (res.status === 429) reason = "Demasiados intentos. Probá en un momento.";
+            else if (res.status >= 500) reason = "El servidor falló. Intentá de nuevo.";
+          }
+          setCouponErrors((p) => ({ ...p, [storeSlug]: reason }));
+          return;
+        }
         const data = await res.json();
         if (data.valid) {
           setCouponForStore(storeSlug, {
@@ -807,43 +875,90 @@ export default function CheckoutEntregaPage() {
 
   return (
     <>
-      <div className="pt-6 sm:pt-8 pb-6">
-        <Link
-          href="/checkout/datos"
-          className="inline-flex items-center gap-2 h-11 sm:h-9 px-3.5 sm:px-3 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 transition-all shadow-sm mb-3"
-        >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Volver a tus datos
-        </Link>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+      {/* Header rediseñado mobile (Brandon, mayo 14 2026): compacto, link
+          "Volver" inline con el titulo, sin subtitulo redundante. Desktop
+          mantiene el layout amplio editorial. */}
+      <div className="pt-4 sm:pt-8 pb-4 sm:pb-6">
+        <div className="flex items-center gap-2 mb-2 sm:mb-3">
+          <Link
+            href="/checkout/datos"
+            aria-label="Volver a tus datos"
+            className="inline-flex items-center justify-center sm:gap-2 h-10 w-10 sm:w-auto sm:h-9 sm:px-3 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-all shadow-sm shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
+            <span className="hidden sm:inline">Volver a tus datos</span>
+          </Link>
+          <h1 className="sm:hidden text-lg font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] truncate">
+            Entrega y pago
+          </h1>
+        </div>
+        <h1 className="hidden sm:block text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           Entrega y pago
         </h1>
-        <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
+        <p className="hidden sm:block mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
           Elige dónde recibes y cómo pagás.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-16">
-        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-          {/* ── Direcciones guardadas (si hay) ─────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-8 items-start pb-28 lg:pb-16">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6" noValidate>
+          {/* ── Direcciones guardadas (si hay) ───────────────────────
+                Brandon, mayo 14 2026: el boton "Usar otra direccion" del
+                picker abre AddAddressFlowModal (paso 1: CTA "Poner ubicacion
+                actual", paso 2: mapa). La direccion confirmada se persiste
+                en handleMapConfirm — la proxima visita aparece como otra
+                tarjeta para marcar con check. */}
           {savedAddresses.length > 0 && !useNewAddress && (
-            <AddressPicker
-              addresses={savedAddresses}
-              activeId={activeAddressId}
-              onSelect={handlePickAddress}
-              onNew={handleUseNewAddress}
-              onRemove={(id) => {
-                removeAddress(id);
-                if (id === activeAddressId) setActiveAddressId(null);
-              }}
-            />
+            <>
+              <AddressPicker
+                addresses={savedAddresses}
+                activeId={activeAddressId}
+                onSelect={handlePickAddress}
+                onNew={() => setAddAddressModalOpen(true)}
+                onRemove={(id) => {
+                  removeAddress(id);
+                  if (id === activeAddressId) setActiveAddressId(null);
+                }}
+              />
+              {!manualAddressEntry && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManualAddressEntry(true);
+                    handleUseNewAddress();
+                  }}
+                  className="text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--accent)] underline underline-offset-2 transition-colors"
+                >
+                  ¿Sin GPS? Ingresar dirección manualmente
+                </button>
+              )}
+            </>
           )}
 
-          {/* ── DIRECCIÓN ─────────────────────────────────────────── */}
+          {/* ── DIRECCIÓN — solo aparece si NO hay direcciones guardadas
+                o el cliente eligió "llenar manualmente". Cuando hay
+                savedAddresses, el flujo principal es AddressPicker arriba
+                + modal "Agregar otra dirección" para registrar nuevas. */}
+          {(savedAddresses.length === 0 || manualAddressEntry) && (
           <SectionBox
             kicker="Dirección"
-            title="¿A dónde te lo llevamos?"
+            title={
+              savedAddresses.length > 0 && !manualAddressEntry
+                ? "Agregar otra ubicación"
+                : "¿A dónde te lo llevamos?"
+            }
             icon={MapPin}
+            action={
+              savedAddresses.length > 0 && manualAddressEntry ? (
+                <button
+                  type="button"
+                  onClick={() => setManualAddressEntry(false)}
+                  className="text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+                >
+                  Ocultar campos
+                </button>
+              ) : null
+            }
           >
             {/* ── Botón GRANDE animado de ubicación actual ───────── */}
             <button
@@ -941,6 +1056,35 @@ export default function CheckoutEntregaPage() {
               </div>
             )}
 
+            {/* Brandon mayo 15 v4: cuando los fields están ocultos (default),
+                mostramos un divider "o" + botón secundario "Ingresar dirección
+                manualmente". Una vez visible (por GPS o por click manual)
+                queda oculto. */}
+            {!showManualAddressFields && (
+              <div className="space-y-3">
+                <div className="relative flex items-center gap-3">
+                  <span className="flex-1 h-px bg-[var(--rule-base)]" aria-hidden />
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                    o
+                  </span>
+                  <span className="flex-1 h-px bg-[var(--rule-base)]" aria-hidden />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManualAddressEntry(true);
+                    setUseNewAddress(true);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] h-12 sm:h-13 px-5 text-[length:var(--ts-sm)] sm:text-base font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 active:scale-[0.98] transition-all shadow-sm"
+                >
+                  <Edit3 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Ingresar Dirección Manualmente
+                </button>
+              </div>
+            )}
+
+            {showManualAddressFields && (
+            <>
             <div>
               <Label htmlFor="ck-address">Calle y número</Label>
               <input
@@ -1056,7 +1200,10 @@ export default function CheckoutEntregaPage() {
                 />
               </div>
             </div>
+            </>
+            )}
           </SectionBox>
+          )}
 
           {/* ── PAGO ──────────────────────────────────────────────── */}
           <SectionBox kicker="Método de pago" title="¿Cómo te queda más cómodo?" icon={Wallet}>
@@ -1103,52 +1250,56 @@ export default function CheckoutEntregaPage() {
               </p>
             )}
 
-            {payment.method === "efectivo" && (
-              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5 space-y-3">
-                <div>
-                  <Label htmlFor="ck-cash">Calculadora de vuelto (opcional)</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] h-12 px-4 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)]">
-                      S/
-                    </span>
-                    <input
-                      id="ck-cash"
-                      type="number"
-                      min={0}
-                      step="0.10"
-                      value={payment.cashAmount}
-                      onChange={(e) => setPayment({ cashAmount: e.target.value })}
-                      placeholder={grandTotal.toFixed(2)}
-                      className={cn(pillCls(false), "pl-4")}
-                    />
-                  </div>
-                </div>
-                {cashAmount >= grandTotal && cashAmount > 0 && (
-                  <p className="text-[length:var(--ts-xs)] text-[var(--accent)] font-bold">
-                    Tu vuelto será {fmt(cashChange)}
-                  </p>
-                )}
-                {cashShort && (
-                  <p className="text-[length:var(--ts-xs)] text-[var(--data-error-500)] font-semibold">
-                    Faltan {fmt(grandTotal - cashAmount)} para cubrir el total.
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {[10, 20, 50, 100, 200].map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setPayment({ cashAmount: String(v) })}
-                      className="rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-8 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 transition-colors"
-                    >
-                      S/{v}
-                    </button>
-                  ))}
-                </div>
+            {/* Brandon mayo 15 v4 (audit QA #6): feedback visible si el cliente
+                intenta avanzar sin elegir método. Aparece SOLO tras submit. */}
+            {touched && payment.method === "" && (
+              <div
+                role="alert"
+                aria-live="polite"
+                className="flex items-start gap-2 rounded-2xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] dark:bg-[var(--data-error-950,#450a0a)]/30 px-4 py-3"
+              >
+                <AlertCircle
+                  className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5"
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+                <p className="text-[length:var(--ts-sm)] font-semibold text-[var(--data-error-600,#dc2626)] leading-snug">
+                  Elegí cómo querés pagar para continuar.
+                </p>
               </div>
             )}
 
-            {payment.method !== "efectivo" && storesNeedingProof.length > 0 && (
+            {payment.method === "efectivo" && (
+              // Brandon, mayo 14 2026: el panel inline con calculadora se
+              // movio al CashChangeModal que se abre al seleccionar efectivo.
+              // Aca solo dejamos un resumen del monto/vuelto elegido + boton
+              // para reabrir el modal y modificar.
+              <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-[var(--accent-soft)]/50 p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
+                    Pago en efectivo
+                  </p>
+                  {cashAmount >= grandTotal && cashAmount > grandTotal ? (
+                    <p className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
+                      Pagas con {fmt(cashAmount)} · vuelto {fmt(cashChange)}
+                    </p>
+                  ) : (
+                    <p className="text-sm font-bold text-[var(--text-primary)]">
+                      Pagás el monto exacto · {fmt(grandTotal)}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCashModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)] border border-[var(--accent)]/30 px-3.5 h-9 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors shrink-0"
+                >
+                  Cambiar vuelto
+                </button>
+              </div>
+            )}
+
+            {payment.method !== "" && payment.method !== "efectivo" && storesNeedingProof.length > 0 && (
               <div className="space-y-3">
                 <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   Comprobante por tienda
@@ -1244,7 +1395,22 @@ export default function CheckoutEntregaPage() {
             )}
           </SectionBox>
 
-          {/* ── CUPONES (colapsable por default) ──────────────────── */}
+          {/* ── CUPONES — oculto por default ──────────────────────────
+                Brandon, mayo 14 2026: si no hay cupones aplicados y el
+                cliente no toco "Agregar cupon", la seccion entera se rendera
+                como un link minimalista inline (no SectionBox completo). El
+                SectionBox aparece solo cuando es relevante.                */}
+          {!showCouponFields ? (
+            <button
+              type="button"
+              onClick={() => setCouponsUserOpened(true)}
+              className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-10 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            >
+              <Tag className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+              <span>¿Tenés un cupón? Agregalo</span>
+              <span className="text-[var(--accent)] font-extrabold" aria-hidden>+</span>
+            </button>
+          ) : (
           <SectionBox
             kicker="Cupones"
             title="¿Tienes un código?"
@@ -1261,20 +1427,7 @@ export default function CheckoutEntregaPage() {
               ) : null
             }
           >
-            {!showCouponFields ? (
-              <button
-                type="button"
-                onClick={() => setCouponsUserOpened(true)}
-                className="w-full rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors inline-flex items-center justify-between gap-2"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Tag className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                  Agregá tu código de cupón
-                </span>
-                <span aria-hidden>+</span>
-              </button>
-            ) : (
-              <>
+            <>
             <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] -mt-2">
               Un cupón por cada tienda. El descuento se refleja en el total.
             </p>
@@ -1355,10 +1508,10 @@ export default function CheckoutEntregaPage() {
               })}
             </div>
               </>
-            )}
           </SectionBox>
+          )}
 
-          {/* ── LOYALTY POINTS ─────────────────────────────────────── */}
+          {/* LOYALTY POINTS */}
           {loyaltyAvailable > 0 && (
             <SectionBox kicker="Puntos Buleje" title="Canjeá lo que tengas" icon={Sparkles}>
               <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] -mt-2">
@@ -1427,87 +1580,54 @@ export default function CheckoutEntregaPage() {
             </p>
           )}
 
-          {/* ── Datos del comprador (read-only) ───────────────────── */}
-          <SectionBox
-            kicker="Datos"
-            title="Tus datos"
-            icon={Wallet}
-            action={
-              <Link
-                href="/checkout/datos"
-                className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-4 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
-              >
-                Editar
-              </Link>
-            }
-          >
-            <dl className="space-y-2 text-[length:var(--ts-sm)]">
-              <div className="flex justify-between gap-3 py-2 border-b border-[var(--rule-soft)]">
-                <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] self-center">
-                  Nombre
-                </dt>
-                <dd className="font-semibold text-[var(--text-primary)] truncate">
-                  {customer.name || "—"}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3 py-2 border-b border-[var(--rule-soft)]">
-                <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] self-center">
-                  Teléfono
-                </dt>
-                <dd className="font-semibold text-[var(--text-primary)] tabular-nums">
-                  {customer.phone || "—"}
-                </dd>
-              </div>
-              {customer.email && (
-                <div className="flex justify-between gap-3 py-2">
-                  <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] self-center">
-                    Email
-                  </dt>
-                  <dd className="font-semibold text-[var(--text-primary)] truncate">
-                    {customer.email}
-                  </dd>
-                </div>
-              )}
-            </dl>
-          </SectionBox>
-
-          {/* CTA mobile (desktop usa el summary sticky) */}
-          <div className="lg:hidden pt-2">
-            <button
-              type="submit"
-              disabled={!isAddressValid || !allProofsReady}
-              className={cn(
-                "group inline-flex w-full items-center justify-center gap-2 rounded-full px-6 h-12",
-                "text-[length:var(--ts-sm)] font-bold tracking-[var(--ls-tight)] transition-all duration-200",
-                "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent)]/90 hover:gap-3",
-                "shadow-[0_6px_20px_-10px_var(--accent)]",
-                "disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none",
-              )}
-            >
-              {!allProofsReady ? "Subí los comprobantes" : "Revisar pedido"}
-              <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
-            </button>
-          </div>
+          {/* CTA mobile duplicado removido (Brandon, mayo 14 2026):
+              CheckoutMobileCtaBar sticky bottom cubre el rol sin duplicar
+              el "Revisar pedido" que ya aparece en el CheckoutSummary. */}
         </form>
 
-        <CheckoutSummary
-          ctaLabel={!allProofsReady ? "Subí los comprobantes" : "Revisar pedido"}
-          onCtaClick={() => {
-            setTouched(true);
-            if (isAddressValid && allProofsReady)
-              navigateTo("/checkout/confirmar", "Preparando tu resumen");
-          }}
-          ctaDisabled={!isAddressValid || !allProofsReady}
-          couponDiscount={couponDiscountTotal}
-          loyaltyDiscount={loyaltyDiscountTotal}
-          showItems
-          helperText={
-            !allProofsReady
-              ? "Falta subir el comprobante de pago"
-              : "Un paso más para confirmar"
-          }
-        />
+        {/* CheckoutSummary oculto en mobile — CheckoutMobileCtaBar sticky
+            bottom ya cubre total + CTA revisar pedido (Brandon, mayo 14 2026) */}
+        <div className="hidden lg:block">
+          <CheckoutSummary
+            ctaLabel={!allProofsReady ? "Subí los comprobantes" : "Revisar pedido"}
+            onCtaClick={() => {
+              setTouched(true);
+              if (isAddressValid && allProofsReady)
+                navigateTo("/checkout/confirmar", "Preparando tu resumen");
+            }}
+            ctaDisabled={!isAddressValid || !allProofsReady}
+            couponDiscount={couponDiscountTotal}
+            loyaltyDiscount={loyaltyDiscountTotal}
+            showItems
+            helperText={
+              !allProofsReady
+                ? "Falta subir el comprobante de pago"
+                : "Un paso más para confirmar"
+            }
+          />
+        </div>
       </div>
+
+      <CheckoutMobileCtaBar
+        primaryLabel="Total"
+        total={Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal)}
+        ctaLabel={!allProofsReady ? "Falta comprobante" : "Revisar pedido"}
+        ctaOnClick={() => {
+          setTouched(true);
+          if (isAddressValid && allProofsReady)
+            navigateTo("/checkout/confirmar", "Preparando tu resumen");
+        }}
+        ctaDisabled={!isAddressValid || !allProofsReady}
+        disabledReason={
+          !isAddressValid
+            ? "Completá tu dirección"
+            : !allProofsReady
+              ? "Subí los comprobantes"
+              : undefined
+        }
+        helperText="Un paso más para confirmar"
+      />
+
       <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
       {mapInitial && (
         <LocationConfirmModal
@@ -1520,6 +1640,33 @@ export default function CheckoutEntregaPage() {
           onConfirm={handleMapConfirm}
         />
       )}
+
+      {/* Modal "Agregar otra dirección" — abre desde AddressPicker.onNew.
+          Reusa handleMapConfirm para persistir + auto-seleccionar la nueva
+          dirección en el picker. */}
+      <AddAddressFlowModal
+        open={addAddressModalOpen}
+        onClose={() => setAddAddressModalOpen(false)}
+        onConfirm={async (lat, lon, addr) => {
+          // handleMapConfirm pobla los campos del checkout state (calle,
+          // dep, prov, dist, zone) usando reverse-geocode. useSavedAddresses
+          // hook detecta el address.address con coords y lo persiste con
+          // savedAt actualizado, asi la proxima visita aparece como nueva
+          // tarjeta en el AddressPicker.
+          await handleMapConfirm(lat, lon, addr);
+          setAddAddressModalOpen(false);
+        }}
+      />
+
+      {/* Modal "Calculadora de vuelto" — abre auto al seleccionar Efectivo
+          o via boton "Cambiar vuelto" en el resumen inline. */}
+      <CashChangeModal
+        open={cashModalOpen}
+        onClose={() => setCashModalOpen(false)}
+        total={grandTotal}
+        initialAmount={payment.cashAmount}
+        onConfirm={(amount) => setPayment({ cashAmount: amount })}
+      />
       {activeProofModal && (
         <PaymentProofModal
           open

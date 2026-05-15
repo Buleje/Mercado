@@ -15,6 +15,28 @@ import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/market
 // fetched concurrently. React.cache solves the per-request dedupe problem.
 const getStoreBySlug = cache((slug: string) => MarketplaceStoresDB.getBySlug(slug));
 
+// Brandon mayo 15 v3: N+1 fix — review.findMany + review.groupBy se llamaban
+// 3x en 22ms (mismo storeId). Suspense boundaries y streaming re-evaluan el
+// subarbol multiples veces; React.cache deduplica dentro del mismo request.
+const getReviewsByStoreId = cache((tenantId: string, storeId: string) =>
+  StoreReviewsDB.listByStoreId(tenantId, storeId),
+);
+
+// Hours JSON lookup deduplicado + paralelizable. Antes vivía inline dentro
+// del render — al ser awaiteado seriamente, bloqueaba el flujo después de
+// categoryImages. Ahora corre en Promise.all con reviews y categoryImages.
+const getHoursJson = cache(async (storeId: string): Promise<unknown> => {
+  try {
+    const { prisma: prismaClient } = await import("@/lib/prisma");
+    const rows = await prismaClient.$queryRaw<Array<{ hoursJson: unknown }>>`
+      SELECT "hoursJson" FROM "Store" WHERE id = ${storeId} LIMIT 1
+    `;
+    return rows[0]?.hoursJson ?? null;
+  } catch {
+    return null;
+  }
+});
+
 // Designer audit: el title antes mostraba la categoría raw "polleria" sin
 // tilde. Map mínimo a labels visibles correctos en español.
 const CATEGORY_LABELS: Record<string, string> = {
@@ -144,10 +166,19 @@ function StoreJsonLd({
     areaServed: { "@type": "City", name: "Pucallpa" },
   };
 
+    // Brandon mayo 15 v4 (audit Security #2): escape de "<" + separadores
+  // Unicode U+2028 / U+2029 que JSON.stringify no escapa pero algunos
+  // parsers JS interpretan como newlines, lo que podria romper el
+  // <script> JSON-LD y permitir XSS si el admin guarda payload malicioso.
+  const safeJson = JSON.stringify(jsonLd)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJson }}
     />
   );
 }
@@ -245,8 +276,21 @@ async function StoreDetailContent({ slug }: { slug: string }) {
     .sort((a, b) => b[1] - a[1])
     .map(([name, count]) => ({ name, count }));
 
-  // Resuelve imágenes: per-store > global default > undefined (texto-only).
-  const categoryImages = await resolveCategoryImages(ownImages);
+  // 4-5. Paralelizar 3 fetches independientes que antes corrian seriales:
+  //  a) categoryImages (Object.keys de Settings global)
+  //  b) reviews + summary (Review table)
+  //  c) hoursJson (Store.hoursJson raw)
+  // Ganancia: ~3× latencia → 1× la mas lenta. Tambien evita el N+1 detector
+  // que disparaba 3x en 22ms por re-rendering de Suspense boundaries.
+  const [categoryImages, reviewsAndSummary, hoursJson, storeHoursLib] = await Promise.all([
+    resolveCategoryImages(ownImages),
+    getReviewsByStoreId(store.tenantId, store.id),
+    getHoursJson(store.id),
+    import("@/lib/marketplace-store-hours"),
+  ]);
+  const { reviews, summary: reviewSummary } = reviewsAndSummary;
+  const { isOpenNow: storeIsOpenNow, nextOpening } = storeHoursLib;
+
   const categories: StoreCategoryChip[] = persistedOrder.length === 0
     ? baseCategories
     : (() => {
@@ -260,25 +304,7 @@ async function StoreDetailContent({ slug }: { slug: string }) {
         });
       })();
 
-  // 4. Fetch reseñas REALES (de la tabla Review). Defensive: si falla,
-  //    devuelve listas vacías y la UI muestra empty state honesto.
-  const { reviews, summary: reviewSummary } = await StoreReviewsDB.listByStoreId(store.tenantId, store.id);
-
-  // 5. Horario real de la tienda — leído de Store.hoursJson (columna jsonb
-  //    fuera del schema Prisma — fase expand). Si no hay hours configuradas,
-  //    cae al cómputo legacy (Settings.autoCloseTime).
-  const { prisma: prismaClient } = await import("@/lib/prisma");
-  const { isOpenNow: storeIsOpenNow, nextOpening } = await import("@/lib/marketplace-store-hours");
   const NOW = new Date();
-  let hoursJson: unknown = null;
-  try {
-    const rows = await prismaClient.$queryRaw<Array<{ hoursJson: unknown }>>`
-      SELECT "hoursJson" FROM "Store" WHERE id = ${store.id} LIMIT 1
-    `;
-    hoursJson = rows[0]?.hoursJson ?? null;
-  } catch {
-    hoursJson = null;
-  }
   const isOpenReal = hoursJson
     ? storeIsOpenNow(hoursJson as never, NOW)
     : computeIsOpenNow();
@@ -322,8 +348,14 @@ async function StoreDetailContent({ slug }: { slug: string }) {
         Se activa con el feature flag marketplace-chat-public en Vercel env.
         Si el flag está off, el endpoint devuelve 503 y el widget muestra
         "Chat temporalmente no disponible". Sin fricción si no está listo.
+
+        Brandon mayo 14 2026: oculto en mobile (sm-only). En cel satura
+        el viewport — el cliente tiene el sticky cart bar abajo y el
+        widget tapa el catálogo. En desktop sigue visible.
       */}
-      <ChatBubble storeSlug={slug} storeName={store.name} />
+      <div className="hidden sm:contents">
+        <ChatBubble storeSlug={slug} storeName={store.name} />
+      </div>
     </>
   );
 }
