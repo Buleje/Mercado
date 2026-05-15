@@ -1,10 +1,10 @@
 "use client";
 
-// CardTitle removido — header inline eliminado en Row 2.
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DateRange } from "./DashboardDateRange";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
+import { CardTitle } from "@buleje/design-system";
 // BulejeMetricHeroCard removido (duplicado con TodayHub). Re-importar si se
 // restaura el hero en esta pantalla.
 import { SkeletonEditorial } from "@/components/ui-system";
@@ -279,9 +279,9 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
             Ventas · {rangeTxt}
           </p>
-          <h3 className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
+          <CardTitle className="text-base sm:text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
             Cuánto vendiste, cuántos pedidos y cuántos clientes te compraron
-          </h3>
+          </CardTitle>
         </header>
         <BulejeComposedChart
           data={weeklyData}
