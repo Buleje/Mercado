@@ -126,13 +126,13 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
     <div className="w-full">
       {/* Header del strip — delta de mitad contra mitad */}
       {halfDelta != null && Math.abs(halfDelta) >= 5 && (
-        <div className="flex justify-end mb-2">
+        <div className="flex justify-end mb-3">
           <span
             className={cn(
-              "inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-2 py-1 rounded-full",
+              "inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-full border",
               halfDelta > 0
-                ? "bg-[color:var(--section-accent,var(--data-success))]/10 text-[color:var(--section-accent,var(--data-success))]"
-                : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
+                ? "bg-[color:var(--section-accent,var(--data-success))]/10 text-[color:var(--section-accent,var(--data-success))] border-[color:var(--section-accent,var(--data-success))]/30"
+                : "bg-[var(--data-error-50)] text-[var(--data-error-500)] border-[var(--data-error-500)]/30",
             )}
             title={
               halfDelta > 0
@@ -145,47 +145,53 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
           </span>
         </div>
       )}
-      {/* Chart area — 7 barras con label encima */}
-      <div className="relative flex items-end justify-between gap-1 h-20">
-        {/* Linea del promedio */}
+      {/* Chart area — barras con label encima.
+          Brandon mayo 2026 v2: alto subido a h-28 (era h-20), gap entre
+          barras 1.5 (era 1), label de promedio movido a top-left con
+          fondo sólido para no taparse con los valores de barras. */}
+      <div className="relative flex items-end justify-between gap-1.5 h-28">
+        {/* Linea del promedio (sutil, posicionada absoluta) */}
         <div
-          className="absolute left-0 right-0 border-t border-dashed border-[var(--text-tertiary)] opacity-40 pointer-events-none"
+          className="absolute left-0 right-0 border-t-2 border-dashed border-[var(--text-tertiary)]/40 pointer-events-none"
           style={{ bottom: `${avgPct}%` }}
           aria-hidden
+        />
+        {/* Pill del promedio — esquina superior izquierda fuera del chart */}
+        <span
+          className="absolute left-0 top-0 -translate-y-1/2 inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-2 py-0.5 text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums z-10"
+          aria-hidden
         >
-          <span className="absolute right-0 -top-3 text-[length:var(--ts-3xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] bg-[var(--surface-raised)] px-1">
-            prom · {fmt(avg)}
-          </span>
-        </div>
+          Prom · {fmt(avg)}
+        </span>
 
         {displayData.map((d, i) => {
           const heightPct = Math.max(6, (d.value / max) * 100);
           return (
             <div
               key={i}
-              className="flex-1 flex flex-col items-center justify-end gap-1 relative group"
+              className="flex-1 flex flex-col items-center justify-end gap-1.5 relative group"
               title={`${d.label}: ${d.value.toLocaleString("es-PE")}`}
             >
               <span
                 className={cn(
-                  "text-[length:var(--ts-3xs)] font-bold tabular-nums leading-none",
+                  "text-xs font-extrabold tabular-nums leading-none",
                   d.isToday
                     ? "text-[color:var(--section-primary,var(--text-primary))]"
                     : d.isMax
                       ? "text-[var(--data-warning-500)]"
-                      : "text-[var(--text-tertiary)]",
+                      : "text-[var(--text-secondary)]",
                 )}
               >
                 {fmt(d.value)}
               </span>
               <div
                 className={cn(
-                  "w-full rounded-t-sm transition-all",
+                  "w-full rounded-t-md transition-all",
                   d.isToday
                     ? "bg-[color:var(--section-primary,var(--text-primary))]"
                     : d.isMax
-                      ? "bg-[var(--data-warning-500)] opacity-80"
-                      : "bg-[var(--text-tertiary)] opacity-30 group-hover:opacity-60",
+                      ? "bg-[var(--data-warning-500)] opacity-85"
+                      : "bg-[var(--text-tertiary)] opacity-40 group-hover:opacity-65",
                 )}
                 style={{ height: `${heightPct}%` }}
               />
@@ -195,26 +201,26 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
       </div>
 
       {/* Labels inferiores con etiquetas HOY / MEJOR */}
-      <div className="flex items-start justify-between gap-1 mt-1.5">
+      <div className="flex items-start justify-between gap-1.5 mt-2.5">
         {displayData.map((d, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
             <span
               className={cn(
-                "text-[length:var(--ts-3xs)] font-bold uppercase tracking-wider tabular-nums",
+                "text-xs font-extrabold uppercase tracking-wider tabular-nums",
                 d.isToday
                   ? "text-[color:var(--section-primary,var(--text-primary))]"
-                  : "text-[var(--text-tertiary)]",
+                  : "text-[var(--text-secondary)]",
               )}
             >
               {d.label}
             </span>
             {d.isToday && (
-              <span className="text-[length:var(--ts-3xs)] font-extrabold uppercase tracking-wider text-[color:var(--section-primary,var(--text-primary))]">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[color:var(--section-primary,var(--text-primary))]">
                 hoy
               </span>
             )}
             {d.isMax && i !== todayIdx && (
-              <span className="text-[length:var(--ts-3xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-500)]">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--data-warning-500)]">
                 pico
               </span>
             )}
@@ -262,16 +268,19 @@ export const AdminInsightCard = memo(function AdminInsightCard({
       )}
       aria-labelledby="admin-insight-hero"
     >
-      {/* Top zone: greeting + hero KPI + sparkline */}
+      {/* Top zone: greeting + hero KPI + sparkline.
+          Brandon mayo 2026 v2: tipografía agrandada — antes greeting era
+          text-2xs uppercase chiquito, ahora text-lg semibold (saludo
+          legible). heroLabel sube a text-sm, heroDelta a text-base. */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 sm:p-8 border-b border-[var(--rule-soft)]">
         {/* Hero metric — top-left más grande (F-pattern) */}
         <div className="lg:col-span-5">
           {greeting && (
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+            <p className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] mb-3">
               {greeting}
             </p>
           )}
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+          <p className="text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
             {heroLabel}
           </p>
           {loading ? (
@@ -296,11 +305,11 @@ export const AdminInsightCard = memo(function AdminInsightCard({
             </div>
           )}
           {heroDelta != null && !loading && (
-            <p className="mt-3 flex items-center gap-2 text-xs">
-              <span className={cn("inline-flex items-center gap-0.5 font-bold tabular-nums", deltaColor)}>
+            <p className="mt-4 flex items-center gap-2 text-base">
+              <span className={cn("inline-flex items-center gap-1 font-extrabold tabular-nums", deltaColor)}>
                 {deltaUp && "↑"} {deltaDown && "↓"} {Math.abs(heroDelta).toFixed(1)}%
               </span>
-              <span className="text-[var(--text-tertiary)]">{heroDeltaLabel}</span>
+              <span className="text-[var(--text-tertiary)] font-semibold">{heroDeltaLabel}</span>
             </p>
           )}
         </div>
@@ -331,21 +340,21 @@ export const AdminInsightCard = memo(function AdminInsightCard({
                     ? "text-[var(--data-error-500)]"
                     : "text-[var(--text-primary)]";
             return (
-              <div key={m.label} className="px-4 py-4 sm:px-6 sm:py-5">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+              <div key={m.label} className="px-5 py-5 sm:px-7 sm:py-6">
+                <p className="text-xs sm:text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2.5">
                   {m.label}
                 </p>
-                <div className="flex items-baseline gap-1">
-                  {m.prefix && <span className="text-sm font-bold text-[var(--text-tertiary)]">{m.prefix}</span>}
+                <div className="flex items-baseline gap-1.5">
+                  {m.prefix && <span className="text-base sm:text-lg font-bold text-[var(--text-tertiary)]">{m.prefix}</span>}
                   <NumberFlow
                     value={m.value}
                     format={{ maximumFractionDigits: m.decimals ?? 0 }}
-                    className={cn("text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)]", statusColor)}
+                    className={cn("text-2xl sm:text-3xl font-extrabold tabular-nums tracking-[var(--ls-tight)]", statusColor)}
                   />
-                  {m.suffix && <span className="text-sm font-semibold text-[var(--text-tertiary)]">{m.suffix}</span>}
+                  {m.suffix && <span className="text-base font-semibold text-[var(--text-tertiary)]">{m.suffix}</span>}
                 </div>
                 {m.delta != null && (
-                  <p className="mt-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] tabular-nums">
+                  <p className="mt-1.5 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] tabular-nums">
                     <span className={dUp ? "text-[var(--data-success-500)]" : dDown ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"}>
                       {dUp && "↑"} {dDown && "↓"} {Math.abs(m.delta).toFixed(1)}%
                     </span>
@@ -367,18 +376,18 @@ export const AdminInsightCard = memo(function AdminInsightCard({
             insight.type === "info" && "bg-[var(--surface-sunken)]",
           )}
         >
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]">
-            {insight.type === "opportunity" && <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
-            {insight.type === "warning" && <Lightbulb className="h-4 w-4 text-[var(--data-warning-500)]" strokeWidth={1.75} aria-hidden />}
-            {insight.type === "info" && <Lightbulb className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)]">
+            {insight.type === "opportunity" && <Sparkles className="h-5 w-5" strokeWidth={2} aria-hidden />}
+            {insight.type === "warning" && <Lightbulb className="h-5 w-5 text-[var(--data-warning-500)]" strokeWidth={2} aria-hidden />}
+            {insight.type === "info" && <Lightbulb className="h-5 w-5" strokeWidth={2} aria-hidden />}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+            <p className="text-xs sm:text-sm font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
               {insight.type === "opportunity" && "Oportunidad detectada"}
               {insight.type === "warning" && "Necesita atención"}
               {insight.type === "info" && "Insight"}
             </p>
-            <p className="text-sm text-[var(--text-primary)] leading-relaxed">{insight.text}</p>
+            <p className="text-base text-[var(--text-primary)] leading-relaxed font-medium">{insight.text}</p>
           </div>
           {insight.cta && (
             <PrimaryButton

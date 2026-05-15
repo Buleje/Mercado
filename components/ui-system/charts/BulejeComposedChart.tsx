@@ -143,9 +143,10 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
         <ComposedChart
           data={data}
           margin={{
-            // showValues activo: extra top headroom para que el LabelList encima
-            // de la barra más alta no se corte (visto en Inventario · Abarrotes).
-            top: showValues ? 28 : 12,
+            // showValues activo: extra top headroom para que la pill flotante
+            // del label encima de la barra más alta no se corte. Bumped a 36
+            // (era 28) porque la pill ahora tiene border-rect y offset=10.
+            top: showValues ? 36 : 12,
             right: 16,
             bottom: 4,
             left: 0,
@@ -165,6 +166,15 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
             tickLine={false}
             axisLine={false}
             tick={{ fill: CHART_AXIS_COLOR, fontWeight: 600 }}
+            // Brandon mayo 2026 v2: interval=0 fuerza mostrar TODOS los
+            // labels (Recharts default omite cuando no caben). Rotación
+            // -30° + height=60 acomoda labels largos "Lunes 10/05" sin
+            // pisarse. dy=8 baja un toque para no solapar el axis line.
+            interval={0}
+            angle={-30}
+            textAnchor="end"
+            height={60}
+            dy={8}
           />
           <YAxis
             yAxisId="left"
@@ -251,18 +261,57 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
                   <LabelList
                     dataKey={series.key}
                     position="top"
-                    // Recharts LabelFormatter signature: (value, ..._args) => ReactNode
-                    formatter={((value: unknown) => {
+                    offset={10}
+                    // Brandon mayo 2026 v2: custom content que dibuja un
+                    // rect de fondo detrás del texto. Sin esto, las líneas
+                    // de tendencia (Saldo neto, Pedidos, Ingresos S/) pasan
+                    // por encima y tapan los labels de las barras.
+                    content={((props: {
+                      x?: number;
+                      y?: number;
+                      width?: number;
+                      value?: number | string;
+                    }) => {
+                      const { x = 0, y = 0, width = 0, value } = props;
                       const num = Number(value);
-                      if (!Number.isFinite(num) || num === 0) return "";
-                      return valueFormat ? valueFormat(num, series.key) : defaultValueFormat(num);
+                      if (!Number.isFinite(num) || num === 0) return null;
+                      const text = valueFormat
+                        ? valueFormat(num, series.key)
+                        : defaultValueFormat(num);
+                      if (!text) return null;
+                      const cx = x + width / 2;
+                      // Estimación ancho del texto: 6.5px por char a fontSize 11
+                      const padX = 6;
+                      const rectWidth = Math.max(20, text.length * 6.5 + padX * 2);
+                      const rectHeight = 18;
+                      return (
+                        <g pointerEvents="none">
+                          <rect
+                            x={cx - rectWidth / 2}
+                            y={y - rectHeight - 2}
+                            width={rectWidth}
+                            height={rectHeight}
+                            rx={4}
+                            ry={4}
+                            fill="var(--surface-raised)"
+                            stroke="var(--rule-base)"
+                            strokeWidth={1}
+                          />
+                          <text
+                            x={cx}
+                            y={y - rectHeight / 2 - 2}
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            fill={CHART_AXIS_COLOR}
+                            fontSize={CHART_FONT.axisSize}
+                            fontWeight={700}
+                            fontFamily={CHART_FONT.family}
+                          >
+                            {text}
+                          </text>
+                        </g>
+                      );
                     }) as never}
-                    style={{
-                      fill: CHART_AXIS_COLOR,
-                      fontSize: CHART_FONT.axisSize,
-                      fontWeight: 700,
-                      fontFamily: CHART_FONT.family,
-                    }}
                   />
                 )}
               </Bar>

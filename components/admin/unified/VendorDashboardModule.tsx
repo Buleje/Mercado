@@ -182,8 +182,10 @@ export default function VendorDashboardModule() {
       <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
-            {/* Hub "Hoy" — saludo dinámico + hero KPI scoped al rango activo */}
-            <TodayHub dateRange={dateRange} />
+            {/* Hub "Hoy" — saludo dinámico + hero KPI scoped al rango activo.
+                hideAlerts=true porque InicioDashboardV2 las renderea side-by-side
+                con la Meta del mes (v2 mayo 2026). */}
+            <TodayHub dateRange={dateRange} hideAlerts />
             {/* Dashboard denso con compound charts + multi-signal KPIs scoped al rango */}
             <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} />
           </div>

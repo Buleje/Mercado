@@ -58,16 +58,26 @@ const CAT_LABEL: Record<string, string> = {
   otros: "Otros",
 };
 
-const DAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+// Brandon mayo 2026: labels del eje X con día + fecha corta para que el
+// dueño de la bodega entienda inmediatamente "Lunes 10/05" sin tener que
+// adivinar qué semana es. Variantes según el ancho del rango.
+const DAY_FULL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const DAY_SHORT = ["Do", "L", "Ma", "Mi", "Ju", "Vi", "Sa"];
 const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 const MS_DAY = 24 * 60 * 60 * 1000;
 
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
 /**
- * Construye hasta 14 buckets cubriendo el rango [from, to].
- * - Rango <= 1 día: 6 buckets de 4h
- * - Rango <= 14 días: buckets diarios
- * - Rango más largo: buckets de (span/14) días
+ * Construye buckets cubriendo el rango [from, to] sin saltarse días en el
+ * modo "mensual" — para que se vean L Ma Mi Ju Vi Sa Do consecutivos.
+ * - Rango <= 1 día: 6 buckets de 4h ("08h", "12h", …)
+ * - Rango <= 8 días (semanal): buckets diarios "Lunes 10/05"
+ * - Rango <= 35 días (mensual): buckets diarios "L 10/05"
+ * - Rango más largo (anual): máx 14 buckets uniformes "Ene 1"
  */
 function buildBuckets(from: Date, to: Date): Array<{ label: string; start: number; end: number }> {
   const span = to.getTime() - from.getTime();
@@ -81,7 +91,7 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
       const start = new Date(fromStart.getTime() + i * 4 * 60 * 60 * 1000);
       const end = new Date(start.getTime() + 4 * 60 * 60 * 1000 - 1);
       out.push({
-        label: `${String(start.getHours()).padStart(2, "0")}h`,
+        label: `${pad2(start.getHours())}h`,
         start: start.getTime(),
         end: end.getTime(),
       });
@@ -89,7 +99,8 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
     return out;
   }
 
-  if (days <= 14) {
+  // Semanal (≤ 8 días): "Lunes 10/05" — día completo + fecha corta
+  if (days <= 8) {
     const out: Array<{ label: string; start: number; end: number }> = [];
     const cursor = new Date(from);
     cursor.setHours(0, 0, 0, 0);
@@ -98,8 +109,9 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
     while (cursor.getTime() <= last.getTime()) {
       const dayEnd = new Date(cursor);
       dayEnd.setHours(23, 59, 59, 999);
+      const dayName = DAY_FULL[cursor.getDay()] ?? "";
       out.push({
-        label: DAY_LABELS[cursor.getDay()] ?? `${cursor.getDate()}`,
+        label: `${dayName} ${pad2(cursor.getDate())}/${pad2(cursor.getMonth() + 1)}`,
         start: cursor.getTime(),
         end: dayEnd.getTime(),
       });
@@ -108,7 +120,28 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
     return out;
   }
 
-  // Rango largo: máx 14 buckets uniformes
+  // Mensual (≤ 35 días): "L 10/05" — letra del día + fecha corta. Sin saltarse.
+  if (days <= 35) {
+    const out: Array<{ label: string; start: number; end: number }> = [];
+    const cursor = new Date(from);
+    cursor.setHours(0, 0, 0, 0);
+    const last = new Date(to);
+    last.setHours(23, 59, 59, 999);
+    while (cursor.getTime() <= last.getTime()) {
+      const dayEnd = new Date(cursor);
+      dayEnd.setHours(23, 59, 59, 999);
+      const dayShort = DAY_SHORT[cursor.getDay()] ?? "";
+      out.push({
+        label: `${dayShort} ${pad2(cursor.getDate())}/${pad2(cursor.getMonth() + 1)}`,
+        start: cursor.getTime(),
+        end: dayEnd.getTime(),
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return out;
+  }
+
+  // Rango largo (> 35 días): máx 14 buckets uniformes
   const bucketSize = Math.ceil(days / 14);
   const out: Array<{ label: string; start: number; end: number }> = [];
   const cursor = new Date(from);
@@ -117,9 +150,9 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
     const bucketEnd = new Date(cursor.getTime() + bucketSize * MS_DAY - 1);
     const actualEnd = bucketEnd.getTime() > to.getTime() ? to : bucketEnd;
     out.push({
-      label: days > 60
+      label: days > 90
         ? `${MONTH_LABELS[cursor.getMonth()]} ${cursor.getDate()}`
-        : `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+        : `${pad2(cursor.getDate())}/${pad2(cursor.getMonth() + 1)}`,
       start: cursor.getTime(),
       end: actualEnd.getTime(),
     });
@@ -634,14 +667,17 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
     },
   ];
 
-  // layout="grid" (2026-04-24): los 5 charts (caja, inventario, compras,
-  // clientes, productos) se renderizan 2 por fila en lg+ en vez de 1 por
-  // fila. Reduce el scroll y permite leer comparaciones en paralelo.
+  // Brandon mayo 2026 v2: layout="column" — cada chart abarca toda la fila
+  // para que tenga aire y se lea cómodo. Antes (layout="grid", 2026-04-24)
+  // mostraba 2 por fila pero los gráficos quedaban apretados y el eje X con
+  // los nuevos labels "Lunes 10/05" ya no entraba. Una fila por gráfico
+  // resuelve ambos problemas y deja respiro visual.
   return (
     <DraggableSections
       items={sections}
       storageKey="inicio-multi-order"
-      layout="grid"
+      layout="column"
+      gap={4}
     />
   );
 });

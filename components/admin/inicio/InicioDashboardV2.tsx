@@ -5,6 +5,7 @@ import type { DateRange } from "./DashboardDateRange";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { CardTitle } from "@buleje/design-system";
+import { DashboardAlertsList } from "@/components/admin/hoy/TodayHub";
 // BulejeMetricHeroCard removido (duplicado con TodayHub). Re-importar si se
 // restaura el hero en esta pantalla.
 import { SkeletonEditorial } from "@/components/ui-system";
@@ -217,59 +218,68 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
           Ticket prom., Clientes) quedan cubiertos por las KPI cards de
           las siguientes secciones. */}
 
-      {/* ── Meta + hora pico (enriquece el hero) · ambos dinámicos por preset ── */}
-      <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
-          <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-              {PRESET_META_LABEL[presetKey] ?? PRESET_META_LABEL.mensual}
-              {presetKey === "mensual" && ` · día ${dayOfMonth}`}
-            </p>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">
-              S/ {Math.round(acumRango).toLocaleString("es-PE")} de S/ {Math.round(metaRango).toLocaleString("es-PE")}
-              <span className="ml-2 text-[var(--text-tertiary)] font-normal">
-                ({metaPct}% avanzado)
+      {/* ── Meta + Alertas accionables side-by-side ──
+          Brandon mayo 2026 v2: en lugar de banda Meta full-width + bloque
+          de Alertas separado en TodayHub, ambos van en 1 fila grid 2-col.
+          Lectura más rápida del estado del negocio. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 flex flex-col">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+                {PRESET_META_LABEL[presetKey] ?? PRESET_META_LABEL.mensual}
+                {presetKey === "mensual" && ` · día ${dayOfMonth}`}
+              </p>
+              <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tabular-nums leading-tight">
+                S/ {Math.round(acumRango).toLocaleString("es-PE")}
+                <span className="text-[var(--text-tertiary)] font-semibold"> / </span>
+                S/ {Math.round(metaRango).toLocaleString("es-PE")}
+              </p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)] font-semibold">
+                {metaPct}% avanzado
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
+                <span className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  Hora pico
+                </span>
+                <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
+                  {peakHourLabel}
+                </span>
               </span>
-            </p>
+              <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
+                <span className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  {PRESET_PROYECCION[presetKey] ?? PRESET_PROYECCION.mensual}
+                </span>
+                <span
+                  className={
+                    "text-sm font-extrabold tabular-nums " +
+                    (proyPct >= 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")
+                  }
+                >
+                  {proyPct}%
+                </span>
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1">
-              <span className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Hora pico
-              </span>
-              <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
-                {peakHourLabel}
-              </span>
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1">
-              <span className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                {PRESET_PROYECCION[presetKey] ?? PRESET_PROYECCION.mensual}
-              </span>
-              <span
-                className={
-                  "text-sm font-extrabold tabular-nums " +
-                  (proyPct >= 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]")
-                }
-              >
-                {proyPct}%
-              </span>
-            </span>
+          <div className="mt-auto h-3 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+            <div
+              className={
+                "h-full rounded-full transition-all duration-500 " +
+                (metaPct >= 75
+                  ? "bg-[var(--data-success-500)]"
+                  : metaPct >= 40
+                    ? "bg-primary"
+                    : "bg-[var(--data-warning-500)]")
+              }
+              style={{ width: `${metaPct}%` }}
+            />
           </div>
-        </div>
-        <div className="h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-          <div
-            className={
-              "h-full rounded-full transition-all duration-500 " +
-              (metaPct >= 75
-                ? "bg-[var(--data-success-500)]"
-                : metaPct >= 40
-                  ? "bg-primary"
-                  : "bg-[var(--data-warning-500)]")
-            }
-            style={{ width: `${metaPct}%` }}
-          />
-        </div>
-      </section>
+        </section>
+
+        <DashboardAlertsList dateRange={dateRange} />
+      </div>
 
       {/* ── Row 2: Compound chart — 3 series correlacionadas (ventas + pedidos + clientes)
           Brandon mayo 2026 v2: header restaurado con título plain-spanish para
