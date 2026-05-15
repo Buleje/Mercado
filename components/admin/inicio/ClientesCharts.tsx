@@ -189,7 +189,6 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
         <DashboardSection
           chartId="clientes.distribucion-gasto"
           hasData={true}
-          defaultVisible={false}
           kicker="Distribución · gasto histórico"
           title="Cuántos clientes en cada rango de gasto"
           kpis={[
@@ -236,7 +235,6 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
         <DashboardSection
           chartId="clientes.frecuencia-compra"
           hasData={true}
-          defaultVisible={false}
           kicker="Frecuencia · en el periodo"
           title="Cuántas veces compran tus clientes"
           kpis={[

@@ -26,6 +26,14 @@ interface ChartMeta {
   label: string;
   /** Por defecto true. Si el chart no tiene datos suficientes, pasa false. */
   hasData: boolean;
+  /**
+   * Por defecto true. Si false, el chart está oculto al inicio (charts
+   * avanzados/secundarios). El user puede mostrarlo desde el modal.
+   * Brandon mayo 2026 v3: fix bug — antes el manager NO usaba este campo,
+   * causando que el modal dijera "VISIBLE" pero el chart no se mostraba
+   * hasta el segundo click.
+   */
+  defaultVisible: boolean;
 }
 
 interface ChartsVisibilityState {
@@ -142,9 +150,9 @@ export function useChartRegistration(
   // por DashboardSection cuando el caller no pasó chartId.
   useEffect(() => {
     if (!ctx || id === "__none__") return;
-    ctx.register({ id, label, hasData });
+    ctx.register({ id, label, hasData, defaultVisible });
     return () => ctx.unregister(id);
-  }, [ctx, id, label, hasData]);
+  }, [ctx, id, label, hasData, defaultVisible]);
 
   if (!ctx) return { visible: true };
 
@@ -173,7 +181,12 @@ export function useChartsVisibilityManager() {
   }
   const charts = Array.from(ctx.registryRef.current.values()).map((m) => {
     const userPref = ctx.visibility[m.id];
-    const visible = typeof userPref === "boolean" ? userPref : m.hasData;
+    // Misma lógica que el hook: userPref > (hasData && defaultVisible) > false.
+    // Sin esto, el modal mostraba "VISIBLE" para charts con defaultVisible=false
+    // pero el DashboardSection retornaba null — inconsistencia que forzaba
+    // doble click en el toggle.
+    const visible =
+      typeof userPref === "boolean" ? userPref : m.hasData && m.defaultVisible;
     return { ...m, visible };
   });
   return {

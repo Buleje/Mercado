@@ -127,7 +127,6 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <DashboardSection
           chartId="ventas.por-dia-semana"
           hasData={(data.ventasPorDia ?? []).some((d) => (d.total ?? 0) > 0)}
-          defaultVisible={false}
           kicker="Día de la semana · periodo"
           title="Distribución por día · L a D"
           kpis={[

@@ -227,7 +227,6 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
         <DashboardSection
           chartId="productos.sin-movimiento"
           hasData={true}
-          defaultVisible={false}
           kicker="Dead stock · top 10 zombies"
           title="Productos sin movimiento · capital inmovilizado"
           kpis={[

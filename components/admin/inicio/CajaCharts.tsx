@@ -138,7 +138,6 @@ export default function CajaCharts({ data }: { data: CajaData }) {
         <DashboardSection
           chartId="caja.tendencia-mensual"
           hasData={(data.flujoMensual ?? []).length > 0}
-          defaultVisible={false}
           kicker="Tendencia · rango activo"
           title="Ingresos y egresos por mes"
           kpis={[
@@ -169,7 +168,6 @@ export default function CajaCharts({ data }: { data: CajaData }) {
         <DashboardSection
           chartId="caja.ingresos-por-hora"
           hasData={true}
-          defaultVisible={false}
           kicker="Ingresos hoy · por hora"
           title="Distribución horaria de cobros"
           kpis={[
