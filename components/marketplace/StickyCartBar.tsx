@@ -20,6 +20,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useMemo, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { m as motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart,
@@ -42,6 +43,14 @@ const PREVIEW_COUNT = 3;
 export default function StickyCartBar() {
   const { items, updateQuantity, removeItem } = useMarketplaceCart();
   const [expanded, setExpanded] = useState(false);
+  const pathname = usePathname();
+
+  // Brandon, mayo 14 2026: en /marketplace/carrito y /checkout/** el cliente
+  // ya esta dentro del flujo de pago. Mostrar el sticky cart bar global ahi
+  // duplica el CTA y le quita protagonismo al "Continuar al checkout" del
+  // CheckoutSummary. Cada pagina tiene su propio sticky CTA contextual.
+  const inCheckoutFlow =
+    pathname === "/marketplace/carrito" || pathname?.startsWith("/checkout/") || pathname === "/checkout";
 
   const { totalQty, subtotal } = useMemo(() => {
     let q = 0;
@@ -78,7 +87,7 @@ export default function StickyCartBar() {
     if (totalQty === 0 && expanded) setExpanded(false);
   }, [totalQty, expanded]);
 
-  const isVisible = totalQty > 0 && dismissedSubtotal !== subtotal;
+  const isVisible = totalQty > 0 && dismissedSubtotal !== subtotal && !inCheckoutFlow;
 
   const handleDismiss = () => {
     setDismissedSubtotal(subtotal);
@@ -185,32 +194,42 @@ export default function StickyCartBar() {
             )}
           </AnimatePresence>
 
-          {/* ── Bar principal ─────────────────────────────────────────────── */}
+          {/* ── Bar principal — redisenado (Brandon, mayo 14 2026) ──────────
+               Cambios vs version anterior:
+                 - Surface accent en vez de text-primary → mas comercial.
+                 - Carrito icon dentro de circulo blanco con badge accent — mas
+                   reconocible para vecinos de Pucallpa.
+                 - CTA "Ver carrito" como pill blanco con texto accent —
+                   maximiza contraste sobre el fondo accent del bar.
+                 - Subtotal en formato grande + "items" subrayado para
+                   refuerzo de cantidad.
+                 - Glow accent debajo del bar via shadow color para que se
+                   note flotando sobre el contenido. */}
           <div className="flex items-stretch gap-2">
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-expanded={expanded}
               aria-label={expanded ? "Cerrar resumen" : "Ver resumen del carrito"}
-              className="flex-1 flex items-center justify-between gap-3 rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] px-4 py-3 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] active:scale-[0.99] transition-transform text-left"
+              className="flex-1 flex items-center justify-between gap-3 rounded-2xl bg-linear-to-r from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white px-3.5 py-2.5 shadow-[0_18px_45px_-12px_color-mix(in_oklch,var(--accent)_45%,transparent)] active:scale-[0.99] transition-transform text-left ring-1 ring-white/15 ring-inset"
             >
               <span className="flex items-center gap-3 min-w-0">
-                <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]">
-                  <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
-                  <span className="absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--surface-canvas)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--text-primary)] ring-2 ring-[var(--text-primary)]">
+                <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[var(--accent)] shadow-md">
+                  <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                  <span className="absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-white">
                     {totalQty > 99 ? "99+" : totalQty}
                   </span>
                 </span>
-                <span className="flex flex-col min-w-0">
-                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--surface-canvas)]/70 inline-flex items-center gap-1">
-                    Tu carrito
+                <span className="flex flex-col min-w-0 leading-tight">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/85 inline-flex items-center gap-1">
+                    Tu carrito · {totalQty} {totalQty === 1 ? "item" : "items"}
                     {expanded ? (
                       <ChevronDown className="h-3 w-3" strokeWidth={2.25} aria-hidden />
                     ) : (
                       <ChevronUp className="h-3 w-3" strokeWidth={2.25} aria-hidden />
                     )}
                   </span>
-                  <span className="text-base font-black tabular-nums leading-tight">
+                  <span className="text-lg font-black tabular-nums">
                     {fmt(subtotal)}
                   </span>
                 </span>
@@ -218,21 +237,22 @@ export default function StickyCartBar() {
               <Link
                 href="/marketplace/carrito"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-3.5 py-1.5 text-sm font-bold text-white shrink-0 active:scale-95 transition"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 h-10 text-sm font-extrabold text-[var(--accent)] shrink-0 active:scale-95 transition shadow-md hover:bg-white/95"
               >
-                Ver carrito
-                <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                Ir a pagar
+                <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
               </Link>
             </button>
 
-            {/* Dismiss button */}
+            {/* Dismiss button — match del estilo nuevo, bg slightly oscuro
+                para diferenciarse del bar accent */}
             <button
               type="button"
               onClick={handleDismiss}
               aria-label="Ocultar barra del carrito"
-              className="shrink-0 inline-flex items-center justify-center rounded-2xl bg-[var(--text-primary)]/85 text-[var(--surface-canvas)] px-3 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] hover:bg-[var(--text-primary)] active:scale-95 transition-all"
+              className="shrink-0 inline-flex items-center justify-center w-11 rounded-2xl bg-[var(--text-primary)]/95 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] hover:bg-[var(--text-primary)] active:scale-95 transition-all"
             >
-              <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             </button>
           </div>
         </motion.div>

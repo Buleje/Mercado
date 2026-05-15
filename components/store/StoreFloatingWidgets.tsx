@@ -50,9 +50,14 @@ export default function StoreFloatingWidgets() {
     <>
       <RecentPurchases />
       <PostDeliverySurveyTrigger />
-      <WhatsAppFloatingButton />
-      <QuickReorderButton />
-      <SocioPromoFlotante />
+      {/* Brandon mayo 14 2026 v2: el chat WhatsApp + repetir pedido +
+          socio-promo se ocultan en mobile (saturan la pantalla del cel).
+          Solo aparecen en sm+ donde hay espacio sobrante a la derecha. */}
+      <div className="hidden sm:contents">
+        <WhatsAppFloatingButton />
+        <QuickReorderButton />
+        <SocioPromoFlotante />
+      </div>
     </>
   );
 }

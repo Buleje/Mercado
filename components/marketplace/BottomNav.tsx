@@ -86,6 +86,15 @@ export default function BottomNav() {
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
 
+  // Brandon, mayo 14 2026: durante el flujo de checkout (carrito + datos +
+  // entrega + confirmar) el BottomNav distrae del CTA principal y ofrece
+  // salidas no intencionales (volver a buscar). En mobile lo ocultamos.
+  // En desktop ya esta oculto por default (sm:hidden del nav).
+  const inCheckoutFlow =
+    pathname === "/marketplace/carrito" ||
+    pathname?.startsWith("/checkout/") ||
+    pathname === "/checkout";
+
   // Tab principal: en tiendas-only va a /tiendas, sino a /marketplace
   const homeHref = isTiendasOnly ? "/tiendas" : "/marketplace";
 
@@ -133,6 +142,8 @@ export default function BottomNav() {
   );
 
   const currentActive = activeTab();
+
+  if (inCheckoutFlow) return null;
 
   return (
     <nav

@@ -12,13 +12,14 @@
  * Evitar setState en useEffect — usar event handlers (lint rule hooks/set-state-in-effect).
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, LayoutGrid, List } from "@buleje/design-system/icons";
+import { Search, LayoutGrid, List, ShoppingCart, Check } from "@buleje/design-system/icons";
 import { CanastaVacia } from "@/components/ui-system/illustrations";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import type { DbStoreProduct } from "@/lib/db/marketplace.db";
 
 interface StoreCatalogProps {
@@ -32,6 +33,10 @@ interface StoreCatalogProps {
       el catalog mantiene su input interno como fallback. */
   externalSearch?: string;
   onExternalSearchChange?: (value: string) => void;
+  /** View toggle controlado desde el padre (sticky bar arriba del catalogo).
+      Si no se pasa, fallback al toggle local en el toolbar. */
+  externalView?: "grid" | "list";
+  onExternalViewChange?: (view: "grid" | "list") => void;
 }
 
 type SortKey = "default" | "price_asc" | "price_desc" | "name_az";
@@ -49,47 +54,113 @@ const fmt = (n: number) =>
 function ProductListRow({
   product,
   storeSlug,
+  storeId,
+  storeName,
 }: {
   product: DbStoreProduct;
   storeSlug: string;
+  storeId: string;
+  storeName: string;
 }) {
   const href = `/marketplace/${storeSlug}/producto/${product.productId}`;
+  const { addItem, items } = useMarketplaceCart();
+  // qty del producto en este store (para mostrar feedback "ya agregado")
+  const inCart = items.find(
+    (i) => i.productId === product.productId && i.storeId === storeId,
+  );
+  const qty = inCart?.quantity ?? 0;
+  const hasModifiers = (product.modifierGroups?.length ?? 0) > 0;
+
+  const handleAdd = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Con modifiers (ej. pollo "1/4 vs 1/8") no podemos agregar directo —
+      // mandamos al detalle para que el cliente elija opciones.
+      if (hasModifiers) {
+        window.location.href = href;
+        return;
+      }
+      addItem({
+        productId: product.productId,
+        storeProductId: product.id,
+        name: product.productName,
+        price: product.retailPrice,
+        image: product.productImage,
+        unit: product.productUnit,
+        storeId,
+        storeName,
+        storeSlug,
+        quantity: 1,
+        category: product.productCategory,
+        stock: product.stock ?? null,
+      });
+    },
+    [addItem, hasModifiers, href, product, storeId, storeName, storeSlug],
+  );
+
   return (
-    <Link
-      href={href}
-      className="flex gap-4 items-center p-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 transition-colors group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-    >
-      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-[var(--surface-sunken)] flex items-center justify-center">
-        {product.productImage ? (
-          <Image
-            src={product.productImage}
-            alt={product.productName}
-            width={64}
-            height={64}
-            className="object-cover w-full h-full"
-          />
-        ) : (
-          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-center leading-tight px-1">
-            {product.productCategory}
-          </span>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">
-          {product.productName}
-        </p>
-        {product.productUnit && (
-          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
-            {product.productUnit}
+    <div className="flex gap-3 sm:gap-4 items-center p-3 sm:p-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 transition-colors group">
+      <Link
+        href={href}
+        className="flex flex-1 min-w-0 gap-3 sm:gap-4 items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] rounded-lg"
+      >
+        <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-[var(--surface-sunken)] flex items-center justify-center">
+          {product.productImage ? (
+            <Image
+              src={product.productImage}
+              alt={product.productName}
+              width={64}
+              height={64}
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] text-center leading-tight px-1">
+              {product.productCategory}
+            </span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+            {product.productName}
           </p>
+          {product.productUnit && (
+            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mt-0.5 truncate">
+              {product.productUnit}
+            </p>
+          )}
+          <p className="mt-1 text-base sm:text-lg font-extrabold text-[var(--text-primary)] tabular-nums">
+            {fmt(product.retailPrice)}
+          </p>
+        </div>
+      </Link>
+      <button
+        type="button"
+        onClick={handleAdd}
+        aria-label={qty > 0 ? `Agregar otro ${product.productName}` : `Agregar ${product.productName} al carrito`}
+        title={hasModifiers ? "Elegi opciones del producto" : "Agregar al carrito"}
+        className={cn(
+          "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border-2 transition-all shadow-sm",
+          // Tamaño grande para tap target en mobile, compacto en desktop.
+          "h-12 w-12 sm:h-11 sm:w-auto sm:px-4",
+          qty > 0
+            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent-soft)]/80"
+            : "border-[var(--accent)] bg-[var(--accent-600,var(--accent))] text-white hover:scale-[1.03] hover:shadow-md",
         )}
-      </div>
-      <div className="flex-shrink-0 text-right">
-        <p className="text-sm font-bold text-[var(--text-primary)]">
-          {fmt(product.retailPrice)}
-        </p>
-      </div>
-    </Link>
+      >
+        {qty > 0 ? (
+          <>
+            <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            <span className="hidden sm:inline text-sm font-extrabold tabular-nums">{qty}</span>
+          </>
+        ) : (
+          <>
+            <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            <span className="hidden sm:inline text-sm font-extrabold">Agregar</span>
+          </>
+        )}
+      </button>
+    </div>
   );
 }
 
@@ -101,6 +172,8 @@ export default function StoreCatalog({
   activeCategory,
   externalSearch,
   onExternalSearchChange,
+  externalView,
+  onExternalViewChange,
 }: StoreCatalogProps) {
   const [internalSearch, setInternalSearch] = useState("");
   // Si el padre controla la búsqueda (desde el sticky bar), usar esa.
@@ -108,7 +181,11 @@ export default function StoreCatalog({
   const search = externalSearch !== undefined ? externalSearch : internalSearch;
   const setSearch = onExternalSearchChange ?? setInternalSearch;
   const [sort, setSort] = useState<SortKey>("default");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [internalView, setInternalView] = useState<"grid" | "list">("grid");
+  const view = externalView ?? internalView;
+  const setView = onExternalViewChange ?? setInternalView;
+  // Si el view se controla afuera, ocultamos el toggle local en el toolbar.
+  const showLocalViewToggle = externalView === undefined;
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -165,18 +242,13 @@ export default function StoreCatalog({
       aria-labelledby="store-catalog-heading"
       className="scroll-mt-24 space-y-6"
     >
-      {/* Header */}
-      <div>
-        <p className="text-sm font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-          Catálogo
-        </p>
-        <h2
-          id="store-catalog-heading"
-          className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]"
-        >
-          Todos nuestros productos
-        </h2>
-      </div>
+      {/* Header SR-only — el heading visible vive en cada sección de categoría.
+          Brandon mayo 15 v6: quitado "Todos nuestros productos" + contadores.
+          La estrategia comercial Rappi-style: que el cliente vea PRODUCTOS,
+          no labels burocráticos. */}
+      <h2 id="store-catalog-heading" className="sr-only">
+        Catálogo de productos
+      </h2>
 
       {/* Toolbar — filtros grandes, cuadrados, visibles */}
       <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
@@ -215,41 +287,42 @@ export default function StoreCatalog({
           </select>
         </label>
 
-        {/* Count + view toggle */}
+        {/* View toggle — quitado el contador "N productos" (ruido visual).
+            Brandon mayo 15 v6: facilidad de uso primero, los contadores
+            distraen del catálogo. */}
         <div className="flex items-center gap-3 lg:ml-auto">
-          <span className="text-sm font-bold tabular-nums text-[var(--text-secondary)] whitespace-nowrap px-3 py-2 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
-            {filtered.length} producto{filtered.length !== 1 ? "s" : ""}
-          </span>
-          <div className="flex rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]">
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              aria-label="Vista en cuadrícula"
-              aria-pressed={view === "grid"}
-              className={cn(
-                "h-12 w-12 inline-flex items-center justify-center transition-colors",
-                view === "grid"
-                  ? "bg-[var(--accent-600,var(--accent))] text-white"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-              )}
-            >
-              <LayoutGrid className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              aria-label="Vista en lista"
-              aria-pressed={view === "list"}
-              className={cn(
-                "h-12 w-12 inline-flex items-center justify-center border-l-2 border-[var(--rule-base)] transition-colors",
-                view === "list"
-                  ? "bg-[var(--accent-600,var(--accent))] text-white"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-              )}
-            >
-              <List className="h-5 w-5" />
-            </button>
-          </div>
+          {showLocalViewToggle && (
+            <div className="flex rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)]">
+              <button
+                type="button"
+                onClick={() => setView("grid")}
+                aria-label="Vista en cuadrícula"
+                aria-pressed={view === "grid"}
+                className={cn(
+                  "h-12 w-12 inline-flex items-center justify-center transition-colors",
+                  view === "grid"
+                    ? "bg-[var(--accent-600,var(--accent))] text-white"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <LayoutGrid className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("list")}
+                aria-label="Vista en lista"
+                aria-pressed={view === "list"}
+                className={cn(
+                  "h-12 w-12 inline-flex items-center justify-center border-l-2 border-[var(--rule-base)] transition-colors",
+                  view === "list"
+                    ? "bg-[var(--accent-600,var(--accent))] text-white"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <List className="h-5 w-5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -271,32 +344,67 @@ export default function StoreCatalog({
       ) : view === "list" ? (
         <div className="flex flex-col gap-2">
           {filtered.map((p) => (
-            <ProductListRow key={p.id} product={p} storeSlug={storeSlug} />
+            <ProductListRow
+              key={p.id}
+              product={p}
+              storeSlug={storeSlug}
+              storeId={storeId}
+              storeName={storeName}
+            />
           ))}
         </div>
       ) : grouped ? (
         // Vista por secciones: agrupada por categoría, cada sección con su header.
         <div className="space-y-10">
-          {grouped.map(([cat, items]) => (
+          {grouped.map(([cat, items], catIdx) => {
+            // Brandon mayo 15 v6: estrategia comercial Rappi/iFood:
+            //   - Primera categoría = "Los más pedidos" (anclaje + social proof)
+            //   - Segunda en adelante = nombre real (Combos, Pizzas, etc)
+            //   - Quitado el contador "N productos" (ruido)
+            //   - Subtítulo con copy de venta + scarcity sutil
+            const isFirstCategory = catIdx === 0;
+            const subtitleByPosition = isFirstCategory
+              ? "Lo que la gente pide más esta semana"
+              : catIdx === 1
+                ? "Recomendados del chef"
+                : items.length > 6
+                  ? "Para todos los gustos"
+                  : "Selección curada";
+            return (
             <section
               key={cat}
               id={`cat-${cat}`}
               className="scroll-mt-28"
               aria-labelledby={`cat-h-${cat}`}
             >
-              <div className="flex items-center gap-3 mb-5">
-                <span className="h-3.5 w-3.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_0_4px_var(--accent-soft)]" aria-hidden="true" />
-                <div>
-                  <h3
-                    id={`cat-h-${cat}`}
-                    className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] leading-tight tracking-tight"
-                  >
-                    {humanizeCategory(cat)}
-                  </h3>
-                  <p className="text-base font-medium text-[var(--text-secondary)]">
-                    {items.length} producto{items.length !== 1 ? "s" : ""}
-                  </p>
+              <div className="flex items-end justify-between gap-3 mb-5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    aria-hidden
+                    className="h-3.5 w-3.5 rounded-full bg-[var(--accent)] shrink-0 shadow-[0_0_0_4px_var(--accent-soft)]"
+                  />
+                  <div className="min-w-0">
+                    <h3
+                      id={`cat-h-${cat}`}
+                      className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight tracking-tight"
+                    >
+                      {isFirstCategory ? "🔥 Los más pedidos" : humanizeCategory(cat)}
+                    </h3>
+                    <p className="text-sm font-medium text-[var(--text-tertiary)] mt-0.5">
+                      {subtitleByPosition}
+                    </p>
+                  </div>
                 </div>
+                {/* Badge "popular" en la primera categoría — social proof */}
+                {isFirstCategory && (
+                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-3 h-7 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
+                    <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+                    </span>
+                    Trending
+                  </span>
+                )}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
                 {items.map((p, idx) => (
@@ -323,7 +431,8 @@ export default function StoreCatalog({
                 ))}
               </div>
             </section>
-          ))}
+            );
+          })}
         </div>
       ) : (
         // Grid plano cuando hay filtro de categoría o búsqueda activa.
