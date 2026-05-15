@@ -341,7 +341,9 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-[#060a0d] text-white border-t border-white/10">
+    <footer className="relative bg-gradient-to-b from-[#0a0e12] via-[#070a0d] to-[#04070a] text-white border-t border-white/10">
+      {/* Hairline gradient en el borde superior */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
       {/* WhatsApp contact + Perks bar son del marketplace (Delivery Gratis,
           horarios, Pago con Yape). En landing pages SaaS confunden al
           visitante (¿Buleje es bodega o plataforma?). Ocultos en isLandingMode. */}
@@ -351,20 +353,20 @@ export default function Footer() {
 
       {/* Perks */}
       {!isLandingMode && (
-      <div className="border-b border-white/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="border-b border-white/10 bg-gradient-to-b from-white/[0.02] to-transparent">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-7">
             {perks.map((perk) => {
               const PIcon = perk.Icon;
               return (
                 <div
                   key={perk.label}
-                  className="flex items-center gap-3"
+                  className="flex items-center gap-3.5"
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/5">
-                    <PIcon className="h-3.5 w-3.5 text-white/70" strokeWidth={1.75} aria-hidden />
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-white/15 bg-white/[0.04]">
+                    <PIcon className="h-5 w-5 text-white/85" strokeWidth={2} aria-hidden />
                   </div>
-                  <span className="text-xs font-medium text-white/70 tabular-nums">{perk.label}</span>
+                  <span className="text-sm sm:text-base font-bold text-white/90 leading-snug tabular-nums">{perk.label}</span>
                 </div>
               );
             })}
@@ -512,220 +514,241 @@ export default function Footer() {
         </div>
       )}
 
-      {/* Main Footer — Mega footer rediseñado (5 columnas ricas) — solo fuera de landing */}
+      {/* Mega footer rediseñado — HERO arriba + grid 4 columnas. Solo fuera
+          de landing/storeMode/tiendasOnly. Tipografía y spacing siguen
+          bsm-typography-rules (text-base body, h-12 inputs/CTAs, icons h-4+). */}
       {!isStoreMode && !isLandingMode && !isTiendasOnlyMode && (
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-10">
-          {/* ── Columna 1: Marketplace ── */}
-          <nav aria-label="Marketplace">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              {t("footer.marketplace")}
-            </h3>
-            <ul className="space-y-2.5">
-              {marketplaceLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <h4 className="mt-6 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-3">
-              {t("footer.categories")}
-            </h4>
-            <ul className="space-y-2">
-              {categoryLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-white/55 hover:text-white transition-colors text-xs"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+      <>
+        {/* ── HERO BLOCK: brand + descripción + redes + contacto ── */}
+        <div className="border-b border-white/10">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-10 lg:gap-16 items-start">
+              {/* Identidad de marca */}
+              <div>
+                <BulejeWordmark
+                  size={48}
+                  strokeWidth={1.75}
+                  textSize={28}
+                  className="text-white"
+                />
+                <p className="mt-6 text-base sm:text-lg text-white/80 leading-relaxed max-w-xl">
+                  {storeTheme?.description || platformDesc || hp.footerDescription}
+                </p>
+                <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                  <span className="inline-flex items-center gap-2 rounded-full border-2 border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-bold text-white/85">
+                    <MapPin className="h-4 w-4 text-white/70" strokeWidth={2} aria-hidden />
+                    {platformCity} · {platformRegion}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border-2 border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-bold text-white/85">
+                    <span className="flex items-center gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-amber-300 text-amber-300" strokeWidth={1.5} aria-hidden />
+                      ))}
+                    </span>
+                    <span className="tabular-nums">{hp.footerRating}</span>
+                  </span>
+                </div>
+              </div>
 
-          {/* ── Columna 2: Mi cuenta ── */}
-          <nav aria-label="Mi cuenta">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              {t("footer.myAccount")}
-            </h3>
-            <ul className="space-y-2.5">
-              {cuentaLinks.map((link) => (
-                <li key={link.label}>
+              {/* Contacto directo + redes */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60">
+                  Hablemos directo
+                </h3>
+                {(() => {
+                  const rawPhone = (storeTheme?.whatsapp || platformWa || hp.footerWhatsApp || "").replace(/\D/g, "");
+                  if (!rawPhone) return null;
+                  const text = encodeURIComponent(`Hola ${storeTheme?.name || platformName}, quiero hacer un pedido`);
+                  return (
+                    <a
+                      href={`https://wa.me/${rawPhone}?text=${text}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-3 h-14 rounded-2xl bg-emerald-500 text-white text-base font-extrabold hover:bg-emerald-400 transition-colors shadow-[var(--shadow-md)]"
+                    >
+                      <WhatsAppIcon className="h-6 w-6" />
+                      Escribinos por WhatsApp
+                    </a>
+                  );
+                })()}
+                <div className="grid grid-cols-2 gap-2.5">
                   <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
+                    href={fbUrl || hp.footerFacebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 h-12 rounded-2xl border-2 border-white/15 bg-white/[0.04] text-sm font-bold text-white hover:bg-white/[0.08] hover:border-white/25 transition-colors"
+                    aria-label="Facebook"
                   >
-                    {link.label}
+                    <Facebook className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    Facebook
                   </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* ── Columna 3: Vendé en Buleje ── */}
-          <nav aria-label="Vendé en Buleje">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              {t("footer.sellOnBuleje")}
-            </h3>
-            <ul className="space-y-2.5">
-              {businessLinks.map((link) => (
-                <li key={link.label}>
                   <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
+                    href={igUrl || hp.footerInstagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 h-12 rounded-2xl border-2 border-white/15 bg-white/[0.04] text-sm font-bold text-white hover:bg-white/[0.08] hover:border-white/25 transition-colors"
+                    aria-label="Instagram"
                   >
-                    {link.label}
+                    <Instagram className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    Instagram
                   </a>
-                </li>
-              ))}
-            </ul>
-            <a
-              href="/vender"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
-            >
-              <Store className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-              {t("footer.openYourStore")}
-            </a>
-          </nav>
-
-          {/* ── Columna 4: Ayuda ── */}
-          <nav aria-label="Ayuda">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/40 mb-5">
-              {t("footer.help")}
-            </h3>
-            <ul className="space-y-2.5">
-              {helpLinks.map((link) => (
-                <li key={link.label}>
+                </div>
+                <div className="mt-1 space-y-2.5">
                   <a
-                    href={link.href}
-                    className="text-white/65 hover:text-white transition-colors text-sm"
+                    href={`tel:${(storeTheme?.phone || platformPhone || "+51929340532").replace(/\s/g, "")}`}
+                    className="flex items-center gap-3 text-base text-white/85 hover:text-white transition-colors"
                   >
-                    {link.label}
+                    <Phone className="h-4 w-4 text-white/70 shrink-0" strokeWidth={2} aria-hidden />
+                    <span className="tabular-nums font-semibold">{storeTheme?.phone || platformPhone || "929 340 532"}</span>
                   </a>
-                </li>
-              ))}
-            </ul>
-            {/* Audit P9: antes concatenaba `${whatsapp}?text=...` sin
-                normalizar — si `storeTheme.whatsapp` ya era un wa.me URL
-                completo con ?text=, se generaba ?text=...?text=... mal. */}
-            {(() => {
-              const rawPhone = (storeTheme?.whatsapp || hp.footerWhatsApp || "").replace(/\D/g, "");
-              if (!rawPhone) return null;
-              const text = encodeURIComponent("Hola Buleje, necesito ayuda");
-              return (
-                <a
-                  href={`https://wa.me/${rawPhone}?text=${text}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors"
-                >
-                  <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-                  WhatsApp
-                </a>
-              );
-            })()}
-          </nav>
-
-          {/* ── Columna 5: Identidad ── */}
-          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-            <div className="mb-4 flex items-center gap-2 text-white">
-              <BulejeWordmark
-                size={32}
-                strokeWidth={1.75}
-                textSize={16}
-                className="text-white"
-              />
+                  <div className="flex items-center gap-3 text-base text-white/85">
+                    <Clock className="h-4 w-4 text-white/70 shrink-0" strokeWidth={2} aria-hidden />
+                    <span className="tabular-nums font-semibold">{hoursLabel}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-white/50 text-sm leading-relaxed mb-3">
-              {storeTheme?.description || platformDesc || hp.footerDescription}
-            </p>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/70 mb-4">
-              <MapPin className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
-              {platformCity} · {platformRegion}
-            </div>
-            <div className="flex items-center gap-1.5 mb-4">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-3 w-3 fill-white text-white" strokeWidth={1.5} aria-hidden />
-              ))}
-              <span className="text-white/55 text-[length:var(--ts-2xs)] ml-1.5 tabular-nums">{hp.footerRating}</span>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
+          </div>
+        </div>
+
+        {/* ── LINKS GRID: 4 columnas espaciadas con tipografía DS ── */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+            {/* Marketplace */}
+            <nav aria-label="Marketplace">
+              <h3 className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60 mb-5">
+                {t("footer.marketplace")}
+              </h3>
+              <ul className="space-y-3">
+                {marketplaceLinks.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-sm font-semibold text-white/80 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <h4 className="mt-7 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60 mb-4">
+                {t("footer.categories")}
+              </h4>
+              <ul className="flex flex-wrap gap-2">
+                {categoryLinks.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.03] px-3 py-1.5 text-xs font-bold text-white/80 hover:bg-white/[0.08] hover:text-white hover:border-white/25 transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            {/* Mi cuenta */}
+            <nav aria-label="Mi cuenta">
+              <h3 className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60 mb-5">
+                {t("footer.myAccount")}
+              </h3>
+              <ul className="space-y-3">
+                {cuentaLinks.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-sm font-semibold text-white/80 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            {/* Vendé en Buleje */}
+            <nav aria-label="Vendé en Buleje">
+              <h3 className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60 mb-5">
+                {t("footer.sellOnBuleje")}
+              </h3>
+              <ul className="space-y-3">
+                {businessLinks.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-sm font-semibold text-white/80 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="/vender"
+                className="mt-5 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-white/20 bg-white/[0.04] text-sm font-extrabold text-white hover:bg-white/[0.08] hover:border-white/30 transition-colors"
+              >
+                <Store className="h-4 w-4" strokeWidth={2} aria-hidden />
+                {t("footer.openYourStore")}
+              </a>
+            </nav>
+
+            {/* Ayuda */}
+            <nav aria-label="Ayuda">
+              <h3 className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60 mb-5">
+                {t("footer.help")}
+              </h3>
+              <ul className="space-y-3">
+                {helpLinks.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-sm font-semibold text-white/80 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              {/* Audit P9: normaliza phone para evitar `?text=...?text=...` doble. */}
               {(() => {
-                const rawPhone = (storeTheme?.whatsapp || platformWa || hp.footerWhatsApp || "").replace(/\D/g, "");
+                const rawPhone = (storeTheme?.whatsapp || hp.footerWhatsApp || "").replace(/\D/g, "");
                 if (!rawPhone) return null;
-                const text = encodeURIComponent(`Hola ${storeTheme?.name || platformName}, quiero hacer un pedido`);
+                const text = encodeURIComponent("Hola Buleje, necesito ayuda");
                 return (
                   <a
                     href={`https://wa.me/${rawPhone}?text=${text}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-                    aria-label="WhatsApp"
+                    className="mt-5 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-white/20 bg-white/[0.04] text-sm font-extrabold text-white hover:bg-white/[0.08] hover:border-white/30 transition-colors"
                   >
-                    <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                    WhatsApp
+                    <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    Soporte por WhatsApp
                   </a>
                 );
               })()}
-              <a
-                href={fbUrl || hp.footerFacebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                Facebook
-              </a>
-              <a
-                href={igUrl || hp.footerInstagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                Instagram
-              </a>
-            </div>
-            <div className="mt-5 space-y-2">
-              <div className="flex items-center gap-2.5 text-xs text-white/55">
-                <Phone className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
-                <a
-                  href={`tel:${storeTheme?.phone || platformPhone || "+51929340532"}`}
-                  className="tabular-nums hover:text-white/80"
-                >
-                  {storeTheme?.phone || platformPhone || "929 340 532"}
-                </a>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs text-white/55">
-                <Clock className="h-3.5 w-3.5 text-white/55 shrink-0" strokeWidth={1.75} aria-hidden />
-                <span className="tabular-nums">{hoursLabel}</span>
-              </div>
-            </div>
+            </nav>
           </div>
         </div>
-      </div>
+      </>
       )}
 
-      {/* Newsletter — solo en modo marketplace global, NO en landing pages. */}
+      {/* Newsletter — benefit-led, solo en modo marketplace global. */}
       {!isStoreMode && !isLandingMode && (
-      <div className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-white/55" strokeWidth={1.75} aria-hidden />
-                Recibe ofertas exclusivas
+      <div className="border-t border-white/10 bg-gradient-to-b from-white/[0.02] to-transparent">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-7 lg:gap-10">
+            <div className="max-w-xl">
+              <span className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 text-amber-200 border-2 border-amber-300/30 px-3 py-1 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] mb-3">
+                <Mail className="h-4 w-4" strokeWidth={2} aria-hidden />
+                Newsletter Buleje
+              </span>
+              <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white leading-tight">
+                Ofertas frescas todas las semanas
               </h3>
-              <p className="text-xs text-white/45 mt-1 leading-relaxed">Promociones, nuevos productos y descuentos directo a tu correo.</p>
+              <p className="mt-2 text-sm sm:text-base text-white/70 leading-relaxed">
+                Cupones, nuevos productos y promociones de las tiendas de Pucallpa, directo a tu correo. Sin spam.
+              </p>
             </div>
             <form
               onSubmit={async (e) => {
@@ -742,12 +765,12 @@ export default function Footer() {
                   if (res.ok) setNlEmail("");
                 } catch { setNlStatus("error"); }
               }}
-              className="flex items-center gap-2 w-full sm:w-auto"
+              className="flex flex-col sm:flex-row items-stretch gap-2.5 w-full lg:w-auto lg:min-w-[420px]"
             >
               {nlStatus === "success" ? (
-                <div className="flex items-center gap-2 text-sm text-emerald-300 font-bold">
-                  <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                  <span>Suscrito correctamente.</span>
+                <div className="flex items-center gap-2.5 h-12 px-5 rounded-2xl border-2 border-emerald-400/40 bg-emerald-400/10 text-base text-emerald-200 font-extrabold">
+                  <CheckCircle2 className="h-5 w-5" strokeWidth={2} aria-hidden />
+                  <span>Suscrito. ¡Gracias!</span>
                 </div>
               ) : (
                 <>
@@ -757,58 +780,63 @@ export default function Footer() {
                     value={nlEmail}
                     onChange={(e) => setNlEmail(e.target.value)}
                     placeholder="tu@email.com"
-                    className="h-10 px-4 rounded-full bg-white/5 border border-white/15 text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/40 focus:border-white/40 flex-1 sm:w-60"
+                    className="h-12 px-5 rounded-2xl bg-white/[0.05] border-2 border-white/15 text-base text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 flex-1"
                   />
                   <button
                     type="submit"
                     disabled={nlStatus === "loading"}
-                    className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-white text-gray-900 text-xs font-bold hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 h-12 px-6 rounded-2xl bg-white text-gray-900 text-base font-extrabold hover:bg-gray-100 transition-colors disabled:opacity-50"
                   >
-                    {nlStatus === "loading" ? "..." : <><ArrowRight className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> Suscribir</>}
+                    {nlStatus === "loading" ? "Enviando…" : (
+                      <>
+                        Suscribirme
+                        <ArrowRight className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+                      </>
+                    )}
                   </button>
                 </>
               )}
             </form>
           </div>
+          {nlStatus === "error" && (
+            <p className="mt-3 text-sm text-rose-300 font-semibold">No pudimos suscribirte. Probá de nuevo en un momento.</p>
+          )}
         </div>
       </div>
       )}
 
-      {/* Trust badges + copyright */}
-      <div className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 bg-white/5 border border-white/10">
-                <ShieldCheck className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
-                Sitio Seguro
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 bg-white/5 border border-white/10">
-                <CreditCard className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
+      {/* Trust strip + copyright */}
+      <div className="border-t border-white/10 bg-black/30">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-7">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-5">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+              <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-white/85 bg-white/[0.05] border-2 border-white/15">
+                <ShieldCheck className="h-4 w-4 text-emerald-300" strokeWidth={2} aria-hidden />
+                Sitio seguro
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-white/85 bg-white/[0.05] border-2 border-white/15">
+                <CreditCard className="h-4 w-4 text-sky-300" strokeWidth={2} aria-hidden />
                 Yape · Plin
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 bg-white/5 border border-white/10">
-                <Wallet className="h-3 w-3 text-white/60" strokeWidth={1.75} aria-hidden />
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-white/85 bg-white/[0.05] border-2 border-white/15">
+                <Wallet className="h-4 w-4 text-amber-300" strokeWidth={2} aria-hidden />
                 Efectivo OK
-              </div>
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-white/85 bg-white/[0.05] border-2 border-white/15">
+                <Truck className="h-4 w-4 text-rose-300" strokeWidth={2} aria-hidden />
+                Delivery Pucallpa
+              </span>
             </div>
 
-            {/* Currency + Locale switchers removidos — default: Soles + Español */}
-
-            <div className="flex flex-col sm:flex-row items-center gap-2">
-              <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-[length:var(--ts-2xs)] text-white/35 tabular-nums">
-                © {year} {storeTheme?.name || platformName}
-                <span className="mx-0.5">·</span>
-                <span>Hecho en Ciudad Constitución, Perú</span>
-                <span className="mx-0.5">·</span>
-                <span className="text-white/45">Pucallpa próximamente</span>
-                <span className="mx-0.5">·</span>
-                <a href="/privacidad" className="hover:text-white/60 transition-colors">Privacidad</a>
-                <span className="mx-0.5">·</span>
-                <a href="/terminos" className="hover:text-white/60 transition-colors">Términos</a>
-              </p>
-              {/* "v1.0 beta" eliminado en producción pública — proyecta inseguridad. */}
-            </div>
+            <p className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs sm:text-sm text-white/65 tabular-nums">
+              <span className="font-semibold text-white/80">© {year} {storeTheme?.name || platformName}</span>
+              <span aria-hidden className="text-white/30">·</span>
+              <span>Hecho con cariño en Perú</span>
+              <span aria-hidden className="text-white/30">·</span>
+              <a href="/privacidad" className="font-semibold text-white/70 hover:text-white transition-colors">Privacidad</a>
+              <span aria-hidden className="text-white/30">·</span>
+              <a href="/terminos" className="font-semibold text-white/70 hover:text-white transition-colors">Términos</a>
+            </p>
           </div>
         </div>
       </div>
