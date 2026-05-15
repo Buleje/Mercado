@@ -462,6 +462,16 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
   const fmtPEN = (v: number) =>
     `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
 
+  // Formateador adaptable del eje Y para soles. Brandon mayo 2026: si el
+  // valor < 1000, muestra "S/146" (no "S/0k"). Si >= 1000, "S/1.5k".
+  // Antes el eje siempre dividía por 1000 y mostraba "0k" cuando los
+  // valores eran chicos — sin marcas reales en el grid.
+  const fmtPENAxis = (v: number): string => {
+    if (v === 0) return "S/0";
+    if (Math.abs(v) >= 1000) return `S/${(v / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+    return `S/${Math.round(v)}`;
+  };
+
   const sections: DraggableItem[] = [
     {
       id: "caja",
@@ -490,8 +500,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
               { key: "egresos", label: "Egresos", color: "amber", yAxis: "left" },
             ]}
             lines={[{ key: "neto", label: "Saldo neto", color: "accent", yAxis: "right" }]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            rightAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            leftAxisFormat={fmtPENAxis}
+            rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
             height={300}
             minDataPoints={2}
@@ -525,7 +535,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
               { key: "skus", label: "SKUs", color: "tertiary", yAxis: "left", opacity: 0.18 },
             ]}
             leftAxisFormat={(v) => v.toString()}
-            rightAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("valor")
                 ? `S/ ${Number(v).toLocaleString("es-PE")}`
@@ -562,7 +572,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             areas={[
               { key: "pendiente", label: "Por pagar S/", color: "amber", yAxis: "left", opacity: 0.22 },
             ]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            leftAxisFormat={fmtPENAxis}
             rightAxisFormat={(v) => v.toString()}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("órdenes")
@@ -601,7 +611,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             ]}
             lines={[{ key: "ticketProm", label: "Ticket prom. S/", color: "accent", yAxis: "right" }]}
             leftAxisFormat={(v) => v.toString()}
-            rightAxisFormat={(v) => `S/${v}`}
+            rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("ticket")
                 ? `S/ ${Number(v).toLocaleString("es-PE")}`
@@ -646,7 +656,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
               { key: "margen", label: "Margen S/", color: "tertiary", yAxis: "right", opacity: 0.2 },
             ]}
             leftAxisFormat={(v) => v.toString()}
-            rightAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
+            rightAxisFormat={fmtPENAxis}
             tooltipFormat={(v, name) =>
               name?.toLowerCase().includes("unidades")
                 ? `${Number(v).toLocaleString("es-PE")} u`

@@ -207,6 +207,12 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
               {validOrder.map((id, index) => {
                 const item = items.find((i) => i.id === id);
                 if (!item) return null;
+                // Brandon mayo 2026 v3: si el render del item retorna null
+                // (ej. DashboardSection con chartId no visible), NO renderizar
+                // el wrapper drag-and-drop — antes dejaba un hueco vacío de
+                // height:100% entre las secciones visibles.
+                const rendered = item.render();
+                if (!rendered) return null;
                 const isFullSpan = layout === "grid" && item.span === "full";
                 return (
                   <DraggableSection
@@ -219,7 +225,7 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
                     onPresent={() => setPresentingId(id)}
                     fullSpan={isFullSpan}
                   >
-                    {item.render()}
+                    {rendered}
                   </DraggableSection>
                 );
               })}

@@ -61,31 +61,43 @@ function previousWindow(from: Date, to: Date): { from: Date; to: Date } {
  * Si span > 14d → buckets (span/14) días.
  * Retorna array [{ label: string, start: Date, end: Date }].
  */
-function buildBuckets(from: Date, to: Date): Array<{ label: string; start: Date; end: Date }> {
+// Brandon mayo 2026 v3: labels "01 May" + iso para tooltip humano.
+const MONTH_LABELS_API = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+function pad2API(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function buildBuckets(from: Date, to: Date): Array<{ label: string; iso: string; start: Date; end: Date }> {
   const msDay = 24 * 60 * 60 * 1000;
   const span = to.getTime() - from.getTime();
   const days = span / msDay;
 
   if (days <= 1) {
     // Intradía: 6 buckets de 4h
-    const buckets: Array<{ label: string; start: Date; end: Date }> = [];
+    const buckets: Array<{ label: string; iso: string; start: Date; end: Date }> = [];
     for (let i = 0; i < 6; i++) {
       const start = new Date(from.getTime() + i * 4 * 60 * 60 * 1000);
       const end = new Date(start.getTime() + 4 * 60 * 60 * 1000 - 1);
-      buckets.push({ label: `${String(start.getHours()).padStart(2, "0")}h`, start, end });
+      buckets.push({
+        label: `${pad2API(start.getHours())}h`,
+        iso: start.toISOString(),
+        start,
+        end,
+      });
     }
     return buckets;
   }
 
-  if (days <= 14) {
-    // Diario
-    const buckets: Array<{ label: string; start: Date; end: Date }> = [];
-    const DAY_LABELS = ["D", "L", "M", "X", "J", "V", "S"];
+  if (days <= 35) {
+    // Diario "01 May" (semanal + mensual)
+    const buckets: Array<{ label: string; iso: string; start: Date; end: Date }> = [];
     let cursor = startOfDay(from);
     while (cursor.getTime() <= to.getTime()) {
       const end = endOfDay(cursor);
       buckets.push({
-        label: DAY_LABELS[cursor.getDay()] ?? `${cursor.getDate()}`,
+        label: `${pad2API(cursor.getDate())} ${MONTH_LABELS_API[cursor.getMonth()]}`,
+        iso: cursor.toISOString(),
         start: new Date(cursor),
         end: new Date(end),
       });
@@ -96,13 +108,14 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: Date;
 
   // Rango largo → máximo 14 buckets uniformes
   const bucketSize = Math.ceil(days / 14);
-  const buckets: Array<{ label: string; start: Date; end: Date }> = [];
+  const buckets: Array<{ label: string; iso: string; start: Date; end: Date }> = [];
   let cursor = startOfDay(from);
   while (cursor.getTime() <= to.getTime()) {
     const bucketEnd = new Date(cursor.getTime() + bucketSize * msDay - 1);
     const end = bucketEnd.getTime() > to.getTime() ? to : bucketEnd;
     buckets.push({
-      label: `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+      label: `${pad2API(cursor.getDate())} ${MONTH_LABELS_API[cursor.getMonth()]}`,
+      iso: cursor.toISOString(),
       start: new Date(cursor),
       end: new Date(end),
     });
@@ -238,6 +251,8 @@ export async function GET(req: NextRequest) {
       return Math.round(sum);
     });
     const sparklineLabels = buckets.map((b) => b.label);
+    // Brandon mayo 2026 v3: iso del día para tooltip humano ("Domingo 2 de mayo")
+    const sparklineIso = buckets.map((b) => b.iso);
 
     // Heatmap: últimos 30d (no depende del rango — tendencia larga)
     const heatmapRaw: Record<string, number> = {};
@@ -340,6 +355,7 @@ export async function GET(req: NextRequest) {
           deltaVsPrevious: Math.round(deltaVsPrevious * 10) / 10,
           sparkline,
           sparklineLabels,
+          sparklineIso,
           // Retrocompat: clientes viejos esperan `totalToday` / `deltaVsYesterday`
           totalToday: Math.round(totalRange * 100) / 100,
           deltaVsYesterday: Math.round(deltaVsPrevious * 10) / 10,

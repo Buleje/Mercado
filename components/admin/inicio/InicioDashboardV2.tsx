@@ -38,6 +38,7 @@ interface OverviewData {
     deltaVsPrevious?: number;
     sparkline: number[];
     sparklineLabels?: string[];
+    sparklineIso?: string[];
   };
   contextual: {
     ordersToday: number;
@@ -163,11 +164,15 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
     );
   }
 
-  // Weekly data desde sparkline — labels dinámicos según rango
+  // Weekly data desde sparkline — labels dinámicos según rango.
+  // Brandon mayo 2026 v3: iso propagado del API (sparklineIso) para que el
+  // tooltip muestre "Domingo 2 de mayo" en lugar de "01 May".
   const lastSpark = hero.sparkline[hero.sparkline.length - 1] || 1;
   const sparkLabels = hero.sparklineLabels ?? [];
+  const sparkIso = hero.sparklineIso ?? [];
   const weeklyData = hero.sparkline.map((ventas, i) => ({
     day: sparkLabels[i] ?? `${i + 1}`,
+    iso: sparkIso[i] ?? "",
     ventas: Math.round(ventas),
     pedidos: Math.max(1, Math.round((ventas / lastSpark) * ordersInRange)) || 0,
     clientes: Math.max(1, Math.round((ventas / lastSpark) * uniqueCustomers)) || 0,
@@ -315,7 +320,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
 // modal o si no tiene datos (todas las ventas son 0).
 
 interface ResumenVentasSectionProps {
-  weeklyData: Array<{ day: string; ventas: number; pedidos: number; clientes: number }>;
+  weeklyData: Array<{ day: string; iso?: string; ventas: number; pedidos: number; clientes: number }>;
   rangeTxt: string;
 }
 

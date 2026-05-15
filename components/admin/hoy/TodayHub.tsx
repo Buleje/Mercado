@@ -33,6 +33,7 @@ interface OverviewData {
     deltaVsPrevious?: number;
     sparkline: number[];
     sparklineLabels?: string[];
+    sparklineIso?: string[];
   };
   contextual: {
     ordersToday: number;  // legacy
