@@ -284,6 +284,17 @@ export default function Footer() {
 
   const { homepage: hp, deliveryConfig, storeTheme } = useSettings();
   const pathname = usePathname();
+
+  // Brandon mayo 15 v4 2026: footer oculto en /marketplace/carrito y /checkout/*.
+  // Razón: en el flujo de compra (carrito → datos → entrega → confirmar), el
+  // footer mete ruido visual y compite con el CTA "Continuar al checkout".
+  // El cliente debe estar 100% enfocado en cerrar la compra, sin links salidos.
+  // (Early return va abajo, tras todos los hooks, para no romper rules-of-hooks.)
+  const isCheckoutFlow =
+    pathname === "/marketplace/carrito" ||
+    pathname?.startsWith("/checkout/") ||
+    pathname === "/checkout";
+
   const isStoreMode = isStoreModePath(pathname);
   // Mayo 2026: footer simplificado en landing pages — antes 5 columnas
   // (Marketplace / Mi Cuenta / Vendé en Buleje / Ayuda / Más) era aspiracional
@@ -314,6 +325,8 @@ export default function Footer() {
   const igUrl = brand?.socials.instagram || "";
   const [nlEmail, setNlEmail] = useState("");
   const [nlStatus, setNlStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  if (isCheckoutFlow) return null;
 
   const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const todayName = todayDow !== null ? DAY_NAMES[todayDow] : null;
