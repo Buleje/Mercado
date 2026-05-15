@@ -84,7 +84,7 @@ function useTopStores(): Suggestion[] {
   const [stores, setStores] = useState<StoreLite[]>([]);
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/marketplace/stores?limit=5", { cache: "force-cache" })
+    fetch("/api/marketplace/stores?limit=5", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { data: [] }))
       .then((j) => {
         if (cancelled) return;

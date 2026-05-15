@@ -13,11 +13,16 @@ import { QuickAddProvider, useQuickAdd } from "@/contexts/quick-add-context";
 import QuickAddDrawer from "@/components/marketplace/QuickAddDrawer";
 import type { Product } from "@/data/products";
 
-const addItemMock = vi.fn();
+const addMultipleMock = vi.fn();
+const addMarketplaceItemMock = vi.fn();
 const showToastMock = vi.fn();
 
 vi.mock("@/contexts/cart-context", () => ({
-  useCart: () => ({ addItem: addItemMock }),
+  useCart: () => ({ addMultiple: addMultipleMock }),
+}));
+
+vi.mock("@/hooks/use-marketplace-cart", () => ({
+  useMarketplaceCart: () => ({ addItem: addMarketplaceItemMock }),
 }));
 
 vi.mock("@/contexts/toast-context", () => ({
@@ -75,7 +80,8 @@ function renderWithProvider(product: Product = PRODUCT) {
 
 describe("QuickAddDrawer", () => {
   beforeEach(() => {
-    addItemMock.mockClear();
+    addMultipleMock.mockClear();
+    addMarketplaceItemMock.mockClear();
     showToastMock.mockClear();
   });
   afterEach(cleanup);
@@ -100,17 +106,38 @@ describe("QuickAddDrawer", () => {
 
     const dec = screen.getByLabelText("Disminuir cantidad");
     const inc = screen.getByLabelText("Aumentar cantidad");
+    const input = screen.getByLabelText("Cantidad") as HTMLInputElement;
 
     expect(dec).toBeDisabled();
+    expect(input.value).toBe("1");
     fireEvent.click(inc);
     fireEvent.click(inc);
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(input.value).toBe("3");
     fireEvent.click(inc);
     expect(inc).toBeDisabled();
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(input.value).toBe("3");
   });
 
-  it("calls addItem N times with the product and shows toast", () => {
+  it("allows typing the qty manually and clamps to stock on blur", () => {
+    renderWithProvider({ ...PRODUCT, stock: 8 });
+    fireEvent.click(screen.getByText("open"));
+
+    const input = screen.getByLabelText("Cantidad") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "5" } });
+    expect(input.value).toBe("5");
+
+    // Sobrepasa stock — al hacer blur se clampa a 8
+    fireEvent.change(input, { target: { value: "20" } });
+    fireEvent.blur(input);
+    expect(input.value).toBe("8");
+
+    // Vacío o cero — al hacer blur se vuelve 1
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.blur(input);
+    expect(input.value).toBe("1");
+  });
+
+  it("calls addMultiple once with the right quantity and shows toast", () => {
     renderWithProvider();
     fireEvent.click(screen.getByText("open"));
 
@@ -119,8 +146,10 @@ describe("QuickAddDrawer", () => {
     const addBtn = screen.getByRole("button", { name: /Agregar 3/i });
     fireEvent.click(addBtn);
 
-    expect(addItemMock).toHaveBeenCalledTimes(3);
-    expect(addItemMock).toHaveBeenCalledWith(expect.objectContaining({ id: 42 }));
+    expect(addMultipleMock).toHaveBeenCalledTimes(1);
+    expect(addMultipleMock).toHaveBeenCalledWith([
+      { product: expect.objectContaining({ id: 42 }), quantity: 3 },
+    ]);
     expect(showToastMock).toHaveBeenCalledWith("3× Arroz Superior", "/img/arroz.png");
   });
 

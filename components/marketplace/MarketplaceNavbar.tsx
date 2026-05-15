@@ -25,6 +25,7 @@ import {
   Moon,
   LogOut,
   Compass,
+  Home as HomeIcon,
   Store,
   ChefHat,
   Sparkles,
@@ -32,9 +33,11 @@ import {
   Tag,
   Package,
   Wallet,
+  ShoppingCart,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { CartBadge } from "@/components/marketplace/MarketplaceCart";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useTheme } from "@/contexts/theme-context";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCustomer } from "@/contexts/customer-context";
@@ -86,6 +89,15 @@ type NavLink = {
 };
 
 const PRIMARY_LINKS: readonly NavLink[] = [
+  {
+    // Brandon mayo 14 2026 v2: agregado link "Inicio" → home B2C (Rappi-style).
+    // Aparece primero — siempre es la salida natural del marketplace al hero.
+    id: "inicio",
+    href: "/",
+    labelKey: "nav.home",
+    icon: HomeIcon,
+    matchEquals: "/",
+  },
   {
     id: "explorar",
     href: "/marketplace/explorar",
@@ -210,7 +222,6 @@ export default function MarketplaceNavbar() {
   const pathname = usePathname();
   const navSearchParams = useSearchParams();
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const mobileSearchRef = useRef<HTMLInputElement>(null);
   const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
   // Cuando volvemos del callback OAuth con `?oauth=complete&name=...`,
   // pre-llenamos el AuthModal con el nombre del usuario y solo le pedimos
@@ -238,6 +249,8 @@ export default function MarketplaceNavbar() {
   }, []);
   const { count: wishlistCount } = useWishlist();
   const { customer, clear } = useCustomer();
+  // Carrito — usado en mobile para mostrar conteo encima del icono.
+  const { itemCount: cartItemCount } = useMarketplaceCart();
   const { resolved: themeResolved, toggle: toggleTheme } = useTheme();
   const { t } = useLocale();
   const scrolled = useScrolledPastThreshold(40);
@@ -311,13 +324,6 @@ export default function MarketplaceNavbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, [userMenuOpen]);
 
-  // Autofocus search al abrir drawer mobile
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const timer = setTimeout(() => mobileSearchRef.current?.focus(), 60);
-    return () => clearTimeout(timer);
-  }, [mobileMenuOpen]);
-
   // Body scroll lock mientras drawer mobile abierto
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -360,11 +366,12 @@ export default function MarketplaceNavbar() {
       >
         <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center gap-3 lg:gap-4">
-            {/* ── Logo ── */}
+            {/* ── Logo (desktop+tablet) — Brandon, mayo 14 2026: siempre lleva a /tiendas.
+                 En mobile vive dentro del input de búsqueda (mayo 15 2026). ── */}
             <Link
-              href="/marketplace"
-              aria-label="Buleje — Ir al marketplace"
-              className="flex items-center shrink-0 text-[var(--accent)]"
+              href="/tiendas"
+              aria-label="Buleje — Ir al directorio de tiendas"
+              className="hidden md:flex items-center shrink-0 text-[var(--accent)]"
             >
               <BulejeWordmark
                 size={36}
@@ -624,141 +631,278 @@ export default function MarketplaceNavbar() {
               )}
             </div>
 
-            {/* ── Mobile: cart + hamburger ── */}
-            <div className="flex md:hidden items-center gap-1 ml-auto">
-              {/* Order tracker badge mobile */}
-              <OrderTrackerNavBadge variant="compact" />
-              <span data-tour="cart" className="inline-flex">
-                <CartBadge onClick={handleOpenCart} />
-              </span>
+            {/* ── Mobile bar (Brandon, mayo 15 2026) ──
+                 Layout: [Hamburger] [Search pill: logo + placeholder + lupa] [User] [Cart-with-count-on-top].
+                 El logo desktop arriba se oculta — vive dentro del input ahora.
+                 OrderTrackerNavBadge se mueve al drawer en mobile (real-estate). */}
+            <div className="flex md:hidden items-center gap-1.5 w-full">
+              {/* Hamburger */}
               <button
-                onClick={() => setMobileMenuOpen((o) => !o)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800"
-                aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+                onClick={() => setMobileMenuOpen(true)}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                aria-label="Abrir menú"
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-drawer"
               >
-                {mobileMenuOpen ? (
-                  <X className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
-                ) : (
-                  <Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
+                <Menu className="h-6 w-6" aria-hidden="true" strokeWidth={2} />
+              </button>
+
+              {/* Search pill: logo Buleje (mark) · placeholder · lupa */}
+              <form
+                onSubmit={handleSearch}
+                role="search"
+                aria-label={t("nav.search")}
+                className="flex-1 min-w-0"
+              >
+                <div className="relative flex items-center h-11 rounded-full bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)] focus-within:border-[var(--accent)] focus-within:bg-[var(--surface-canvas)] transition-colors pl-1.5 pr-1 gap-1.5">
+                  {/* Logo (solo mark, sin texto) al inicio del input */}
+                  <Link
+                    href="/tiendas"
+                    aria-label="Buleje — Inicio"
+                    className="shrink-0 inline-flex items-center"
+                    onClick={(e) => {
+                      // Si el input tiene foco, evita perderlo al tocar el logo.
+                      e.currentTarget.blur();
+                    }}
+                  >
+                    <BulejeWordmark size={28} showText={false} />
+                  </Link>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Categoría, producto o tienda"
+                    aria-label={t("nav.search")}
+                    className="flex-1 min-w-0 bg-transparent outline-none text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-medium"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="Buscar"
+                    className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-white active:scale-95 transition-transform hover:brightness-110"
+                  >
+                    <Search className="h-4 w-4" aria-hidden="true" strokeWidth={2.5} />
+                  </button>
+                </div>
+              </form>
+
+              {/* User — iniciales si está autenticado, ícono si no */}
+              {customer ? (
+                <Link
+                  href="/marketplace/mi-cuenta"
+                  aria-label={`Cuenta de ${customer.name ?? "usuario"}`}
+                  className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-[length:var(--ts-sm)] font-black text-white shadow-sm active:scale-95 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                >
+                  {getInitials(customer.name)}
+                </Link>
+              ) : (
+                <button
+                  onClick={openAuthModal}
+                  aria-label={t("nav.login")}
+                  className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                >
+                  <UserCircle className="h-6 w-6" aria-hidden="true" strokeWidth={1.75} />
+                </button>
+              )}
+
+              {/* Cart — ícono con contador ARRIBA (centrado), no al costado */}
+              <button
+                data-tour="cart"
+                onClick={handleOpenCart}
+                aria-label={`Carrito — ${cartItemCount} ${cartItemCount === 1 ? "producto" : "productos"}`}
+                className="relative shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              >
+                {cartItemCount > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-0 left-1/2 -translate-x-1/2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white shadow-sm leading-none ring-2 ring-[var(--surface-raised)] tabular-nums"
+                  >
+                    {cartItemCount > 99 ? "99+" : cartItemCount}
+                  </span>
                 )}
+                <ShoppingCart
+                  className="h-6 w-6 mt-1.5"
+                  aria-hidden="true"
+                  strokeWidth={2}
+                />
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* ── Mobile drawer lateral ── */}
+      {/* ── Mobile drawer (Brandon, mayo 15 2026 v2) ──
+           - Sale por la IZQUIERDA (mismo lado que el hamburger)
+           - Transición suave: 320ms cubic-bezier easeOut + fade del backdrop
+           - Sin input de búsqueda interno (ya vive en la nav bar)
+           - Header gradient con logo + saludo + decorative blobs
+           - Items con indicator pill izquierdo + chevron derecho */}
       {mobileMenuOpen && (
         <div className="md:hidden" role="presentation">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Cerrar menú"
-            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-[60] bg-black/55 backdrop-blur-md animate-in fade-in duration-300"
           />
           <aside
             id="mobile-drawer"
             role="dialog"
             aria-modal="true"
             aria-label="Menú del marketplace"
-            className="fixed inset-y-0 right-0 z-[70] flex w-full sm:max-w-md flex-col bg-[var(--surface-canvas)] shadow-2xl animate-in slide-in-from-right duration-200 overscroll-contain"
+            className="fixed inset-y-0 left-0 z-[70] flex w-[88%] sm:max-w-md flex-col bg-[var(--surface-canvas)] shadow-[8px_0_48px_-8px_rgba(0,0,0,0.35)] animate-in slide-in-from-left fade-in duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] overscroll-contain rounded-r-3xl"
           >
-            {/* Header drawer */}
-            <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-3">
-              <span className="inline-flex items-center gap-2 text-[var(--accent)]">
-                <BulejeWordmark
-                  size={28}
-                  strokeWidth={1.75}
-                  textSize={16}
-                  className="text-[var(--accent-600)] dark:text-white"
-                />
-              </span>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="Cerrar menú"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--text-secondary)] dark:text-gray-400 hover:bg-[var(--surface-sunken)] dark:hover:bg-gray-800"
-              >
-                <X className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
-              </button>
+            {/* ── Header gradient ── */}
+            <div className="relative overflow-hidden bg-linear-to-br from-[var(--accent-600,var(--accent))] via-[var(--accent)] to-[var(--accent-500,var(--accent))] text-white px-5 pt-5 pb-6 rounded-tr-3xl">
+              {/* decorative blobs */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -top-20 -right-10 h-48 w-48 rounded-full bg-white/15 blur-3xl"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -bottom-16 -left-8 h-36 w-36 rounded-full bg-white/10 blur-2xl"
+              />
+
+              {/* Top row: brand + close */}
+              <div className="relative flex items-center justify-between mb-5">
+                <Link
+                  href="/tiendas"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Buleje — Inicio"
+                  className="inline-flex items-center gap-2 text-white"
+                >
+                  {/* Mark blanco (cuadrado) — diseño plano para que se vea sobre gradient accent */}
+                  <span
+                    aria-hidden
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 ring-1 ring-white/40 backdrop-blur-sm"
+                  >
+                    <span className="text-white font-black text-lg leading-none -mt-0.5">b</span>
+                  </span>
+                  <span className="font-extrabold text-xl tracking-[var(--ls-tight)] text-white leading-none">
+                    Buleje
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Cerrar menú"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 active:scale-90 transition-all"
+                >
+                  <X className="h-5 w-5" aria-hidden="true" strokeWidth={2.5} />
+                </button>
+              </div>
+
+              {/* Greeting block */}
+              <div className="relative flex items-center gap-3">
+                {customer ? (
+                  <span
+                    aria-hidden
+                    className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-[var(--accent)] text-lg font-black uppercase shadow-lg ring-2 ring-white/30"
+                  >
+                    {getInitials(customer.name)}
+                  </span>
+                ) : (
+                  <span
+                    aria-hidden
+                    className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/15 text-white shadow-lg ring-2 ring-white/30"
+                  >
+                    <UserCircle className="h-7 w-7" strokeWidth={1.75} />
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/80 leading-tight">
+                    {customer ? "Tu cuenta" : "Bienvenido a"}
+                  </p>
+                  <p className="text-xl font-extrabold tracking-[var(--ls-tight)] text-white leading-tight truncate">
+                    {customer ? `Hola, ${customer.name?.split(" ")[0] ?? "vecino"}` : "Buleje Pucallpa"}
+                  </p>
+                  {customer?.phone ? (
+                    <p className="text-[length:var(--ts-xs)] font-medium text-white/85 tabular-nums leading-tight mt-0.5">
+                      +51 {customer.phone}
+                    </p>
+                  ) : (
+                    <p className="text-[length:var(--ts-xs)] font-medium text-white/80 leading-tight mt-0.5">
+                      Tu barrio, tu compra
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Search top, autofocus */}
-            <form
-              onSubmit={handleSearch}
-              role="search"
-              aria-label={t("nav.search")}
-              className="border-b border-[var(--rule-soft)] px-4 py-3"
-            >
-              <div className="relative">
-                <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none"
-                  aria-hidden="true"
-                  strokeWidth={1.75}
-                />
-                <input
-                  ref={mobileSearchRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("nav.searchPlaceholder")}
-                  aria-label={t("nav.search")}
-                  className="w-full rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800 border border-gray-200 dark:border-gray-700 pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] dark:text-white placeholder-gray-400 outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
-                />
-              </div>
-            </form>
-
-            {/* Scrollable: links + mega-menu + switchers */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3">
-              <div className="space-y-0.5">
+            {/* ── Body scrollable ── */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-4">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2.5 px-3">
+                Explorar
+              </p>
+              <ul className="space-y-1">
                 {renderedLinks.map((link) => {
                   if (link.discover) return null;
                   const active = isActive(link);
                   const LinkIcon = link.icon;
                   return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
-                        active
-                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900",
-                      )}
-                    >
-                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-alt)] dark:bg-gray-900">
-                        <LinkIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
-                      </span>
-                      <span className="flex-1">{t(link.labelKey)}</span>
-                      {link.showLiveDot && hasActiveLive && (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "group relative flex items-center gap-3 rounded-2xl pl-4 pr-3 py-2.5 text-[length:var(--ts-sm)] font-bold transition-all active:scale-[0.98]",
+                          active
+                            ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                            : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+                        )}
+                      >
+                        {/* Indicator pill (left edge) cuando activo */}
+                        {active && (
+                          <span
+                            aria-hidden
+                            className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-r-full bg-[var(--accent)]"
+                          />
+                        )}
                         <span
-                          aria-label={t("nav.liveNow")}
-                          className="relative inline-flex h-2 w-2"
+                          className={cn(
+                            "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all",
+                            active
+                              ? "bg-[var(--accent)] text-white shadow-[0_6px_16px_-6px_var(--accent)]"
+                              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
+                          )}
                         >
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error-500)] opacity-75" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
+                          <LinkIcon className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
                         </span>
-                      )}
-                      {link.showNewBadge && (
-                        <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-500)]">
-                          {t("nav.new")}
-                        </span>
-                      )}
-                    </Link>
+                        <span className="flex-1 truncate">{t(link.labelKey)}</span>
+                        {link.showLiveDot && hasActiveLive && (
+                          <span
+                            aria-label={t("nav.liveNow")}
+                            className="relative inline-flex h-2.5 w-2.5"
+                          >
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-error-500)] opacity-75" />
+                            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]" />
+                          </span>
+                        )}
+                        {link.showNewBadge && (
+                          <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-[var(--data-warning-500)]">
+                            {t("nav.new")}
+                          </span>
+                        )}
+                        <ChevronDown
+                          className={cn(
+                            "h-4 w-4 -rotate-90 transition-transform",
+                            active
+                              ? "text-[var(--accent)]"
+                              : "text-[var(--text-tertiary)] group-hover:translate-x-0.5",
+                          )}
+                          strokeWidth={2}
+                          aria-hidden
+                        />
+                      </Link>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
 
-              {/* Separator + Descubrí mega-menu — solo si NO estamos en
-                  modo "Solo Tiendas". En tiendas-only el mega-menu trae
-                  enlaces a Recetas, En Vivo, Buleje en Vivo, Novedades,
-                  que no aplican al alcance del catálogo de tiendas. */}
+              {/* Descubrí mega-menu — solo si NO estamos en modo "Solo Tiendas" */}
               {!isTiendasOnly && (
-                <div className="mt-3 border-t border-[var(--rule-soft)] pt-3">
+                <div className="mt-4 border-t border-[var(--rule-soft)] pt-4 px-1">
                   <DiscoverMegaMenu
                     variant="mobile"
                     onNavigate={() => setMobileMenuOpen(false)}
@@ -766,110 +910,106 @@ export default function MarketplaceNavbar() {
                 </div>
               )}
 
-              {/* Currency + Locale switchers removidos — default: Soles + Español */}
+              {/* Tu cuenta quick-access (solo customer) */}
+              {customer && (
+                <div className="mt-4 border-t border-[var(--rule-soft)] pt-4">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2.5 px-3">
+                    Tu cuenta
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 px-1">
+                    <Link
+                      href="/marketplace/mi-cuenta"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-2 py-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent-soft)]/30 active:scale-95 transition-all text-center"
+                    >
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                        <UserCircle className="h-5 w-5" strokeWidth={1.75} />
+                      </span>
+                      <span className="truncate w-full">{t("nav.account")}</span>
+                    </Link>
+                    <Link
+                      href="/mis-pedidos"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-2 py-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent-soft)]/30 active:scale-95 transition-all text-center"
+                    >
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                        <Package className="h-5 w-5" strokeWidth={1.75} />
+                      </span>
+                      <span className="truncate w-full">{t("nav.orders")}</span>
+                    </Link>
+                    <Link
+                      href="/marketplace/favoritos"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="relative flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-2 py-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:bg-[var(--accent-soft)]/30 active:scale-95 transition-all text-center"
+                    >
+                      <span
+                        className={cn(
+                          "inline-flex h-9 w-9 items-center justify-center rounded-full",
+                          wishlistCount > 0
+                            ? "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
+                            : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                        )}
+                      >
+                        <Heart
+                          className={cn("h-5 w-5", wishlistCount > 0 && "fill-current")}
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                      </span>
+                      <span className="truncate w-full">{t("nav.favorites")}</span>
+                      {wishlistCount > 0 && (
+                        <span className="absolute top-1.5 right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-black text-white">
+                          {wishlistCount > 99 ? "99+" : wishlistCount}
+                        </span>
+                      )}
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Footer drawer — auth + theme fijo abajo */}
-            <div className="border-t border-[var(--rule-soft)] px-3 py-3 space-y-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              {customer ? (
-                <>
-                  <Link
-                    href="/marketplace/mi-cuenta"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
-                  >
-                    <UserCircle
-                      className="h-4 w-4 text-[var(--text-secondary)]"
-                      aria-hidden="true"
-                      strokeWidth={1.75}
-                    />
-                    <span>
-                      {t("nav.account")}
-                      {customer.name ? ` — ${customer.name.split(" ")[0]}` : ""}
-                    </span>
-                  </Link>
-                  <Link
-                    href="/mis-pedidos"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
-                  >
-                    <Package
-                      className="h-4 w-4 text-[var(--text-secondary)]"
-                      aria-hidden="true"
-                      strokeWidth={1.75}
-                    />
-                    <span>{t("nav.orders")}</span>
-                  </Link>
-                  <Link
-                    href="/marketplace/favoritos"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900"
-                  >
-                    <Heart
-                      className={cn(
-                        "h-4 w-4",
-                        wishlistCount > 0
-                          ? "fill-current text-[var(--data-error-500)]"
-                          : "text-[var(--text-secondary)]",
-                      )}
-                      aria-hidden="true"
-                      strokeWidth={1.75}
-                    />
-                    <span className="flex-1">{t("nav.favorites")}</span>
-                    {wishlistCount > 0 && (
-                      <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded-full">
-                        {wishlistCount > 99 ? "99+" : wishlistCount}
-                      </span>
-                    )}
-                  </Link>
-                </>
-              ) : (
+            {/* ── Footer: login + theme + logout ── */}
+            <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] rounded-br-3xl">
+              {!customer && (
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     openAuthModal();
                   }}
-                  className="w-full flex items-center justify-center rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 min-h-[44px]"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-[var(--accent-600,var(--accent))] to-[var(--accent)] px-4 h-12 text-sm font-extrabold text-white hover:brightness-110 active:scale-[0.98] transition-all shadow-[0_8px_24px_-8px_var(--accent)] mb-2"
                 >
+                  <UserCircle className="h-5 w-5" strokeWidth={2} aria-hidden />
                   {t("nav.login")}
                 </button>
               )}
-              <button
-                onClick={() => {
-                  toggleTheme();
-                }}
-                className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-900 text-left"
-              >
-                {themeResolved === "dark" ? (
-                  <Sun
-                    className="h-4 w-4 text-[var(--text-secondary)]"
-                    aria-hidden="true"
-                    strokeWidth={1.75}
-                  />
-                ) : (
-                  <Moon
-                    className="h-4 w-4 text-[var(--text-secondary)]"
-                    aria-hidden="true"
-                    strokeWidth={1.75}
-                  />
-                )}
-                <span>
-                  {themeResolved === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
-                </span>
-              </button>
-              {customer && (
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    clear();
-                    setMobileMenuOpen(false);
-                    window.location.reload();
-                  }}
-                  className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] text-left"
+                  onClick={() => toggleTheme()}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 h-11 text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all"
                 >
-                  <LogOut className="h-4 w-4" aria-hidden="true" strokeWidth={1.75} />
-                  <span>{t("nav.logout")}</span>
+                  {themeResolved === "dark" ? (
+                    <Sun className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  ) : (
+                    <Moon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  )}
+                  <span>
+                    {themeResolved === "dark" ? t("nav.lightMode") : t("nav.darkMode")}
+                  </span>
                 </button>
-              )}
+                {customer && (
+                  <button
+                    onClick={() => {
+                      clear();
+                      setMobileMenuOpen(false);
+                      window.location.reload();
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50,#fef2f2)] px-3 h-11 text-[length:var(--ts-xs)] font-bold text-[var(--data-error-600,#dc2626)] hover:bg-[var(--data-error-100,#fee2e2)] active:scale-[0.98] transition-all"
+                    aria-label={t("nav.logout")}
+                  >
+                    <LogOut className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  </button>
+                )}
+              </div>
             </div>
           </aside>
         </div>
