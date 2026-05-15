@@ -321,5 +321,5 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="clientes-base-order" layout="grid" />;
+  return <DraggableSections items={sections} storageKey="clientes-base-order" layout="column" gap={4} />;
 }

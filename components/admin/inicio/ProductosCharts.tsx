@@ -331,5 +331,5 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="productos-base-order" layout="grid" />;
+  return <DraggableSections items={sections} storageKey="productos-base-order" layout="column" gap={4} />;
 }

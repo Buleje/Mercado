@@ -313,5 +313,5 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="compras-base-order" layout="grid" />;
+  return <DraggableSections items={sections} storageKey="compras-base-order" layout="column" gap={4} />;
 }

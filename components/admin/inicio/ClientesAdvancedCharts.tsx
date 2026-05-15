@@ -737,5 +737,5 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="clientes-advanced-order" layout="grid" />;
+  return <DraggableSections items={sections} storageKey="clientes-advanced-order" layout="column" gap={4} />;
 });

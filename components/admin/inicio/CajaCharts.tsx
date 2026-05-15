@@ -327,5 +327,5 @@ export default function CajaCharts({ data }: { data: CajaData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="caja-base-order" layout="grid" />;
+  return <DraggableSections items={sections} storageKey="caja-base-order" layout="column" gap={4} />;
 }

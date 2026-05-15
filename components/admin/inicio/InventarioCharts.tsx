@@ -421,7 +421,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
 
   return (
     <>
-      <DraggableSections items={sections} storageKey="inventario-base-order" layout="grid" />
+      <DraggableSections items={sections} storageKey="inventario-base-order" layout="column" gap={4} />
       <ReorderModal
         open={reorderOpen}
         candidates={reorderCandidates}

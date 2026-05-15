@@ -112,7 +112,10 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
   showLegend = true,
   showGrid = true,
   minDataPoints = 2,
-  showValues = false,
+  // Brandon mayo 2026: default a TRUE — todos los charts del admin ahora
+  // muestran data labels arriba de cada barra para que sean legibles sin
+  // hover ni leer ejes. Caller puede pasar showValues={false} para opt-out.
+  showValues = true,
   valueFormat,
   className,
 }: Props) {

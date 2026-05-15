@@ -331,5 +331,5 @@ export default function VentasCharts({ data }: { data: VentasData }) {
     });
   }
 
-  return <DraggableSections items={sections} storageKey="ventas-base-order" layout="grid" />;
+  return <DraggableSections items={sections} storageKey="ventas-base-order" layout="column" gap={4} />;
 }

@@ -704,5 +704,5 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="inventario-advanced-order" layout="grid" />;
+  return <DraggableSections items={sections} storageKey="inventario-advanced-order" layout="column" gap={4} />;
 });
