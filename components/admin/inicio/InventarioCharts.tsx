@@ -264,6 +264,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
         <DashboardSection
           chartId="inventario.distribucion-stock"
           hasData={true}
+          defaultVisible={false}
           kicker="Distribución · SKUs por rango de stock"
           title="Cuántos productos hay en cada rango"
           kpis={[
@@ -314,6 +315,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
         <DashboardSection
           chartId="inventario.dias-cobertura"
           hasData={true}
+          defaultVisible={false}
           kicker="Cobertura · días restantes top-10"
           title="Días de stock para los productos más expuestos"
           kpis={[

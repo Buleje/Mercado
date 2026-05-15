@@ -782,7 +782,9 @@ export function AdminSidebar({
           {activeTenantLogo ? (
             <div className={cn(
               "relative shrink-0",
-              isDarkTheme && "drop-shadow-[0_0_12px_color-mix(in oklab, var(--accent) 25%, transparent)]"
+              // Brandon mayo 2026 v3: drop-shadow más fuerte + bg blanco sutil
+              // detrás para contrastar el logo del tenant en sidebars oscuros.
+              isDarkTheme && "drop-shadow-md"
             )}>
               <Image
                 src={activeTenantLogo}
@@ -792,7 +794,7 @@ export function AdminSidebar({
                 className={cn(
                   "h-10 w-10 rounded-xl object-cover",
                   isDarkTheme
-                    ? "ring-1 ring-[color-mix(in_oklab,var(--accent)_45%,transparent)]"
+                    ? "ring-2 ring-white/30 bg-white/5"
                     : "ring-2 ring-gray-100 dark:ring-card-border",
                 )}
               />
@@ -800,9 +802,11 @@ export function AdminSidebar({
           ) : (
             <div className={cn(
               "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
+              // Brandon mayo 2026 v3: gradient más fuerte + ring contrastante
+              // + sombra cálida — el BulejeMark se ve nítido sobre sidebar oscuro.
               isDarkTheme
-                ? "bg-linear-to-br from-[color-mix(in_oklab,var(--accent)_42%,transparent)] to-[color-mix(in_oklab,var(--accent)_8%,transparent)] ring-1 ring-[color-mix(in_oklab,var(--accent)_50%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] shadow-[0_0_16px_-2px_color-mix(in_oklab,var(--accent)_45%,transparent)]"
-                : "bg-linear-to-br from-primary/15 to-primary/5 ring-1 ring-primary/20 text-primary",
+                ? "bg-[linear-gradient(135deg,color-mix(in_oklab,var(--accent)_85%,white)_0%,color-mix(in_oklab,var(--accent)_55%,black)_100%)] ring-2 ring-white/25 text-white shadow-[var(--shadow-md)]"
+                : "bg-linear-to-br from-primary/20 to-primary/8 ring-2 ring-primary/25 text-primary shadow-sm",
             )}>
               <BulejeMark size={22} strokeWidth={1.75} />
             </div>

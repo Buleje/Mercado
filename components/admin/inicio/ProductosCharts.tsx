@@ -227,6 +227,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
         <DashboardSection
           chartId="productos.sin-movimiento"
           hasData={true}
+          defaultVisible={false}
           kicker="Dead stock · top 10 zombies"
           title="Productos sin movimiento · capital inmovilizado"
           kpis={[
@@ -260,6 +261,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
         <DashboardSection
           chartId="productos.afinidades"
           hasData={true}
+          defaultVisible={false}
           kicker="Análisis de cesta · co-compra"
           title="Pares que se venden juntos"
           kpis={[

@@ -72,19 +72,22 @@ function pad2(n: number): string {
 }
 
 /**
- * Construye buckets cubriendo el rango [from, to] sin saltarse días en el
- * modo "mensual" — para que se vean L Ma Mi Ju Vi Sa Do consecutivos.
- * - Rango <= 1 día: 6 buckets de 4h ("08h", "12h", …)
- * - Rango <= 8 días (semanal): buckets diarios "Lunes 10/05"
- * - Rango <= 35 días (mensual): buckets diarios "L 10/05"
- * - Rango más largo (anual): máx 14 buckets uniformes "Ene 1"
+ * Construye buckets cubriendo el rango [from, to].
+ * Brandon mayo 2026 v3: label corto + iso para tooltip.
+ *  - Rango <= 1 día: 6 buckets de 4h ("08h")
+ *  - Rango <= 8 días (semanal): "10 May" + iso para tooltip "Viernes 10 de Mayo"
+ *  - Rango <= 35 días (mensual): "10 May" + iso (mismo formato — sin
+ *    abreviatura de día, sin slash, más limpio)
+ *  - Rango > 35 días: "Ene 1" + iso
  */
-function buildBuckets(from: Date, to: Date): Array<{ label: string; start: number; end: number }> {
+type Bucket = { label: string; iso: string; start: number; end: number };
+
+function buildBuckets(from: Date, to: Date): Bucket[] {
   const span = to.getTime() - from.getTime();
   const days = span / MS_DAY;
 
   if (days <= 1) {
-    const out: Array<{ label: string; start: number; end: number }> = [];
+    const out: Bucket[] = [];
     const fromStart = new Date(from);
     fromStart.setHours(Math.floor(fromStart.getHours() / 4) * 4, 0, 0, 0);
     for (let i = 0; i < 6; i++) {
@@ -92,6 +95,7 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
       const end = new Date(start.getTime() + 4 * 60 * 60 * 1000 - 1);
       out.push({
         label: `${pad2(start.getHours())}h`,
+        iso: start.toISOString(),
         start: start.getTime(),
         end: end.getTime(),
       });
@@ -99,30 +103,10 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
     return out;
   }
 
-  // Semanal (≤ 8 días): "Lunes 10/05" — día completo + fecha corta
-  if (days <= 8) {
-    const out: Array<{ label: string; start: number; end: number }> = [];
-    const cursor = new Date(from);
-    cursor.setHours(0, 0, 0, 0);
-    const last = new Date(to);
-    last.setHours(23, 59, 59, 999);
-    while (cursor.getTime() <= last.getTime()) {
-      const dayEnd = new Date(cursor);
-      dayEnd.setHours(23, 59, 59, 999);
-      const dayName = DAY_FULL[cursor.getDay()] ?? "";
-      out.push({
-        label: `${dayName} ${pad2(cursor.getDate())}/${pad2(cursor.getMonth() + 1)}`,
-        start: cursor.getTime(),
-        end: dayEnd.getTime(),
-      });
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    return out;
-  }
-
-  // Mensual (≤ 35 días): "L 10/05" — letra del día + fecha corta. Sin saltarse.
+  // Semanal y mensual (≤ 35 días): formato "10 May" — día + mes abreviado.
+  // El día completo ("Viernes 10 de Mayo") aparece en el tooltip via iso.
   if (days <= 35) {
-    const out: Array<{ label: string; start: number; end: number }> = [];
+    const out: Bucket[] = [];
     const cursor = new Date(from);
     cursor.setHours(0, 0, 0, 0);
     const last = new Date(to);
@@ -130,9 +114,9 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
     while (cursor.getTime() <= last.getTime()) {
       const dayEnd = new Date(cursor);
       dayEnd.setHours(23, 59, 59, 999);
-      const dayShort = DAY_SHORT[cursor.getDay()] ?? "";
       out.push({
-        label: `${dayShort} ${pad2(cursor.getDate())}/${pad2(cursor.getMonth() + 1)}`,
+        label: `${pad2(cursor.getDate())} ${MONTH_LABELS[cursor.getMonth()]}`,
+        iso: cursor.toISOString(),
         start: cursor.getTime(),
         end: dayEnd.getTime(),
       });
@@ -143,16 +127,15 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; start: numbe
 
   // Rango largo (> 35 días): máx 14 buckets uniformes
   const bucketSize = Math.ceil(days / 14);
-  const out: Array<{ label: string; start: number; end: number }> = [];
+  const out: Bucket[] = [];
   const cursor = new Date(from);
   cursor.setHours(0, 0, 0, 0);
   while (cursor.getTime() <= to.getTime()) {
     const bucketEnd = new Date(cursor.getTime() + bucketSize * MS_DAY - 1);
     const actualEnd = bucketEnd.getTime() > to.getTime() ? to : bucketEnd;
     out.push({
-      label: days > 90
-        ? `${MONTH_LABELS[cursor.getMonth()]} ${cursor.getDate()}`
-        : `${pad2(cursor.getDate())}/${pad2(cursor.getMonth() + 1)}`,
+      label: `${pad2(cursor.getDate())} ${MONTH_LABELS[cursor.getMonth()]}`,
+      iso: cursor.toISOString(),
       start: cursor.getTime(),
       end: actualEnd.getTime(),
     });
@@ -224,6 +207,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
   const cajaChart = useMemo(() => {
     const rows = buckets.map((b) => ({
       day: b.label,
+      iso: b.iso,
       ingresos: 0,
       egresos: 0,
       neto: 0,
@@ -340,6 +324,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
   const cliChart = useMemo(() => {
     const rows = buckets.map((b) => ({
       day: b.label,
+      iso: b.iso,
       nuevos: 0,
       recurrentes: 0,
       ticketProm: 0,

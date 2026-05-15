@@ -185,6 +185,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
         <DashboardSection
           chartId="compras.estado-cuentas"
           hasData={true}
+          defaultVisible={false}
           kicker="Cuentas por pagar · estado"
           title="Distribución por estado de cuenta"
           kpis={[
@@ -239,6 +240,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
         <DashboardSection
           chartId="compras.cuentas-por-vencer"
           hasData={true}
+          defaultVisible={false}
           kicker="Cuentas · próximos vencimientos"
           title="Días restantes para pagar"
           kpis={[
@@ -286,6 +288,7 @@ export default function ComprasCharts({ data }: { data: ComprasData }) {
         <DashboardSection
           chartId="compras.top-proveedores-historico"
           hasData={true}
+          defaultVisible={false}
           kicker="Proveedores · histórico total"
           title="Top 10 proveedores acumulados"
           kpis={[

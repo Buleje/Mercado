@@ -127,6 +127,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <DashboardSection
           chartId="ventas.por-dia-semana"
           hasData={(data.ventasPorDia ?? []).some((d) => (d.total ?? 0) > 0)}
+          defaultVisible={false}
           kicker="Día de la semana · periodo"
           title="Distribución por día · L a D"
           kpis={[
@@ -203,6 +204,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <DashboardSection
           chartId="ventas.metodo-pago"
           hasData={(data.metodosPago ?? []).some((m) => (m.total ?? 0) > 0)}
+          defaultVisible={false}
           kicker="Distribución de cobros"
           title="Método de pago"
           kpis={[
@@ -262,6 +264,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <DashboardSection
           chartId="ventas.meta-periodo"
           hasData={(data.ventasNetas ?? 0) > 0}
+          defaultVisible={false}
           kicker="Objetivo vs real · periodo"
           title="Meta del periodo"
           kpis={[
@@ -302,6 +305,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <DashboardSection
           chartId="ventas.forecast-7d"
           hasData={(data.forecast7 ?? []).length > 0}
+          defaultVisible={false}
           kicker="Tendencia lineal · próximos 7 días"
           title="Pronóstico de ventas"
           kpis={[
