@@ -68,6 +68,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
   // ── 1. PARETO 80/20 ─────────────────────────────────────────────────────
   // Top 15 productos por ingresos últimos 30d + curva acumulada %.
   const pareto = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const byId = new Map<string | number, { name: string; ingresos: number }>();
     const priceCost = (id: string | number) => {
@@ -115,6 +116,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
 
   // ── 2. HEATMAP hora × día (últimos 30d) ─────────────────────────────────
   const heatmap = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const cells: HeatmapCell[] = [];
     const m = new Map<string, number>();
@@ -144,6 +146,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
   // ── 3. WATERFALL — descomposición del cambio semanal ────────────────────
   // Semana actual vs semana pasada: Δ = Δ volumen (# tickets) + Δ ticket prom.
   const waterfall = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const now = Date.now();
     const wkA_start = now - 7 * 24 * 60 * 60 * 1000;
     const wkB_start = now - 14 * 24 * 60 * 60 * 1000;
@@ -178,6 +181,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
 
   // ── 4. MIX POR CATEGORÍA — stacked 100% últimos 14d ─────────────────────
   const mix = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, Map<string, number>>();
     const priceCost = (id: string | number) => {
@@ -229,6 +233,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
 
   // ── 5. COMPARATIVA — esta semana vs semana pasada ───────────────────────
   const comparison = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map((_, i) => ({
@@ -286,8 +291,10 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "pareto-80-20",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Análisis Pareto · rango activo"
+          chartId="ventas.advanced.pareto-80-20"
+          hasData={true}
+          defaultVisible={false}
+kicker="Análisis Pareto · rango activo"
           title="Top 15 productos y concentración 80/20"
           kpis={[
             { label: "Ingresos 30d", value: fmtPEN(pareto.grandTotal), tone: "primary" },
@@ -324,8 +331,10 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "heatmap-hora-dia",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Densidad de ventas · rango activo"
+          chartId="ventas.advanced.heatmap-hora-dia"
+          hasData={true}
+          defaultVisible={false}
+kicker="Densidad de ventas · rango activo"
           title="Heatmap hora × día de la semana"
           kpis={[
             { label: "Total 30d", value: fmtPEN(heatmap.total), tone: "primary" },
@@ -345,8 +354,10 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "waterfall-semanal",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Descomposición semanal · qué movió las ventas"
+          chartId="ventas.advanced.waterfall-semanal"
+          hasData={true}
+          defaultVisible={false}
+kicker="Descomposición semanal · qué movió las ventas"
           title="De la semana pasada a la actual"
           kpis={[
             { label: "Sem. pasada", value: fmtPEN(waterfall.prev.total), tone: "neutral" },
@@ -371,8 +382,10 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "mix-categoria",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Mix de categorías · rango activo"
+          chartId="ventas.advanced.mix-categoria"
+          hasData={true}
+          defaultVisible={false}
+kicker="Mix de categorías · rango activo"
           title="Composición diaria de ingresos por categoría"
           kpis={[
             { label: "Total 14d", value: fmtPEN(mix.grand), tone: "primary" },
@@ -406,8 +419,10 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       id: "comparativa-semanal",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Comparativa · semana a semana"
+          chartId="ventas.advanced.comparativa-semanal"
+          hasData={true}
+          defaultVisible={false}
+kicker="Comparativa · semana a semana"
           title="Esta semana vs semana pasada"
         >
           <BulejeComparisonOverlay

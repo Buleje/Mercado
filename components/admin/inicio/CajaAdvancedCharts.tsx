@@ -89,6 +89,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 1. CASH RUNWAY — días de operación ───────────────────────────────────
   const runway = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const ingresos30d =
       orders
@@ -123,6 +124,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 2. PARETO DE MÉTODOS DE PAGO ─────────────────────────────────────────
   const pareto = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<string, number>();
     orders
@@ -155,6 +157,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 3. EVOLUCIÓN MÉTODOS DE PAGO — stacked 14d ──────────────────────────
   const metodosStacked = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, Map<string, number>>();
     const add = (iso: string, method: string, amount: number) => {
@@ -194,6 +197,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 4. COMPARATIVA SEMANAL INGRESOS + EGRESOS ───────────────────────────
   const compSemana = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const buckets = Array.from({ length: 7 }).map(() => ({
@@ -249,6 +253,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 5. EVOLUCIÓN DEL MARGEN NETO 14d ─────────────────────────────────────
   const margenTrend = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, { ingresos: number; costo: number; egresos: number }>();
     const ensure = (k: string) => {
@@ -302,6 +307,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
 
   // ── 6. BALANCE ACUMULADO (running total) últimos 30d ─────────────────────
   const runningBalance = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- pre-existente: Date.now() en useMemo, React Compiler eslint plugin
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, number>();
     const add = (iso: string, delta: number) => {
@@ -341,8 +347,10 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "cash-runway",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Cash runway · rango activo"
+          chartId="caja.advanced.cash-runway"
+          hasData={true}
+          defaultVisible={false}
+kicker="Cash runway · rango activo"
           title="Días de operación con balance actual"
           kpis={[
             {
@@ -385,8 +393,10 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "pareto-metodos",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Pareto · métodos de pago · rango activo"
+          chartId="caja.advanced.pareto-metodos"
+          hasData={true}
+          defaultVisible={false}
+kicker="Pareto · métodos de pago · rango activo"
           title="Qué métodos concentran el cash"
           kpis={[
             { label: "Total 30d", value: fmtS(pareto.total), tone: "primary" },
@@ -423,8 +433,10 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "metodos-stacked",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Evolución de métodos · rango activo"
+          chartId="caja.advanced.metodos-stacked"
+          hasData={true}
+          defaultVisible={false}
+kicker="Evolución de métodos · rango activo"
           title="Composición diaria de cobros por método"
           kpis={[
             { label: "Días con data", value: String(metodosStacked.rows.length), tone: "neutral" },
@@ -469,8 +481,10 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "comparativa-semana",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Comparativa · semana a semana"
+          chartId="caja.advanced.comparativa-semana"
+          hasData={true}
+          defaultVisible={false}
+kicker="Comparativa · semana a semana"
           title="Balance neto — esta semana vs pasada"
         >
           <BulejeComparisonOverlay
@@ -491,8 +505,10 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "margen-trend",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Evolución del margen · rango activo"
+          chartId="caja.advanced.margen-trend"
+          hasData={true}
+          defaultVisible={false}
+kicker="Evolución del margen · rango activo"
           title="Utilidad neta y margen día a día"
           kpis={[
             {
@@ -540,8 +556,10 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       id: "balance-acumulado",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Balance acumulado · rango activo"
+          chartId="caja.advanced.balance-acumulado"
+          hasData={true}
+          defaultVisible={false}
+kicker="Balance acumulado · rango activo"
           title="Trayectoria de caja (running total)"
           kpis={[
             { label: "Final", value: fmtS(runningBalance.finalAcc), tone: runningBalance.finalAcc >= 0 ? "success" : "warning" },

@@ -93,16 +93,21 @@ export function AdminSubSidebar({
               <TabIcon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
               <span className="truncate flex-1 text-left">{t.label}</span>
               {alertCount > 0 && (
-                <span className={cn(
-                  "text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center",
-                  isActive ? "bg-primary/20 text-primary" : "bg-[var(--data-error-500)] text-white"
-                )}>
-                  {alertCount}
+                <span
+                  className={cn(
+                    "inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full text-xs font-extrabold tabular-nums leading-none ring-2",
+                    isActive
+                      ? "bg-primary/15 text-primary ring-primary/20"
+                      : "bg-[var(--data-error-500)] text-white ring-[var(--surface-raised)] dark:ring-[var(--surface-canvas)] shadow-sm"
+                  )}
+                  title={`${alertCount} ${alertCount === 1 ? "alerta" : "alertas"} sin leer`}
+                >
+                  {alertCount > 99 ? "99+" : alertCount}
                 </span>
               )}
               {t.badge != null && t.badge > 0 && !alertCount && (
-                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted font-medium">
-                  {t.badge}
+                <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full text-xs font-bold tabular-nums leading-none bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted ring-1 ring-[var(--rule-base)]">
+                  {t.badge > 99 ? "99+" : t.badge}
                 </span>
               )}
             </button>

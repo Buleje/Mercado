@@ -226,8 +226,10 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       id: "funnel-pedidos",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Funnel · rango activo"
+          chartId="marketplace.advanced.funnel-pedidos"
+          hasData={true}
+          defaultVisible={false}
+kicker="Funnel · rango activo"
           title="De pedido recibido a entregado"
           kpis={[
             { label: "Recibidos", value: String(funnel.recibidos), tone: "primary" },
@@ -372,8 +374,10 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       id: "ratings-marketplace",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Satisfacción · todos los periodos"
+          chartId="marketplace.advanced.ratings-marketplace"
+          hasData={true}
+          defaultVisible={false}
+kicker="Satisfacción · todos los periodos"
           title="Distribución de reseñas"
           kpis={[
             { label: "Total reseñas", value: String(ratings.total), tone: "primary" },
@@ -409,8 +413,10 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       id: "comparativa-semanal-mkt",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Comparativa · ingresos semana a semana"
+          chartId="marketplace.advanced.comparativa-semanal-mkt"
+          hasData={true}
+          defaultVisible={false}
+kicker="Comparativa · ingresos semana a semana"
           title="Esta semana vs pasada"
         >
           <BulejeComparisonOverlay

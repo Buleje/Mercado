@@ -425,8 +425,10 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "salud-inventario",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Salud general · % SKUs sin problema"
+          chartId="inventario.advanced.salud-inventario"
+          hasData={true}
+          defaultVisible={false}
+kicker="Salud general · % SKUs sin problema"
           title="Estado actual del inventario"
           rightSlot={
             <button
@@ -483,8 +485,10 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "rotacion-categoria",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Rotación · rango activo"
+          chartId="inventario.advanced.rotacion-categoria"
+          hasData={true}
+          defaultVisible={false}
+kicker="Rotación · rango activo"
           title="Velocidad y cobertura por categoría"
           kpis={[
             {
@@ -577,8 +581,10 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "waterfall-inventario",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Δ Inventario · rango activo"
+          chartId="inventario.advanced.waterfall-inventario"
+          hasData={true}
+          defaultVisible={false}
+kicker="Δ Inventario · rango activo"
           title="De stock inicio a stock actual"
           kpis={[
             { label: "Stock inicio", value: fmtU(waterfall.stockInicio), tone: "neutral" },
@@ -684,8 +690,10 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       id: "comparativa-semana",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Comparativa · salidas semana a semana"
+          chartId="inventario.advanced.comparativa-semana"
+          hasData={true}
+          defaultVisible={false}
+kicker="Comparativa · salidas semana a semana"
           title="Unidades salidas · esta semana vs pasada"
         >
           <BulejeComparisonOverlay

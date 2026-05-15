@@ -1138,8 +1138,14 @@ export function AdminSidebar({
                 <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110", tab === id ? "text-[var(--data-success-500)]" : "")} />
                 <span className="truncate flex-1 text-left">{label}</span>
                 {alertCount > 0 && (
-                  <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
-                    {alertCount}
+                  // Brandon mayo 2026: badge agrandado + tipografía más fuerte
+                  // + ring para que se note sin animación constante (la pulse
+                  // continua cansa la vista). Solo pulse 1x cuando aparece.
+                  <span
+                    className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-[var(--data-error-500)] text-white text-xs font-extrabold tabular-nums leading-none ring-2 ring-[var(--surface-raised)] dark:ring-[var(--surface-canvas)] shadow-sm"
+                    title={`${alertCount} ${alertCount === 1 ? "alerta" : "alertas"} sin leer`}
+                  >
+                    {alertCount > 99 ? "99+" : alertCount}
                   </span>
                 )}
               </button>
@@ -1170,7 +1176,12 @@ export function AdminSidebar({
                   {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-white/70" />}
                   <Icon className="h-5 w-5 shrink-0 transition-transform duration-[var(--dur-base)]" />
                   {alertCount > 0 && (
-                    <span className="absolute top-1 right-1 text-[length:var(--ts-2xs)] font-bold rounded-full w-4 h-4 flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
+                    // Modo compact: badge en esquina sup-der del icono con ring
+                    // que separa visualmente del icon. Sin animación.
+                    <span
+                      className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--data-error-500)] text-white text-xs font-extrabold tabular-nums leading-none ring-2 ring-[var(--surface-raised)] dark:ring-[var(--surface-canvas)] shadow-sm"
+                      title={`${alertCount} ${alertCount === 1 ? "alerta" : "alertas"} sin leer`}
+                    >
                       {alertCount > 9 ? "9+" : alertCount}
                     </span>
                   )}

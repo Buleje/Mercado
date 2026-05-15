@@ -36,6 +36,13 @@ interface Props {
    * aplica si `chartId` está presente.
    */
   hasData?: boolean;
+  /**
+   * Brandon mayo 2026: si false, el chart está OCULTO por default aunque
+   * tenga datos. Usado para los charts avanzados/especializados (cohort,
+   * waterfall, gauge, funnel, BCG, etc.) que confunden al dueño común.
+   * El user los puede activar desde el modal "Gráficos".
+   */
+  defaultVisible?: boolean;
 }
 
 /**
@@ -50,12 +57,13 @@ interface Props {
  *
  * Se usa en Resumen, Ventas base y Ventas advanced para consistencia total.
  */
-export function DashboardSection({ kicker, title, kpis, rightSlot, children, className, hideHeader, chartId, hasData = true }: Props) {
+export function DashboardSection({ kicker, title, kpis, rightSlot, children, className, hideHeader, chartId, hasData = true, defaultVisible = true }: Props) {
   // Si el chart se registró con un id, consultar visibility. Si no tiene
   // chartId, siempre visible (back-compat con secciones legacy).
   const { visible } = useChartRegistration(chartId ?? "__none__", {
     label: title,
     hasData,
+    defaultVisible,
   });
   if (chartId && !visible) return null;
 

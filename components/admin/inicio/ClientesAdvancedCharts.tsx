@@ -450,8 +450,10 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       id: "rfm-quadrant",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="RFM · recency × frequency · monetary = tamaño"
+          chartId="clientes.advanced.rfm-quadrant"
+          hasData={true}
+          defaultVisible={false}
+kicker="RFM · recency × frequency · monetary = tamaño"
           title="Segmentación estratégica de clientes"
           kpis={[
             { label: "🏆 Champions", value: String(rfm.counts.champions), tone: "success" },
@@ -533,8 +535,10 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       id: "rating-distribution",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Satisfacción · todos los periodos"
+          chartId="clientes.advanced.rating-distribution"
+          hasData={true}
+          defaultVisible={false}
+kicker="Satisfacción · todos los periodos"
           title="Distribución de reseñas por rating"
           kpis={[
             { label: "Total reseñas", value: String(ratingChart.total), tone: "primary" },
@@ -574,8 +578,10 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       id: "comparativa-nuevos",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Comparativa · nuevos clientes semana a semana"
+          chartId="clientes.advanced.comparativa-nuevos"
+          hasData={true}
+          defaultVisible={false}
+kicker="Comparativa · nuevos clientes semana a semana"
           title="Adquisición · esta semana vs pasada"
         >
           <BulejeComparisonOverlay
