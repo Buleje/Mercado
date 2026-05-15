@@ -46,7 +46,9 @@ export type CheckoutAddress = {
   districtCode: string;
   districtName: string;
 };
-export type CheckoutPaymentMethod = "efectivo" | "yape" | "plin" | "transfer";
+// "" = sin método seleccionado (Brandon mayo 15 v4: ya no se preselecciona
+// efectivo por defecto — el cliente debe elegir explícitamente).
+export type CheckoutPaymentMethod = "" | "efectivo" | "yape" | "plin" | "transfer";
 export type CheckoutPayment = {
   method: CheckoutPaymentMethod;
   cashAmount: string;
@@ -117,7 +119,7 @@ const DEFAULT_ADDRESS: CheckoutAddress = {
   districtCode: "",
   districtName: "",
 };
-const DEFAULT_PAYMENT: CheckoutPayment = { method: "efectivo", cashAmount: "" };
+const DEFAULT_PAYMENT: CheckoutPayment = { method: "", cashAmount: "" };
 const DEFAULT_COUPONS: CheckoutCoupons = {};
 const DEFAULT_LOYALTY: CheckoutLoyalty = { redeemPoints: 0 };
 const DEFAULT_PROOFS: CheckoutPaymentProofs = {};
@@ -266,10 +268,14 @@ export function CheckoutDataProvider({ children }: { children: ReactNode }) {
       customer.name.trim().length >= 2 &&
       customer.phone.trim().replace(/\D/g, "").length >= 6;
     const isAddressValid = address.address.trim().length >= 5;
+    // Método "" (sin elegir) = inválido. Brandon mayo 15 v4: el cliente debe
+    // elegir un método explícitamente. Efectivo con cashAmount truthy debe
+    // ser > 0 para ser válido.
     const isPaymentValid =
-      payment.method !== "efectivo" ||
-      !payment.cashAmount ||
-      Number(payment.cashAmount) > 0;
+      payment.method !== "" &&
+      (payment.method !== "efectivo" ||
+        !payment.cashAmount ||
+        Number(payment.cashAmount) > 0);
     const couponDiscountTotal = Object.values(coupons).reduce(
       (acc, c) => acc + (c.discount || 0),
       0,
