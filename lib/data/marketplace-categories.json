@@ -1,16 +1,21 @@
 {
+  "_meta": {
+    "storeZones": {}
+  },
   "restaurante": {
     "label": "Restaurantes",
     "description": "Sabor de la casa",
-    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777179997242-Restaurantes.webp",
+    "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/marketplace-categories/1778678703546-hambuergueza.webp",
     "active": true,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "bodega": {
     "label": "Bodegas",
     "description": "Lo de siempre, cerca",
-    "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777234286469-Bodegas.webp",
+    "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/marketplace-categories/1778679020830-bodegas.webp",
     "active": true,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "fruteria": {
@@ -18,6 +23,7 @@
     "description": "Frescos del día",
     "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777234486586-Supermercado.webp",
     "active": true,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "farmacia": {
@@ -25,6 +31,7 @@
     "description": "Tu botiquín",
     "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777236086432-Farmacia.webp",
     "active": true,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "ferreteria": {
@@ -32,6 +39,7 @@
     "description": "Para reparar y construir",
     "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777235809142-Ferretria_1.webp",
     "active": true,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "polleria": {
@@ -39,6 +47,7 @@
     "description": "Brasa de barrio",
     "imageUrl": null,
     "active": false,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "panaderia": {
@@ -46,6 +55,7 @@
     "description": "Recién horneado",
     "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777236455591-Panaderia.webp",
     "active": true,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "licoreria": {
@@ -53,6 +63,7 @@
     "description": "Para la reunión",
     "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777237796270-LIcor.webp",
     "active": true,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "carniceria": {
@@ -60,6 +71,7 @@
     "description": "Cortes frescos",
     "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777242515712-Carneceria.webp",
     "active": true,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "minimarket": {
@@ -67,6 +79,7 @@
     "description": "Todo en un lugar",
     "imageUrl": null,
     "active": false,
+    "linkedStoreSlugs": [],
     "subcategories": []
   },
   "tecnologia": {
@@ -74,6 +87,7 @@
     "description": "Gadgets & accesorios",
     "imageUrl": "/uploads/marketplace-categories/marketplace-categories_1777242692871-Tecnologia.webp",
     "active": true,
+    "linkedStoreSlugs": [],
     "subcategories": []
   }
 }

@@ -19,39 +19,20 @@ import {
   Save,
   Calendar,
   XCircle,
-  ChevronDown,
   Wrench,
 } from "@buleje/design-system/icons";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import ImageUpload from "@/components/admin/ImageUpload";
-import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
+import CategoryZonePicker from "../CategoryZonePicker";
 import { Spinner, type StoreData, type DayKey, type StoreHours } from "../types";
 
 // ── Constantes locales ──────────────────────────────────────────────────────
 
-const CATEGORIAS = [
-  "Abarrotes", "Bebidas", "Lácteos", "Carnes", "Frutas y verduras",
-  "Panadería", "Limpieza", "Higiene personal", "Electrónica", "Otros",
-];
-
-// Agrupa el catálogo de zonas por ciudad madre. Cada zona se referencia
-// por su `label` (estable) — "Otra (escribir)" se modela con un input
-// libre que el caller maneja aparte.
-const ZONES_BY_CITY: Array<{ city: string; zones: Array<{ value: string; label: string }> }> =
-  (() => {
-    const grouped = new Map<string, Array<{ value: string; label: string }>>();
-    for (const z of MARKETPLACE_ZONES) {
-      const list = grouped.get(z.city) ?? [];
-      list.push({ value: z.label, label: z.label });
-      grouped.set(z.city, list);
-    }
-    return Array.from(grouped.entries()).map(([city, zones]) => ({ city, zones }));
-  })();
-
-const ALL_KNOWN_ZONES = new Set(MARKETPLACE_ZONES.map((z) => z.label));
-const CUSTOM_ZONE_OPTION = "__custom__";
+// Categorías globales del marketplace (con imagen) ahora se cargan desde
+// /api/marketplace/categories y se renderizan en <CategoryZonePicker />.
+// Las zonas también: multi-cobertura agrupada por ciudad + custom.
 
 const DAY_LABELS: Array<{ key: DayKey; label: string; full: string }> = [
   { key: "mon", label: "Lun", full: "Lunes" },
@@ -387,8 +368,11 @@ const EMPTY_CONSTRUCTION: ConstructionState = { enabled: false, message: "" };
 export default function TiendaTab() {
   const [store, setStore] = useState<StoreData>({
     slug: "", name: "", description: "", logoUrl: "",
-    category: "Abarrotes", zone: "Centro", commissionRate: 5, isActive: false,
+    category: "", zone: "", commissionRate: 5, isActive: false,
     hours: DEFAULT_HOURS,
+    subcategory: null,
+    coverageZones: [],
+    customCategories: [],
   });
   const [construction, setConstruction] = useState<ConstructionState>(EMPTY_CONSTRUCTION);
   const [loading, setLoading] = useState(true);
@@ -403,13 +387,23 @@ export default function TiendaTab() {
     let cancelled = false;
     setLoading(true);
     Promise.all([
+      // GET ?my=true ya incluye subcategory / coverageZones / customCategories
+      // (lo extendimos en /api/marketplace/stores) — un solo viaje, sin race.
       fetch("/api/marketplace/stores?my=true").then((r) => (r.ok ? r.json() : null)).catch(() => null),
       fetch("/api/admin/marketplace/store-construction").then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ])
       .then(([storeData, constructionData]) => {
         if (cancelled) return;
         if (storeData && (storeData.slug || storeData.name)) {
-          const next = { ...storeData, hours: storeData.hours ?? DEFAULT_HOURS } as StoreData;
+          const next: StoreData = {
+            ...storeData,
+            hours: storeData.hours ?? DEFAULT_HOURS,
+            subcategory: storeData.subcategory ?? null,
+            coverageZones: Array.isArray(storeData.coverageZones) ? storeData.coverageZones : [],
+            customCategories: Array.isArray(storeData.customCategories)
+              ? storeData.customCategories
+              : [],
+          };
           setStore(next);
           setInitial(next);
         }
@@ -453,7 +447,31 @@ export default function TiendaTab() {
       setStore(next);
       setInitial(next);
 
-      // 2. Guardar flag "Tienda en construcción" SI cambió.
+      // 2. Guardar extras (subcategory + coverageZones + customCategories) —
+      //    storage paralelo en JSON file. Se hace siempre porque el endpoint
+      //    POST/PUT de /api/marketplace/stores no acepta estos campos.
+      try {
+        const exRes = await fetch("/api/admin/marketplace/store-extras", {
+          method: "PUT",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            subcategory: store.subcategory ?? null,
+            coverageZones: store.coverageZones ?? [],
+            customCategories: store.customCategories ?? [],
+          }),
+        });
+        if (!exRes.ok) {
+          const exErr = await exRes.json().catch(() => ({}));
+          throw new Error(exErr.error || "Error al guardar zonas / categorías");
+        }
+      } catch (err) {
+        // No es crítico para Store.category — registramos pero no bloqueamos.
+        if (typeof window !== "undefined") {
+          window.console.warn("[TiendaTab] store-extras save failed", err);
+        }
+      }
+
+      // 3. Guardar flag "Tienda en construcción" SI cambió.
       //    Endpoint dedicado (storage en JSON file, no en DB).
       if (JSON.stringify(initialConstruction) !== JSON.stringify(construction)) {
         const cRes = await fetch("/api/admin/marketplace/store-construction", {
@@ -616,81 +634,41 @@ export default function TiendaTab() {
             </div>
           </SectionCard>
 
-          {/* Categorización */}
-          <SectionCard icon={Tag} title="Categorización" hint="Aparece en filtros del marketplace y define tu comisión.">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              <div className="space-y-2">
-                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                  Categoría principal
-                </label>
-                <div className="relative">
-                  <select
-                    value={store.category}
-                    onChange={(e) => setStore((p) => ({ ...p, category: e.target.value }))}
-                    className={cn(inputBase, "appearance-none pr-12 cursor-pointer")}
-                  >
-                    {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4" /> Zona de cobertura
-                </label>
-                <div className="relative">
-                  <select
-                    value={ALL_KNOWN_ZONES.has(store.zone ?? "") ? store.zone : CUSTOM_ZONE_OPTION}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === CUSTOM_ZONE_OPTION) {
-                        setStore((p) => ({ ...p, zone: ALL_KNOWN_ZONES.has(p.zone ?? "") ? "" : (p.zone ?? "") }));
-                      } else {
-                        setStore((p) => ({ ...p, zone: v }));
-                      }
-                    }}
-                    className={cn(inputBase, "appearance-none pr-12 cursor-pointer")}
-                  >
-                    {ZONES_BY_CITY.map(({ city, zones }) => (
-                      <optgroup key={city} label={city}>
-                        {zones.map((z) => <option key={z.value} value={z.value}>{z.label}</option>)}
-                      </optgroup>
-                    ))}
-                    <option value={CUSTOM_ZONE_OPTION}>✏️ Otra zona (escribir)</option>
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
-                </div>
-                {!ALL_KNOWN_ZONES.has(store.zone ?? "") && (
-                  <input
-                    type="text"
-                    value={store.zone ?? ""}
-                    onChange={(e) => setStore((p) => ({ ...p, zone: e.target.value }))}
-                    placeholder="Ej: Ciudad Constitución — Sector Norte"
-                    maxLength={100}
-                    className={inputBase}
-                  />
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-                  <Percent className="h-4 w-4" /> Comisión Buleje
-                </label>
-                <div
-                  className="h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-center justify-between gap-2"
-                  title="La comisión la fija el equipo de Buleje. Si quieres revisarla, contáctanos por WhatsApp."
-                >
-                  <span className="text-base font-bold tabular-nums text-[var(--text-primary)]">
-                    {store.commissionRate}%
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                    Solo lectura
-                  </span>
-                </div>
-                <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
-                  Es lo que Buleje cobra por cada venta. La fija la plataforma — para revisarla,
-                  contáctanos por WhatsApp.
-                </p>
-              </div>
+          {/* Categoría + subcategoría + zonas de cobertura (componente compuesto) */}
+          <CategoryZonePicker
+            value={{
+              category: store.category ?? "",
+              subcategory: store.subcategory ?? null,
+              coverageZones: store.coverageZones ?? [],
+              customCategories: store.customCategories ?? [],
+            }}
+            onChange={(next) => {
+              setStore((p) => ({
+                ...p,
+                category: next.category,
+                subcategory: next.subcategory,
+                coverageZones: next.coverageZones,
+                customCategories: next.customCategories,
+                // Mantenemos `zone` legacy en sync con el primer coverageZone
+                // marcado, para back-compat con clientes viejos que leen `zone`.
+                zone: next.coverageZones[0] ?? p.zone,
+              }));
+            }}
+          />
+
+          {/* Comisión Buleje — campo de solo lectura aparte */}
+          <SectionCard
+            icon={Percent}
+            title="Comisión Buleje"
+            hint="Es lo que Buleje cobra por cada venta. La fija la plataforma — para revisarla, contáctanos por WhatsApp."
+          >
+            <div className="flex items-center justify-between gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-5 py-4">
+              <span className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">
+                {store.commissionRate}%
+              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Solo lectura
+              </span>
             </div>
           </SectionCard>
 

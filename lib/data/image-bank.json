@@ -196,6 +196,21 @@
           "id": "beb-moqe445r8mti",
           "name": "Vaso Chicha Morada",
           "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777850210557-Baso_Chicha_Morada.webp"
+        },
+        {
+          "id": "beb-mp4i48opa5t5",
+          "name": "Gaseiosa KR",
+          "imageUrl": "/uploads/image-bank/image-bank_1778703444078-kr.webp"
+        },
+        {
+          "id": "beb-mp4i6p1rfa6m",
+          "name": "Gaseosa Oro 3 LT",
+          "imageUrl": "/uploads/image-bank/image-bank_1778703566483-oro_3_lt.webp"
+        },
+        {
+          "id": "beb-mp4i71hpameu",
+          "name": "Gaseosa Oro Personal",
+          "imageUrl": "/uploads/image-bank/image-bank_1778703583099-Oro.webp"
         }
       ]
     },
@@ -264,7 +279,7 @@
         {
           "id": "jug-1",
           "name": "Jugo de Naranja",
-          "imageUrl": ""
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1778704712183-Juego_de_naranja.webp"
         },
         {
           "id": "jug-2",
@@ -274,17 +289,17 @@
         {
           "id": "jug-3",
           "name": "Jugo de Papaya con Leche",
-          "imageUrl": ""
+          "imageUrl": "/uploads/image-bank/image-bank_1778704725582-JUEGO_DE_PAPAYA.webp"
         },
         {
           "id": "jug-4",
           "name": "Jugo de Plátano con Leche",
-          "imageUrl": ""
+          "imageUrl": "/uploads/image-bank/image-bank_1778704748732-juego_de_platano.webp"
         },
         {
           "id": "jug-5",
           "name": "Jugo de Surtido",
-          "imageUrl": ""
+          "imageUrl": "/uploads/image-bank/image-bank_1778704768034-Surtido.webp"
         },
         {
           "id": "jug-6",
@@ -603,6 +618,48 @@
           "id": "com-moq5alc2h0sq",
           "name": "Alitas Cryspi",
           "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1777835397151-Cryspie.webp"
+        }
+      ]
+    },
+    {
+      "id": "caldos",
+      "name": "Caldos",
+      "items": [
+        {
+          "id": "cal-mp4ianwwy77r",
+          "name": "Caldo de Gallina",
+          "imageUrl": "/uploads/image-bank/image-bank_1778703751980-Caldo_de_Gallina.webp"
+        }
+      ]
+    },
+    {
+      "id": "hamburguesa",
+      "name": "Hamburguesa",
+      "items": [
+        {
+          "id": "ham-mp4iiqefurj1",
+          "name": "Hamburguesa a la BBQ",
+          "imageUrl": "/uploads/image-bank/image-bank_1778704127062-BBQ.webp"
+        },
+        {
+          "id": "ham-mp4ij52b8d2b",
+          "name": "Hamburguesa Clasica",
+          "imageUrl": "/uploads/image-bank/image-bank_1778704147618-Clasica.webp"
+        },
+        {
+          "id": "ham-mp4ijgn1lp56",
+          "name": "Hamburguesa Cryspi",
+          "imageUrl": "/uploads/image-bank/image-bank_1778704219101-Cryspi.webp"
+        },
+        {
+          "id": "ham-mp4ilfjxn6hn",
+          "name": "Hambuerguesa Doble Queso",
+          "imageUrl": "/uploads/image-bank/image-bank_1778704246578-doble_queso.webp"
+        },
+        {
+          "id": "ham-mp4ilptxozpw",
+          "name": "Hamburguesa Royal",
+          "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/image-bank/1778704272088-Royal.webp"
         }
       ]
     }

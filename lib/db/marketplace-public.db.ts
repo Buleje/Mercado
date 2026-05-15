@@ -84,9 +84,62 @@ export type DbOrderAggregate = {
   _sum: { total: number };
 };
 
+export type DbStoreLocation = {
+  slug: string;
+  name: string;
+  lat: number | null;
+  lng: number | null;
+  zone: string | null;
+  logo: string | null;
+};
+
 // ── MarketplacePublicDB ───────────────────────────────────────────────────────
 
 export const MarketplacePublicDB = {
+
+  /**
+   * Devuelve la ubicación pública (lat/lng/zone/logo) de un conjunto de
+   * tiendas por slug. Se usa para pintar los markers de "origen" en el
+   * mapa del modal de pedido confirmado.
+   *
+   * @cross-tenant intentional (ADR-082) — el marketplace agrega tiendas de
+   * todos los tenants. Sólo expone tiendas con `isPublished: true`.
+   * Cache: 300s por slug (la ubicación de una tienda casi nunca cambia).
+   */
+  async getStoreLocationsBySlugs(slugs: string[]): Promise<DbStoreLocation[]> {
+    const safe = slugs
+      .filter((s): s is string => typeof s === "string" && /^[a-z0-9-]{2,64}$/.test(s))
+      .slice(0, 10);
+    if (safe.length === 0) return [];
+    const results = await Promise.all(
+      safe.map((slug) =>
+        getOrSet<DbStoreLocation | null>(`marketplace:store-location:${slug}:v1`, 300, async () => {
+          const store = await prisma.store.findUnique({
+            where: { slug },
+            select: {
+              slug: true,
+              name: true,
+              lat: true,
+              lng: true,
+              zone: true,
+              logo: true,
+              isPublished: true,
+            },
+          });
+          if (!store || !store.isPublished) return null;
+          return {
+            slug: store.slug,
+            name: store.name,
+            lat: store.lat ?? null,
+            lng: store.lng ?? null,
+            zone: store.zone ?? null,
+            logo: store.logo ?? null,
+          };
+        }),
+      ),
+    );
+    return results.filter((s): s is DbStoreLocation => s !== null);
+  },
 
   /**
    * Devuelve un producto público del marketplace por ID.

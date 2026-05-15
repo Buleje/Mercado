@@ -16,7 +16,6 @@ import {
   XCircle,
   Save,
   X,
-  ChevronDown,
   TrendingUp,
   Star,
   MessageSquare,
@@ -25,7 +24,9 @@ import {
   Gift,
   ExternalLink,
   Zap,
-  ArrowRight } from "@buleje/design-system/icons";
+  ArrowRight,
+  Globe,
+  MapPin } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -39,6 +40,7 @@ import { useMarketplaceCommissions } from "@/components/admin/marketplace/hooks/
 import { useMarketplaceCoupons } from "@/components/admin/marketplace/hooks/use-marketplace-coupons";
 import { useMarketplaceReviews } from "@/components/admin/marketplace/hooks/use-marketplace-reviews";
 import { useMarketplaceTienda } from "@/components/admin/marketplace/hooks/use-marketplace-tienda";
+import CategoryZonePicker from "@/components/admin/unified/marketplace/CategoryZonePicker";
 
 // Dynamic import del tab de precios competitivos
 const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitivePricingTab"));
@@ -126,15 +128,8 @@ const TABS = [
 
 type TabId = string;
 
-const CATEGORIAS = [
-  "Abarrotes", "Bebidas", "Lácteos", "Carnes", "Frutas y verduras",
-  "Panadería", "Limpieza", "Higiene personal", "Electrónica", "Otros",
-];
-
-const ZONAS = [
-  "Yarinacocha", "Callería", "Coronel Portillo", "Manantay",
-  "Centro", "Ica Yanayacu", "Pueblo Libre", "Todos",
-];
+// CATEGORIAS y ZONAS legacy migrados a <CategoryZonePicker /> (consume catálogo
+// del superadmin via /api/marketplace/categories + lib/marketplace-zones).
 
 // ─────────────────────────────────────────────
 // Admin Marketplace Overview (only visible for platform admins)
@@ -600,337 +595,447 @@ function MarketplaceTiendaTab() {
     .join("") || "BS";
 
   const statusBadge = !store.isActive
-    ? { label: "Inactiva", className: "bg-[var(--rule-soft)] text-[var(--text-secondary)] border border-[var(--rule-base)]" }
+    ? { label: "Borrador", className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-2 border-[var(--rule-base)]" }
     : store.vacationMode
-    ? { label: "En vacaciones", className: "bg-[var(--data-warning-50)] text-[var(--data-warning)] border border-[var(--data-warning)]/30" }
-    : { label: "Publicada", className: "bg-[var(--data-success-50)] text-[var(--data-success)] border border-[var(--data-success)]/30" };
+    ? { label: "Vacaciones", className: "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-2 border-[var(--data-warning)]/40" }
+    : { label: "Publicada", className: "bg-[var(--data-success-50)] text-[var(--data-success)] border-2 border-[var(--data-success)]/40" };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border-2 border-[var(--data-error)] rounded-2xl text-base font-medium text-[var(--data-error)]">
+          <AlertCircle className="h-5 w-5 shrink-0" />
           {error}
         </div>
       )}
 
-      {/* ── Hero preview: cómo se verá tu tienda en el marketplace ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-primary/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
-        <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5">
-          {/* Logo / Avatar */}
+      {/* ── HERO BANNER ───────────────────────────────── */}
+      <header className="relative overflow-hidden rounded-3xl border-2 border-[var(--rule-base)] bg-linear-to-br from-primary/8 via-[var(--surface-canvas)] to-[var(--accent-soft)]/30 px-6 py-7 sm:px-8 sm:py-8">
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-[var(--accent)]/10 blur-3xl pointer-events-none" />
+        <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6">
+          {/* Logo grande */}
           <div className="relative shrink-0">
-            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-[var(--surface-raised)] flex items-center justify-center">
+            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-3xl overflow-hidden border-4 border-[var(--surface-canvas)] shadow-xl bg-[var(--surface-raised)] flex items-center justify-center">
               {store.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={store.logoUrl} alt={store.name || store.slug} className="h-full w-full object-cover" />
               ) : (
-                <span className="text-2xl font-extrabold text-primary">{initials}</span>
+                <span className="text-3xl font-extrabold text-primary">{initials}</span>
               )}
             </div>
-            <span className={cn("absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider", statusBadge.className)}>
-              {statusBadge.label}
-            </span>
           </div>
 
           {/* Identidad */}
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight truncate">
-              {store.name || "Tu tienda"}
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <span className={cn("inline-flex items-center h-7 px-3 rounded-full text-xs font-extrabold uppercase tracking-wider", statusBadge.className)}>
+                {statusBadge.label}
+              </span>
+              {store.slug && (
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-tertiary)]">
+                  <Globe className="h-3.5 w-3.5" />
+                  <span className="font-mono">/marketplace/{store.slug}</span>
+                </span>
+              )}
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight truncate">
+              {store.name || "Tu tienda en el marketplace"}
             </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)] line-clamp-2">
+            <p className="mt-2 text-base text-[var(--text-secondary)] line-clamp-2 max-w-2xl leading-relaxed">
               {store.description || "Sin descripción todavía. Cuéntale a los clientes qué te hace especial."}
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-              <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-tertiary)]">
-                <Store className="h-3 w-3" /> {store.category || "Sin categoría"}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)]">
+                <Store className="h-4 w-4 text-primary" />
+                {store.category || "Sin categoría"}
               </span>
-              <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-tertiary)]">
-                <Zap className="h-3 w-3" /> {store.zone || "Sin zona"}
+              <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)]">
+                <MapPin className="h-4 w-4 text-[var(--accent)]" />
+                {(store.coverageZones?.length ?? 0) > 0
+                  ? `${store.coverageZones!.length} zona${store.coverageZones!.length === 1 ? "" : "s"}`
+                  : store.zone || "Sin zonas"}
               </span>
-              <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-tertiary)]">
-                <DollarSign className="h-3 w-3" /> {store.commissionRate}% comisión
+              <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)]">
+                <DollarSign className="h-4 w-4 text-[var(--data-success)]" />
+                {store.commissionRate}% comisión
               </span>
             </div>
           </div>
 
-          {/* CTA: ver tienda pública */}
+          {/* CTAs */}
           {store.slug && (
             <a
               href={`/marketplace/${store.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white text-xs font-bold text-[var(--text-primary)] hover:border-primary hover:text-primary transition-colors"
+              className="shrink-0 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-extrabold text-[var(--text-primary)] hover:border-primary hover:text-primary hover:shadow-md transition-all"
             >
-              <Eye className="h-3.5 w-3.5" /> Ver pública
-              <ExternalLink className="h-3 w-3 opacity-60" />
+              <Eye className="h-5 w-5" />
+              Ver pública
+              <ExternalLink className="h-4 w-4 opacity-60" />
             </a>
           )}
         </div>
-      </div>
+      </header>
 
-      {/* ── Sección 1: Identidad ── */}
-      <section className="bg-white border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 space-y-5">
-        <header className="flex items-center gap-2 pb-3 border-b border-[var(--rule-soft)]">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Store className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Identidad</h3>
-            <p className="text-xs text-[var(--text-tertiary)]">Cómo te encuentran los clientes en el marketplace</p>
-          </div>
-        </header>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Slug */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">URL</label>
-            <div className="flex items-stretch rounded-lg border border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
-              <span className="inline-flex items-center px-3 text-xs font-semibold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r border-[var(--rule-base)] whitespace-nowrap">/marketplace/</span>
-              <input
-                type="text"
-                value={store.slug}
-                onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
-                placeholder="mi-bodega"
-                className="flex-1 min-w-0 px-3 py-2.5 bg-transparent text-sm text-[var(--text-primary)] outline-none"
-              />
+      {/* ── LAYOUT 2-COLUMNAS ─────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ── COLUMNA PRINCIPAL ────────────────────────── */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Identidad */}
+          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+            <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+                <Store className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Identidad</h3>
+                <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
+                  Cómo te encuentran los clientes en el marketplace.
+                </p>
+              </div>
+            </header>
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2 sm:col-span-1">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <Globe className="h-4 w-4" /> URL pública
+                </label>
+                <div className="flex items-stretch h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+                  <span className="inline-flex items-center px-4 text-sm font-extrabold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r-2 border-[var(--rule-base)] whitespace-nowrap">/marketplace/</span>
+                  <input
+                    type="text"
+                    value={store.slug}
+                    onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
+                    placeholder="mi-bodega"
+                    className="flex-1 min-w-0 px-4 bg-transparent text-base font-semibold text-[var(--text-primary)] outline-none"
+                  />
+                </div>
+                <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
+                  Solo minúsculas y guiones. Evita cambiarla — los links viejos dejan de funcionar.
+                </p>
+              </div>
+              <div className="space-y-2 sm:col-span-1">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Nombre visible <span className="text-[var(--data-error)]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={store.name}
+                  onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="Bodega San Martín"
+                  maxLength={60}
+                  className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+                <p className="text-sm text-[var(--text-tertiary)]">
+                  <span className="font-bold tabular-nums">{store.name.length}</span>/60 caracteres
+                </p>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">Descripción</label>
+                  <span className="text-sm text-[var(--text-tertiary)] tabular-nums">
+                    <span className="font-bold">{(store.description ?? "").length}</span>/240
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  maxLength={240}
+                  value={store.description}
+                  onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
+                  placeholder="Describe tu tienda: horarios, especialidades, qué te hace única…"
+                  className="w-full px-4 py-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all leading-relaxed"
+                />
+              </div>
             </div>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Solo minúsculas, sin espacios. Cambiar la URL rompe links viejos.</p>
-          </div>
+          </section>
 
-          {/* Nombre */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Nombre visible</label>
-            <input
-              type="text"
-              value={store.name}
-              onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
-              placeholder="Bodega San Martín"
-              className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-            />
-          </div>
-
-          {/* Categoría */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Categoría principal</label>
-            <div className="relative">
-              <select
-                value={store.category}
-                onChange={(e) => setStore((p) => ({ ...p, category: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-              >
-                {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Zona */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Zona de cobertura</label>
-            <div className="relative">
-              <select
-                value={store.zone}
-                onChange={(e) => setStore((p) => ({ ...p, zone: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-              >
-                {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Sección 2: Marca visual ── */}
-      <section className="bg-white border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 space-y-5">
-        <header className="flex items-center gap-2 pb-3 border-b border-[var(--rule-soft)]">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
-            <Star className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Marca visual</h3>
-            <p className="text-xs text-[var(--text-tertiary)]">Logo y descripción que verán tus clientes</p>
-          </div>
-        </header>
-
-        <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-5 items-start">
-          <ImageUpload
-            value={store.logoUrl}
-            onChange={(url) => setStore((p) => ({ ...p, logoUrl: url }))}
-            onClear={() => setStore((p) => ({ ...p, logoUrl: "" }))}
-            folder="marketplace-logos"
-            label="Logo (200×200)"
-            hint="JPG, PNG o WebP · cuadrado recomendado"
-            aspectRatio="square"
+          {/* Categoría + subcategoría + zonas de cobertura */}
+          <CategoryZonePicker
+            value={{
+              category: store.category ?? "",
+              subcategory: store.subcategory ?? null,
+              coverageZones: store.coverageZones ?? [],
+              customCategories: store.customCategories ?? [],
+            }}
+            onChange={(next) =>
+              setStore((p) => ({
+                ...p,
+                category: next.category,
+                subcategory: next.subcategory,
+                coverageZones: next.coverageZones,
+                customCategories: next.customCategories,
+                // Mantiene `zone` legacy en sync con el 1er coverageZone marcado.
+                zone: next.coverageZones[0] ?? p.zone,
+              }))
+            }
           />
 
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">URL del logo (opcional)</label>
-              <input
-                type="url"
+          {/* Comisión */}
+          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+            <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--data-success)]/10 text-[var(--data-success)] shrink-0">
+                <DollarSign className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Comisión Buleje</h3>
+                <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
+                  Lo que Buleje cobra por cada venta. La fija la plataforma — para revisarla, contáctanos por WhatsApp.
+                </p>
+              </div>
+            </header>
+            <div className="p-6">
+              <div className="flex items-center justify-between gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-5">
+                <span className="text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">
+                  {store.commissionRate}%
+                </span>
+                <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Solo lectura
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Marca visual: logo + URL backup */}
+          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+            <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)] shrink-0">
+                <Star className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Imagen de la tienda</h3>
+                <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
+                  Logo cuadrado 200×200 — aparece en la tarjeta de tu tienda en /tiendas y en cada pedido.
+                </p>
+              </div>
+            </header>
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-6 items-start">
+              <ImageUpload
                 value={store.logoUrl}
-                onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
-                placeholder="https://… o sube una imagen arriba"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                onChange={(url) => setStore((p) => ({ ...p, logoUrl: url }))}
+                onClear={() => setStore((p) => ({ ...p, logoUrl: "" }))}
+                folder="marketplace-logos"
+                label=""
+                hint=""
+                aspectRatio="square"
               />
-              {store.logoUrl && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--data-success)]">
-                  <CheckCircle className="h-3.5 w-3.5" /> Logo configurado
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Descripción</label>
-                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
-                  {(store.description ?? "").length}/240
-                </span>
+              <div className="space-y-3">
+                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  …o pega una URL de imagen
+                </label>
+                <input
+                  type="url"
+                  value={store.logoUrl}
+                  onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
+                  placeholder="https://…"
+                  className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+                {store.logoUrl ? (
+                  <div className="flex items-center gap-2 text-sm font-bold text-[var(--data-success)]">
+                    <CheckCircle className="h-4 w-4" /> Logo configurado
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-relaxed">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-[var(--text-tertiary)]" />
+                    Sin logo, usaremos las iniciales de tu tienda como avatar.
+                  </div>
+                )}
               </div>
-              <textarea
-                rows={3}
-                maxLength={240}
-                value={store.description}
-                onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
-                placeholder="Describe tu bodega, horarios, especialidades..."
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
-              />
             </div>
-          </div>
+          </section>
         </div>
-      </section>
 
-      {/* ── Sección 3: Operación ── */}
-      <section className="bg-white border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 space-y-5">
-        <header className="flex items-center gap-2 pb-3 border-b border-[var(--rule-soft)]">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--data-warning)]/10 text-[var(--data-warning)]">
-            <Zap className="h-4 w-4" />
-          </span>
-          <div>
-            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Operación</h3>
-            <p className="text-xs text-[var(--text-tertiary)]">Visibilidad, comisión y modo vacaciones</p>
-          </div>
-        </header>
-
-        {/* Comisión + estado en grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Comisión acordada</label>
-            <div className="flex items-stretch rounded-lg border border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
-              <input
-                type="number"
-                min={0}
-                max={30}
-                step={0.5}
-                value={store.commissionRate}
-                onChange={(e) => setStore((p) => ({ ...p, commissionRate: parseFloat(e.target.value) || 0 }))}
-                className="flex-1 min-w-0 px-3 py-2.5 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none tabular-nums"
-              />
-              <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l border-[var(--rule-base)]">%</span>
-            </div>
-          </div>
-
-          {/* Estado activo */}
-          <div className="flex items-center justify-between gap-3 px-4 py-3 bg-[var(--surface-sunken)] rounded-lg border border-[var(--rule-base)]">
-            <div className="flex items-start gap-2.5 min-w-0">
-              <span className={cn("flex h-7 w-7 items-center justify-center rounded-full shrink-0", store.isActive ? "bg-[var(--data-success)]/15 text-[var(--data-success)]" : "bg-[var(--rule-base)] text-[var(--text-tertiary)]")}>
-                {store.isActive ? <CheckCircle className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+        {/* ── ASIDE (sticky) ────────────────────────────── */}
+        <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-4 self-start">
+          {/* Vista previa */}
+          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+            <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+                <Eye className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-[var(--text-primary)]">Visible en marketplace</p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{store.isActive ? "Los clientes te encuentran" : "Tienda oculta"}</p>
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Vista previa</h3>
+                <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
+                  Cómo te ven los clientes en el listado.
+                </p>
+              </div>
+            </header>
+            <div className="p-5">
+              <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden">
+                <div className="relative h-24 bg-linear-to-br from-primary/15 via-[var(--surface-raised)] to-[var(--accent-soft)]/40">
+                  {(store.coverageZones?.length ?? 0) > 0 && (
+                    <span className="absolute top-3 left-3 inline-flex items-center gap-1 h-7 px-3 rounded-full bg-[var(--surface-canvas)]/95 backdrop-blur text-xs font-extrabold text-[var(--text-primary)] shadow-sm">
+                      <MapPin className="h-3.5 w-3.5 text-[var(--accent)]" />
+                      {store.coverageZones![0]}
+                    </span>
+                  )}
+                </div>
+                <div className="px-5 pb-5 -mt-9">
+                  <div className="h-16 w-16 rounded-2xl border-4 border-[var(--surface-canvas)] bg-[var(--surface-raised)] shadow-md overflow-hidden flex items-center justify-center">
+                    {store.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={store.logoUrl} alt={store.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-xl font-extrabold text-primary">{initials}</span>
+                    )}
+                  </div>
+                  <h4 className="mt-3 text-base font-extrabold text-[var(--text-primary)] truncate">
+                    {store.name || "Tu tienda"}
+                  </h4>
+                  <p className="mt-1 text-sm text-[var(--text-secondary)] line-clamp-2 min-h-[2.6em] leading-relaxed">
+                    {store.description || "Agrega una descripción atractiva para que los clientes te conozcan."}
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                    {store.category && (
+                      <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full bg-[var(--surface-sunken)] text-xs font-extrabold text-[var(--text-primary)]">
+                        <Store className="h-3 w-3" /> {store.category}
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full bg-[var(--surface-sunken)] text-xs font-extrabold text-[var(--text-primary)]">
+                      <DollarSign className="h-3 w-3" /> {store.commissionRate}%
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-            <button
-              onClick={() => setStore((p) => ({ ...p, isActive: !p.isActive }))}
-              className={cn(
-                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0",
-                store.isActive ? "bg-primary" : "bg-gray-300"
-              )}
-              aria-label="Activar tienda en marketplace"
-            >
-              <span className={cn(
-                "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
-                store.isActive ? "translate-x-6" : "translate-x-1"
-              )} />
-            </button>
-          </div>
-        </div>
+          </section>
 
-        {/* Modo vacaciones */}
-        <div className={cn(
-          "space-y-3 p-4 rounded-xl border transition-colors",
-          store.vacationMode
-            ? "bg-[var(--data-warning-50)] border-[var(--data-warning)]/40"
-            : "bg-[var(--surface-sunken)] border-[var(--rule-base)]"
-        )}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-start gap-2.5 min-w-0">
-              <span className={cn("flex h-7 w-7 items-center justify-center rounded-full shrink-0", store.vacationMode ? "bg-[var(--data-warning)]/20 text-[var(--data-warning)]" : "bg-[var(--rule-base)] text-[var(--text-tertiary)]")}>
-                <Clock className="h-3.5 w-3.5" />
+          {/* Estado de la tienda */}
+          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+            <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--data-warning)]/10 text-[var(--data-warning)] shrink-0">
+                <Zap className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-[var(--text-primary)]">Modo vacaciones</p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pausa pedidos sin despublicar la tienda</p>
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Estado</h3>
+                <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
+                  Controla la visibilidad de tu tienda.
+                </p>
               </div>
-            </div>
-            <button
-              onClick={() => setStore((p) => ({ ...p, vacationMode: !p.vacationMode }))}
-              className={cn(
-                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0",
-                store.vacationMode ? "bg-[var(--data-warning)]" : "bg-gray-300"
-              )}
-              aria-label="Activar modo vacaciones"
-            >
-              <span className={cn(
-                "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform",
-                store.vacationMode ? "translate-x-6" : "translate-x-1"
-              )} />
-            </button>
-          </div>
-          {store.vacationMode && (
-            <div className="space-y-1.5">
-              <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] uppercase tracking-wide">Mensaje a clientes (opcional)</label>
-              <input
-                type="text"
-                value={store.vacationMessage ?? ""}
-                onChange={(e) => setStore((p) => ({ ...p, vacationMessage: e.target.value }))}
-                placeholder="Ej: Volvemos el lunes 15. ¡Gracias por tu paciencia!"
-                className="w-full px-3 py-2 rounded-lg border border-[var(--data-warning)]/40 bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-warning)] focus:border-[var(--data-warning)] transition-all"
+            </header>
+            <div className="p-4">
+              <ToggleRow
+                active={store.isActive}
+                onToggle={() => setStore((p) => ({ ...p, isActive: !p.isActive }))}
+                title="Publicada en marketplace"
+                desc={store.isActive ? "Visible y aceptando pedidos." : "Borrador — solo tú la ves."}
+                tone="primary"
+                icon={store.isActive ? CheckCircle : EyeOff}
               />
+              <div className="border-t-2 border-[var(--rule-base)] my-1" />
+              <ToggleRow
+                active={!!store.vacationMode}
+                onToggle={() => setStore((p) => ({ ...p, vacationMode: !p.vacationMode }))}
+                title="Modo vacaciones"
+                desc="Pausa pedidos sin despublicar."
+                tone="warning"
+                icon={Clock}
+              />
+              {store.vacationMode && (
+                <div className="mt-3 px-2 space-y-2">
+                  <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                    Mensaje a clientes
+                  </label>
+                  <input
+                    type="text"
+                    value={store.vacationMessage ?? ""}
+                    onChange={(e) => setStore((p) => ({ ...p, vacationMessage: e.target.value }))}
+                    placeholder="Ej: Volvemos el lunes 15"
+                    maxLength={140}
+                    className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--data-warning)]/50 bg-[var(--data-warning-50)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-warning)]/30 transition-all"
+                  />
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </section>
+          </section>
+        </aside>
+      </div>
 
-      {/* ── Sticky save bar ── */}
-      <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 px-5 py-3 rounded-2xl border border-[var(--rule-base)] bg-white/95 backdrop-blur shadow-lg">
-        <p className="text-xs text-[var(--text-tertiary)] hidden sm:block">
+      {/* ── STICKY SAVE BAR ─────────────────────────────── */}
+      <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 px-5 py-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur shadow-xl">
+        <p className="text-sm text-[var(--text-tertiary)] hidden sm:block font-medium">
           Los cambios se aplican al instante en tu tienda pública.
         </p>
         <div className="flex items-center gap-3 ml-auto">
           {saved && (
-            <span className="text-sm text-[var(--data-success)] font-semibold flex items-center gap-1">
-              <CheckCircle className="h-4 w-4" /> Guardado
+            <span className="inline-flex items-center gap-2 text-base font-bold text-[var(--data-success)]">
+              <CheckCircle className="h-5 w-5" /> Guardado
             </span>
           )}
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
+            className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-primary text-white text-base font-extrabold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
           >
             {saving ? (
-              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <Save className="h-4 w-4" />
+              <Save className="h-5 w-5" />
             )}
             {saving ? "Guardando..." : "Guardar cambios"}
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// ToggleRow — fila de toggle reutilizable para el aside "Estado"
+// ─────────────────────────────────────────────
+function ToggleRow({
+  active,
+  onToggle,
+  title,
+  desc,
+  tone = "primary",
+  icon: Icon,
+}: {
+  active: boolean;
+  onToggle: () => void;
+  title: string;
+  desc: string;
+  tone?: "primary" | "warning";
+  icon?: React.ElementType;
+}) {
+  const onColor = tone === "warning" ? "bg-[var(--data-warning)]" : "bg-primary";
+  const iconBg = active
+    ? tone === "warning"
+      ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]"
+      : "bg-primary/15 text-primary"
+    : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]";
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="w-full flex items-center justify-between gap-3 px-2 py-3 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors text-left"
+      aria-pressed={active}
+    >
+      <div className="flex items-start gap-3 min-w-0">
+        {Icon && (
+          <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl shrink-0 transition-colors", iconBg)}>
+            <Icon className="h-4 w-4" />
+          </span>
+        )}
+        <div className="min-w-0">
+          <p className="text-base font-extrabold text-[var(--text-primary)]">{title}</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5 leading-relaxed">{desc}</p>
+        </div>
+      </div>
+      <span
+        className={cn(
+          "relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0",
+          active ? onColor : "bg-[var(--rule-strong)]",
+        )}
+      >
+        <span
+          className={cn(
+            "inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform",
+            active ? "translate-x-6" : "translate-x-1",
+          )}
+        />
+      </span>
+    </button>
   );
 }
 

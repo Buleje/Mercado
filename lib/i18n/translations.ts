@@ -158,6 +158,10 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "landing.nav.plans": { es: "Planes", en: "Plans", shi: "Planes" },
   "landing.nav.faq": { es: "FAQ", en: "FAQ", shi: "FAQ" },
   "landing.nav.openStore": { es: "Abre tu Tienda", en: "Open your Store", shi: "Mi xobo kichay" },
+  "landing.nav.inicio": { es: "Inicio", en: "Home", shi: "Yoba" },
+  "landing.nav.tiendas": { es: "Tiendas", en: "Stores", shi: "Xobokoni" },
+  "landing.nav.negocios": { es: "Negocios", en: "Business", shi: "Tsain" },
+  "landing.nav.conoceBuleje": { es: "Conocé Buleje", en: "Learn more", shi: "Onan Buleje" },
   "landing.nav.signin": { es: "Ingresar", en: "Sign in", shi: "Ichinon" },
   "landing.nav.startStore": { es: "Empezar mi tienda", en: "Start my store", shi: "Mi xobo kichay" },
 

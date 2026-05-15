@@ -190,3 +190,4 @@ lighthouse.*
 # no son código. Schemas y seeds iniciales sí se versionan.
 lib/data/marketplace-category-clicks.json
 lib/data/*-runtime.json
+lib/data/store-extras.json

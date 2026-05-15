@@ -75,37 +75,45 @@ export function getZoneLabel(idOrLabel: string | null | undefined): string {
 
 /**
  * Construye el listado de zonas para el filtro de /tiendas usando SÓLO
- * los stores con zona poblada. Si una zona del catálogo no está en uso,
- * NO aparece en el filtro. Si una tienda escribió una zona manual fuera
- * del catálogo, también aparece (custom passthrough).
+ * las zonas declaradas por tiendas publicadas. Considera tanto el campo
+ * legacy `zone` (single) como `coverageZones[]` (multi-zona, store-extras).
+ * Si una tienda escribió una zona manual fuera del catálogo, también
+ * aparece (custom passthrough).
  *
  * Siempre prepende un item "Todas las zonas" con id vacío.
  */
 export function deriveActiveZones(
-  stores: ReadonlyArray<{ zone?: string | null }>,
+  stores: ReadonlyArray<{ zone?: string | null; coverageZones?: string[] | null }>,
 ): MarketplaceZone[] {
   const seen = new Set<string>();
   const result: MarketplaceZone[] = [];
-  for (const s of stores) {
-    const raw = (s.zone ?? "").trim();
-    if (!raw) continue;
-    const id = normalizeZoneId(raw);
+
+  const pushZone = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    const id = normalizeZoneId(trimmed);
     if (id) {
-      if (seen.has(id)) continue;
+      if (seen.has(id)) return;
       seen.add(id);
       const z = MARKETPLACE_ZONES.find((x) => x.id === id);
       if (z) result.push(z);
     } else {
-      // Zona manual fuera del catálogo — se respeta tal como la escribió el admin.
-      const customId = raw
+      const customId = trimmed
         .toLowerCase()
         .normalize("NFD")
         .replace(/[̀-ͯ]/g, "")
         .replace(/[^a-z0-9]+/g, "_")
         .replace(/^_+|_+$/g, "");
-      if (!customId || seen.has(customId)) continue;
+      if (!customId || seen.has(customId)) return;
       seen.add(customId);
-      result.push({ id: customId, label: raw, city: "Otro" });
+      result.push({ id: customId, label: trimmed, city: "Otro" });
+    }
+  };
+
+  for (const s of stores) {
+    if (s.zone) pushZone(s.zone);
+    if (Array.isArray(s.coverageZones)) {
+      for (const z of s.coverageZones) pushZone(z);
     }
   }
   result.sort((a, b) => a.label.localeCompare(b.label, "es"));
