@@ -5,7 +5,6 @@ import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 import ConditionalPromoBar from "@/components/marketplace/ConditionalPromoBar";
 import ConditionalSecondaryNav from "@/components/marketplace/ConditionalSecondaryNav";
 import QuickAddDrawer from "@/components/marketplace/QuickAddDrawer";
-import StickyCartBar from "@/components/marketplace/StickyCartBar";
 import BottomNav from "@/components/marketplace/BottomNav";
 import Footer from "@/components/Footer";
 import { QuickAddProvider } from "@/contexts/quick-add-context";
@@ -52,7 +51,11 @@ export default function TiendasLayout({
               <Suspense fallback={null}>
                 <QuickAddDrawer />
               </Suspense>
-              <StickyCartBar />
+              {/* StickyCartBar removido del directorio /tiendas (Brandon, mayo 14 2026):
+                  el carrito flotante solo aparece dentro de una tienda concreta
+                  (/marketplace/[slug]). En el directorio /tiendas el cliente esta
+                  navegando entre tiendas, no comprando, asi que el bar flotante
+                  era ruido visual. */}
               <BottomNav />
               <NavModeToast />
             </div>

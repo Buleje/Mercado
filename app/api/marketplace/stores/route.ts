@@ -98,6 +98,22 @@ export async function GET(req: NextRequest) {
         hoursJson = null;
       }
 
+      // Cargar extras (subcategory, coverageZones, customCategories) — JSON
+      // storage paralelo a Store. Forma parte del payload "mi tienda" para
+      // que el admin pueda editar todo en un solo viaje.
+      let extras = { subcategory: null as string | null, coverageZones: [] as string[], customCategories: [] as unknown[] };
+      try {
+        const { getStoreExtras } = await import("@/lib/store-extras");
+        const e = await getStoreExtras(store.slug);
+        extras = {
+          subcategory: e.subcategory,
+          coverageZones: e.coverageZones,
+          customCategories: e.customCategories,
+        };
+      } catch {
+        /* ignore */
+      }
+
       return NextResponse.json({
         id:              store.id,
         slug:            store.slug,
@@ -111,6 +127,9 @@ export async function GET(req: NextRequest) {
         vacationMode:    store.vacationMode,
         vacationMessage: store.vacationMessage ?? "",
         hours:           hoursJson,
+        subcategory:     extras.subcategory,
+        coverageZones:   extras.coverageZones,
+        customCategories: extras.customCategories,
       });
     }
 
@@ -120,6 +139,26 @@ export async function GET(req: NextRequest) {
     //   2. Aplicar override de zona manual si la tienda no la fija.
     let manualCategoryStoreSlugs: string[] = [];
     let manualStoreZones: Record<string, string> = {};
+    // Slugs cuya `coverageZones` (multi-zona en store-extras.json) incluye
+    // el filtro pedido — los unimos al OR del where para que /tiendas pueda
+    // filtrar por cualquier zona declarada como cobertura, no solo `Store.zone`.
+    let coverageZoneSlugs: string[] = [];
+    if (zone) {
+      try {
+        const { readFile: rf } = await import("node:fs/promises");
+        const { join: jn } = await import("node:path");
+        const rawExtras = await rf(
+          jn(process.cwd(), "lib", "data", "store-extras.json"),
+          "utf8",
+        ).catch(() => "{}");
+        const all = JSON.parse(rawExtras) as Record<string, { coverageZones?: string[] }>;
+        coverageZoneSlugs = Object.entries(all)
+          .filter(([, v]) => Array.isArray(v.coverageZones) && v.coverageZones.includes(zone))
+          .map(([s]) => s);
+      } catch {
+        coverageZoneSlugs = [];
+      }
+    }
     try {
       const { readFile } = await import("node:fs/promises");
       const { join } = await import("node:path");
@@ -151,15 +190,26 @@ export async function GET(req: NextRequest) {
       // override del superadmin (manualStoreZones). Resultado: en /tiendas
       // se mostraba "Calleria" pero al filtrar → 0 stores porque ninguna
       // tienda lo tenia escrito en DB. Ahora el filtro hace OR(DB, override).
+      //
+      // Brandon mayo 14 2026: el id que envia el cliente viene normalizado
+      // (lowercase, sin acentos) — ej. "centro", "calleria" — pero en DB la
+      // columna `zone` guarda el label original ("Centro", "Calleria"). El
+      // match exacto no encontraba ninguna tienda y aparecian zonas "huerfanas"
+      // en el filtro. Ahora usamos `equals + mode insensitive` para empatar.
       const zoneOverrideSlugs = zone
         ? Object.entries(manualStoreZones)
-            .filter(([, z]) => z === zone)
+            .filter(([, z]) => z.toLowerCase() === zone.toLowerCase())
             .map(([slug]) => slug)
         : [];
-      const zoneClause = zone
-        ? zoneOverrideSlugs.length > 0
-          ? { OR: [{ zone }, { slug: { in: zoneOverrideSlugs } }] }
-          : { zone }
+      // Combina: override del superadmin + coverageZones[] del propio tenant.
+      const extraZoneSlugs = Array.from(new Set([...zoneOverrideSlugs, ...coverageZoneSlugs]));
+      const zoneFilter = zone
+        ? { zone: { equals: zone, mode: "insensitive" as const } }
+        : null;
+      const zoneClause = zoneFilter
+        ? extraZoneSlugs.length > 0
+          ? { OR: [zoneFilter, { slug: { in: extraZoneSlugs } }] }
+          : zoneFilter
         : {};
       stores = await prisma.store.findMany({
         where: {
@@ -434,6 +484,17 @@ export async function GET(req: NextRequest) {
         return {};
       });
 
+    // Bulk lookup de store-extras (coverageZones, subcategory, customCategories)
+    // — JSON storage paralelo a Store. Solo necesitamos coverageZones aquí
+    // para el filtro de /tiendas (zona multi-cobertura).
+    const { getStoreExtrasMap } = await import("@/lib/store-extras");
+    const extrasMap = await getStoreExtrasMap(stores.map((s) => s.slug as string)).catch(
+      (err) => {
+        logger.warn("[marketplace/stores] extras lookup failed", { error: String(err) });
+        return new Map();
+      },
+    );
+
     // Helpers de horario — derivan isOpenNow + nextOpening desde hoursJson
     // del Store (más preciso que el autoCloseTime legacy de Settings).
     const { isOpenNow: storeIsOpenNow, nextOpening, sortStoresByStatus } =
@@ -507,6 +568,8 @@ export async function GET(req: NextRequest) {
         vacationMessage: s.vacationMessage,
         underConstruction: Boolean(construction?.enabled),
         underConstructionMessage: construction?.message ?? null,
+        coverageZones: extrasMap.get(slug)?.coverageZones ?? [],
+        subcategory: extrasMap.get(slug)?.subcategory ?? null,
         lat: s.lat,
         lng: s.lng,
         productCount: trust.productCount,

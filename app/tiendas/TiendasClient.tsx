@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Store, MapPin, ArrowUpRight, List, Map as MapIcon, Bike,
-  Search as SearchIcon, ShoppingBag, Truck,
+  Search as SearchIcon, ShoppingBag, Truck, ChevronRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
@@ -49,7 +49,6 @@ import TusTiendasStrip from "@/components/marketplace/TusTiendasStrip";
 import MisTiendasFavoritasStrip from "@/components/marketplace/MisTiendasFavoritasStrip";
 import TiendasBreadcrumb from "@/components/marketplace/TiendasBreadcrumb";
 import TiendasPromoCards from "@/components/marketplace/TiendasPromoCards";
-import TiendasMainCategoriesGrid from "@/components/marketplace/TiendasMainCategoriesGrid";
 import TiendasHeroAds from "@/components/marketplace/TiendasHeroAds";
 import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader";
 import MisPedidosFavoritosStrip from "@/components/marketplace/MisPedidosFavoritosStrip";
@@ -149,6 +148,10 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   const [zone, setZone] = useState(
     () => initialZone ?? searchParams.get("zona") ?? "",
   );
+  // Modal de zonas — Brandon mayo 14 2026: antes mostrábamos las zonas como
+  // cajitas inline (10+ items horizontales que saturaban la UI). Ahora se
+  // abre un modal lateral con la lista — un solo botón "Filtrar por zona".
+  const [zoneModalOpen, setZoneModalOpen] = useState(false);
   const [productFilters, setProductFilters] =
     useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
 
@@ -406,8 +409,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
 
   // ── Zonas del filtro: SOLO las que tienen tiendas reales (no inventamos) ──
   // Si stores aún no cargó, mostramos sólo el item "Todas las zonas".
+  // Considera tanto el legacy `zone` (single) como `coverageZones[]` (multi-zona
+  // gestionado por el admin en el tab Mi Tienda).
   const zonesForFilter = deriveActiveZones(
-    stores.map((s) => ({ zone: (s as { zone?: string }).zone })),
+    stores.map((s) => ({
+      zone: (s as { zone?: string }).zone,
+      coverageZones: (s as { coverageZones?: string[] }).coverageZones,
+    })),
   );
 
   // ── TS-22 sort: deriva la lista ordenada de filteredStores ──
@@ -478,41 +486,84 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
            fuera del contexto de tienda y confundiría al usuario. */}
       {!isTiendasOnly && <TiendasBreadcrumb zonaLabel={zonaLabel} />}
 
-      {/* ── Hero editorial Buleje ───────────────────────────────────────
-           Headline grande con accent en italic serif (alineado con marca),
-           subtitle, ubicación + buscador, y stats trust bar abajo. */}
-      <section className="relative overflow-hidden border-b border-[var(--rule-base)] bg-linear-to-b from-[var(--surface-canvas)] to-[var(--surface-sunken)]">
+      {/* ── Hero rediseñado (Brandon, mayo 14 2026) ─────────────────────
+           Mobile: compacto (text mas chico, menos padding, sin descripcion
+           larga). Chip stats inline con # tiendas activas + zonas.
+           Desktop: el layout editorial anterior con card de stats a la
+           derecha se mantiene. */}
+      {/* Hero rediseñado (Brandon, mayo 14 2026 v2): contraste/color marca
+          más fuerte. Antes era from-surface-canvas → to-surface-sunken
+          (gris muy lavado, casi monocromático). Ahora gradiente con
+          accent-soft + capa de color marca + dotted overlay. */}
+      <section className="relative overflow-hidden border-b-2 border-[var(--accent)]/15 bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-canvas)] to-[var(--accent-soft)]">
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
+          className="pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/15 blur-3xl"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -bottom-32 -left-32 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/[0.04] blur-3xl"
+          className="pointer-events-none absolute -bottom-32 -left-32 h-[360px] w-[360px] rounded-full bg-[var(--accent)]/10 blur-3xl"
         />
-        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-10 sm:pt-14 sm:pb-14">
+        {/* Dotted grid pattern para textura visual */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage:
+              "radial-gradient(var(--accent) 1.5px, transparent 1.5px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-6 sm:pt-14 sm:pb-14">
           <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 items-end">
-            {/* Headline + ubicación + buscador */}
+            {/* Headline + ubicación + buscador.
+                 Brandon mayo 15 v3: eyebrow "Directorio · X" removido —
+                 saturaba la jerarquía visual. El título habla por sí solo. */}
             <div className="min-w-0">
-              <p className="inline-flex items-center gap-2 mb-4 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                <span aria-hidden className="inline-block h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-                <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-60 animate-ping" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                </span>
-                {hasLocation
-                  ? `Directorio · ${customerCity ?? customerRegion}`
-                  : "Directorio de tiendas"}
-              </p>
-              <h1 className="text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold leading-[0.98] tracking-[-0.035em] text-[var(--text-primary)]">
+              <h1 className="text-[clamp(1.75rem,7vw,3.75rem)] font-extrabold leading-[1.02] sm:leading-[0.98] tracking-[-0.025em] sm:tracking-[-0.035em] text-[var(--text-primary)]">
                 Las mejores tiendas
-                <br />
+                {" "}
                 <span className="italic font-serif text-[var(--accent)]">de tu barrio.</span>
               </h1>
-              <p className="mt-4 max-w-xl text-base sm:text-lg text-[var(--text-secondary)] leading-[1.45]">
+              {/* Brandon, mayo 14 2026: descripción "Bodegas, restaurantes…"
+                  oculta en mobile — Brandon quiere solo título + buscador.
+                  En sm+ sigue visible. */}
+              <p className="hidden sm:block mt-2 sm:mt-4 max-w-xl text-sm sm:text-lg text-[var(--text-secondary)] leading-[1.4] sm:leading-[1.45]">
                 Bodegas, restaurantes, farmacias y más — todo de tus vecinos,
-                con delivery rápido y pago al recibir.
+                con delivery rápido.
               </p>
+
+              {/* Stats chip inline — antes mobile-only, ahora también oculto en
+                  mobile (Brandon mayo 14: en cel solo título + buscador).
+                  Sigue visible en tablet (sm) hasta lg, donde el card lateral
+                  toma su lugar. */}
+              {stores.length > 0 && (
+                <div className="hidden sm:flex lg:hidden mt-3 items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)] border-2 border-[var(--accent)]/20 px-3 h-9 text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm">
+                    <Store className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
+                    <span className="tabular-nums">{stores.length}</span>
+                    <span className="text-[var(--text-secondary)] font-bold">tiendas</span>
+                  </span>
+                  {(() => {
+                    const zoneCount = new Set(stores.map((s) => (s as { zone?: string }).zone).filter(Boolean)).size;
+                    if (zoneCount === 0) return null;
+                    return (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] px-3 h-9 text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm">
+                        <MapPin className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
+                        <span className="tabular-nums">{zoneCount}</span>
+                        <span className="text-[var(--text-secondary)] font-bold">zonas</span>
+                      </span>
+                    );
+                  })()}
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-50,var(--accent-soft))] border-2 border-[var(--data-success-500,var(--accent))]/30 px-3 h-9 text-[length:var(--ts-xs)] font-extrabold text-[var(--data-success-600,var(--accent))]">
+                    <span aria-hidden className="relative inline-flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--data-success-500,var(--accent))] opacity-70 animate-ping" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--data-success-600,var(--accent))]" />
+                    </span>
+                    En vivo
+                  </span>
+                </div>
+              )}
 
               {/* Ubicación + buscador en linea.
                   Brandon, mayo 2026: la card "Tu ubicación · Pucallpa"
@@ -520,7 +571,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   o de otras ciudades (CC). Ahora sólo se muestra si el
                   cliente está logueado Y completó departamento/distrito
                   en su perfil. Sin login → directo al buscador. */}
-              <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="mt-3 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
                 {hasLocation && (
                   <div className="inline-flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2.5 shrink-0 shadow-sm">
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
@@ -561,7 +612,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 Antes: grid 2x2 de números planos. Ahora: stats con iconos +
                 pulse "en vivo" + mini ticker de actividad reciente. Comunica
                 que la plataforma está activa, no es un placeholder. */}
-            <div className="relative rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 sm:p-6 shadow-sm overflow-hidden">
+            <div className="relative rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 sm:p-6 shadow-sm overflow-hidden hidden lg:block">
               <div
                 aria-hidden
                 className="pointer-events-none absolute -top-12 -right-12 h-28 w-28 rounded-full bg-[var(--accent)]/[0.08] blur-2xl"
@@ -642,8 +693,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
 
       {/* ── Banner rotante de promos (gestionado desde superadmin) ─────
            Aparece solo cuando NO hay búsqueda activa para no competir
-           con el hero de resultados. */}
-      {search.trim().length === 0 && <TiendasHeroAds />}
+           con el hero de resultados. Brandon mayo 14 2026: oculto en
+           mobile — el cliente quiere ir directo a categorías y tiendas. */}
+      {search.trim().length === 0 && (
+        <div className="hidden sm:block">
+          <TiendasHeroAds />
+        </div>
+      )}
 
       {/* ── Hero de resultados de búsqueda — solo cuando hay query activa ─
            Da prioridad visual a la tienda buscada antes de las secciones
@@ -720,23 +776,56 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         </section>
       )}
 
-      {/* ── 2 cards promocionales con paleta Buleje ──────────────────── */}
-      {search.trim().length === 0 && <TiendasPromoCards />}
+      {/* ── 2 cards promocionales con paleta Buleje ──────────────────
+           Brandon, mayo 14 2026: ocultas en mobile — el cliente en cel
+           quiere ir directo a las tiendas, no a promos secundarias.
+           En sm+ siguen visibles. */}
+      {search.trim().length === 0 && (
+        <div className="hidden sm:block">
+          <TiendasPromoCards hasOffers={stores.some((s) => ((s as { activePromos?: number }).activePromos ?? 0) > 0)} />
+        </div>
+      )}
 
-      {/* ── Mis tiendas favoritas — solo activa con 5+ pedidos en 5+ tiendas ── */}
-      <MisTiendasFavoritasStrip />
+      {/* Brandon mayo 14 2026: strips de "tus tiendas favoritas" y
+          "tus tiendas frecuentes" ocultos en mobile. En cel el cliente
+          quiere ver categorías y tiendas directamente, sin ruido de
+          historial personal. En sm+ visibles. */}
+      <div className="hidden sm:contents">
+        {/* ── Mis tiendas favoritas — solo activa con 5+ pedidos en 5+ tiendas ── */}
+        <MisTiendasFavoritasStrip />
 
-      {/* ── Tus tiendas frecuentes ──────────────────────────────────── */}
-      <TusTiendasStrip />
+        {/* ── Tus tiendas frecuentes ──────────────────────────────── */}
+        <TusTiendasStrip />
+      </div>
 
       {/* ── Secciones personalizadas — solo logueados ─────────────────
           Si el cliente no inició sesión, no le mostramos su historial
-          ni recomendaciones por GPS — eso requiere identidad. */}
-      {isLoggedIn && (
-        <>
-          {/* Hero "Repetir último pedido" — solo si hay historial */}
-          {search.trim().length === 0 && <RepetirUltimoPedido />}
+          ni recomendaciones por GPS — eso requiere identidad.
+          Brandon, mayo 14 2026: reordenado para que "Repetir último
+          pedido" quede pegado a "Categorías principales" — antes había
+          MisPedidosFavoritosStrip y FeaturedStoresNearby entre medio,
+          rompiendo la conexión visual. Ahora:
+            1. Repetir último pedido (hero)
+            2. Categorías principales (grid grande)
+            3. Pedidos favoritos
+            4. Tiendas destacadas cerca */}
+      {/* "Repetir último pedido" — Brandon mayo 14: oculto en mobile
+          para minimizar ruido en cel. En sm+ visible cuando logueado. */}
+      {isLoggedIn && search.trim().length === 0 && (
+        <div className="hidden sm:block">
+          <RepetirUltimoPedido />
+        </div>
+      )}
 
+      {/* TiendasMainCategoriesGrid removido (Brandon mayo 14 2026 v2):
+          las categorías principales del superadmin ahora viven en la home
+          /, no en /tiendas. Acá el cliente busca por filtros chip y zona,
+          la entrada por categoría sigue siendo /marketplace/categoria/[slug]. */}
+
+      {/* Brandon mayo 14 2026: pedidos favoritos + tiendas destacadas
+          cerca también ocultas en mobile. En sm+ visibles. */}
+      {isLoggedIn && (
+        <div className="hidden sm:contents">
           {/* Pedidos favoritos del cliente (localStorage) */}
           <MisPedidosFavoritosStrip />
 
@@ -749,7 +838,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16">
             <FeaturedStoresNearby userCoords={userCoords} />
           </section>
-        </>
+        </div>
       )}
 
       {/* RecommendationsStrip eliminado (Brandon, mayo 2026): la
@@ -758,24 +847,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
           Mantener ambas creaba duplicación visual y mostraba data
           a deslogueados. */}
 
-      {/* ── Grid de Categorías principales (cajas grandes con imagen) ─
-           Click filtra el grid de "Todas las tiendas" más abajo.
-           Pasamos stores reales para que oculte categorías sin tiendas
-           (la sección entera desaparece si ninguna categoría tiene tiendas). */}
-      <TiendasMainCategoriesGrid
-        selected={category}
-        onSelect={setCategory}
-        stores={stores}
-        storesLoading={loading}
-      />
-
-      {/* ── Filtros + Grid — directo, sin hero pesado ─────────────────── */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-12">
+      {/* ── Filtros + Grid — directo, sin hero pesado.
+           Brandon, mayo 15 v3 2026: removidos eyebrow "Todas las tiendas"
+           y título "Filtrá y elegí" — el texto comercial persuasivo
+           ("Recomendadas para vos") aparece después del toolbar, justo
+           encima del listado, para mejor jerarquía. */}
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12">
         <div className="mb-3">
-          <TiendasSectionHeader
-            eyebrow="Todas las tiendas"
-            title="Filtrá y elegí"
-          />
           {!isTiendasOnly && (
             <div className="mt-1">
               <QuickFilterChips
@@ -895,135 +973,357 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
             </div>
           )}
 
-          {/* Zonas = cajitas chicas. Solo se muestra si hay ≥1 zona real
-              vinculada a tiendas (zonesForFilter siempre incluye "Todas",
-              así que length>1 indica que hay zonas con tiendas). */}
+          {/* Filtrar por zona = botón único que abre modal.
+              Brandon mayo 14 2026: las cajitas inline de zonas saturaban
+              la UI cuando había muchas zonas. Ahora un solo botón con la
+              zona activa visible (o "Todas las zonas") + modal con la
+              lista completa al tap. */}
           {zonesForFilter.length > 1 && (
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
-              Filtrar por zona
-            </p>
-            <div
-              role="group"
-              aria-label="Filtrar por zona"
-              className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
+            {/* Label "Filtrar por zona" removido (Brandon mayo 15 v3):
+                el botón ya muestra el mismo texto — era duplicación. */}
+            <button
+              type="button"
+              onClick={() => setZoneModalOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={zoneModalOpen}
+              className={cn(
+                "inline-flex items-center gap-3 rounded-2xl border-2 transition-all px-4 h-12 sm:h-14 shadow-sm hover:shadow-md hover:-translate-y-0.5",
+                zone
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]/50",
+              )}
             >
-              {zonesForFilter.map((z) => {
-                const active = zone === z.id;
-                return (
-                  <button
-                    key={z.id || "todas"}
-                    onClick={() => setZone(z.id)}
-                    aria-pressed={active}
-                    className={cn(
-                      "shrink-0 inline-flex flex-col items-center gap-1.5 rounded-2xl border-2 transition-all px-3 py-3 min-w-[96px] sm:min-w-[88px]",
-                      active
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                        : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 hover:-translate-y-0.5",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "h-11 w-11 sm:h-9 sm:w-9 rounded-lg flex items-center justify-center text-[length:var(--ts-2xs)] font-extrabold tracking-tight",
-                        active ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-                      )}
-                    >
-                      <MapPin className="h-4 w-4" strokeWidth={2} />
-                    </span>
-                    <span
-                      className={cn(
-                        "text-[length:var(--ts-xs)] font-bold leading-tight text-center",
-                        active ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
-                      )}
-                    >
-                      {z.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+              <span
+                className={cn(
+                  "inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0",
+                  zone
+                    ? "bg-[var(--accent-600,var(--accent))] text-white"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                )}
+              >
+                <MapPin className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              </span>
+              <span className="flex flex-col items-start gap-0.5 min-w-0">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider opacity-70 leading-tight">
+                  {zone ? "Zona activa" : "Filtrar por zona"}
+                </span>
+                <span className="text-sm font-extrabold tracking-tight leading-tight truncate max-w-[180px] sm:max-w-[240px]">
+                  {zone
+                    ? zonesForFilter.find((z) => z.id === zone)?.label ?? "Zona"
+                    : "Todas las zonas"}
+                </span>
+              </span>
+              {zone && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZone("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setZone("");
+                    }
+                  }}
+                  aria-label="Quitar filtro de zona"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))]/15 hover:bg-[var(--accent-600,var(--accent))]/30 text-[var(--accent)] transition-colors shrink-0 cursor-pointer"
+                >
+                  <span aria-hidden className="text-base font-black leading-none">×</span>
+                </span>
+              )}
+              <ChevronRight className="h-4 w-4 opacity-50 shrink-0 ml-1" strokeWidth={2.5} aria-hidden />
+            </button>
           </div>
           )}
 
-          {/* ── Fila de acciones inline · rediseñada (mas grande, DS tokens) ──
-               Toolbar superior tipo PedidosYa: chips grandes, mejor jerarquía
-               visual y separación clara entre filtros / vista / acción de
-               limpiar. Usa surface-raised + ruler base para aterrizar contra
-               el canvas. */}
+          {/* ── Modal de zonas ────────────────────────────────────────── */}
+          {zoneModalOpen && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Filtrar por zona"
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6 backdrop-blur-md bg-slate-950/60"
+              onClick={() => setZoneModalOpen(false)}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full sm:max-w-md max-h-[85svh] flex flex-col rounded-t-3xl sm:rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)]">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+                      <MapPin className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] leading-tight">
+                        Filtrar
+                      </p>
+                      <h3 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+                        Elegí tu zona
+                      </h3>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setZoneModalOpen(false)}
+                    aria-label="Cerrar"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] text-[var(--text-primary)] transition-colors shrink-0"
+                  >
+                    <span aria-hidden className="text-xl font-black leading-none">×</span>
+                  </button>
+                </div>
+
+                {/* Lista de zonas */}
+                <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+                  <ul className="space-y-2">
+                    {zonesForFilter.map((z) => {
+                      const active = zone === z.id;
+                      return (
+                        <li key={z.id || "todas"}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setZone(z.id);
+                              setZoneModalOpen(false);
+                            }}
+                            aria-pressed={active}
+                            className={cn(
+                              "w-full flex items-center gap-3 rounded-2xl border-2 p-3 sm:p-4 text-left transition-all",
+                              active
+                                ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-md"
+                                : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/30",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl shrink-0",
+                                active
+                                  ? "bg-[var(--accent-600,var(--accent))] text-white"
+                                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                              )}
+                            >
+                              <MapPin className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                            </span>
+                            <span
+                              className={cn(
+                                "flex-1 min-w-0 text-base font-extrabold tracking-tight",
+                                active ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
+                              )}
+                            >
+                              {z.label}
+                            </span>
+                            {active && (
+                              <span
+                                aria-hidden
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white font-black text-xs shrink-0"
+                              >
+                                ✓
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Toolbar — rediseñado mobile-first (Brandon, mayo 14 2026) ──
+               Mobile: scroll horizontal con todos los controles en chips
+               grandes (vista pill + sort + filtros + limpiar). El flex-wrap
+               anterior se montaba feo en pantallas chicas — ahora la fila
+               siempre cabe via overflow-x scroll.
+               Desktop (sm+): grid de 2 cols con filtros a la izquierda y
+               vista pill alineada a la derecha. */}
           <div
             role="toolbar"
             aria-label="Filtros y vista de tiendas"
-            className="flex items-center gap-3 flex-wrap rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 sm:px-5 sm:py-3.5 shadow-sm"
+            className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-sm overflow-hidden"
           >
-            <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
-              <MarketplaceFilters
-                filters={productFilters}
-                userCoords={userCoords}
-                geoLoading={geoLoading}
-                onChange={handleFiltersChange}
-                onRequestGeo={handleGeoSort}
-                hideProductCategory
-              />
+            {/* ── Mobile: scroll-x con todo en chips ── */}
+            <div className="sm:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide px-3 py-2.5">
+              <div
+                role="group"
+                aria-label="Cambiar entre vista lista y mapa"
+                className="inline-flex items-center rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1 shrink-0"
+              >
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  aria-pressed={viewMode === "list"}
+                  aria-label="Vista en lista"
+                  className={cn(
+                    "inline-flex items-center justify-center h-9 w-9 rounded-full transition-all",
+                    viewMode === "list"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
+                      : "text-[var(--text-secondary)]",
+                  )}
+                >
+                  <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("map")}
+                  aria-pressed={viewMode === "map"}
+                  aria-label="Vista en mapa"
+                  className={cn(
+                    "inline-flex items-center justify-center h-9 w-9 rounded-full transition-all",
+                    viewMode === "map"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
+                      : "text-[var(--text-secondary)]",
+                  )}
+                >
+                  <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                </button>
+              </div>
 
-              <span aria-hidden className="hidden sm:inline-block h-7 w-px bg-[var(--rule-soft)]" />
+              <span aria-hidden className="h-7 w-px bg-[var(--rule-soft)] shrink-0" />
 
-              <StoresSortSelector value={sortKey} onChange={setSortKey} />
+              <div className="shrink-0">
+                <StoresSortSelector value={sortKey} onChange={setSortKey} />
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <MarketplaceFilters
+                  filters={productFilters}
+                  userCoords={userCoords}
+                  geoLoading={geoLoading}
+                  onChange={handleFiltersChange}
+                  onRequestGeo={handleGeoSort}
+                  hideProductCategory
+                />
+              </div>
+
+              {hasFilters && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setCategory("todos");
+                    setZone("");
+                    setSubCategoryId(null);
+                    setGeoActive(false);
+                    setUserCoords(null);
+                    setProductFilters(DEFAULT_FILTERS);
+                    setActiveChips(new Set());
+                    setSortKey("relevance");
+                  }}
+                  aria-label="Limpiar todos los filtros activos"
+                  className="inline-flex items-center gap-1 rounded-full border-2 border-[var(--data-error-500,#ef4444)]/30 bg-[var(--data-error-50,#fef2f2)] dark:bg-[var(--data-error-950,#450a0a)]/30 px-3 h-9 text-sm font-extrabold text-[var(--data-error-600,#dc2626)] shrink-0"
+                >
+                  Limpiar
+                </button>
+              )}
             </div>
 
-            <div
-              role="group"
-              aria-label="Cambiar entre vista lista y mapa"
-              className="inline-flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1 shrink-0"
-            >
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                aria-pressed={viewMode === "list"}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold transition-all",
-                  viewMode === "list"
-                    ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                )}
-              >
-                <List className="h-4 w-4" strokeWidth={2} aria-hidden />
-                Lista
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("map")}
-                aria-pressed={viewMode === "map"}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold transition-all",
-                  viewMode === "map"
-                    ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                )}
-              >
-                <MapIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                Mapa
-              </button>
-            </div>
+            {/* ── Desktop (sm+): layout antiguo con filtros izquierda + vista derecha ── */}
+            <div className="hidden sm:flex items-center gap-3 flex-wrap px-5 py-3.5">
+              <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                <MarketplaceFilters
+                  filters={productFilters}
+                  userCoords={userCoords}
+                  geoLoading={geoLoading}
+                  onChange={handleFiltersChange}
+                  onRequestGeo={handleGeoSort}
+                  hideProductCategory
+                />
 
-            {hasFilters && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setCategory("todos");
-                  setZone("");
-                  setSubCategoryId(null);
-                  setGeoActive(false);
-                  setUserCoords(null);
-                  setProductFilters(DEFAULT_FILTERS);
-                  setActiveChips(new Set());
-                  setSortKey("relevance");
-                }}
-                aria-label="Limpiar todos los filtros activos"
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-1.5 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 transition-all shrink-0"
+                <span aria-hidden className="hidden sm:inline-block h-7 w-px bg-[var(--rule-soft)]" />
+
+                <StoresSortSelector value={sortKey} onChange={setSortKey} />
+              </div>
+
+              <div
+                role="group"
+                aria-label="Cambiar entre vista lista y mapa"
+                className="inline-flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1 shrink-0"
               >
-                Limpiar todo
-              </button>
-            )}
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  aria-pressed={viewMode === "list"}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold transition-all",
+                    viewMode === "list"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <List className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("map")}
+                  aria-pressed={viewMode === "map"}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold transition-all",
+                    viewMode === "map"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <MapIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  Mapa
+                </button>
+              </div>
+
+              {hasFilters && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setCategory("todos");
+                    setZone("");
+                    setSubCategoryId(null);
+                    setGeoActive(false);
+                    setUserCoords(null);
+                    setProductFilters(DEFAULT_FILTERS);
+                    setActiveChips(new Set());
+                    setSortKey("relevance");
+                  }}
+                  aria-label="Limpiar todos los filtros activos"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-1.5 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 transition-all shrink-0"
+                >
+                  Limpiar todo
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Bloque comercial (Brandon mayo 15 v3) ──
+             Persuasivo, no técnico. Aparece entre el toolbar y el listado
+             para guiar al usuario y bajar la ansiedad de elección.
+             Conteo dinámico = social proof barato pero efectivo. */}
+        <div className="mt-5 mb-4 flex items-end justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+              <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
+              recomendaciones
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+              Recomendadas para vos
+            </h2>
+            <p className="mt-1 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
+              {finalStores.length > 0 ? (
+                <>
+                  <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
+                    {finalStores.length}
+                  </span>{" "}
+                  {finalStores.length === 1 ? "tienda" : "tiendas"} del barrio
+                  <span className="mx-1.5 text-[var(--text-tertiary)]">·</span>
+                  <span className="font-semibold text-[var(--accent)]">entrega hoy</span>
+                </>
+              ) : (
+                <>Tiendas del barrio · entrega hoy</>
+              )}
+            </p>
           </div>
         </div>
 
@@ -1054,131 +1354,6 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         )}
       </section>
 
-      {/* ── Asi funciona en Buleje — 3 pasos del flujo de pedido.
-           DIFERENCIADO de /marketplace/como-pagar (que cubre solo PAGO):
-           aqui mostramos el FLUJO COMPLETO de un pedido en una tienda —
-           desde elegir hasta recibir. Sin duplicar valores genericos
-           (delivery rapido, 0% comision, etc) que ya estan en como-pagar. */}
-      <section
-        aria-label="Como funciona pedir en Buleje"
-        className="relative overflow-hidden border-t border-[var(--rule-soft)] bg-[var(--surface-raised)]"
-      >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
-        />
-        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <div className="max-w-2xl mb-10 sm:mb-12">
-            <p className="inline-flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
-              <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
-              Si nunca pediste aqui
-            </p>
-            <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]">
-              De la tienda a tu puerta,{" "}
-              <span className="italic font-serif text-[var(--accent)]">en 3 pasos.</span>
-            </h2>
-            <p className="mt-3 text-base text-[var(--text-secondary)] max-w-lg leading-relaxed">
-              Sin app, sin trámites. Eliges, pedís y recibís — todo desde el celular,
-              en menos de lo que tarda un agua en hervir.
-            </p>
-          </div>
-
-          {(() => {
-            const steps = [
-              {
-                n: "01",
-                title: "Eliges la tienda",
-                desc: "Filtra por zona o categoria. Mira el rating, productos y horario antes de entrar.",
-                Icon: SearchIcon,
-                detail: "Buscar · Filtrar · Comparar",
-              },
-              {
-                n: "02",
-                title: "Armás el pedido",
-                desc: "Carrito por tienda. El total que ves es el que pagas — sin comisiones escondidas.",
-                Icon: ShoppingBag,
-                detail: "Carrito unico por tienda",
-              },
-              {
-                n: "03",
-                title: "Recibís en tu puerta",
-                desc: "El motorizado llega en 30 min promedio. Pagas Yape o efectivo al recibir, vos elegis.",
-                Icon: Truck,
-                detail: "30 min · Pago al recibir",
-              },
-            ];
-
-            return (
-              <ol className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 relative">
-                {/* Linea conectora horizontal (md+) */}
-                <div
-                  aria-hidden
-                  className="hidden md:block absolute top-12 left-[16.66%] right-[16.66%] h-px bg-linear-to-r from-transparent via-[var(--rule-base)] to-transparent"
-                />
-                {steps.map((step) => {
-                  const FIcon = step.Icon;
-                  return (
-                    <li
-                      key={step.n}
-                      className="relative group rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-7 transition-all hover:border-[var(--accent)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
-                    >
-                      {/* Numero grande arriba */}
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <p className="font-display text-[2.5rem] sm:text-[3rem] font-extrabold leading-[0.85] tracking-[-0.04em] text-[var(--rule-base)] tabular-nums group-hover:text-[var(--accent)]/30 transition-colors">
-                          {step.n}
-                        </p>
-                        <span
-                          aria-hidden
-                          className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white"
-                        >
-                          <FIcon className="h-5 w-5" strokeWidth={2} />
-                        </span>
-                      </div>
-
-                      <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-                        {step.title}
-                      </h3>
-                      <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
-                        {step.desc}
-                      </p>
-
-                      {/* Tag inferior con detalle accion */}
-                      <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)]/70 border border-[var(--rule-soft)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-                        {step.detail}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ol>
-            );
-          })()}
-
-          {/* Trust line tras los 3 pasos — links concretos a paginas relevantes */}
-          <div className="mt-8 flex items-center gap-2 flex-wrap text-sm text-[var(--text-secondary)]">
-            <span className="font-bold text-[var(--text-primary)]">¿Dudas?</span>
-            <Link
-              href="/marketplace/como-pagar"
-              className="inline-flex items-center gap-1 text-[var(--accent)] font-bold hover:underline"
-            >
-              Ver formas de pago <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
-            </Link>
-            <span aria-hidden className="text-[var(--rule-base)]">·</span>
-            <Link
-              href="/tracking"
-              className="inline-flex items-center gap-1 text-[var(--accent)] font-bold hover:underline"
-            >
-              Sigue tu pedido <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
-            </Link>
-            <span aria-hidden className="text-[var(--rule-base)]">·</span>
-            <Link
-              href="/ayuda"
-              className="inline-flex items-center gap-1 text-[var(--accent)] font-bold hover:underline"
-            >
-              Centro de ayuda <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.25} />
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* ── Sumate a Buleje — slim banner (v3, mayo 2026).
           v2 tenia 2 cards XL con stats que duplicaban /abrir-tienda y

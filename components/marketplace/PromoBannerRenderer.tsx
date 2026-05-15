@@ -149,7 +149,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
 
     return (
       <div
-        className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-stretch px-4 sm:px-6 gap-3 sm:gap-4 border border-[var(--rule-soft)]"
+        className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-[4/1] flex items-stretch px-4 sm:px-6 gap-3 sm:gap-4 border border-[var(--rule-soft)]"
         style={{ background: bgGradient }}
       >
         {hasImage && banner.imageUrl && (
@@ -187,7 +187,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
   if (type === "image") {
     return (
       <div
-        className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-center justify-center border border-[var(--rule-soft)]"
+        className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-[4/1] flex items-center justify-center border border-[var(--rule-soft)]"
         style={{ background: bgGradient }}
       >
         {hasImage && banner.imageUrl && (
@@ -219,7 +219,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
   // ── CLASSIC (default): texto + CTA chip ───────────────────────────────────
   return (
     <div
-      className="relative overflow-hidden rounded-2xl aspect-[4/1] flex items-center justify-between px-6 sm:px-10 border border-[var(--rule-soft)]"
+      className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-[4/1] flex items-center justify-between px-6 sm:px-10 border border-[var(--rule-soft)]"
       style={{ background: bgGradient }}
     >
       {hasImage && banner.imageUrl && (
@@ -240,11 +240,11 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
           />
         </>
       )}
-      <div className="relative z-10 flex items-center justify-between w-full">
-      <div className="flex-1 min-w-0 max-w-[60%]">
+      <div className="relative z-10 flex items-center justify-between gap-3 w-full">
+      <div className="flex-1 min-w-0 max-w-[60%] sm:max-w-[60%]">
         <h3
           className={
-            "font-display text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight " +
+            "font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight leading-[1.1] " +
             (banner.imageUrl ? "text-white drop-shadow-md" : "text-[#0c1015]")
           }
         >
@@ -253,7 +253,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
         {banner.subtitle && (
           <p
             className={
-              "text-xs sm:text-sm lg:text-base font-medium mt-1 " +
+              "text-sm sm:text-sm lg:text-base font-medium mt-1.5 leading-snug line-clamp-2 sm:line-clamp-none " +
               (banner.imageUrl ? "text-white/90 drop-shadow" : "text-[#0c1015]/70")
             }
           >
@@ -263,12 +263,12 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
       </div>
       <span
         className={
-          "shrink-0 inline-flex items-center gap-1 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-extrabold whitespace-nowrap " +
+          "shrink-0 inline-flex items-center gap-1 rounded-full px-3.5 sm:px-4 h-9 sm:h-10 text-sm font-extrabold whitespace-nowrap shadow-md " +
           (banner.imageUrl ? "bg-white text-[#0c1015]" : "bg-[#0c1015] text-white")
         }
       >
         {banner.ctaLabel}
-        <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+        <ChevronRight className="h-3.5 w-3.5" />
       </span>
       </div>
     </div>
