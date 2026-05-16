@@ -26,6 +26,7 @@ import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useTenant } from "@/contexts/tenant-context";
 import { SIDEBAR_STYLE_PRESETS } from "@/lib/admin-template";
+import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
 import {
   getVerticalConfig,
   filterTabsForVertical,
@@ -994,6 +995,9 @@ export function AdminSidebar({
                       )} />
 
                       <span className="truncate flex-1 text-left">{displayLabel}</span>
+                      {isSingleTab && (
+                        <ScopeBadge tabId={catTabs[0] as string} variant="dot" />
+                      )}
 
                       {totalAlerts > 0 && (
                         <span className="text-[length:var(--ts-2xs)] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center bg-[var(--data-error-500)] text-white leading-none animate-pulse">
@@ -1072,6 +1076,7 @@ export function AdminSidebar({
                                       : (isDarkTheme ? "text-white/45" : "text-[var(--text-tertiary)]")
                                   )} />
                                   <span className="truncate">{subTabLabel}</span>
+                                  <ScopeBadge tabId={subTabId} variant="dot" />
                                   {isFeaturedSub && subAlertCount === 0 && subTabId !== "asistente-ia" && (
                                     <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-[var(--data-warning-500)]/20 text-[var(--data-warning-700)] dark:text-[var(--data-warning-400)] leading-none">
                                       Destacado
@@ -1142,6 +1147,7 @@ export function AdminSidebar({
                 )}
                 <Icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform duration-[var(--dur-base)] group-hover:scale-110", tab === id ? "text-[var(--data-success-500)]" : "")} />
                 <span className="truncate flex-1 text-left">{label}</span>
+                <ScopeBadge tabId={id} variant="chip" />
                 {alertCount > 0 && (
                   // Brandon mayo 2026: badge agrandado + tipografía más fuerte
                   // + ring para que se note sin animación constante (la pulse
@@ -1370,6 +1376,7 @@ export function AdminSidebar({
                 >
                   <FlyoutTabIcon className="h-4 w-4 shrink-0" />
                   <span className="truncate flex-1 text-left">{resolveLabel(tabId, tabInfo.label)}</span>
+                  <ScopeBadge tabId={tabId} variant="chip" />
                   {tab === tabId && <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
                 </button>
               );

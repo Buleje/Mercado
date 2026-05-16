@@ -2,6 +2,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type FlyoutTheme = "light" | "dark" | "cristal";
@@ -130,7 +131,8 @@ export function SidebarFlyout({
                 isActive ? themeStyles.activeIcon : themeStyles.inactiveIcon,
               )}
             />
-            <span className="truncate">{label}</span>
+            <span className="truncate flex-1 text-left">{label}</span>
+            <ScopeBadge tabId={id} variant="chip" />
           </button>
         );
       })}
