@@ -1064,6 +1064,88 @@ body {
   background-color: rgba(255, 255, 255, 0.02);
 }
 
+/* ── Dark mode shell root override ─────────────────────────────────────────
+ * Brandon 2026-05-16: el wrapper del admin tiene `bg-gray-50 dark:bg-[var(--surface-canvas)]`
+ * pero Tailwind 4 a veces no genera la regla dark con arbitrary value + var,
+ * o el orden de capas hace que bg-gray-50 gane. !important asegura que en
+ * dark mode el shell root se pinte canvas.
+ */
+.dark [data-admin-shell="true"] {
+  background-color: #0d1117 !important;
+}
+
+/* ── Dark mode defensive overrides para admin shell ─────────────────────────
+ * Brandon 2026-05-16: muchos componentes del admin tienen `bg-white`,
+ * `text-gray-*`, `border-gray-*` sin variante `dark:` porque se escribieron
+ * antes de la migración a tokens. En dark mode esos islotes de blanco rompen
+ * la coherencia visual. Estas reglas defensivas mapean esas clases comunes
+ * a tokens correctos del DS dentro del admin shell. Si un componente quiere
+ * permanecer claro a propósito (ej. previews de ticket, mockups), debe usar
+ * un wrapper con `data-keep-light` para opt-out (no implementado aún —
+ * añadir si surge la necesidad).
+ *
+ * Scope: solo dentro de `.dark [data-admin-shell="true"]` para evitar
+ * pisar el sidebar buleje (que usa white/[0.04] translúcido sobre slate).
+ */
+/* Colores hardcoded para evitar guerra con vars que pueden estar
+   override-eadas a oklch light en alguna scope intermedia. */
+.dark [data-admin-shell="true"] main .bg-white,
+.dark [data-admin-shell="true"] [role="tabpanel"] .bg-white {
+  background-color: #1c2230 !important;  /* --surface-raised */
+}
+.dark [data-admin-shell="true"] main .bg-gray-50,
+.dark [data-admin-shell="true"] [role="tabpanel"] .bg-gray-50 {
+  background-color: #0d1117 !important;  /* --surface-canvas */
+}
+.dark [data-admin-shell="true"] main .bg-gray-100,
+.dark [data-admin-shell="true"] [role="tabpanel"] .bg-gray-100 {
+  background-color: #161b22 !important;  /* --surface-sunken */
+}
+.dark [data-admin-shell="true"] main .text-gray-900,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-900,
+.dark [data-admin-shell="true"] main .text-gray-800,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-800 {
+  color: #f0f3f7 !important;  /* --text-primary */
+}
+.dark [data-admin-shell="true"] main .text-gray-700,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-700,
+.dark [data-admin-shell="true"] main .text-gray-600,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-600 {
+  color: #b8c0cc !important;  /* --text-secondary */
+}
+.dark [data-admin-shell="true"] main .text-gray-500,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-500,
+.dark [data-admin-shell="true"] main .text-gray-400,
+.dark [data-admin-shell="true"] [role="tabpanel"] .text-gray-400 {
+  color: #8590a3 !important;  /* --text-tertiary */
+}
+.dark [data-admin-shell="true"] main .border-gray-200,
+.dark [data-admin-shell="true"] [role="tabpanel"] .border-gray-200,
+.dark [data-admin-shell="true"] main .border-gray-100,
+.dark [data-admin-shell="true"] [role="tabpanel"] .border-gray-100 {
+  border-color: #2e3645 !important;  /* --rule-base */
+}
+.dark [data-admin-shell="true"] main .border-gray-300,
+.dark [data-admin-shell="true"] [role="tabpanel"] .border-gray-300 {
+  border-color: #232a38 !important;  /* --rule-soft */
+}
+/* Divide helpers (Tailwind divide-*) usan border-color en > * + * */
+.dark [data-admin-shell="true"] main .divide-gray-200 > * + *,
+.dark [data-admin-shell="true"] [role="tabpanel"] .divide-gray-200 > * + *,
+.dark [data-admin-shell="true"] main .divide-gray-100 > * + *,
+.dark [data-admin-shell="true"] [role="tabpanel"] .divide-gray-100 > * + * {
+  border-color: #2e3645 !important;
+}
+/* Headings y body text con color por default — h1/h2/h3 sin clase explícita */
+.dark [data-admin-shell="true"] main h1,
+.dark [data-admin-shell="true"] main h2,
+.dark [data-admin-shell="true"] main h3,
+.dark [data-admin-shell="true"] [role="tabpanel"] h1,
+.dark [data-admin-shell="true"] [role="tabpanel"] h2,
+.dark [data-admin-shell="true"] [role="tabpanel"] h3 {
+  color: #f0f3f7;
+}
+
 /* ── Mejora 20: Densidad de tabla configurable ──────────────────────────── */
 .table-compact td,
 .table-compact th { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; font-size: 0.75rem !important; line-height: 1rem !important; }

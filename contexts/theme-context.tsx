@@ -53,14 +53,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [resolved, setResolved] = useState<Resolved>("light");
   const intervalRef = useRef<number | null>(null);
 
-  // Hydrate: light fijo. Brandon decisión 2026-05-09 rev: el modo claro es
-  // permanente por defecto en toda la plataforma. Ignoramos cualquier
-  // sessionStorage previo y removemos la clase `.dark` defensivamente.
+  // Hydrate: light por defecto, pero respeta el override del usuario en
+  // sessionStorage. Brandon 2026-05-16: cuando el usuario activa dark mode
+  // explícitamente, debe persistir mientras dure la sesión de la pestaña
+  // (no se borra en recargas dentro de la misma pestaña). El default sigue
+  // siendo light — solo cambia si hay un valor explícito guardado.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setThemeState("light");
-    setResolved("light");
-    applyDom("light");
+    let initial: Theme = "light";
+    try {
+      const saved = window.sessionStorage.getItem(SESSION_KEY);
+      if (saved === "dark" || saved === "light" || saved === "system") {
+        initial = saved;
+      }
+    } catch {
+      /* ignore */
+    }
+    setThemeState(initial);
+    const r: Resolved = initial === "system" ? getThemeByTime() : initial;
+    setResolved(r);
+    applyDom(r);
   }, []);
 
   // Cleanup: si quedó un interval de la version time-based anterior, limpiarlo.
