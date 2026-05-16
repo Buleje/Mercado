@@ -69,7 +69,7 @@ export default function GananciasPage() {
         </p>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 space-y-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 space-y-6">
         <header className="flex items-start justify-between gap-3 earnings-print-hide">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
@@ -132,7 +132,7 @@ export default function GananciasPage() {
             {/* Hero total */}
             <div
               data-print-card
-              className="rounded-3xl border-2 border-[var(--accent)] bg-gradient-to-br from-[var(--accent-soft)] via-[var(--surface-raised)] to-[var(--surface-raised)] p-6 lg:p-8"
+              className="rounded-3xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-6 lg:p-8"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -194,7 +194,7 @@ export default function GananciasPage() {
                         <div className="flex-1 h-9 rounded-xl bg-[var(--surface-sunken)] overflow-hidden relative">
                           {pct > 0 && (
                             <div
-                              className="absolute inset-y-0 left-0 bg-gradient-to-r from-[var(--accent)] to-[var(--brand-primary-light)] rounded-xl"
+                              className="absolute inset-y-0 left-0 bg-[var(--accent)] rounded-xl"
                               style={{ width: `${pct}%` }}
                             />
                           )}

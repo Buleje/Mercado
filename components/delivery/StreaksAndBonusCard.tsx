@@ -17,11 +17,8 @@ import {
   Flame,
   Target,
   Zap,
-  CloudRain,
   Calendar,
-  Sunset,
   Trophy,
-  Sparkles,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -33,13 +30,13 @@ interface BonusItem {
   label: string;
   current?: number;
   target?: number;
-  tone: "rose" | "amber" | "purple";
+  tone: "amber";
 }
 
-interface MockData {
+interface StreaksData {
   streak: {
     days: number;
-    recentDays: boolean[]; // últimos 7 días, índice 0 = hace 6 días, índice 6 = hoy
+    recentDays: boolean[]; // lunes[0]…domingo[6] de la semana ISO actual
   };
   weeklyGoal: {
     current: number;
@@ -49,45 +46,19 @@ interface MockData {
   bonuses: BonusItem[];
 }
 
-// ─── Mock ────────────────────────────────────────────────────────────────────
-
-const MOCK: MockData = {
-  streak: {
-    days: 5,
-    recentDays: [true, true, false, true, true, true, true],
-  },
-  weeklyGoal: {
-    current: 450,
-    target: 600,
-    daysRemaining: 3,
-  },
-  bonuses: [
-    { id: "rain", icon: CloudRain, label: "Lluvia +30%", tone: "rose" },
-    {
-      id: "trip5",
-      icon: Calendar,
-      label: "5 viajes",
-      current: 3,
-      target: 5,
-      tone: "amber",
-    },
-    { id: "peak", icon: Sunset, label: "Hora pico +S/3", tone: "purple" },
-  ],
+// Estado inicial vacío — sin valores fake. Brandon mayo 2026 v7: removido
+// el MOCK con días/meta/bonuses inventados. Si el endpoint aún no respondió,
+// mostramos zeros honestos (el skeleton/empty se nota y empuja a conectarse).
+const EMPTY: StreaksData = {
+  streak: { days: 0, recentDays: [false, false, false, false, false, false, false] },
+  weeklyGoal: { current: 0, target: 600, daysRemaining: 0 },
+  bonuses: [],
 };
 
-// ─── Paleta de tono para chips ────────────────────────────────────────────────
-
-const TONE_CLASSES: Record<BonusItem["tone"], string> = {
-  rose: "bg-rose-500/10 text-rose-500 border-rose-500/20",
-  amber: "bg-amber-400/10 text-[var(--data-warning-500)] border-amber-400/20",
-  purple: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-};
-
-const TONE_BAR: Record<BonusItem["tone"], string> = {
-  rose: "bg-rose-400",
-  amber: "bg-amber-400",
-  purple: "bg-purple-400",
-};
+// Paleta unificada (sin rose/purple decorativos).
+const TONE_CHIP =
+  "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/25";
+const TONE_BAR = "bg-[var(--accent)]";
 
 // ─── Labels de día de la semana (L M M J V S D) ──────────────────────────────
 
@@ -111,7 +82,7 @@ function StreakSection({
   streak,
 }: {
   isOnline: boolean;
-  streak: MockData["streak"];
+  streak: StreaksData["streak"];
 }) {
   const dayLabels = getWeekDayLabels();
   const bonusDaysLeft = 7 - streak.days;
@@ -175,14 +146,11 @@ function StreakSection({
 
       {/* Subtítulo */}
       <p className="text-sm font-semibold text-[var(--text-secondary)]">
-        {goalReached ? (
-          <span className="inline-flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-            Racha activa — ¡Sigue así!
-          </span>
-        ) : (
-          `Próximo bonus en ${bonusDaysLeft} día${bonusDaysLeft !== 1 ? "s" : ""}`
-        )}
+        {goalReached
+          ? "Racha de 7 días completada."
+          : streak.days === 0
+            ? "Empieza tu racha hoy"
+            : `Quedan ${bonusDaysLeft} día${bonusDaysLeft !== 1 ? "s" : ""} para completar la semana`}
       </p>
     </div>
   );
@@ -199,7 +167,6 @@ function ProgressRing({
   size?: number;
   strokeWidth?: number;
 }) {
-  const id = useId();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (Math.min(percent, 100) / 100) * circumference;
@@ -214,13 +181,6 @@ function ProgressRing({
       aria-hidden="true"
       role="img"
     >
-      <defs>
-        <linearGradient id={`ring-grad-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity="1" />
-          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.6" />
-        </linearGradient>
-      </defs>
-      {/* Track */}
       <circle
         cx={cx}
         cy={cy}
@@ -229,13 +189,12 @@ function ProgressRing({
         stroke="var(--rule-base)"
         strokeWidth={strokeWidth}
       />
-      {/* Progress */}
       <circle
         cx={cx}
         cy={cy}
         r={radius}
         fill="none"
-        stroke={`url(#ring-grad-${id})`}
+        stroke="var(--accent)"
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeDasharray={circumference}
@@ -249,7 +208,7 @@ function ProgressRing({
 
 // ─── Sub-componente: Meta semanal ─────────────────────────────────────────────
 
-function WeeklyGoalSection({ weeklyGoal }: { weeklyGoal: MockData["weeklyGoal"] }) {
+function WeeklyGoalSection({ weeklyGoal }: { weeklyGoal: StreaksData["weeklyGoal"] }) {
   const percent = Math.round((weeklyGoal.current / weeklyGoal.target) * 100);
   const goalReached = weeklyGoal.current >= weeklyGoal.target;
 
@@ -289,10 +248,12 @@ function WeeklyGoalSection({ weeklyGoal }: { weeklyGoal: MockData["weeklyGoal"] 
             {goalReached ? (
               <span className="inline-flex items-center gap-1.5">
                 <Trophy className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-                Meta alcanzada
+                Meta semanal alcanzada
               </span>
+            ) : weeklyGoal.daysRemaining === 0 ? (
+              "La semana cierra hoy"
             ) : (
-              `Faltan ${weeklyGoal.daysRemaining} día${weeklyGoal.daysRemaining !== 1 ? "s" : ""}`
+              `${weeklyGoal.daysRemaining} día${weeklyGoal.daysRemaining !== 1 ? "s" : ""} restante${weeklyGoal.daysRemaining !== 1 ? "s" : ""}`
             )}
           </p>
         </div>
@@ -304,81 +265,32 @@ function WeeklyGoalSection({ weeklyGoal }: { weeklyGoal: MockData["weeklyGoal"] 
 // ─── Sub-componente: Chip de bonus ───────────────────────────────────────────
 
 function BonusChip({ bonus }: { bonus: BonusItem }) {
-  const [open, setOpen] = useState(false);
   const hasProgress = bonus.current !== undefined && bonus.target !== undefined;
   const progressPct = hasProgress
     ? Math.round(((bonus.current ?? 0) / (bonus.target ?? 1)) * 100)
     : 0;
 
+  // Chip simple, sin animaciones cosméticas. Si tiene progreso, muestra contador
+  // y mini-barra inline (info útil); si no, sólo label + icono.
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-label={`Bonus: ${bonus.label}`}
-        className={`
-          inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-extrabold
-          transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]
-          animate-pulse-subtle
-          ${TONE_CLASSES[bonus.tone]}
-        `}
-      >
-        <bonus.icon className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
-        <span>{bonus.label}</span>
-
-        {/* Mini progress inline para trip5 */}
-        {hasProgress && (
-          <span className="text-xs font-bold opacity-80 tabular-nums">
+    <div
+      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-extrabold ${TONE_CHIP}`}
+      aria-label={`Bonus: ${bonus.label}`}
+    >
+      <bonus.icon className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+      <span>{bonus.label}</span>
+      {hasProgress && (
+        <span className="inline-flex items-center gap-2 ml-1">
+          <span className="text-xs font-bold tabular-nums opacity-80">
             {bonus.current}/{bonus.target}
           </span>
-        )}
-      </button>
-
-      {/* Tooltip detalle */}
-      {open && (
-        <div
-          role="tooltip"
-          className="absolute bottom-full left-0 mb-2 z-20 w-52 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-lg"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <bonus.icon className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
-            <p className="text-sm font-extrabold text-[var(--text-primary)]">
-              {bonus.label}
-            </p>
-          </div>
-
-          {hasProgress && (
-            <>
-              <div className="flex justify-between text-xs font-bold text-[var(--text-secondary)] mb-1">
-                <span>Progreso</span>
-                <span className="tabular-nums">
-                  {bonus.current}/{bonus.target} ({progressPct}%)
-                </span>
-              </div>
-              <div className="h-2 rounded-full bg-[var(--rule-base)] overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${TONE_BAR[bonus.tone]}`}
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-            </>
-          )}
-
-          {!hasProgress && (
-            <p className="text-xs font-semibold text-[var(--text-secondary)]">
-              Bonus activo ahora mismo. Entrega más pedidos para aprovecharlo.
-            </p>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="mt-2 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-          >
-            Cerrar
-          </button>
-        </div>
+          <span className="relative h-1.5 w-10 rounded-full bg-[var(--rule-base)] overflow-hidden">
+            <span
+              className={`absolute inset-y-0 left-0 rounded-full ${TONE_BAR}`}
+              style={{ width: `${progressPct}%` }}
+            />
+          </span>
+        </span>
       )}
     </div>
   );
@@ -391,8 +303,9 @@ interface Props {
 }
 
 export default function StreaksAndBonusCard({ isOnline }: Props) {
-  // Live data desde el endpoint — fallback al MOCK si aún no cargó o hay error.
-  const [data, setData] = useState<MockData>(MOCK);
+  // Live data desde el endpoint. Mientras no hay respuesta, mostramos zeros
+  // honestos en vez de mocks decorativos (Brandon mayo 2026 v7).
+  const [data, setData] = useState<StreaksData>(EMPTY);
 
   const load = useCallback(async () => {
     try {
@@ -401,22 +314,19 @@ export default function StreaksAndBonusCard({ isOnline }: Props) {
         cache: "no-store",
       });
       if (!res.ok) return;
-      // El API devuelve `icon` como string emoji por compat — lo mapeamos
-      // por `id` a un Lucide icon real para que JSX no intente renderizar
-      // <🌧️> como tag (causa el warning "tag <🌧️> is unrecognized").
-      const json = (await res.json()) as Omit<MockData, "bonuses"> & {
+      const json = (await res.json()) as Omit<StreaksData, "bonuses"> & {
         bonuses: Array<Omit<BonusItem, "icon"> & { icon?: unknown }>;
       };
       const ID_TO_ICON: Record<string, LucideIcon> = {
-        rain: CloudRain,
         trip5: Calendar,
-        peak: Sunset,
+        weekend: Calendar,
       };
-      const normalized: MockData = {
+      const normalized: StreaksData = {
         ...json,
         bonuses: json.bonuses.map((b) => ({
           ...b,
-          icon: ID_TO_ICON[b.id] ?? Sparkles,
+          icon: ID_TO_ICON[b.id] ?? Calendar,
+          tone: "amber",
         })),
       };
       setData(normalized);

@@ -79,7 +79,7 @@ export default function MapaPage() {
           <button
             type="button"
             onClick={() => router.push("/delivery-app")}
-            className="mt-6 inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--accent)] font-extrabold text-white shadow-lg shadow-[var(--accent)]/25"
+            className="mt-6 inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--accent)] font-extrabold text-white"
           >
             Ir al panel
             <ArrowRight className="h-5 w-5" strokeWidth={2.5} />
@@ -90,23 +90,23 @@ export default function MapaPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
-      <header className="flex items-start justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
+      <header className="flex items-start justify-between mb-5 gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
             <MapBadge className="h-6 w-6" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl lg:text-2xl font-extrabold text-[var(--text-primary)] leading-tight">
               Mapa de pedidos
             </h1>
             <p className="text-sm font-semibold text-[var(--text-secondary)]">
-              Tu posición en tiempo real
+              Tiendas reales del marketplace + tu posición en vivo
             </p>
           </div>
         </div>
         <span
-          className={`inline-flex items-center gap-2 h-9 px-3 rounded-full text-sm font-extrabold ${
+          className={`inline-flex items-center gap-2 h-9 px-3 rounded-full text-sm font-extrabold shrink-0 ${
             partner.isOnline
               ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
               : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
@@ -118,25 +118,52 @@ export default function MapaPage() {
       </header>
 
       <div className="rounded-3xl overflow-hidden border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <div className="h-[60vh] lg:h-[70vh] min-h-[420px]">
+        <div className="h-[60vh] lg:h-[72vh] min-h-[440px]">
           <PartnerMap partnerLat={partner.lat} partnerLng={partner.lng} />
         </div>
       </div>
 
-      <div className="mt-5 grid sm:grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Legend
           dot={<span className="inline-block h-3 w-3 rounded-full bg-[var(--accent)]" />}
           title="Tu ubicación"
-          subtitle="Se actualiza cada 30 segundos"
+          subtitle="Actualiza cada 30s"
         />
         <Legend
           dot={
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand-secondary)] text-white text-[10px] font-extrabold">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white border-2" style={{ borderColor: "#dc2626" }}>
+              <span className="block h-3 w-3 rounded-full bg-[#dc2626]" />
+            </span>
+          }
+          title="Alta demanda"
+          subtitle="Top 1/3 últimos 30d"
+        />
+        <Legend
+          dot={
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white border-2" style={{ borderColor: "#d97706" }}>
+              <span className="block h-3 w-3 rounded-full bg-[#d97706]" />
+            </span>
+          }
+          title="Demanda media"
+          subtitle="Tienda activa"
+        />
+        <Legend
+          dot={
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white border-2 border-[var(--text-tertiary)]">
+              <span className="block h-3 w-3 rounded-full bg-[var(--text-tertiary)]" />
+            </span>
+          }
+          title="Baja demanda"
+          subtitle="Pocos pedidos"
+        />
+        <Legend
+          dot={
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#fbbf24] text-[10px] font-extrabold text-[#111] border-2 border-white">
               S/
             </span>
           }
           title="Pedido disponible"
-          subtitle="Toca el marcador para aceptar"
+          subtitle="Toca para aceptar"
         />
       </div>
     </div>

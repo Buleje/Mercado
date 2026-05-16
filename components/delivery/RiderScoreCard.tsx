@@ -20,7 +20,6 @@ import {
   Shield,
   Rocket,
   Flame,
-  Sparkles,
   Lock,
   type LucideIcon,
 } from "@buleje/design-system/icons";
@@ -43,9 +42,9 @@ interface Tier {
   name: string;
   min: number;
   max: number;
-  /** Clases Tailwind para el gradient del hero badge */
-  gradient: string;
-  /** Color del texto sobre el gradient */
+  /** Color de relleno del tier badge — paleta sobria del DS. */
+  bgClass: string;
+  /** Color del texto sobre el badge */
   textClass: string;
 }
 
@@ -65,99 +64,141 @@ interface BadgeDef {
 
 // ─── Datos estáticos ──────────────────────────────────────────────────────────
 
+// Brandon mayo 2026 v7: tiers con paleta sobria del DS. Antes había gradients
+// vivos (zinc, gold-orange, cyan-blue) que se veían como una skin de fútbol —
+// menos profesional. Ahora un solo color por tier, derivado de tokens.
 const TIERS: Tier[] = [
   {
     id: "bronce",
     name: "Bronce",
     min: 0,
     max: 2000,
-    gradient: "from-orange-400 to-[var(--data-warning-700)]",
-    textClass: "text-amber-900",
+    bgClass: "bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)]",
+    textClass: "text-[var(--text-secondary)]",
   },
   {
     id: "plata",
     name: "Plata",
     min: 2000,
     max: 6000,
-    gradient: "from-zinc-300 to-zinc-600",
-    textClass: "text-zinc-900",
+    bgClass: "bg-[var(--surface-sunken)] border-2 border-[var(--text-tertiary)]",
+    textClass: "text-[var(--text-primary)]",
   },
   {
     id: "oro",
     name: "Oro",
     min: 6000,
     max: 9000,
-    gradient: "from-yellow-400 to-orange-500",
-    textClass: "text-orange-950",
+    bgClass: "bg-[var(--brand-secondary)]/15 border-2 border-[var(--brand-secondary)]",
+    textClass: "text-[var(--brand-secondary)]",
   },
   {
     id: "diamante",
     name: "Diamante",
     min: 9000,
     max: Infinity,
-    gradient: "from-cyan-300 to-blue-600",
-    textClass: "text-blue-950",
+    bgClass: "bg-[var(--accent-soft)] border-2 border-[var(--accent)]",
+    textClass: "text-[var(--accent)]",
   },
 ];
 
-const MOCK_BADGES: BadgeDef[] = [
-  {
-    id: "cumplidor",
-    name: "Cumplidor",
-    Icon: Trophy,
-    desc: "100% on-time este mes",
-    state: "unlocked",
-    colorClass: "text-yellow-500",
-    bgClass: "bg-yellow-500/10",
-  },
-  {
-    id: "estrella",
-    name: "Estrella",
-    Icon: Star,
-    desc: "5★ por 30 días",
-    state: "in-progress",
-    progress: 70,
-    colorClass: "text-[var(--data-warning-500)]",
-    bgClass: "bg-[var(--data-warning-500)]/10",
-  },
-  {
-    id: "velocidad",
-    name: "Velocidad",
-    Icon: Zap,
-    desc: "Top 10 rápidos",
-    state: "unlocked",
-    colorClass: "text-sky-500",
-    bgClass: "bg-sky-500/10",
-  },
-  {
-    id: "confiable",
-    name: "Confiable",
-    Icon: Shield,
-    desc: "0 cancelaciones",
-    state: "unlocked",
-    colorClass: "text-[var(--data-success-500)]",
-    bgClass: "bg-[var(--data-success-500)]/10",
-  },
-  {
-    id: "crecimiento",
-    name: "Crecimiento",
-    Icon: Rocket,
-    desc: "+20% viajes",
-    state: "locked",
-    colorClass: "text-purple-500",
-    bgClass: "bg-purple-500/10",
-  },
-  {
-    id: "racha30",
-    name: "Racha 30",
-    Icon: Flame,
-    desc: "30 días online",
-    state: "in-progress",
-    progress: 17,
-    colorClass: "text-rose-500",
-    bgClass: "bg-rose-500/10",
-  },
-];
+// Brandon mayo 2026 v7: badges REALES computados desde rating / totalAccepted /
+// acceptanceRate (datos que ya vienen del API /api/delivery/me/me). Antes había
+// "Estrella 70%", "Racha 30 17%" inventados; ahora cada badge tiene una regla
+// derivada del estado real del rider.
+function computeBadges(
+  rating: number,
+  totalAccepted: number,
+  acceptanceRate: number,
+): BadgeDef[] {
+  const onTime = Math.round(acceptanceRate * 100);
+  return [
+    {
+      id: "primera",
+      name: "Primera entrega",
+      Icon: Trophy,
+      desc: "Tu primer viaje",
+      state: totalAccepted >= 1 ? "unlocked" : "locked",
+      colorClass: "text-[var(--accent)]",
+      bgClass: "bg-[var(--accent-soft)]",
+    },
+    {
+      id: "rating-alto",
+      name: "5 estrellas",
+      Icon: Star,
+      desc: "Promedio 4.8★ o más",
+      state:
+        rating >= 4.8
+          ? "unlocked"
+          : rating > 0
+            ? "in-progress"
+            : "locked",
+      progress: rating > 0 ? Math.min(100, Math.round((rating / 4.8) * 100)) : undefined,
+      colorClass: "text-[var(--accent)]",
+      bgClass: "bg-[var(--accent-soft)]",
+    },
+    {
+      id: "diez-viajes",
+      name: "10 viajes",
+      Icon: Zap,
+      desc: "Completá 10 entregas",
+      state:
+        totalAccepted >= 10
+          ? "unlocked"
+          : totalAccepted > 0
+            ? "in-progress"
+            : "locked",
+      progress: totalAccepted > 0 ? Math.min(100, Math.round((totalAccepted / 10) * 100)) : undefined,
+      colorClass: "text-[var(--accent)]",
+      bgClass: "bg-[var(--accent-soft)]",
+    },
+    {
+      id: "cumplidor",
+      name: "Cumplidor",
+      Icon: Shield,
+      desc: "90% de aceptación",
+      state:
+        onTime >= 90
+          ? "unlocked"
+          : onTime > 0
+            ? "in-progress"
+            : "locked",
+      progress: onTime > 0 ? Math.min(100, Math.round((onTime / 90) * 100)) : undefined,
+      colorClass: "text-[var(--accent)]",
+      bgClass: "bg-[var(--accent-soft)]",
+    },
+    {
+      id: "cincuenta",
+      name: "50 viajes",
+      Icon: Rocket,
+      desc: "Llegá a 50 entregas",
+      state:
+        totalAccepted >= 50
+          ? "unlocked"
+          : totalAccepted > 0
+            ? "in-progress"
+            : "locked",
+      progress: totalAccepted > 0 ? Math.min(100, Math.round((totalAccepted / 50) * 100)) : undefined,
+      colorClass: "text-[var(--accent)]",
+      bgClass: "bg-[var(--accent-soft)]",
+    },
+    {
+      id: "cien",
+      name: "Centurión",
+      Icon: Flame,
+      desc: "100 entregas en tu carrera",
+      state:
+        totalAccepted >= 100
+          ? "unlocked"
+          : totalAccepted > 0
+            ? "in-progress"
+            : "locked",
+      progress: totalAccepted > 0 ? Math.min(100, Math.round((totalAccepted / 100) * 100)) : undefined,
+      colorClass: "text-[var(--accent)]",
+      bgClass: "bg-[var(--accent-soft)]",
+    },
+  ];
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -225,24 +266,12 @@ function BadgeCircle({ badge }: { badge: BadgeDef }) {
           </span>
         )}
 
-        {/* Dot pulsante para in-progress */}
+        {/* Dot estático para in-progress (sin animate-ping cosmético) */}
         {isInProgress && (
-          <span className="absolute -top-0.5 -right-0.5">
-            <span className="relative flex h-3 w-3">
-              <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--data-warning-500)]" />
-            </span>
-          </span>
-        )}
-
-        {/* Sparkle en hover para unlocked */}
-        {isUnlocked && (
           <span
-            className="absolute -top-1 -right-1 opacity-0 motion-safe:group-hover/badge:opacity-100 transition-opacity duration-200 pointer-events-none"
+            className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-[var(--accent)] border-2 border-[var(--surface-raised)]"
             aria-hidden
-          >
-            <Sparkles className={`h-4 w-4 ${badge.colorClass}`} strokeWidth={1.5} />
-          </span>
+          />
         )}
       </div>
 
@@ -264,7 +293,7 @@ function BadgeCircle({ badge }: { badge: BadgeDef }) {
         <div className="w-14">
           <div className="h-1 rounded-full bg-[var(--rule-base)] overflow-hidden">
             <div
-              className="h-full rounded-full bg-amber-400 transition-all duration-700"
+              className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
               style={{ width: `${badge.progress}%` }}
               role="progressbar"
               aria-valuenow={badge.progress}
@@ -312,7 +341,7 @@ function TierProgress({
         aria-label={`Progreso hacia ${next.name}: ${progress}%`}
       >
         <div
-          className={`h-full rounded-full bg-gradient-to-r ${next.gradient} transition-all duration-700`}
+          className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -370,6 +399,10 @@ export default function RiderScoreCard({
 
   const tier = useMemo(() => getTier(pts), [pts]);
   const nextTier = useMemo(() => getNextTier(tier), [tier]);
+  const badges = useMemo(
+    () => computeBadges(rating, totalAccepted, acceptanceRate),
+    [rating, totalAccepted, acceptanceRate],
+  );
 
   const onTimePercent = Math.round(acceptanceRate * 100);
 
@@ -386,15 +419,15 @@ export default function RiderScoreCard({
           {/* Tier badge grande */}
           <div>
             <div
-              className={`inline-flex items-center gap-3 rounded-2xl bg-gradient-to-br ${tier.gradient} px-5 py-3 shadow-md`}
+              className={`inline-flex items-center gap-3 rounded-2xl px-5 py-3 ${tier.bgClass}`}
               aria-label={`Nivel actual: ${tier.name}`}
             >
               <Trophy
-                className={`h-8 w-8 shrink-0 ${tier.textClass} opacity-90`}
+                className={`h-7 w-7 shrink-0 ${tier.textClass}`}
                 strokeWidth={2}
               />
               <span
-                className={`text-2xl font-black tracking-tight ${tier.textClass}`}
+                className={`text-xl font-extrabold tracking-tight ${tier.textClass}`}
                 data-no-translate
               >
                 {tier.name}
@@ -415,8 +448,8 @@ export default function RiderScoreCard({
             {nextTier ? (
               <TierProgress score={pts} current={tier} next={nextTier} />
             ) : (
-              <p className="mt-4 text-sm font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
-                Nivel maximo alcanzado
+              <p className="mt-4 text-sm font-extrabold text-[var(--accent)]">
+                Nivel máximo alcanzado
               </p>
             )}
           </div>
@@ -454,7 +487,7 @@ export default function RiderScoreCard({
             role="list"
             aria-label="Badges del repartidor"
           >
-            {MOCK_BADGES.map((badge) => (
+            {badges.map((badge) => (
               <div key={badge.id} role="listitem">
                 <BadgeCircle badge={badge} />
               </div>
@@ -463,8 +496,8 @@ export default function RiderScoreCard({
 
           {/* Leyenda de estados */}
           <div className="mt-6 flex items-center gap-4 flex-wrap border-t border-[var(--rule-base)] pt-4">
-            <LegendItem dot="bg-[var(--data-success-500)]" label="Obtenido" />
-            <LegendItem dot="bg-amber-400 animate-pulse" label="En progreso" />
+            <LegendItem dot="bg-[var(--accent)]" label="Obtenido" />
+            <LegendItem dot="bg-[var(--accent)]/40" label="En progreso" />
             <LegendItem dot="bg-[var(--text-tertiary)] opacity-50" label="Bloqueado" />
           </div>
         </div>
