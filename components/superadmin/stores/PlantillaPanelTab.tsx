@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Eye, EyeOff, Sparkles, RotateCcw, CheckCircle2, Crown, Lock, Layers,
   ChevronDown, ChevronRight, Edit3, Save, X, ExternalLink, Palette,
-  AlertCircle, Loader2,
+  AlertCircle, Loader2, Pencil, Check,
 } from "@buleje/design-system/icons";
 import {
   ADMIN_MODULE_CATALOG,
@@ -102,14 +102,32 @@ const PLAN_BADGE: Record<AdminPlan, string> = {
   max: "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] border border-[var(--data-success-500)]/30",
 };
 
+type PresetId = "minimo" | "completo" | "enterprise" | "personalizado";
+
 interface PresetMode {
-  id: "minimo" | "completo" | "enterprise";
+  id: PresetId;
   label: string;
   description: string;
   icon: React.ReactNode;
-  /** Visibilidad efectiva por módulo. */
-  apply: (entry: AdminModuleEntry) => boolean;
+  /**
+   * Visibilidad efectiva por módulo. Para "personalizado" devuelve la
+   * visibilidad ACTUAL del template (no-op) — al elegirlo, el superadmin
+   * edita módulo a módulo en la lista de abajo.
+   */
+  apply: (entry: AdminModuleEntry, currentVisible: boolean) => boolean;
 }
+
+const PRESET_MINIMO_IDS = [
+  "asistente-ia",
+  "ventas-caja",
+  "pedidos",
+  "inventario",
+  "productos",
+  "plata",
+  "clientes",
+  "config",
+  "plan",
+] as const;
 
 const PRESET_MODES: PresetMode[] = [
   {
@@ -117,7 +135,7 @@ const PRESET_MODES: PresetMode[] = [
     label: "Mínimo (bodega vecino)",
     description: "Solo lo esencial: Ventas, Pedidos, Inventario, Productos, Mi Plata, Clientes, Config.",
     icon: <Layers className="h-4 w-4" />,
-    apply: (e) => ["asistente-ia", "ventas-caja", "pedidos", "inventario", "productos", "plata", "clientes", "config", "plan"].includes(e.id),
+    apply: (e) => (PRESET_MINIMO_IDS as readonly string[]).includes(e.id),
   },
   {
     id: "completo",
@@ -133,7 +151,33 @@ const PRESET_MODES: PresetMode[] = [
     icon: <Crown className="h-4 w-4" />,
     apply: () => true,
   },
+  {
+    id: "personalizado",
+    label: "Personalizado",
+    description: "Vos decidís módulo por módulo en la lista de abajo. Lo que prendas o apagues se guarda al pulsar “Guardar cambios”.",
+    icon: <Pencil className="h-4 w-4" />,
+    // No-op: respeta la visibility actual del template — el superadmin edita
+    // manualmente abajo y luego guarda.
+    apply: (_e, currentVisible) => currentVisible,
+  },
 ];
+
+/**
+ * Devuelve qué preset matchea el state actual del template, o "personalizado"
+ * si no coincide con ninguno. Permite resaltar el preset "activo" en la UI.
+ */
+function detectActivePreset(tpl: AdminTemplate): PresetId {
+  for (const preset of PRESET_MODES) {
+    if (preset.id === "personalizado") continue;
+    const matchesAll = ADMIN_MODULE_CATALOG.every((m) => {
+      const ov = tpl.overrides[m.id] ?? {};
+      const currentVisible = ov.visible ?? m.defaultVisible;
+      return preset.apply(m, currentVisible) === currentVisible;
+    });
+    if (matchesAll) return preset.id;
+  }
+  return "personalizado";
+}
 
 interface ChangeToast {
   /** Texto principal — qué se cambió. */
@@ -199,6 +243,11 @@ export function PlantillaPanelTab() {
       byPlan[ov.plan ?? m.defaultPlan]++;
     }
     return { visible, total: ADMIN_MODULE_CATALOG.length, byPlan };
+  }, [tpl]);
+
+  const activePresetId = useMemo<PresetId>(() => {
+    if (!tpl) return "personalizado";
+    return detectActivePreset(tpl);
   }, [tpl]);
 
   const grouped = useMemo(() => {
@@ -269,15 +318,29 @@ export function PlantillaPanelTab() {
   }, [showToast]);
 
   const applyPreset = useCallback((preset: PresetMode) => {
+    // Brandon mayo 2026 v7: "personalizado" es un no-op — invita al usuario
+    // a editar la lista de abajo. Hacemos scroll suave al catálogo y un toast
+    // que aclara el flujo.
+    if (preset.id === "personalizado") {
+      const catalog = document.getElementById("plantilla-modulos-catalog");
+      if (catalog) catalog.scrollIntoView({ behavior: "smooth", block: "start" });
+      showToast(
+        `Modo "Personalizado" activado`,
+        `Editá módulo a módulo abajo. Cuando termines, pulsá “Guardar cambios”.`,
+        "info",
+      );
+      return;
+    }
     let visibleCount = 0;
     setTpl((prev) => {
       if (!prev) return prev;
       const overrides: AdminTemplate["overrides"] = {};
       for (const m of ADMIN_MODULE_CATALOG) {
-        const wantsVisible = preset.apply(m);
+        const currentOv = prev.overrides[m.id] ?? {};
+        const currentVisible = currentOv.visible ?? m.defaultVisible;
+        const wantsVisible = preset.apply(m, currentVisible);
         if (wantsVisible) visibleCount++;
-        const current = prev.overrides[m.id] ?? {};
-        const nextOv = { ...current };
+        const nextOv = { ...currentOv };
         if (wantsVisible !== m.defaultVisible) nextOv.visible = wantsVisible;
         else delete nextOv.visible;
         if (Object.keys(nextOv).length > 0) overrides[m.id] = nextOv;
@@ -673,76 +736,82 @@ export function PlantillaPanelTab() {
       <section>
         <div className="flex items-baseline justify-between gap-3 mb-4">
           <div>
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-              Atajos · deshabilitados
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+              Plantillas rápidas
             </p>
-            <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-tertiary)] tracking-tight">
-              Presets rápidos
+            <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+              Elegí cómo arrancan los negocios
             </h3>
           </div>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hidden sm:block max-w-md text-right">
-            Brandon mayo 2026 v2 — ahora los módulos se habilitan automáticamente según el plan que tenga cada negocio. Sin override manual.
+            Una plantilla rápida o el modo Personalizado para encender/apagar módulos uno por uno. Los cambios solo se aplican al pulsar “Guardar cambios”.
           </p>
         </div>
 
-        {/* Banner explicativo del cambio (reemplaza la accion de los presets) */}
-        <div className="mb-4 rounded-xl border-2 border-dashed border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 px-4 py-3 flex items-start gap-3">
-          <span
-            aria-hidden
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-white"
-          >
-            <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">
-              Sin atajos manuales · habilitado por plan del negocio
-            </p>
-            <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-relaxed">
-              Cuando un cliente elige un plan en <code className="font-mono text-[var(--accent)]">/abrir-tienda</code>, los módulos correspondientes se activan automáticamente.
-              Free (S/0) ve lo básico · Starter (S/89) suma inventario y fiados · Pro (S/179) suma SUNAT y marketplace · Business (S/349) desbloquea todo.
-              Los presets de abajo quedaron deshabilitados para evitar overrides accidentales.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {PRESET_MODES.map((preset) => {
-            const moduleCount = ADMIN_MODULE_CATALOG.filter(preset.apply).length;
+            const isActive = activePresetId === preset.id;
+            const moduleCount =
+              preset.id === "personalizado"
+                ? stats.visible
+                : ADMIN_MODULE_CATALOG.filter((m) => preset.apply(m, m.defaultVisible)).length;
             return (
               <button
                 key={preset.id}
                 type="button"
-                disabled
-                aria-disabled="true"
-                title="Atajos deshabilitados — los modulos se habilitan por plan del negocio"
-                className="group text-left rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 p-5 cursor-not-allowed opacity-55 grayscale-[0.4]"
+                onClick={() => applyPreset(preset)}
+                aria-pressed={isActive}
+                title={`Aplicar plantilla "${preset.label}"`}
+                className={
+                  "group relative text-left rounded-2xl border-2 p-5 transition-colors " +
+                  (isActive
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/40")
+                }
               >
-                <div className="flex items-start justify-between gap-3 mb-3">
+                {isActive && (
+                  <span
+                    aria-label="Plantilla actual"
+                    className="absolute top-3 right-3 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-white"
+                  >
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  </span>
+                )}
+                <div className="flex items-start gap-3 mb-3">
                   <span
                     aria-hidden
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
+                    className={
+                      "inline-flex h-10 w-10 items-center justify-center rounded-xl " +
+                      (isActive
+                        ? "bg-[var(--accent)] text-white"
+                        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")
+                    }
                   >
                     {preset.icon}
                   </span>
-                  <span className="inline-flex items-baseline gap-1 rounded-full bg-[var(--surface-canvas)] border border-[var(--rule-soft)] px-2.5 py-1">
-                    <span className="text-base font-extrabold tabular-nums text-[var(--text-tertiary)] leading-none">
-                      {moduleCount}
+                  {preset.id !== "personalizado" && (
+                    <span className="inline-flex items-baseline gap-1 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-soft)] px-2.5 py-1">
+                      <span className="text-base font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
+                        {moduleCount}
+                      </span>
+                      <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                        módulos
+                      </span>
                     </span>
-                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                      módulos
-                    </span>
-                  </span>
+                  )}
                 </div>
-                <p className="text-base font-extrabold tracking-tight text-[var(--text-tertiary)] leading-tight line-through decoration-1">
+                <p className="text-base font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
                   {preset.label}
                 </p>
-                <p className="mt-1.5 text-sm text-[var(--text-tertiary)] leading-relaxed">
+                <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-relaxed">
                   {preset.description}
                 </p>
-                <span className="mt-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-                  <Lock className="h-3 w-3" strokeWidth={2.25} aria-hidden />
-                  Deshabilitado
-                </span>
+                {isActive && (
+                  <span className="mt-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                    <CheckCircle2 className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                    Plantilla actual
+                  </span>
+                )}
               </button>
             );
           })}
@@ -750,8 +819,10 @@ export function PlantillaPanelTab() {
       </section>
 
       {/* Lista de módulos por categoría v2 — headers más fuertes, progress bar
-          mini por categoría, plan badges con icon, hover destacado por row. */}
-      <section>
+          mini por categoría, plan badges con icon, hover destacado por row.
+          id="plantilla-modulos-catalog" usado por el preset "Personalizado"
+          para scroll suave (Brandon mayo 2026 v7). */}
+      <section id="plantilla-modulos-catalog" tabIndex={-1}>
         <div className="flex items-end justify-between gap-3 mb-4">
           <div>
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
