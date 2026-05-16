@@ -6,7 +6,6 @@ import { applyRateLimit } from "@/lib/rate-limit";
 
 // Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — query
 // params + cookies (requireAdmin) + queries en tiempo real.
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/admin/sunat/invoices — listar comprobantes emitidos.

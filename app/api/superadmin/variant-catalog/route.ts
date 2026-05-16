@@ -10,7 +10,6 @@ import { applyRateLimit } from "@/lib/rate-limit";
 // (requirePlatformAPI = superadmin con TOTP). Los tenants leen via
 // /api/admin/variant-catalog (read-only, marcado @global-catalog ok).
 // Cierra Info de auditoría 2026-05-16 sobre @platform-shared marker.
-export const dynamic = "force-dynamic";
 
 const TemplateSchema = z
   .object({

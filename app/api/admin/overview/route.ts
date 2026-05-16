@@ -6,7 +6,6 @@ import { requireAdmin } from "@/lib/require-admin";
 // en producción (ventas del día congeladas a las 00:00 del build). El
 // endpoint depende de cookies (requireAdmin), `?from`/`?to` query params y
 // queries en tiempo real — siempre debe ser SSR puro.
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/admin/overview

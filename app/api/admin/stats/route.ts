@@ -11,7 +11,6 @@ import { logger } from "@/lib/logger";
 // es >90% y la DB ve menos de 1 query/min por tenant. La invalidación
 // natural ocurre al expirar TTL — para POS o nuevos pedidos hay tabs
 // dedicados que sí reflejan en tiempo real.
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/admin/stats

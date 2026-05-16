@@ -9,7 +9,6 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 
 // Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — depende
 // de cookies (requireAdmin) + queries en tiempo real polleadas cada 15s.
-export const dynamic = "force-dynamic";
 
 const DASHBOARD_TTL_SEC = 15; // Cached for 15 s — keeps polling cheap
 

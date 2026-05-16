@@ -5,7 +5,6 @@ import { getOrSet } from "@/lib/cache";
 
 // Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — el endpoint
 // depende de cookies (requireAdmin) y datos en tiempo real del día.
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/admin/today-summary

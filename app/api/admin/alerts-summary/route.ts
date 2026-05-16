@@ -5,13 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
 
 // Brandon 2026-05-16 (audit P1):
-//  - force-dynamic obligatorio (depende de cookies via requireAdmin).
 //  - getOrSet TTL 60s — el banner llama este endpoint en cada navegación
 //    y polling del header. Sin cache, eran 5 queries/llamada (1 tenant + 4
 //    aggregates). Con TTL 60s + dedupe in-flight, cache hit >90%.
 //  - Promise.all para pedidosSinPartner (antes era query serial fuera del
 //    Promise.all → 5 queries en cascada).
-export const dynamic = "force-dynamic";
+// Nota: NO se declara `export const dynamic = "force-dynamic"` porque es
+// incompatible con `nextConfig.cacheComponents` en Next 16 (ADR-019).
+// El endpoint usa cookies via requireAdmin — Next infiere dynamic igual.
 
 /**
  * GET /api/admin/alerts-summary

@@ -20,7 +20,6 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
-export const dynamic = "force-dynamic";
 
 const DIGEST_RE = /^[a-f0-9]{8,32}$/i;
 

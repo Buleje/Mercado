@@ -9,7 +9,6 @@ import { assertCsrf } from "@/lib/auth/csrf";
 // Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — endpoint
 // destructivo (borra todo y reseeda) con cookies + CSRF + STRICT rate
 // limit + step-up confirm. NO debe cachearse jamás.
-export const dynamic = "force-dynamic";
 
 /**
  * POST /api/admin/seed-data

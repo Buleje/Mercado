@@ -7,7 +7,6 @@ import { assertCsrf } from "@/lib/auth/csrf";
 
 // Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — endpoint
 // nuclear de eliminación con cookies (requireAdmin) + CSRF + step-up auth.
-export const dynamic = "force-dynamic";
 
 /**
  * POST /api/admin/clear-data

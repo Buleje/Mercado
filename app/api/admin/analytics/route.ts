@@ -6,7 +6,6 @@ import { logger } from "@/lib/logger";
 
 // Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — analytics
 // con cookies (requireAdmin) y aggregates en tiempo real.
-export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "analista"]);

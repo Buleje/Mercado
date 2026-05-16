@@ -10,7 +10,6 @@ import { applyRateLimit } from "@/lib/rate-limit";
 // emails, addresses, total gastado, puntos de lealtad) — es legítimo (Ley
 // 29733 Art. 18 derecho de portabilidad) pero alto valor para un atacante
 // con cuenta admin comprometida. STRICT = 10 requests / 15 min por IP.
-export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   // 0. Rate limit: previene exfiltración masiva si admin password comprometido.

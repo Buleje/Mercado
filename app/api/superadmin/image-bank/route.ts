@@ -9,7 +9,6 @@ import { applyRateLimit } from "@/lib/rate-limit";
 // Las mutaciones del ImageBank SOLO viven aquí (requirePlatformAPI =
 // superadmin con TOTP). Los tenants leen via /api/admin/image-bank
 // (read-only, marcado @global-catalog ok).
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/superadmin/image-bank
