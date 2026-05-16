@@ -91,7 +91,7 @@ export default function ProductQRGenerator() {
           : (data.products ?? []);
         setProducts(list);
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[ProductQRGenerator] products fetch failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

@@ -1097,7 +1097,7 @@ export default function SalesOrdersTab() {
                               method: "PATCH",
                               headers: csrfHeaders({ "Content-Type": "application/json" }),
                               body: JSON.stringify({ notes: value ? `[ADMIN] ${value}` : "" }),
-                            }).catch(() => {});
+                            }).catch((err) => console.warn("[SalesOrdersTab] PATCH notes failed:", err));
                           }, 1000);
                         }}
                       />

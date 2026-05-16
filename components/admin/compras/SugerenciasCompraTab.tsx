@@ -248,7 +248,7 @@ export default function SugerenciasCompraTab() {
               amount: po.total,
               dueDate: new Date(Date.now() + 30 * 86_400_000).toISOString(),
             }),
-          }).catch(() => {});
+          }).catch((err) => console.warn("[SugerenciasCompraTab] payable create failed:", err));
         }
       }
 

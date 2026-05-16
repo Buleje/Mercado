@@ -47,7 +47,7 @@ export default function FiadoTendenciaCobroChart() {
           }));
         }
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[FiadoTendenciaCobroChart] fetch failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

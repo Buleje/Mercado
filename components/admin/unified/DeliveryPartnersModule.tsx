@@ -2812,7 +2812,7 @@ export default function DeliveryPartnersModule() {
     tenantFetch("/api/delivery/kpis")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (d) setKpis(d as DeliveryKPIs); })
-      .catch(() => {})
+      .catch((err) => console.warn("[DeliveryPartnersModule] /api/delivery/kpis failed:", err))
       .finally(() => setKpisLoading(false));
   }, []);
 
