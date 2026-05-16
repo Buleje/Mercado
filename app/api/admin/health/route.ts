@@ -6,6 +6,10 @@ import { cacheStore } from "@/lib/cache";
 import { isQueueEnabled } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — probe
+// de salud en tiempo real (DB, cache, queues), no debe cachearse.
+export const dynamic = "force-dynamic";
+
 export type HealthService = {
   id: string;
   name: string;

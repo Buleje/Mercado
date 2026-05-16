@@ -5,6 +5,9 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio.
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/admin/analytics/payment-methods
  *

@@ -5,6 +5,12 @@ import { ImageBankDB } from "@/lib/db/image-bank.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic + nota platform-wide.
+// Las mutaciones del ImageBank SOLO viven aquí (requirePlatformAPI =
+// superadmin con TOTP). Los tenants leen via /api/admin/image-bank
+// (read-only, marcado @global-catalog ok).
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/superadmin/image-bank
  *   Lista todo el banco (categorías + items).

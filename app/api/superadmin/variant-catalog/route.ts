@@ -5,6 +5,13 @@ import { VariantCatalogDb } from "@/lib/db/variant-catalog.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio + nota
+// platform-wide. Las mutaciones del VariantCatalog SOLO viven aquí
+// (requirePlatformAPI = superadmin con TOTP). Los tenants leen via
+// /api/admin/variant-catalog (read-only, marcado @global-catalog ok).
+// Cierra Info de auditoría 2026-05-16 sobre @platform-shared marker.
+export const dynamic = "force-dynamic";
+
 const TemplateSchema = z
   .object({
     category: z.string().min(1).max(60),
