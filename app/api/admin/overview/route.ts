@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 
+// Brandon 2026-05-16 P1 (audit): force-dynamic obligatorio. Sin esto, Next 16
+// puede inferir el endpoint como estático en build y servir KPIs cacheados
+// en producción (ventas del día congeladas a las 00:00 del build). El
+// endpoint depende de cookies (requireAdmin), `?from`/`?to` query params y
+// queries en tiempo real — siempre debe ser SSR puro.
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/admin/overview
  *

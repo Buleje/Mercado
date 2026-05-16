@@ -147,9 +147,17 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     const dailyVentasMap = new Map<string, number>();
     const dailyProfitMap = new Map<string, number>();
     const dailyTicketsMap = new Map<string, number>();
-    [...mOrders.map(o => ({ date: o.createdAt, total: o.total, items: o.items })),
-    ...orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= new Date(now.getTime() - 14 * 86400000)).map(o => ({ date: o.createdAt, total: o.total, items: o.items }))
-    ].forEach(t => {
+    // SECURITY 2026-05-16 (P0 double-count fix): antes hacía
+    // [...mOrders, ...orders.filter(>=14d)] — las órdenes en el solapamiento
+    // (mes actual ∩ últimos 14 días) se contaban DOS veces en sparkline,
+    // ventasDiarias y dailyProfitMap. Bug crítico: distorsionaba el KPI
+    // que el bodeguero usa para decidir.
+    // Fix: una sola fuente — orders filtradas por (entregado + últimos 14d).
+    // mOrders ya no se usa aquí para los daily maps.
+    orders
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt) >= new Date(now.getTime() - 14 * 86400000))
+      .map((o) => ({ date: o.createdAt, total: o.total, items: o.items }))
+      .forEach(t => {
       const k = dateKey(t.date);
       dailyVentasMap.set(k, (dailyVentasMap.get(k) ?? 0) + t.total);
       dailyTicketsMap.set(k, (dailyTicketsMap.get(k) ?? 0) + 1);

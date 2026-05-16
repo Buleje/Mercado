@@ -43,6 +43,30 @@ export default function AdminLoginPage() {
   }, []);
   const adminPath = (path: string) => `${tenantPrefix}${path}`;
 
+  /**
+   * SECURITY 2026-05-16 (P0 open redirect fix): valida que un destino
+   * proveniente de `?from=` sea SOLO una ruta interna relativa. Bloquea
+   * `https://evil.com`, `//evil.com`, `javascript:`, `data:` y cualquier
+   * forma con `://`. Si el valor es inválido, retorna el fallback admin.
+   * Antes: `router.push(decodeURIComponent(fromRef.current))` aceptaba
+   * cualquier URL externa → phishing via WhatsApp post-login.
+   */
+  const safeRedirectPath = (raw: string | null | undefined, fallback: string): string => {
+    if (!raw) return fallback;
+    let dest = raw;
+    try {
+      dest = decodeURIComponent(raw);
+    } catch {
+      return fallback;
+    }
+    if (!dest.startsWith("/")) return fallback;
+    if (dest.startsWith("//")) return fallback;      // protocol-relative
+    if (dest.includes("://")) return fallback;        // absolute URL
+    if (/^[a-z]+:/i.test(dest)) return fallback;      // javascript:, data:, etc.
+    if (dest.includes("\\")) return fallback;          // backslash tricks
+    return dest;
+  };
+
   const [username, setUsername] = useState("");
   const [pw, setPw] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -164,7 +188,7 @@ export default function AdminLoginPage() {
         } else if (data.role === "owner" || data.role === "platform_admin") {
           router.push("/superadmin/login");
         } else {
-          router.push(fromRef.current ? decodeURIComponent(fromRef.current) : adminPath("/admin"));
+          router.push(safeRedirectPath(fromRef.current, adminPath("/admin")));
         }
       } else {
         showError("Usuario o contraseña incorrectos");
@@ -182,7 +206,7 @@ export default function AdminLoginPage() {
     try {
       const res = await fetch("/api/auth/bypass", { method: "POST" });
       if (res.ok) {
-        router.push(fromRef.current ? decodeURIComponent(fromRef.current) : adminPath("/admin"));
+        router.push(safeRedirectPath(fromRef.current, adminPath("/admin")));
         return;
       }
       showError(

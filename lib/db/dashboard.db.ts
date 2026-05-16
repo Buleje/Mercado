@@ -47,6 +47,11 @@ export const DashboardDB = {
       // Round 28 P0 (DB profundo audit): faltaba `deletedAt: null`. Sin él
       // el dashboard sumaba revenue de pedidos cancelados/eliminados — KPIs
       // de revenue/ticket promedio inflados.
+      // Brandon 2026-05-16 P0 (perf audit): agregado `take: 500` — antes
+      // traía TODOS los pedidos históricos (10k+ en tenants activos) cada
+      // 15s de polling. Esto causaba OOM en serverless workers y latencia
+      // de 2-3s. 500 cubre ~3-6 meses de actividad típica, suficiente para
+      // todos los charts del dashboard.
       // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
       prisma.order.findMany({
         where: { tenantId, deletedAt: null },
@@ -66,9 +71,13 @@ export const DashboardDB = {
           },
         },
         orderBy: { createdAt: "desc" },
+        take: 500,
       }),
 
       // 3. Sales — items necesarios para revenue/cost charts
+      // Brandon 2026-05-16 P0 (perf audit): `take: 1000` agregado. Sales
+      // POS son más volumétricas que orders marketplace — 1000 cubre ~1-3
+      // meses de un tenant activo. Charts solo usan últimos 30d/90d.
       // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
       prisma.sale.findMany({
         where: { tenantId },
@@ -88,9 +97,14 @@ export const DashboardDB = {
           },
         },
         orderBy: { createdAt: "desc" },
+        take: 1000,
       }),
 
       // 4. Customers — sin relation `locations` (dashboard no usa saved locations)
+      // Brandon 2026-05-16 P0 (perf audit): `take: 2000` agregado. Customers
+      // ordenados por `updatedAt desc` — los 2000 más recientemente activos
+      // cubren CRM dashboard sin OOM. Tenants con 10k+ customers requieren
+      // paginación dedicada en módulo Clientes (no en dashboard general).
       // eslint-disable-next-line no-restricted-properties -- read scoped por tenantId.
       prisma.customer.findMany({
         where: { tenantId },
@@ -106,6 +120,7 @@ export const DashboardDB = {
           notifOrderUpdates: true, notifPromotions: true, notifRestock: true,
         },
         orderBy: { updatedAt: "desc" },
+        take: 2000,
       }),
 
       // 5. Purchases — items necesarios para purchase analysis
