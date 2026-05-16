@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Loader2, Save, Check, GripVertical, Eye, EyeOff,
   ArrowUp, ArrowDown, Layers, Search, Globe, Tag, FileText, Link2, Sparkles,
+  Plus, Trash2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -204,6 +205,72 @@ export default function CategoriesEditorTab() {
     return "good";
   }, []);
 
+  // Brandon mayo 2026 v7: CRUD completo de categorías.
+  // Crear: agrega al final del array con id único (slug).
+  // Eliminar: filtra del array (afecta visibilidad — los productos con esa
+  //   categoría siguen existiendo pero quedan sin filtro hasta reasignarse).
+  const slugify = (s: string): string =>
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+
+  const [newCatName, setNewCatName] = useState("");
+  const [showNewForm, setShowNewForm] = useState(false);
+
+  // Lock body scroll cuando el modal "Nueva categoría" está abierto.
+  useEffect(() => {
+    if (!showNewForm) return;
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = orig; };
+  }, [showNewForm]);
+
+  const handleCreateCategory = useCallback(() => {
+    const label = newCatName.trim();
+    if (!label) return;
+    let id = slugify(label);
+    if (!id) return;
+    // Si el id colisiona, agregar un sufijo numérico.
+    let suffix = 2;
+    const existingIds = new Set(cats.map((c) => c.id));
+    while (existingIds.has(id)) {
+      id = `${slugify(label)}-${suffix++}`;
+    }
+    const seoLabel = label.toLowerCase();
+    const newCat: CategoryConfig = {
+      id,
+      label,
+      emoji: "",
+      visible: true,
+      order: cats.length,
+      seo: {
+        metaTitle: `${label} en ${storeName} | Compra online con delivery`,
+        metaDescription: `Encuentra ${seoLabel} frescos y de calidad en ${storeName}. Entrega rápida a domicilio. Paga con Yape, Plin o efectivo.`,
+        keywords: [seoLabel, "delivery", storeName.toLowerCase(), "compra online", "pucallpa"],
+        slug: id,
+      },
+    };
+    setCats((prev) => [...prev, newCat]);
+    setNewCatName("");
+    setShowNewForm(false);
+  }, [newCatName, cats, storeName]);
+
+  const handleDeleteCategory = useCallback((idx: number) => {
+    const cat = cats[idx];
+    if (!cat) return;
+    const ok = confirm(
+      `¿Eliminar la categoría "${cat.label}"?\n\n` +
+        `Los productos que la tenían quedarán sin categoría hasta que les asignes otra. ` +
+        `Esto NO borra productos.`,
+    );
+    if (!ok) return;
+    setCats((prev) => prev.filter((_, i) => i !== idx).map((c, i) => ({ ...c, order: i })));
+  }, [cats]);
+
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
@@ -232,9 +299,17 @@ export default function CategoriesEditorTab() {
       {/* Toolbar — encabezado lo da el módulo padre */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-sm text-[var(--text-secondary)]">
-          Reordena, renombra y oculta categorías del catálogo.
+          Crea, renombra, reordena o elimina las categorías del catálogo. Los
+          productos te dejarán elegir entre las visibles.
         </p>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setShowNewForm((v) => !v)}
+            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold text-[var(--accent)] border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-white transition-colors min-h-[44px]"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva categoría
+          </button>
           <button
             onClick={bulkGenerateSeo}
             className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors min-h-[44px]"
@@ -251,10 +326,117 @@ export default function CategoriesEditorTab() {
             )}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {saved ? "¡Guardado!" : "Guardar orden"}
+            {saved ? "¡Guardado!" : "Guardar cambios"}
           </button>
         </div>
       </div>
+
+      {/* Modal nueva categoría — overlay centrado con backdrop */}
+      {showNewForm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="new-cat-title"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
+          onClick={() => { setShowNewForm(false); setNewCatName(""); }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") { setShowNewForm(false); setNewCatName(""); }
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-2xl overflow-hidden"
+          >
+            <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
+              <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+                <Tag className="h-6 w-6" strokeWidth={2.25} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
+                  Catálogo
+                </p>
+                <h2 id="new-cat-title" className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">
+                  Nueva categoría
+                </h2>
+                <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
+                  Aparece en el POS, en el formulario de productos y en tu tienda online.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowNewForm(false); setNewCatName(""); }}
+                aria-label="Cerrar"
+                className="h-10 w-10 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+              >
+                <Check className="h-0 w-0" aria-hidden />
+                <span aria-hidden className="text-xl leading-none">×</span>
+              </button>
+            </header>
+
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label htmlFor="new-cat-name" className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5 block">
+                  Nombre
+                </label>
+                <input
+                  id="new-cat-name"
+                  autoFocus
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newCatName.trim()) handleCreateCategory();
+                  }}
+                  placeholder="Ej: Snacks importados, Cuidado personal…"
+                  className="w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] focus:bg-[var(--surface-raised)] outline-none transition-colors"
+                />
+              </div>
+
+              {/* Preview de slug + SEO auto */}
+              {newCatName.trim() && (
+                <div className="rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-4 space-y-2.5">
+                  <div className="flex items-center gap-2 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <Globe className="h-3.5 w-3.5" aria-hidden />
+                    Vista previa
+                  </div>
+                  <div className="text-xs text-[var(--text-secondary)] space-y-1.5">
+                    <div className="flex items-baseline gap-2 font-mono">
+                      <span className="text-[var(--text-tertiary)] shrink-0">URL:</span>
+                      <span className="font-semibold text-[var(--text-primary)] break-all">
+                        /tienda/categoria/<strong className="text-[var(--accent)]">{slugify(newCatName) || "..."}</strong>
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[var(--text-tertiary)] shrink-0">Título SEO:</span>
+                      <span className="font-semibold text-[var(--text-primary)]">
+                        {newCatName.trim()} en {storeName} | Compra online con delivery
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <footer className="px-6 py-4 bg-[var(--surface-sunken)] border-t-2 border-[var(--rule-soft)] flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setShowNewForm(false); setNewCatName(""); }}
+                className="h-11 px-4 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateCategory}
+                disabled={!newCatName.trim()}
+                className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--accent)] text-white font-extrabold text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                Crear categoría
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
 
       {/* Category list */}
       <div className="space-y-2">
@@ -301,14 +483,21 @@ export default function CategoriesEditorTab() {
                 </button>
 
                 <div className="flex items-center gap-1">
-                  <button onClick={() => moveUp(i)} disabled={i === 0} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent disabled:opacity-20 transition-colors">
+                  <button onClick={() => moveUp(i)} disabled={i === 0} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent disabled:opacity-20 transition-colors" title="Subir">
                     <ArrowUp className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => moveDown(i)} disabled={i === cats.length - 1} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent disabled:opacity-20 transition-colors">
+                  <button onClick={() => moveDown(i)} disabled={i === cats.length - 1} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent disabled:opacity-20 transition-colors" title="Bajar">
                     <ArrowDown className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => toggleVisibility(i)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
+                  <button onClick={() => toggleVisibility(i)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors" title={cat.visible ? "Ocultar" : "Mostrar"}>
                     {cat.visible ? <Eye className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <EyeOff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCategory(i)}
+                    className="p-1.5 rounded-lg hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)] transition-colors text-[var(--text-tertiary)]"
+                    title="Eliminar categoría"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>

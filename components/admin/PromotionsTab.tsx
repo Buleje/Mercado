@@ -13,7 +13,7 @@ import type { DbPromotion, DbCustomer } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 import { CardTitle, LoadingState, PrimaryButton, SectionTitle } from "@buleje/design-system";
-import { useSettings } from "@/contexts/settings-context";
+import { useSettingsSafe } from "@/contexts/settings-context";
 
 function formatDate(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -77,7 +77,11 @@ function applyStoreName(template: string, storeName: string): string {
 }
 
 export default function PromotionsTab() {
-  const { businessName, storeTheme } = useSettings();
+  // Brandon mayo 2026 v7: el admin no monta SettingsProvider (lo monta el
+  // storefront). Usamos la variante "safe" + fallback.
+  const settings = useSettingsSafe();
+  const businessName = settings?.businessName;
+  const storeTheme = settings?.storeTheme;
   const storeName = (storeTheme as { storeName?: string } | null)?.storeName?.trim()
     || businessName?.trim()
     || "Tu Tienda";

@@ -11,6 +11,7 @@ import {
   ChevronDown, ChevronRight, ShoppingCart, Settings,
   Leaf, UtensilsCrossed, Boxes, Droplets, Sparkles,
   Smartphone, CreditCard, HandCoins,
+  Camera, Lightbulb, Timer, ClipboardList, RefreshCcw,
 } from "@buleje/design-system/icons";
 
 // Mapeo de id de categoria → icono Lucide. Reemplaza los emojis originales
@@ -215,7 +216,7 @@ function ModuleTooltip() {
       </button>
       {open && (
         <div className="absolute left-6 top-0 z-50 w-80 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-xs leading-relaxed pointer-events-none">
-          <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm mb-2">🛍️ Punto de Venta (POS)</p>
+          <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm mb-2 inline-flex items-center gap-1.5"><ShoppingCart className="h-4 w-4 text-primary" aria-hidden /> Punto de Venta (POS)</p>
           <p className="text-[var(--text-secondary)] dark:text-muted mb-3">Registra ventas en mostrador: busca productos, agrégalos al carrito, elige cómo cobrar y confirma la venta.</p>
           <div className="space-y-1.5">
             <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Catálogo:</span> <span className="text-[var(--text-secondary)] dark:text-muted">busca por nombre, filtra por categoría o escanea código de barras.</span></p>
@@ -223,7 +224,7 @@ function ModuleTooltip() {
             <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cobro:</span> <span className="text-[var(--text-secondary)] dark:text-muted">efectivo, Yape, Plin, tarjeta o fiado. Pago dividido también.</span></p>
           </div>
           <div className="mt-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-2">
-            <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">💡 Ejemplo</p>
+            <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold inline-flex items-center gap-1.5"><Lightbulb className="h-3.5 w-3.5" aria-hidden /> Ejemplo</p>
             <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Carlos busca “Leche”, agrega 2 unidades al carrito, el cliente paga S/10 en efectivo y el sistema le dice el vuelto.</p>
           </div>
         </div>
@@ -771,9 +772,13 @@ function ShiftSummaryWidget() {
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
     >
       <div className="px-4 py-2 flex items-center gap-3 text-xs">
-        <span className="text-[var(--text-secondary)] dark:text-muted">&#9201; {timeStr}</span>
+        <span className="text-[var(--text-secondary)] dark:text-muted inline-flex items-center gap-1.5">
+          <Timer className="h-3.5 w-3.5" aria-hidden /> {timeStr}
+        </span>
         <span className="font-bold text-primary" style={{ color: "var(--accent)" }}>S/{(data.totalVentas ?? 0).toFixed(0)}</span>
-        <span className="text-[var(--text-secondary)] dark:text-muted">&#128203; {data.cantidadVentas ?? 0}</span>
+        <span className="text-[var(--text-secondary)] dark:text-muted inline-flex items-center gap-1.5">
+          <ClipboardList className="h-3.5 w-3.5" aria-hidden /> {data.cantidadVentas ?? 0}
+        </span>
       </div>
       {expanded && (
         <m.div
@@ -1616,7 +1621,7 @@ export default function POSView() {
                 className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors cursor-pointer"
                 title="Escanear producto con camara"
               >
-                <span className="text-primary">&#128247;</span> <span className="hidden sm:inline">Foto</span>
+                <Camera className="h-4 w-4 text-primary" aria-hidden /> <span className="hidden sm:inline">Foto</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1754,7 +1759,16 @@ export default function POSView() {
                 que generaban ruido visual. El selector de categoría es la
                 herramienta principal para filtrar el grid. */}
             <div className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x pt-1 pb-1">
-              {categories.map(c => {
+              {categories
+                // Brandon mayo 2026 v7: ocultar categorías sin productos
+                // visibles. "todos" siempre se muestra (es el catch-all).
+                // Las demás aparecen solo si tienen al menos un producto
+                // activo en el inventario actual.
+                .filter((c) => {
+                  if (c.id === "todos") return true;
+                  return products.some((p) => p.category === c.id);
+                })
+                .map((c) => {
                 const Icon = CATEGORY_ICONS[c.id] ?? Package;
                 const active = category === c.id;
                 return (
@@ -1852,11 +1866,15 @@ export default function POSView() {
           </div>
         </div>
 
-        {/* Right: Cart */}
+        {/* Right: Cart
+            Brandon mayo 2026 v7: en modo expanded el carrito mantenía
+            `lg:w-96 xl:w-md` (clase inválida) y CRECÍA verticalmente sin
+            límite, comiendo la pantalla. Ahora ancho compacto fijo + altura
+            limitada en ambos modos para que la grilla de productos respire. */}
         <div className={cn(
-          "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  flex flex-col shrink-0 min-h-0",
-          expanded ? "lg:w-96 xl:w-md" : "lg:w-80 xl:w-96"
-        )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
+          "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl flex flex-col shrink-0 min-h-0",
+          "lg:w-80 xl:w-[22rem]"
+        )} style={{ minHeight: "28rem", maxHeight: expanded ? "calc(100vh - 8rem)" : "calc(100vh - 14rem)" }}>
           {/* Cart header */}
           <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <div className="flex items-center justify-between">
@@ -2087,7 +2105,7 @@ export default function POSView() {
                   className="px-4 py-3 rounded-lg border-2 border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold text-sm hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 transition-colors flex items-center gap-1.5"
                   title="Trueque Digital"
                 >
-                  &#128260; Trueque
+                  <RefreshCcw className="h-4 w-4" aria-hidden /> Trueque
                 </button>
               </div>
             </div>
@@ -2265,7 +2283,7 @@ export default function POSView() {
         <div className="modal-backdrop p-4" onClick={() => setShowTrueque(false)}>
           <div className="bg-[var(--surface-raised)] rounded-xl max-w-sm w-full p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">&#128260;</span>
+              <RefreshCcw className="h-6 w-6 text-[var(--data-warning-500)]" aria-hidden />
               <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Trueque Digital</CardTitle>
             </div>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">El cliente intercambia productos por su compra (comun en zonas rurales de selva).</p>
