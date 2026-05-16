@@ -86,149 +86,117 @@ interface Props {
  * Aporta info real: ve cuanto vendiste cada dia y comparas facil.
  */
 function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] }) {
-  const { max, avg, maxIdx, todayIdx, displayData, halfDelta } = useMemo(() => {
-    const max = Math.max(...data, 1);
-    const avg = data.reduce((s, v) => s + v, 0) / Math.max(1, data.length);
+  const { maxValue, maxLabel, avg, avgDelta, tendencyPct } = useMemo(() => {
+    const max = Math.max(...data, 0);
     const maxIdx = data.indexOf(max);
-    const todayIdx = data.length - 1;
+    const avg = data.reduce((s, v) => s + v, 0) / Math.max(1, data.length);
     const defaultDays = ["L", "M", "X", "J", "V", "S", "D"];
-    const displayData = data.map((value, i) => {
-      const label = labels?.[i] ?? defaultDays[i % 7];
-      return { value, label, isToday: i === todayIdx, isMax: i === maxIdx };
-    });
+    const maxLabel = labels?.[maxIdx] ?? defaultDays[maxIdx % 7] ?? "—";
 
-    // Delta primera mitad vs segunda mitad del rango — muestra si estas
-    // acelerando o desacelerando.
+    // Delta hoy vs ayer (último vs penúltimo)
+    const today = data[data.length - 1] ?? 0;
+    const yesterday = data[data.length - 2] ?? 0;
+    const avgDelta = today - yesterday;
+
+    // Tendencia: 2da mitad vs 1ra mitad del rango
     const mid = Math.ceil(data.length / 2);
     const firstHalf = data.slice(0, mid);
     const secondHalf = data.slice(mid);
     const firstAvg = firstHalf.reduce((s, v) => s + v, 0) / Math.max(1, firstHalf.length);
     const secondAvg = secondHalf.reduce((s, v) => s + v, 0) / Math.max(1, secondHalf.length);
-    let halfDelta: number | null = null;
+    let tendencyPct: number | null = null;
     if (firstAvg > 0 && secondHalf.length > 0) {
-      halfDelta = ((secondAvg - firstAvg) / firstAvg) * 100;
+      tendencyPct = ((secondAvg - firstAvg) / firstAvg) * 100;
     } else if (firstAvg === 0 && secondAvg > 0) {
-      halfDelta = 100; // Arrancó desde cero — mostrar como crecimiento fuerte
+      tendencyPct = 100;
     }
 
-    return { max, avg, maxIdx, todayIdx, displayData, halfDelta };
+    return { maxValue: max, maxLabel, avg, avgDelta, tendencyPct };
   }, [data, labels]);
 
-  const avgPct = (avg / max) * 100;
+  // Formateador soles: 4520 -> "S/ 4,520", 342 -> "S/ 342"
+  const fmtS = (n: number) => `S/ ${Math.round(n).toLocaleString("es-PE")}`;
 
-  // Formateador compacto: 4520 -> "4.5k", 342 -> "342"
-  const fmt = (n: number) => {
-    if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
-    return n.toFixed(0);
-  };
-
+  // Brandon mayo 2026 v4: reemplazado el strip de barras críptico (con
+  // "PROM · 18", "PICO", "HOY") por 3 insights numéricos directos —
+  // formato tipo "tarjeta resumen" que el dueño entiende sin mirar
+  // ejes ni descifrar pills micro.
   return (
-    <div className="w-full">
-      {/* Header del strip — delta de mitad contra mitad */}
-      {halfDelta != null && Math.abs(halfDelta) >= 5 && (
-        <div className="flex justify-end mb-3">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-full border",
-              halfDelta > 0
-                ? "bg-[color:var(--section-accent,var(--data-success))]/10 text-[color:var(--section-accent,var(--data-success))] border-[color:var(--section-accent,var(--data-success))]/30"
-                : "bg-[var(--data-error-50)] text-[var(--data-error-500)] border-[var(--data-error-500)]/30",
-            )}
-            title={
-              halfDelta > 0
-                ? "Estás acelerando: la segunda mitad del rango vendió más que la primera"
-                : "Estás desacelerando: la segunda mitad vendió menos que la primera"
-            }
-          >
-            {halfDelta > 0 ? "↗" : "↘"} 2da mitad {halfDelta > 0 ? "+" : ""}
-            {halfDelta.toFixed(0)}% vs 1ra
-          </span>
-        </div>
-      )}
-      {/* Chart area — barras con label encima.
-          Brandon mayo 2026 v2: alto subido a h-28 (era h-20), gap entre
-          barras 1.5 (era 1), label de promedio movido a top-left con
-          fondo sólido para no taparse con los valores de barras. */}
-      <div className="relative flex items-end justify-between gap-1.5 h-28">
-        {/* Linea del promedio (sutil, posicionada absoluta) */}
-        <div
-          className="absolute left-0 right-0 border-t-2 border-dashed border-[var(--text-tertiary)]/40 pointer-events-none"
-          style={{ bottom: `${avgPct}%` }}
-          aria-hidden
-        />
-        {/* Pill del promedio — esquina superior izquierda fuera del chart */}
-        <span
-          className="absolute left-0 top-0 -translate-y-1/2 inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-2 py-0.5 text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums z-10"
-          aria-hidden
-        >
-          Prom · {fmt(avg)}
-        </span>
-
-        {displayData.map((d, i) => {
-          const heightPct = Math.max(6, (d.value / max) * 100);
-          return (
-            <div
-              key={i}
-              className="flex-1 flex flex-col items-center justify-end gap-1.5 relative group"
-              title={`${d.label}: ${d.value.toLocaleString("es-PE")}`}
-            >
-              <span
-                className={cn(
-                  "text-xs font-extrabold tabular-nums leading-none",
-                  d.isToday
-                    ? "text-[color:var(--section-primary,var(--text-primary))]"
-                    : d.isMax
-                      ? "text-[var(--data-warning-500)]"
-                      : "text-[var(--text-secondary)]",
-                )}
-              >
-                {fmt(d.value)}
-              </span>
-              <div
-                className={cn(
-                  "w-full rounded-t-md transition-all",
-                  d.isToday
-                    ? "bg-[color:var(--section-primary,var(--text-primary))]"
-                    : d.isMax
-                      ? "bg-[var(--data-warning-500)] opacity-85"
-                      : "bg-[var(--text-tertiary)] opacity-40 group-hover:opacity-65",
-                )}
-                style={{ height: `${heightPct}%` }}
-              />
-            </div>
-          );
-        })}
+    <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {/* Insight 1: Tu mejor día */}
+      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+        <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+          Tu mejor día
+        </p>
+        <p className="text-base sm:text-lg font-extrabold text-[color:var(--data-success-500)] tabular-nums leading-tight">
+          {fmtS(maxValue)}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
+          {maxLabel}
+        </p>
       </div>
 
-      {/* Labels inferiores con etiquetas HOY / MEJOR */}
-      <div className="flex items-start justify-between gap-1.5 mt-2.5">
-        {displayData.map((d, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-            <span
-              className={cn(
-                "text-xs font-extrabold uppercase tracking-wider tabular-nums",
-                d.isToday
-                  ? "text-[color:var(--section-primary,var(--text-primary))]"
-                  : "text-[var(--text-secondary)]",
-              )}
-            >
-              {d.label}
-            </span>
-            {d.isToday && (
-              <span className="text-xs font-extrabold uppercase tracking-wider text-[color:var(--section-primary,var(--text-primary))]">
-                hoy
-              </span>
+      {/* Insight 2: Promedio por día */}
+      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+        <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+          Promedio por día
+        </p>
+        <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tabular-nums leading-tight">
+          {fmtS(avg)}
+        </p>
+        {avgDelta !== 0 && (
+          <p
+            className={cn(
+              "mt-1 text-sm font-bold tabular-nums",
+              avgDelta > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
             )}
-            {d.isMax && i !== todayIdx && (
-              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--data-warning-500)]">
-                pico
-              </span>
-            )}
-          </div>
-        ))}
+          >
+            {avgDelta > 0 ? "↑" : "↓"} {fmtS(Math.abs(avgDelta))} vs ayer
+          </p>
+        )}
+      </div>
+
+      {/* Insight 3: Tendencia */}
+      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+        <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
+          ¿Estás creciendo?
+        </p>
+        {tendencyPct == null ? (
+          <p className="text-base sm:text-lg font-extrabold text-[var(--text-tertiary)] leading-tight">
+            Sin datos
+          </p>
+        ) : tendencyPct >= 5 ? (
+          <>
+            <p className="text-base sm:text-lg font-extrabold text-[var(--data-success-500)] tabular-nums leading-tight">
+              ↗ Subiste {Math.abs(tendencyPct).toFixed(0)}%
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
+              vendiste más esta segunda mitad
+            </p>
+          </>
+        ) : tendencyPct <= -5 ? (
+          <>
+            <p className="text-base sm:text-lg font-extrabold text-[var(--data-error-500)] tabular-nums leading-tight">
+              ↘ Bajaste {Math.abs(tendencyPct).toFixed(0)}%
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
+              vendiste menos esta segunda mitad
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] leading-tight">
+              Estable
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
+              vendiste parecido en todo el período
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
+
 }
 
 export const AdminInsightCard = memo(function AdminInsightCard({

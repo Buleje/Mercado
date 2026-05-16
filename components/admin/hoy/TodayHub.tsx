@@ -7,6 +7,7 @@ import { AdminInsightCard, type ContextualMetric, type InsightAction } from "@/c
 import { BulejeHeatmap, type HeatmapCell } from "@/components/ui-system/charts";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { usePersonalizedGreeting } from "@/hooks/use-personalized-greeting";
+import { usePlatformBrand } from "@/lib/use-platform-brand";
 import { cn } from "@/lib/utils";
 import type { DateRange } from "@/components/admin/inicio/DashboardDateRange";
 
@@ -92,7 +93,12 @@ const PRESET_ORDERS_LABEL: Record<string, string> = {
 };
 
 export function TodayHub({ userName, greeting: greetingOverride, dateRange, hideAlerts = false, className }: Props) {
-  const dynamicGreeting = usePersonalizedGreeting(userName ?? "bodeguero");
+  // Brandon mayo 2026 v4: si no se pasa userName, usamos el nombre del
+  // negocio en lugar de "bodeguero" — "Buenas tardes, Mi Pollo" se siente
+  // más personal y refuerza la marca propia del dueño.
+  const { brand } = usePlatformBrand();
+  const businessName = brand?.identity.name?.trim() || "bodeguero";
+  const dynamicGreeting = usePersonalizedGreeting(userName ?? businessName);
   const greeting = greetingOverride ?? dynamicGreeting;
 
   const [data, setData] = useState<OverviewData | null>(null);

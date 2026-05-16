@@ -782,8 +782,6 @@ export function AdminSidebar({
           {activeTenantLogo ? (
             <div className={cn(
               "relative shrink-0",
-              // Brandon mayo 2026 v3: drop-shadow más fuerte + bg blanco sutil
-              // detrás para contrastar el logo del tenant en sidebars oscuros.
               isDarkTheme && "drop-shadow-md"
             )}>
               <Image
@@ -792,21 +790,24 @@ export function AdminSidebar({
                 width={40}
                 height={40}
                 className={cn(
-                  "h-10 w-10 rounded-xl object-cover",
+                  // Brandon mayo 2026 v4: fondo blanco SIEMPRE — el logo
+                  // del tenant tiene mejor contraste sobre blanco que sobre
+                  // gradient verde/accent, especialmente en sidebar oscuro.
+                  "h-10 w-10 rounded-xl object-contain bg-white p-0.5",
                   isDarkTheme
-                    ? "ring-2 ring-white/30 bg-white/5"
-                    : "ring-2 ring-gray-100 dark:ring-card-border",
+                    ? "ring-2 ring-white/40"
+                    : "ring-2 ring-gray-200 dark:ring-card-border",
                 )}
               />
             </div>
           ) : (
             <div className={cn(
-              "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
-              // Brandon mayo 2026 v3: gradient más fuerte + ring contrastante
-              // + sombra cálida — el BulejeMark se ve nítido sobre sidebar oscuro.
+              // Sin logo del tenant: usamos BulejeMark sobre blanco con
+              // accent color para el icon (mantiene identidad de marca).
+              "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-white ring-2",
               isDarkTheme
-                ? "bg-[linear-gradient(135deg,color-mix(in_oklab,var(--accent)_85%,white)_0%,color-mix(in_oklab,var(--accent)_55%,black)_100%)] ring-2 ring-white/25 text-white shadow-[var(--shadow-md)]"
-                : "bg-linear-to-br from-primary/20 to-primary/8 ring-2 ring-primary/25 text-primary shadow-sm",
+                ? "ring-white/40 text-[color:var(--accent)] shadow-[var(--shadow-md)]"
+                : "ring-gray-200 text-primary shadow-sm",
             )}>
               <BulejeMark size={22} strokeWidth={1.75} />
             </div>
