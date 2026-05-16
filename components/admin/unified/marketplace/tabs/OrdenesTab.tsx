@@ -425,13 +425,24 @@ export default function OrdenesTab() {
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Brandon 2026-05-16 (audit P1): agregado visibility guard. Antes
+  // polleaba cada 30s aunque la pestaña estuviera oculta. Mantiene la
+  // pausa optimista U1 (no polleamos si hay advance en curso).
   useEffect(() => {
-    // U1: pausar polling mientras hay un advance en curso para no pisar optimistic update
-    const t = setInterval(() => {
-      if (advancingIdRef.current) return;
-      load({ silent: true });
-    }, 30_000);
-    return () => clearInterval(t);
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const tick = () => { if (!advancingIdRef.current) load({ silent: true }); };
+    const start = () => { if (!interval) interval = setInterval(tick, 30_000); };
+    const stop = () => { if (interval) { clearInterval(interval); interval = null; } };
+    if (typeof document !== "undefined" && document.visibilityState === "visible") start();
+    const onVis = () => {
+      if (document.visibilityState === "visible") { tick(); start(); }
+      else stop();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [load]);
 
   const advance = async (order: MarketplaceOrder) => {

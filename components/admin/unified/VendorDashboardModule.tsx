@@ -127,10 +127,24 @@ export default function VendorDashboardModule() {
     void fetchDashboard(false);
   }, [fetchDashboard, tab]);
 
+  // Brandon 2026-05-16 (audit P1): agregado visibility guard. Antes pollée
+  // cada REFRESH_INTERVAL_MS aunque la pestaña estuviera oculta, gastando
+  // red/CPU sin razón. Patrón espejo de MetasLogrosModule:248-263.
   useEffect(() => {
     if (tab !== "marketplace") return;
-    const interval = setInterval(() => { void fetchDashboard(true); }, REFRESH_INTERVAL_MS);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (!interval) interval = setInterval(() => { void fetchDashboard(true); }, REFRESH_INTERVAL_MS); };
+    const stop = () => { if (interval) { clearInterval(interval); interval = null; } };
+    if (typeof document !== "undefined" && document.visibilityState === "visible") start();
+    const onVis = () => {
+      if (document.visibilityState === "visible") { void fetchDashboard(true); start(); }
+      else stop();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [fetchDashboard, tab]);
 
   const rangeLabel: Record<string, string> = {

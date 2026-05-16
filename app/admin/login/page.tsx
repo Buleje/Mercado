@@ -82,7 +82,6 @@ export default function AdminLoginPage() {
     fromRef.current = params.get("from");
 
     const tenantParam = params.get("tenant");
-    const autoParam = params.get("auto");
 
     if (tenantParam) {
       localStorage.setItem("active-tenant-slug", tenantParam);
@@ -100,17 +99,14 @@ export default function AdminLoginPage() {
       setRememberMe(true);
     }
 
-    if (tenantParam && autoParam === "1") {
-      try {
-        const credKey = `sa-cred-${tenantParam}`;
-        const credJson = localStorage.getItem(credKey);
-        if (credJson) {
-          const cred = JSON.parse(credJson) as { username: string; password: string };
-          if (cred.username) setUsername(cred.username);
-          if (cred.password) setPw(cred.password);
-        }
-      } catch { /* ignore */ }
-    }
+    // SECURITY 2026-05-16 (P0 fix): eliminado el flujo de auto-login con
+    // password desde localStorage. Antes leía `sa-cred-${tenantParam}` con
+    // {username, password} en plaintext y los seteaba en el form si vino
+    // `?auto=1` desde superadmin/tenants → cualquier XSS robaba credenciales.
+    // Ahora solo precargamos el username via ?user= (no password). El
+    // superadmin debe pegar la contraseña temporal manualmente.
+    const userParam = params.get("user");
+    if (userParam) setUsername(userParam);
 
     usernameRef.current?.focus();
   }, []);

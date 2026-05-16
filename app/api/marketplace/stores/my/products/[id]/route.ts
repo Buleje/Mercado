@@ -49,21 +49,28 @@ export async function PATCH(
       );
     }
 
-    // Verificar que el StoreProduct pertenece a una tienda del tenant
-    const store = await prisma.store.findFirst({
-      where: { tenantId: auth.tenantId },
-      select: { id: true },
-    });
-
-    if (!store) {
-      return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
-    }
-
+    // SECURITY 2026-05-16 (P1 IDOR multi-store fix): antes la validación
+    // tomaba la PRIMERA tienda del tenant con `store.findFirst({ tenantId })`
+    // y luego buscaba `storeProduct.findFirst({ storeId: store.id })`. Si un
+    // tenant tiene 2+ tiendas, un admin de la tienda A podía mutar
+    // StoreProduct de la tienda B (mismo tenant). No es cross-tenant pero
+    // rompe el aislamiento per-store en multi-store.
+    //
+    // Ahora: resolvemos el storeProduct primero y validamos directamente
+    // que su Store.tenantId === auth.tenantId. Esto cubre TODOS los stores
+    // del tenant correctamente, independiente del orden de creación.
     const storeProduct = await prisma.storeProduct.findFirst({
-      where: { id, storeId: store.id },
+      where: { id },
+      select: {
+        id: true,
+        storeId: true,
+        store: { select: { tenantId: true } },
+      },
     });
 
-    if (!storeProduct) {
+    if (!storeProduct || storeProduct.store.tenantId !== auth.tenantId) {
+      // Misma respuesta para "no existe" y "cross-tenant" — evita info
+      // disclosure (atacante no puede enumerar IDs de otros tenants).
       return NextResponse.json({ error: "Producto no encontrado en tu tienda" }, { status: 404 });
     }
 

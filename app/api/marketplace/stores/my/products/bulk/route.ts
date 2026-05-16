@@ -38,20 +38,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1) Asegurar que la tienda existe y pertenece al tenant del admin.
-    const store = await prisma.store.findFirst({
-      where: { tenantId: auth.tenantId },
-      select: { id: true },
-    });
-    if (!store) {
-      return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
-    }
-
-    // 2) updateMany con scope storeId + ids — aislamiento doble.
+    // SECURITY 2026-05-16 (P1 IDOR multi-store fix): antes tomaba la
+    // PRIMERA tienda del tenant con findFirst, lo que permitía mutar
+    // StoreProduct de OTRAS tiendas del mismo tenant. Ahora updateMany
+    // matchea contra TODAS las tiendas del tenant via `store.tenantId`.
     const result = await prisma.storeProduct.updateMany({
       where: {
         id: { in: parsed.data.ids },
-        storeId: store.id,
+        store: { tenantId: auth.tenantId },
       },
       data: { isActive: parsed.data.isActive },
     });
