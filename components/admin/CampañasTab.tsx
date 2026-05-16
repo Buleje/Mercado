@@ -134,7 +134,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
     fetch("/api/message-templates")
       .then(r => r.ok ? r.json() : [])
       .then((data: MsgTemplate[]) => setTemplates(data))
-      .catch(() => {});
+      .catch((err) => console.warn("[CampañasTab] templates fetch failed:", err));
   }, []);
 
   // Fetch audience count whenever segment changes

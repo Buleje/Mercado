@@ -49,7 +49,8 @@ export default function MiPerfilTab() {
           });
         }
       })
-      .catch(() => {})
+      // Brandon 2026-05-16 (audit P2 regla 7): logger en lugar de silencio.
+      .catch((err) => console.warn("[MiPerfilTab] /api/auth/me failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

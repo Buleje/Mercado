@@ -3,8 +3,20 @@ import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, CustomersDB, OrdersDB, FiadosDB, SettingsDB } from "@/lib/db";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { applyRateLimit } from "@/lib/rate-limit";
+
+// Brandon 2026-05-16 (audit P2 PII hardening): force-dynamic obligatorio +
+// rate limit STRICT. Este endpoint exporta TODA la PII del tenant (phones,
+// emails, addresses, total gastado, puntos de lealtad) — es legítimo (Ley
+// 29733 Art. 18 derecho de portabilidad) pero alto valor para un atacante
+// con cuenta admin comprometida. STRICT = 10 requests / 15 min por IP.
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  // 0. Rate limit: previene exfiltración masiva si admin password comprometido.
+  const rateLimitResponse = applyRateLimit(req, "STRICT", "admin-export-all");
+  if (rateLimitResponse) return rateLimitResponse;
+
   // 1. Auth — solo admin puede exportar todos los datos
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

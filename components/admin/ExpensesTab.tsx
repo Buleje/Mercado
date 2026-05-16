@@ -84,7 +84,7 @@ export default function ExpensesTab() {
     fetch(`/api/expenses?from=${fromStr}&to=${toStr}&limit=1000`)
       .then(r => r.ok ? r.json() : [])
       .then(data => setHistoricExpenses(data))
-      .catch(() => {});
+      .catch((err) => console.warn("[ExpensesTab] /api/expenses failed:", err));
   }, [tick]);
 
   const monthlyExpenseData = useMemo(() => {

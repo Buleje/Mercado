@@ -103,7 +103,10 @@ function GiftCardDisplay({ card }: { card: GiftCard }) {
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
-    await navigator.clipboard.writeText(card.code).catch(() => {});
+    // Clipboard write puede fallar si el browser bloquea (Safari sin focus
+    // del documento, iframe sin permission). Best-effort intencional: el
+    // botón se ve como "copiado" igual y si falla solo el usuario sabe.
+    await navigator.clipboard.writeText(card.code).catch(() => { /* clipboard best-effort */ });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

@@ -100,7 +100,7 @@ export default function CustomKPITab() {
   };
 
   const remove = async (id: string) => {
-    await fetch(`/api/custom-kpis?id=${id}`, { method: "DELETE" }).catch(() => {});
+    await fetch(`/api/custom-kpis?id=${id}`, { method: "DELETE" }).catch((err) => console.warn("[CustomKPITab] delete failed:", err));
     setKpis(prev => prev.filter(k => k.id !== id));
   };
 

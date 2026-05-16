@@ -26,7 +26,7 @@ export default function ReturnsTab() {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
-    fetch("/api/returns").then(r => r.ok ? r.json() : []).then(d => setReturns(Array.isArray(d) ? d : d?.returns ?? [])).catch(() => {}).finally(() => setLoading(false));
+    fetch("/api/returns").then(r => r.ok ? r.json() : []).then(d => setReturns(Array.isArray(d) ? d : d?.returns ?? [])).catch((err) => console.warn("[ReturnsTab] /api/returns failed:", err)).finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
 

@@ -155,14 +155,14 @@ export default function BatchesTab() {
     fetch("/api/products")
       .then(r => r.json())
       .then((d: unknown) => setProducts(Array.isArray(d) ? d.map((p: { id: number; name: string; category?: string }) => ({ id: p.id, name: p.name, category: p.category || "Otros" })) : []))
-      .catch(() => {});
+      .catch((err) => console.warn("[BatchesTab] /api/products failed:", err));
     fetch("/api/admin/warehouses")
       .then(r => r.json())
       .then((d: unknown) => {
         const items = Array.isArray(d) ? d : (d as { items?: unknown[] })?.items;
         setWarehouses(Array.isArray(items) ? items.map((w: { id: string; name: string }) => ({ id: w.id, name: w.name })) : []);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[BatchesTab] /api/admin/warehouses failed:", err));
   }, []);
 
   const processed = useMemo(() => {

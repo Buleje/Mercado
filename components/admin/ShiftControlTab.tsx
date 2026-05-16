@@ -209,7 +209,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
           setShifts(prev => prev.map(s => s.id === localId ? { ...s, registerId: reg.id } : s));
         });
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[ShiftControlTab] open shift register failed:", err));
     loadShiftData();
   };
 
@@ -233,7 +233,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "close", closingAmount: countedCash, notes: closeForm.notes }),
-      }).catch(() => {});
+      }).catch((err) => console.warn("[ShiftControlTab] close shift register failed:", err));
     }
   };
 
