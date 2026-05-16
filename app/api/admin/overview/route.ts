@@ -147,29 +147,19 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; iso: string;
 }
 
 /**
- * TODO Brandon 2026-05-16 (audit P1 regla 1): migrar las 9 queries de
- * abajo a una clase dedicada `lib/db/overview.db.ts`. Hoy las dejamos
- * aquí porque son específicas de este endpoint (rangos custom, heatmap,
- * top products, alerts compuestas) y mover sin perder aggregation
- * lógica requiere ~2h. Como mitigación inmediata:
- *  - Cada .catch ahora loguea con context (regla 7).
- *  - El catch general NO devuelve `error.message` al cliente (info
- *    disclosure de Prisma internals).
+ * Brandon 2026-05-16 (audit P1 regla 1): las 9 queries del dashboard
+ * vivieron aquí como Prisma directo histórico. Ahora migradas a
+ * `lib/db/overview.db.ts` (OverviewDB.fetchOverview). Este route mantiene
+ * SOLO la lógica de agregación (heatmap, sparkline, insight, alerts) —
+ * los reads pasan por la clase DB con scope tenantId centralizado.
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
 
-  const { prisma } = await import("@/lib/prisma");
   const { logger } = await import("@/lib/logger");
-
-  const logCatch = (op: string) => (err: unknown) => {
-    logger.warn(`[admin/overview] ${op} failed`, {
-      tenantId,
-      err: err instanceof Error ? err.message : String(err),
-    });
-  };
+  const { OverviewDB } = await import("@/lib/db/overview.db");
 
   // ── Parse query params ─────────────────────────────────────────────────────
   const url = new URL(req.url);
@@ -185,7 +175,10 @@ export async function GET(req: NextRequest) {
   startOf30dAgo.setDate(startOf30dAgo.getDate() - 30);
 
   try {
-    const [
+    // Brandon 2026-05-16 (audit P1 regla 1): reads migrados a OverviewDB.
+    // Si la llamada completa falla, el catch general loguea y devuelve
+    // un payload vacío seguro — el dashboard renderiza el empty state.
+    const {
       rangeOrders,
       prevOrders,
       activeOrders,
@@ -195,100 +188,31 @@ export async function GET(req: NextRequest) {
       overdueCreditCount,
       topProducts,
       newCustomersInRange,
-    ] = await Promise.all([
-      // Brandon mayo 2026 v7: revenue/KPIs SOLO cuentan pedidos `entregado`.
-      // Antes usábamos `status: { not: "cancelado" }` que sumaba pedidos en
-      // pendiente/confirmado/preparando/en_camino — eso inflaba ventas porque
-      // esos pedidos aún pueden cancelarse.
-      prisma.order
-        .findMany({
-          where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: "entregado" },
-          select: { total: true, customerPhone: true, createdAt: true },
-        })
-        .catch((err): Array<{ total: number; customerPhone: string | null; createdAt: Date }> => {
-          logCatch("rangeOrders")(err);
-          return [];
-        }),
-
-      prisma.order
-        .findMany({
-          where: { tenantId, createdAt: { gte: prevFrom, lte: prevTo }, status: "entregado" },
-          select: { total: true },
-        })
-        .catch((err): Array<{ total: number }> => {
-          logCatch("prevOrders")(err);
-          return [];
-        }),
-
-      prisma.order
-        .count({
-          where: {
-            tenantId,
-            // "Activos" = pedidos vivos que aún no se cerraron. Acá sí incluimos
-            // preparando porque es operativo, no contable.
-            status: { in: ["pendiente", "confirmado", "preparando", "en_camino"] },
-          },
-        })
-        .catch((err): number => { logCatch("activeOrders")(err); return 0; }),
-
-      prisma.order
-        .findMany({
-          where: { tenantId, createdAt: { gte: startOf30dAgo, lte: rangeTo }, status: "entregado" },
-          select: { createdAt: true },
-          take: 5000,
-        })
-        .catch((err): Array<{ createdAt: Date }> => {
-          logCatch("last30dOrders")(err);
-          return [];
-        }),
-
-      prisma.product
-        .count({
-          where: { tenantId, stock: { lte: 5, gt: 0 }, active: true },
-        })
-        .catch((err): number => { logCatch("criticalStock")(err); return 0; }),
-
-      prisma.product
-        .count({
-          where: {
-            tenantId,
-            expiresAt: {
-              gte: now,
-              lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-            },
-            active: true,
-          },
-        })
-        .catch((err): number => { logCatch("expiring")(err); return 0; }),
-
-      prisma.fiado
-        .count({
-          where: { tenantId, status: "VENCIDO" },
-        })
-        .catch((err): number => { logCatch("overdueCredit")(err); return 0; }),
-
-      prisma.orderItem
-        .groupBy({
-          by: ["productId"],
-          where: {
-            // Top productos: solo cuentan los efectivamente entregados.
-            order: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: "entregado" },
-          },
-          _sum: { quantity: true },
-          orderBy: { _sum: { quantity: "desc" } },
-          take: 5,
-        })
-        .catch((err): Array<{ productId: number | null; _sum: { quantity: number | null } }> => {
-          logCatch("topProducts")(err);
-          return [];
-        }),
-
-      prisma.customer
-        .count({
-          where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo } },
-        })
-        .catch((err): number => { logCatch("newCustomers")(err); return 0; }),
-    ]);
+    } = await OverviewDB.fetchOverview({
+      tenantId,
+      rangeFrom,
+      rangeTo,
+      prevFrom,
+      prevTo,
+      startOf30dAgo,
+      now,
+    }).catch((err): Awaited<ReturnType<typeof OverviewDB.fetchOverview>> => {
+      logger.warn("[admin/overview] fetchOverview failed", {
+        tenantId,
+        err: err instanceof Error ? err.message : String(err),
+      });
+      return {
+        rangeOrders: [],
+        prevOrders: [],
+        activeOrders: 0,
+        last30dOrders: [],
+        criticalStockCount: 0,
+        expiringCount: 0,
+        overdueCreditCount: 0,
+        topProducts: [],
+        newCustomersInRange: 0,
+      };
+    });
 
     // ── Aggregates ─────────────────────────────────────────────────────────
     const totalRange = rangeOrders.reduce((sum: number, o) => sum + Number(o.total ?? 0), 0);
