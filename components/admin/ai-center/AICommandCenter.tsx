@@ -279,7 +279,7 @@ export default function AICommandCenter() {
                 className={cn(
                   "relative inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap",
                   isActive
-                    ? "bg-[var(--text-primary)] text-white"
+                    ? "bg-[var(--accent)] text-white dark:bg-[var(--accent)] dark:text-[var(--surface-canvas)]"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
                 )}
                 title={`${s.label} (Alt+${SECTIONS.indexOf(s) + 1})`}
