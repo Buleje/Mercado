@@ -31,7 +31,7 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
-type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm";
+type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm" | "pos";
 
 interface AdminModalProps {
   open: boolean;
@@ -49,6 +49,11 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   default: "max-w-lg w-[calc(100vw-2rem)] rounded-xl max-h-[85vh]",
   "centered-sm": "max-w-sm w-[calc(100vw-2rem)] rounded-xl max-h-[85vh]",
   wide: "max-w-2xl w-[calc(100vw-2rem)] rounded-xl max-h-[85vh]",
+  // Brandon 2026-05-16: variant `pos` para checkouts con 2-columnas
+  // desktop. max-w-6xl + 92vh para que en PC quepa TODO el flujo de
+  // cobro (descuento + métodos + cliente + comprobante + vuelto) sin
+  // scroll vertical.
+  pos: "max-w-6xl w-[calc(100vw-2rem)] rounded-2xl max-h-[92vh]",
   fullscreen: "w-screen h-screen rounded-none",
   side: "ml-auto h-screen w-full max-w-md rounded-l-2xl",
 };
@@ -57,6 +62,7 @@ const VARIANT_POSITION: Record<Variant, string> = {
   default: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
   "centered-sm": "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
   wide: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+  pos: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
   fullscreen: "top-0 left-0",
   side: "top-0 right-0",
 };

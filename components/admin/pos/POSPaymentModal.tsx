@@ -499,10 +499,10 @@ export default function POSPaymentModal({
     <AdminModal
       open
       onClose={() => { if (!processing) onCancel(); }}
-      variant="wide"
+      variant="pos"
       hideCloseButton
     >
-      <div className="relative flex flex-col">
+      <div className="relative flex flex-col h-full">
         {/* Customer list overlay (Mejora 3) */}
         {showCustomerList && (
           <CustomerListPanel
@@ -514,24 +514,29 @@ export default function POSPaymentModal({
           />
         )}
 
-        {/* Header — tipografia clara, sin kbd ni toggle voz en esquinas */}
-        <div className="px-6 py-7 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-center relative">
-          <p className="text-sm font-semibold text-[var(--text-tertiary)] dark:text-muted mb-2 uppercase tracking-wide">
+        {/*
+          Brandon 2026-05-16: header compacto. En desktop el total queda
+          centrado pero la altura se reduce de py-7 (56px) a py-4 (32px)
+          para liberar espacio vertical y que el body de 2 columnas
+          entre sin scroll en 1080p.
+        */}
+        <div className="px-6 py-4 sm:py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-center relative bg-[var(--surface-raised)]">
+          <p className="text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted uppercase tracking-wide">
             Total a cobrar
           </p>
-          <p className="text-4xl sm:text-5xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums">
+          <p className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-tight mt-1">
             {fmt(total)}
           </p>
-          {discountAmount > 0 && (
-            <p className="text-sm text-[var(--data-error-500)] font-semibold mt-2">
-              Subtotal {fmt(subtotal)} — descuento {discountMode === "percent" ? `${discountPercent.toFixed(0)}% ` : ""}-{fmt(discountAmount)}
-            </p>
-          )}
-          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-2">
+          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-1">
             {cartCount} {cartCount === 1 ? "articulo" : "articulos"}
+            {discountAmount > 0 && (
+              <span className="text-[var(--data-error-500)] font-semibold ml-2">
+                · Subtotal {fmt(subtotal)} − {fmt(discountAmount)}
+              </span>
+            )}
           </p>
 
-          {/* Sugerencia de redondeo — legible */}
+          {/* Sugerencia de redondeo — legible, compacta */}
           {total % 1 !== 0 && (() => {
             const bajo = Math.floor(total);
             const alto = Math.ceil(total);
@@ -544,11 +549,11 @@ export default function POSPaymentModal({
             const uniq = [...new Map(opciones.map(o => [o.val, o])).values()];
             if (uniq.length === 0) return null;
             return (
-              <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
-                <span className="text-sm text-[var(--text-tertiary)]">Redondear a</span>
+              <div className="flex items-center justify-center gap-1.5 mt-2 flex-wrap">
+                <span className="text-xs text-[var(--text-tertiary)]">Redondear a</span>
                 {uniq.map(o => (
                   <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
-                    className="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary hover:text-white transition-colors">
+                    className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary hover:text-white transition-colors">
                     S/{o.val}
                   </button>
                 ))}
@@ -559,20 +564,28 @@ export default function POSPaymentModal({
           <button
             onClick={onCancel}
             aria-label="Cerrar"
-            className="absolute top-5 right-5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
           >
             <X className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />
           </button>
 
-          {/* Toggle voz discreto, abajo derecha del header */}
+          {/* Toggle voz discreto */}
           <button onClick={() => { const next = !voiceEnabled; setVoiceEnabled(next); try { localStorage.setItem("pos-voice-total", String(next)); } catch {} }}
-            className="absolute top-5 left-5 p-2 rounded-lg opacity-60 hover:opacity-100 hover:bg-gray-100 dark:hover:bg-accent transition-all" title={voiceEnabled ? "Desactivar voz" : "Activar voz"}>
+            className="absolute top-4 left-4 p-2 rounded-lg opacity-60 hover:opacity-100 hover:bg-gray-100 dark:hover:bg-accent transition-all" title={voiceEnabled ? "Desactivar voz" : "Activar voz"}>
             {voiceEnabled ? <Volume2 className="h-4 w-4 text-[var(--text-tertiary)]" /> : <VolumeX className="h-4 w-4 text-[var(--text-tertiary)]" />}
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        {/*
+          Brandon 2026-05-16: body en grid 12 columnas para desktop (lg+).
+          Mobile mantiene single-column. Reorganiza el flujo:
+            Col izquierda (7/12): Descuento + Métodos pago + Billetes + Vuelto
+            Col derecha (5/12):    Cliente + Comprobante
+          Resultado: TODO el flujo visible sin scroll en 1080p+.
+        */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-5 sm:px-6 py-5 grid grid-cols-1 lg:grid-cols-12 gap-x-6 gap-y-5">
+            <div className="lg:col-span-7 space-y-5 min-w-0">
 
           {/* Descuento — collapsible */}
           <div>
@@ -1021,6 +1034,14 @@ export default function POSPaymentModal({
             </div>
           )}
 
+            </div>{/* fin columna izquierda */}
+
+            {/*
+              Columna derecha: cliente + comprobante. En mobile sigue
+              apilado debajo del flow de pagos. En lg+ va a la derecha.
+            */}
+            <div className="lg:col-span-5 space-y-5 min-w-0">
+
           {/* Customer search */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -1237,10 +1258,12 @@ export default function POSPaymentModal({
               </div>
             )}
           </div>
-        </div>
+            </div>{/* fin columna derecha */}
+          </div>{/* fin grid 12 cols */}
+        </div>{/* fin body scroll */}
 
-        {/* Footer — CTA grande y claro */}
-        <div className="px-6 py-5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30">
+        {/* Footer — CTA grande y claro, sticky */}
+        <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 dark:bg-surface/30">
           {isFiado && !customerPhone && (
             <p className="text-sm text-[var(--data-error-500)] font-semibold text-center mb-3">
               Selecciona un cliente para continuar
