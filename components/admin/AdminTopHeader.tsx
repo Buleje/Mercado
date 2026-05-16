@@ -109,15 +109,22 @@ export function AdminTopHeader({
   }, []);
 
   /* Clases del header según si aplica tema del sidebar o no.
-     IMPORTANTE: cuando el tema es "buleje" (marca completa), aplica
-     automáticamente al header sin importar applyToHeader — es un tema
-     editorial integral que no tiene sentido fragmentado. */
+     IMPORTANTE: cuando el tema es "buleje" (marca completa) o "dark"
+     (preset "ejecutivo"), aplica automáticamente al header sin importar
+     applyToHeader — son temas oscuros integrales y se ven desconectados
+     si el header queda claro.
+
+     Brandon 2026-05-16: ejecutivo ahora pinta el nav superior con
+     gradient negro-zinc + border tintado por el accent amber, para que
+     se vea más elegante y coherente con el sidebar. */
   const isBulejeTheme = theming.theme === "buleje" || theming.theme === "cristal" || theming.theme === "shaded";
-  const headerThemeClasses = (theming.applyToHeader || isBulejeTheme)
+  const isEjecutivoTheme = theming.theme === "dark";
+  const isAutoDarkTheme = isBulejeTheme || isEjecutivoTheme;
+  const headerThemeClasses = (theming.applyToHeader || isAutoDarkTheme)
     ? isBulejeTheme
       ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_100%)] border-[color-mix(in_oklab,var(--accent)_30%,transparent)] text-white/80"
-      : theming.theme === "dark"
-        ? "bg-zinc-950 border-white/[0.06] text-zinc-300"
+      : isEjecutivoTheme
+        ? "bg-[linear-gradient(180deg,#09090b_0%,#18181b_100%)] border-[color-mix(in_oklab,var(--accent)_25%,transparent)] text-zinc-300"
         : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] text-[var(--text-primary)]"
     : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]";
 
@@ -146,24 +153,24 @@ export function AdminTopHeader({
           aria-label="Búsqueda global (atajo Ctrl+K)"
           className={cn(
             "group flex items-center gap-2.5 px-3.5 h-11 sm:h-10 rounded-xl flex-1 max-w-xl cursor-pointer transition-all border",
-            isBulejeTheme
+            isAutoDarkTheme
               ? "bg-white/[0.04] border-[color-mix(in oklab, var(--accent) 15%, transparent)] hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] hover:bg-white/[0.07]"
               : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-white dark:hover:bg-[var(--surface-raised)] hover:shadow-[var(--shadow-sm)]"
           )}
         >
           <Search className={cn(
             "h-4 w-4 shrink-0 transition-colors",
-            isBulejeTheme ? "text-white/50 group-hover:text-[color-mix(in oklab, var(--accent) 60%, white)]" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-primary"
+            isAutoDarkTheme ? "text-white/50 group-hover:text-[color-mix(in oklab, var(--accent) 60%, white)]" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-primary"
           )} strokeWidth={2} />
           <span className={cn(
             "flex-1 text-left text-sm font-medium truncate transition-colors",
-            isBulejeTheme ? "text-white/55 group-hover:text-white/80" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-[var(--text-secondary)]"
+            isAutoDarkTheme ? "text-white/55 group-hover:text-white/80" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-[var(--text-secondary)]"
           )}>
             Buscar módulos, productos, clientes...
           </span>
           <kbd className={cn(
             "hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border",
-            isBulejeTheme
+            isAutoDarkTheme
               ? "text-white/55 bg-white/[0.06] border-white/[0.1]"
               : "text-[var(--text-tertiary)] dark:text-muted bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]"
           )}>
@@ -182,7 +189,7 @@ export function AdminTopHeader({
             title="Abrir tienda en nueva pestaña"
             className={cn(
               "hidden md:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-xs font-semibold transition-colors shrink-0",
-              isBulejeTheme
+              isAutoDarkTheme
                 ? "border-[color-mix(in oklab, var(--accent) 30%, transparent)] bg-[color-mix(in oklab, var(--accent) 10%, transparent)] text-[color-mix(in oklab, var(--accent) 60%, white)] hover:bg-[color-mix(in oklab, var(--accent) 18%, transparent)]"
                 : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-white/20 dark:bg-white/[0.06] dark:text-gray-100 dark:hover:bg-white/[0.1]"
             )}
