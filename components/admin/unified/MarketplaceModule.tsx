@@ -3125,7 +3125,7 @@ function MarketplaceCuponesTab() {
                   {/* Acciones */}
                   <div className="flex flex-col gap-1 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={() => navigator.clipboard?.writeText(c.code).catch(() => {})}
+                      onClick={() => navigator.clipboard?.writeText(c.code).catch(() => { /* clipboard best-effort */ })}
                       title="Copiar código"
                       className="p-2 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-[var(--text-tertiary)]"
                     >

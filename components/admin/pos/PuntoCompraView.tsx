@@ -157,7 +157,7 @@ export default function PuntoCompraView() {
           return r.activa && today >= start && today <= end;
         });
         setActivePromos(activas);
-      }).catch(() => {}),
+      }).catch((err) => console.warn("[PuntoCompraView] promos fetch failed:", err)),
     ]);
       } finally {
         setLoading(false);
@@ -211,7 +211,7 @@ export default function PuntoCompraView() {
         setPriceHistory(history);
         localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify({ data: history, ts: Date.now() }));
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[PuntoCompraView] price history fetch failed:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

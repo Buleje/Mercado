@@ -54,7 +54,7 @@ export default function ConteoFisicoWizard() {
     fetch('/api/inventory/conteo')
       .then(r => r.json())
       .then(data => { if (Array.isArray(data)) setConteos(data); })
-      .catch(() => {});
+      .catch((err) => console.warn("[ConteoFisicoWizard] conteos fetch failed:", err));
   }, []);
 
   // Start new conteo
