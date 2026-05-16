@@ -53,8 +53,11 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
+        // Brandon mayo 2026 v7: el resumen diario por tienda solo cuenta
+        // pedidos entregados. Antes incluía pedidos pendientes/en_camino que
+        // pueden cancelarse — el dueño veía ventas falsas en su email diario.
         const activeOrders = todayOrders.filter(
-          (o) => o.status !== "cancelado"
+          (o) => o.status === "entregado"
         );
 
         const totalRevenue = activeOrders.reduce((sum, o) => sum + toNumOrZero(o.total), 0);

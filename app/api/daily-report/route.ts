@@ -32,10 +32,12 @@ export async function GET(request: NextRequest) {
       return new Date(s.createdAt) >= startOfDay;
     });
 
-    // Pedidos del día (ya filtrados por since)
+    // Brandon mayo 2026 v7: para el reporte diario "ventas" solo pedidos
+    // efectivamente entregados. Antes incluía pedidos en estados intermedios
+    // que pueden cancelarse posteriormente y distorsionan la cifra del día.
     const activeOrders = allOrders.filter(o => {
       const status = (o.status ?? "").toLowerCase();
-      return status !== "cancelado" && status !== "cancelled";
+      return status === "entregado" || status === "delivered";
     });
 
     // Calcular totales de ventas POS

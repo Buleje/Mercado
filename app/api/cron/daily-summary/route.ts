@@ -60,10 +60,12 @@ export async function GET(req: NextRequest) {
           (s) => new Date(s.createdAt) >= startOfDay
         );
 
-        // Pedidos activos del día (no cancelados)
+        // Brandon mayo 2026 v7: para el reporte diario "ventas del día" solo
+        // contamos los pedidos entregados. Antes incluía pendientes/confirmados/
+        // en_camino que pueden cancelarse y distorsionan el ingreso reportado.
         const activeOrders = todayOrders.filter((o) => {
           const status = (o.status ?? "").toLowerCase();
-          return status !== "cancelado" && status !== "cancelled";
+          return status === "entregado" || status === "delivered";
         });
 
         // Totales

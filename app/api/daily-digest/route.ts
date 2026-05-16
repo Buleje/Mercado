@@ -51,14 +51,17 @@ async function buildDigestData(): Promise<DigestData> {
   const delivered = orders.filter(o => o.status === "entregado").length;
   const cancelled = orders.filter(o => o.status === "cancelado").length;
   const pending = orders.filter(o => o.status !== "entregado" && o.status !== "cancelado").length;
+  // Brandon mayo 2026 v7: revenue = solo entregados. Antes sumábamos todos
+  // los no-cancelados, lo que infla el resumen diario porque un pedido
+  // creado a las 11pm puede cancelarse al día siguiente.
   const totalRevenue = orders
-    .filter(o => o.status !== "cancelado")
+    .filter(o => o.status === "entregado")
     .reduce((sum, o) => sum + toNumOrZero(o.total), 0);
-  const avgOrderValue = totalRevenue / Math.max(orders.length - cancelled, 1);
+  const avgOrderValue = totalRevenue / Math.max(delivered, 1);
 
   const productMap = new Map<string, number>();
   for (const o of orders) {
-    if (o.status === "cancelado") continue;
+    if (o.status !== "entregado") continue;
     for (const item of o.items) {
       productMap.set(item.name, (productMap.get(item.name) ?? 0) + item.quantity);
     }

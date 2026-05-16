@@ -156,16 +156,20 @@ export async function GET(req: NextRequest) {
       topProducts,
       newCustomersInRange,
     ] = await Promise.all([
+      // Brandon mayo 2026 v7: revenue/KPIs SOLO cuentan pedidos `entregado`.
+      // Antes usábamos `status: { not: "cancelado" }` que sumaba pedidos en
+      // pendiente/confirmado/preparando/en_camino — eso inflaba ventas porque
+      // esos pedidos aún pueden cancelarse.
       prisma.order
         .findMany({
-          where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: { not: "cancelado" } },
+          where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: "entregado" },
           select: { total: true, customerPhone: true, createdAt: true },
         })
         .catch(() => [] as Array<{ total: number; customerPhone: string | null; createdAt: Date }>),
 
       prisma.order
         .findMany({
-          where: { tenantId, createdAt: { gte: prevFrom, lte: prevTo }, status: { not: "cancelado" } },
+          where: { tenantId, createdAt: { gte: prevFrom, lte: prevTo }, status: "entregado" },
           select: { total: true },
         })
         .catch(() => [] as Array<{ total: number }>),
@@ -174,14 +178,16 @@ export async function GET(req: NextRequest) {
         .count({
           where: {
             tenantId,
-            status: { in: ["pendiente", "confirmado", "en_camino"] },
+            // "Activos" = pedidos vivos que aún no se cerraron. Acá sí incluimos
+            // preparando porque es operativo, no contable.
+            status: { in: ["pendiente", "confirmado", "preparando", "en_camino"] },
           },
         })
         .catch(() => 0),
 
       prisma.order
         .findMany({
-          where: { tenantId, createdAt: { gte: startOf30dAgo, lte: rangeTo }, status: { not: "cancelado" } },
+          where: { tenantId, createdAt: { gte: startOf30dAgo, lte: rangeTo }, status: "entregado" },
           select: { createdAt: true },
           take: 5000,
         })
@@ -216,7 +222,8 @@ export async function GET(req: NextRequest) {
         .groupBy({
           by: ["productId"],
           where: {
-            order: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: { not: "cancelado" } },
+            // Top productos: solo cuentan los efectivamente entregados.
+            order: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: "entregado" },
           },
           _sum: { quantity: true },
           orderBy: { _sum: { quantity: "desc" } },
@@ -329,9 +336,12 @@ export async function GET(req: NextRequest) {
         cta: { label: "Crear promo", href: "/admin?tab=productos&action=promo" },
       };
     } else if (deltaVsPrevious > 20) {
+      // Brandon mayo 2026 v5: ya no repetimos "Vas X% arriba" porque ese
+      // dato YA está en el hero (heroDelta). El insight ahora sugiere UNA
+      // acción concreta — pedir reseñas — sin duplicar el dato numérico.
       insight = {
         type: "opportunity",
-        text: `Vas ${deltaVsPrevious.toFixed(0)}% arriba vs ${prevLabel[preset]}. Aprovecha el momentum — pide reseñas a clientes que compraron ${presetLabel[preset]}.`,
+        text: `Estás vendiendo más que ${prevLabel[preset]}. Pide reseñas a los clientes que ya te compraron — cuando otros las leen, compran más rápido.`,
         cta: { label: "Ver clientes", href: "/admin?tab=clientes" },
       };
     } else if (criticalStockCount > 3) {

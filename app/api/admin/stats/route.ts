@@ -40,13 +40,15 @@ export async function GET(req: NextRequest) {
       // Orders placed today
       prisma.order.count({ where: { tenantId, createdAt: { gte: startOfToday } } }),
 
-      // Revenue from non-cancelled orders today
+      // Revenue from DELIVERED orders today.
+      // Brandon mayo 2026 v7: antes era `{ notIn: ["cancelado"] }` que sumaba
+      // pedidos pendientes/confirmados/preparando/en_camino (revertibles).
       prisma.order.aggregate({
         _sum: { total: true },
         where: {
           tenantId,
           createdAt: { gte: startOfToday },
-          status: { notIn: ["cancelado"] },
+          status: "entregado",
         },
       }),
 

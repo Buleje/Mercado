@@ -167,7 +167,9 @@ export function OrdersClient() {
     let totalRev = 0;
     for (const o of orders) {
       grouped[o.status] = (grouped[o.status] ?? 0) + 1;
-      if (o.status !== "cancelado") totalRev += o.total;
+      // Brandon mayo 2026 v7: solo `entregado` cuenta como revenue. Pedidos
+      // en pendiente/confirmado/preparando/en_camino aún pueden cancelarse.
+      if (o.status === "entregado") totalRev += o.total;
     }
     return { grouped, totalRev };
   }, [orders]);
