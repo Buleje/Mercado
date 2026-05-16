@@ -114,25 +114,31 @@ function SectionCard({
   icon: Icon,
   title,
   hint,
+  rightSlot,
   children,
 }: {
   icon: React.ElementType;
   title: string;
   hint?: string;
+  rightSlot?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  // Brandon mayo 2026 v7: header más compacto. Icono 36px (era 44), padding
+  // px-4 py-3 (era px-6 pt-5 pb-4). Inner padding p-4 (era p-6). Optional
+  // rightSlot para badges tipo "12 marcadas".
   return (
-    <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
-      <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-primary shrink-0">
-          <Icon className="h-5 w-5" />
+    <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+      <header className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-[var(--rule-soft)]">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+          <Icon className="h-4 w-4" strokeWidth={2.25} />
         </span>
-        <div className="min-w-0">
-          <CardTitle className="text-base font-bold">{title}</CardTitle>
-          {hint && <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">{hint}</p>}
+        <div className="min-w-0 flex-1">
+          <CardTitle className="text-sm sm:text-base font-extrabold leading-tight">{title}</CardTitle>
+          {hint && <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-snug">{hint}</p>}
         </div>
+        {rightSlot && <div className="shrink-0">{rightSlot}</div>}
       </header>
-      <div className="p-6">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </section>
   );
 }
@@ -152,48 +158,59 @@ function CategoryCard({
   onClick: () => void;
   badge?: string;
 }) {
+  // Brandon mayo 2026 v7: rediseño compacto. Antes: aspect 4/3 con imagen
+  // enorme tipo banner. Ahora: card horizontal con thumb cuadrado 56x56 +
+  // label inline. Ocupa ~3x menos espacio vertical. Selected = borde +
+  // tick mini en esquina.
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={selected}
       className={cn(
-        "group relative w-full text-left rounded-2xl overflow-hidden border-2 transition-all",
+        "group relative w-full text-left rounded-xl overflow-hidden border-2 transition-colors flex items-center gap-3 p-2.5",
         selected
-          ? "border-[var(--accent)] shadow-lg shadow-[var(--accent)]/20 ring-2 ring-[var(--accent)]/40"
-          : "border-[var(--rule-base)] hover:border-[var(--accent)]/60 hover:shadow-md",
+          ? "border-[var(--accent)] bg-[var(--accent-soft)]/50"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50 hover:bg-[var(--accent-soft)]/20",
       )}
     >
-      <div className="relative aspect-[4/3] w-full bg-[var(--surface-sunken)]">
+      <div className="relative h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)]">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageUrl}
             alt={label}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="h-full w-full object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
-            <Tag className="h-8 w-8 opacity-40" />
+          <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)]">
+            <Tag className="h-5 w-5 opacity-40" />
           </div>
         )}
-        {selected && (
-          <div className="absolute inset-0 bg-[var(--accent)]/15 flex items-end justify-end p-2">
-            <span className="h-7 w-7 rounded-full bg-[var(--accent)] text-white flex items-center justify-center shadow-md">
-              <Check className="h-4 w-4" strokeWidth={3} />
-            </span>
-          </div>
-        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p
+          className={cn(
+            "text-sm font-extrabold truncate leading-tight",
+            selected ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
+          )}
+        >
+          {label}
+        </p>
         {badge && (
-          <span className="absolute top-2 left-2 inline-flex items-center gap-1 h-6 px-2 rounded-full bg-[var(--surface-canvas)]/95 backdrop-blur text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
+          <span className="inline-flex items-center mt-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
             {badge}
           </span>
         )}
       </div>
-      <div className="px-3 py-2.5 bg-[var(--surface-raised)]">
-        <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">{label}</p>
-      </div>
+      {selected ? (
+        <span className="shrink-0 h-6 w-6 rounded-full bg-[var(--accent)] text-white flex items-center justify-center">
+          <Check className="h-3.5 w-3.5" strokeWidth={3} />
+        </span>
+      ) : (
+        <span className="shrink-0 h-6 w-6 rounded-full border-2 border-[var(--rule-base)]" aria-hidden />
+      )}
     </button>
   );
 }
@@ -466,20 +483,32 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
       <SectionCard
         icon={Tag}
         title="Categoría principal"
-        hint="Elige cómo aparece tu tienda en filtros del marketplace y en /tiendas."
+        hint="Elige cómo aparece tu tienda en filtros del marketplace."
+        rightSlot={
+          value.category ? (
+            <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold">
+              <Check className="h-3 w-3" strokeWidth={3} />
+              Elegida
+            </span>
+          ) : (
+            <span className="inline-flex items-center h-7 px-2.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] text-xs font-bold">
+              Sin elegir
+            </span>
+          )
+        }
       >
         {catalogLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="aspect-[4/3] rounded-2xl bg-[var(--surface-sunken)] animate-pulse"
+                className="h-[68px] rounded-xl bg-[var(--surface-sunken)] animate-pulse"
               />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {visibleCatalog.map((c) => (
                 <CategoryCard
                   key={c.id}
@@ -490,7 +519,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                 />
               ))}
               {value.customCategories.map((c) => (
-                <div key={c.id} className="relative">
+                <div key={c.id} className="relative group">
                   <CategoryCard
                     imageUrl={c.imageUrl}
                     label={c.label}
@@ -498,7 +527,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                     selected={value.category === c.id || value.category === c.label}
                     onClick={() => setCategory(c.id)}
                   />
-                  <div className="absolute top-2 right-2 flex gap-1">
+                  <div className="absolute top-1.5 right-9 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -508,9 +537,9 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                       }}
                       aria-label={`Editar ${c.label}`}
                       title="Editar"
-                      className="h-7 w-7 rounded-full bg-[var(--surface-canvas)]/95 backdrop-blur border border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      className="h-6 w-6 rounded-full bg-[var(--surface-canvas)]/95 backdrop-blur border border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     >
-                      <ImageIcon className="h-3.5 w-3.5" />
+                      <ImageIcon className="h-3 w-3" />
                     </button>
                     <button
                       type="button"
@@ -520,9 +549,9 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                       }}
                       aria-label={`Eliminar ${c.label}`}
                       title="Eliminar"
-                      className="h-7 w-7 rounded-full bg-[var(--surface-canvas)]/95 backdrop-blur border border-[var(--rule-base)] flex items-center justify-center text-[var(--data-error-500)] hover:bg-[var(--data-error-50)]"
+                      className="h-6 w-6 rounded-full bg-[var(--surface-canvas)]/95 backdrop-blur border border-[var(--rule-base)] flex items-center justify-center text-[var(--data-error-500)] hover:bg-[var(--data-error-50)]"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
                 </div>
@@ -533,11 +562,9 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                   setEditing(null);
                   setShowEditor(true);
                 }}
-                className="aspect-[4/3] rounded-2xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 flex flex-col items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors group"
+                className="h-[68px] rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
               >
-                <span className="h-12 w-12 rounded-full bg-[var(--surface-sunken)] group-hover:bg-[var(--accent-soft)] flex items-center justify-center">
-                  <Plus className="h-6 w-6" strokeWidth={2.5} />
-                </span>
+                <Plus className="h-4 w-4" strokeWidth={2.5} />
                 <span className="text-sm font-extrabold">Crear propia</span>
               </button>
             </div>
@@ -545,11 +572,11 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
               <button
                 type="button"
                 onClick={() => setShowAllCats((p) => !p)}
-                className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)] hover:underline"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] hover:underline"
               >
                 {showAllCats ? "Mostrar menos" : `Ver ${catalog.length - 8} categorías más`}
                 <ChevronDown
-                  className={cn("h-4 w-4 transition-transform", showAllCats && "rotate-180")}
+                  className={cn("h-3.5 w-3.5 transition-transform", showAllCats && "rotate-180")}
                 />
               </button>
             )}
@@ -562,14 +589,14 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
         <SectionCard
           icon={Sparkles}
           title="Subcategoría"
-          hint="Una subcategoría te ayuda a aparecer en búsquedas más específicas."
+          hint="Te ayuda a aparecer en búsquedas más específicas."
         >
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => setSubcategory(null)}
               className={cn(
-                "h-11 px-4 rounded-full border-2 text-sm font-extrabold transition-colors",
+                "h-9 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
                 value.subcategory === null
                   ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
@@ -585,7 +612,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                   type="button"
                   onClick={() => setSubcategory(s.id)}
                   className={cn(
-                    "h-11 px-4 rounded-full border-2 text-sm font-extrabold transition-colors",
+                    "h-9 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
                     active
                       ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                       : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
@@ -597,7 +624,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
             })}
           </div>
           {selectedCustom && selectedCustom.subcategories.length === 0 && (
-            <p className="mt-4 text-sm text-[var(--text-tertiary)]">
+            <p className="mt-3 text-xs text-[var(--text-tertiary)]">
               Esta categoría propia aún no tiene subcategorías.{" "}
               <button
                 type="button"
@@ -618,18 +645,28 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
       <SectionCard
         icon={MapPin}
         title="Zonas de cobertura"
-        hint="Marca todas las zonas donde haces delivery. Aparece como filtro en /tiendas para los clientes."
+        hint="Marca dónde hacés delivery."
+        rightSlot={
+          <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold tabular-nums">
+            {value.coverageZones.length}
+            <span className="text-[10px] uppercase tracking-wider opacity-75">marcadas</span>
+          </span>
+        }
       >
-        {ZONES_BY_CITY.map(({ city, zones }) => {
+        {ZONES_BY_CITY.map(({ city, zones }, cityIdx) => {
           const cityZoneIds = zones.map((z) => z.id);
           const allOn = cityZoneIds.every((id) => value.coverageZones.includes(id));
+          const countOn = cityZoneIds.filter((id) => value.coverageZones.includes(id)).length;
           return (
-            <div key={city} className="mb-5 last:mb-0">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-[var(--accent)]" />
+            <div key={city} className={cn(cityIdx > 0 && "mt-4 pt-4 border-t border-[var(--rule-soft)]")}>
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" aria-hidden />
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
                   {city}
                 </h4>
+                <span className="text-[10px] font-bold text-[var(--text-tertiary)] tabular-nums">
+                  {countOn}/{zones.length}
+                </span>
                 <button
                   type="button"
                   onClick={() => {
@@ -643,12 +680,12 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                       onChange({ ...value, coverageZones: Array.from(merged) });
                     }
                   }}
-                  className="text-xs font-bold text-[var(--accent)] hover:underline"
+                  className="ml-auto text-[11px] font-bold text-[var(--accent)] hover:underline shrink-0"
                 >
                   {allOn ? "Quitar todas" : "Marcar todas"}
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {zones.map((z) => {
                   const active = value.coverageZones.includes(z.id);
                   return (
@@ -658,13 +695,13 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                       onClick={() => toggleZone(z.id)}
                       aria-pressed={active}
                       className={cn(
-                        "inline-flex items-center gap-2 h-11 px-4 rounded-full border-2 text-sm font-extrabold transition-colors",
+                        "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 text-xs font-extrabold transition-colors",
                         active
                           ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+                          : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
                       )}
                     >
-                      {active && <Check className="h-4 w-4" strokeWidth={3} />}
+                      {active && <Check className="h-3 w-3" strokeWidth={3} />}
                       {z.label}
                     </button>
                   );
@@ -675,30 +712,10 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
         })}
 
         {/* Custom zones */}
-        <div className="mt-5 pt-5 border-t-2 border-[var(--rule-base)]">
-          <p className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
-            Otras zonas (escribir)
+        <div className="mt-4 pt-4 border-t border-[var(--rule-soft)]">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
+            Otra zona (escribir)
           </p>
-          <div className="flex flex-wrap gap-2 mb-3">
-            {value.coverageZones
-              .filter((z) => !ALL_KNOWN_ZONE_IDS.has(z))
-              .map((z) => (
-                <span
-                  key={z}
-                  className="inline-flex items-center gap-1.5 h-11 pl-4 pr-1.5 rounded-full border-2 border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] text-sm font-extrabold"
-                >
-                  {z}
-                  <button
-                    type="button"
-                    onClick={() => removeZone(z)}
-                    aria-label={`Eliminar ${z}`}
-                    className="h-7 w-7 rounded-full bg-[var(--surface-canvas)]/70 hover:bg-[var(--surface-canvas)] flex items-center justify-center"
-                  >
-                    <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-                  </button>
-                </span>
-              ))}
-          </div>
           <div className="flex gap-2">
             <input
               type="text"
@@ -712,20 +729,39 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
               }}
               placeholder="Ej: Sector San Juan, AAHH Las Palmeras"
               maxLength={100}
-              className="flex-1 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="flex-1 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-[var(--accent)]"
             />
             <button
               type="button"
               onClick={addCustomZone}
               disabled={customZoneInput.trim().length < 2}
-              className="h-12 px-4 rounded-2xl bg-[var(--accent)] text-white font-extrabold inline-flex items-center gap-1.5 disabled:opacity-50"
+              className="h-10 px-3.5 rounded-xl bg-[var(--accent)] text-white font-extrabold inline-flex items-center gap-1.5 text-sm disabled:opacity-50"
             >
-              <Plus className="h-4 w-4" /> Agregar
+              <Plus className="h-3.5 w-3.5" /> Agregar
             </button>
           </div>
-          <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-            Total marcadas: <span className="font-extrabold tabular-nums">{value.coverageZones.length}</span>
-          </p>
+          {value.coverageZones.filter((z) => !ALL_KNOWN_ZONE_IDS.has(z)).length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2.5">
+              {value.coverageZones
+                .filter((z) => !ALL_KNOWN_ZONE_IDS.has(z))
+                .map((z) => (
+                  <span
+                    key={z}
+                    className="inline-flex items-center gap-1 h-9 pl-3 pr-1 rounded-full border-2 border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold"
+                  >
+                    {z}
+                    <button
+                      type="button"
+                      onClick={() => removeZone(z)}
+                      aria-label={`Eliminar ${z}`}
+                      className="h-6 w-6 rounded-full bg-[var(--surface-canvas)]/70 hover:bg-[var(--surface-canvas)] flex items-center justify-center"
+                    >
+                      <X className="h-3 w-3" strokeWidth={2.5} />
+                    </button>
+                  </span>
+                ))}
+            </div>
+          )}
         </div>
       </SectionCard>
 

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     const store = await prisma.store.findFirst({
       where: { tenantId: auth.tenantId },
-      select: { id: true },
+      select: { id: true, slug: true },
     });
 
     if (!store) {
@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
       include: {
         product: {
           select: {
+            id: true,
             name: true,
             stock: true,
             barcode: true,
@@ -46,18 +47,106 @@ export async function GET(req: NextRequest) {
       orderBy: { product: { name: "asc" } },
     });
 
-    const result = storeProducts.map((sp) => ({
-      id: sp.id,
-      name: sp.product.name,
-      isActive: sp.isActive,
-      retailPrice: Number(sp.retailPrice),
-      wholesalePrice: Number(sp.wholesalePrice ?? 0),
-      stock: sp.product.stock ?? 0,
-      sku: sp.product.barcode ?? "",
-      image: sp.product.image ?? null,
-      description: sp.product.description ?? null,
-      category: sp.product.category ?? null,
-    }));
+    // Brandon mayo 2026 v7 (Nivel C): boosts activos para mostrar chip
+    // "Destacado" en la tabla del admin. Raw SQL — el Prisma Client en dev
+    // a veces no tiene el modelo cacheado tras una sesión larga y rompe.
+    type BoostRow = {
+      id: string;
+      productId: number;
+      status: string;
+      bidAmount: string;
+      startDate: Date;
+      endDate: Date;
+      totalSpentPen: string;
+      maxBudgetPen: string;
+      impressionsCount: number;
+      clicksCount: number;
+    };
+    // eslint-disable-next-line no-restricted-properties
+    const boosts = await prisma.$queryRaw<BoostRow[]>`
+      SELECT id, "productId", status,
+             "bidAmount"::text, "startDate", "endDate",
+             "totalSpentPen"::text, "maxBudgetPen"::text,
+             "impressionsCount", "clicksCount"
+      FROM "SponsoredBoost"
+      WHERE "storeId" = ${store.id}
+        AND status IN ('active', 'paused')
+    `.catch(() => [] as BoostRow[]);
+    const boostByProductId = new Map<number, BoostRow>();
+    for (const b of boosts) {
+      const existing = boostByProductId.get(b.productId);
+      if (!existing || (b.status === "active" && existing.status !== "active")) {
+        boostByProductId.set(b.productId, b);
+      }
+    }
+
+    // Brandon mayo 2026 v7 (Nivel C): cálculo de "precio promedio en otras
+    // tiendas" — para que el admin sepa si está caro/barato vs competencia.
+    // Match por barcode (no por productId porque cada tenant tiene Product
+    // distinto). Una sola query agregada por barcodes únicos del catálogo.
+    const barcodes = Array.from(
+      new Set(storeProducts.map((sp) => sp.product.barcode).filter((b): b is string => !!b && b.length > 3)),
+    );
+    const competitionMap = new Map<string, { avg: number; count: number }>();
+    if (barcodes.length > 0) {
+      // eslint-disable-next-line no-restricted-properties
+      const others = await prisma.storeProduct.findMany({
+        where: {
+          isActive: true,
+          storeId: { not: store.id },
+          product: { barcode: { in: barcodes } },
+        },
+        select: {
+          retailPrice: true,
+          product: { select: { barcode: true } },
+        },
+      });
+      const grouped = new Map<string, number[]>();
+      for (const r of others) {
+        const bc = r.product.barcode;
+        if (!bc) continue;
+        const arr = grouped.get(bc) ?? [];
+        arr.push(Number(r.retailPrice));
+        grouped.set(bc, arr);
+      }
+      for (const [bc, prices] of grouped) {
+        const avg = prices.reduce((s, n) => s + n, 0) / prices.length;
+        competitionMap.set(bc, { avg, count: prices.length });
+      }
+    }
+
+    const result = storeProducts.map((sp) => {
+      const activeBoost = boostByProductId.get(sp.product.id) ?? null;
+      const competition = sp.product.barcode ? competitionMap.get(sp.product.barcode) ?? null : null;
+      return {
+        id: sp.id,
+        productId: sp.product.id,
+        name: sp.product.name,
+        isActive: sp.isActive,
+        retailPrice: Number(sp.retailPrice),
+        wholesalePrice: Number(sp.wholesalePrice ?? 0),
+        stock: sp.product.stock ?? 0,
+        sku: sp.product.barcode ?? "",
+        image: sp.product.image ?? null,
+        description: sp.product.description ?? null,
+        category: sp.product.category ?? null,
+        boost: activeBoost
+          ? {
+              id: activeBoost.id,
+              status: activeBoost.status,
+              bidAmount: Number(activeBoost.bidAmount),
+              startDate: activeBoost.startDate.toISOString(),
+              endDate: activeBoost.endDate.toISOString(),
+              totalSpentPen: Number(activeBoost.totalSpentPen),
+              maxBudgetPen: Number(activeBoost.maxBudgetPen),
+              impressionsCount: activeBoost.impressionsCount,
+              clicksCount: activeBoost.clicksCount,
+            }
+          : null,
+        competitionAvgPrice: competition ? Number(competition.avg.toFixed(2)) : null,
+        competitionStoreCount: competition?.count ?? 0,
+      };
+    });
 
     return NextResponse.json(result);
   } catch (err) {
