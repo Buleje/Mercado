@@ -502,8 +502,8 @@ export default function POSPaymentModal({
       variant="pos"
       hideCloseButton
     >
-      <div className="relative flex flex-col h-full">
-        {/* Customer list overlay (Mejora 3) */}
+      <div className="relative flex flex-col h-full bg-[var(--surface-sunken)] dark:bg-surface">
+        {/* Customer list overlay */}
         {showCustomerList && (
           <CustomerListPanel
             onSelect={(phone, name) => {
@@ -515,77 +515,86 @@ export default function POSPaymentModal({
         )}
 
         {/*
-          Brandon 2026-05-16: header compacto. En desktop el total queda
-          centrado pero la altura se reduce de py-7 (56px) a py-4 (32px)
-          para liberar espacio vertical y que el body de 2 columnas
-          entre sin scroll en 1080p.
+          Brandon 2026-05-16 v2 — Rediseño estilo iPad POS:
+          Header con grid horizontal compacto (h-20):
+            LEFT: voice toggle + label "TOTAL A COBRAR"
+            CENTER: monto grande S/X.XX inline con #items
+            RIGHT: chip descuento (si aplica) + close
+          Resultado: header pasa de ~140px (vertical) a ~80px horizontal.
         */}
-        <div className="px-6 py-4 sm:py-5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-center relative bg-[var(--surface-raised)]">
-          <p className="text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted uppercase tracking-wide">
-            Total a cobrar
-          </p>
-          <p className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] tabular-nums leading-tight mt-1">
-            {fmt(total)}
-          </p>
-          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-1">
-            {cartCount} {cartCount === 1 ? "articulo" : "articulos"}
+        <div className="shrink-0 px-5 sm:px-6 py-3 border-b-2 border-[var(--rule-base)] bg-[var(--surface-raised)] flex items-center gap-4">
+          {/* Voice toggle (izquierda) */}
+          <button
+            onClick={() => { const next = !voiceEnabled; setVoiceEnabled(next); try { localStorage.setItem("pos-voice-total", String(next)); } catch {} }}
+            className="shrink-0 h-11 w-11 rounded-xl flex items-center justify-center bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] transition-colors opacity-70 hover:opacity-100"
+            title={voiceEnabled ? "Desactivar voz" : "Activar voz"}
+            aria-label="Toggle voz"
+          >
+            {voiceEnabled ? <Volume2 className="h-5 w-5 text-[var(--text-secondary)]" /> : <VolumeX className="h-5 w-5 text-[var(--text-tertiary)]" />}
+          </button>
+
+          {/* Centro: label + total + items */}
+          <div className="flex-1 min-w-0 flex items-baseline gap-3">
+            <p className="text-[10px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-[0.15em] whitespace-nowrap">
+              Total a cobrar
+            </p>
+            <p className="text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
+              {fmt(total)}
+            </p>
+            <p className="text-sm text-[var(--text-tertiary)] whitespace-nowrap">
+              · {cartCount} {cartCount === 1 ? "articulo" : "articulos"}
+            </p>
             {discountAmount > 0 && (
-              <span className="text-[var(--data-error-500)] font-semibold ml-2">
-                · Subtotal {fmt(subtotal)} − {fmt(discountAmount)}
+              <span className="text-xs font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-2 py-1 rounded-full whitespace-nowrap">
+                −{fmt(discountAmount)} dto
               </span>
             )}
-          </p>
+            {/* Redondeo chips inline */}
+            {total % 1 !== 0 && (() => {
+              const bajo = Math.floor(total);
+              const alto = Math.ceil(total);
+              const a5 = Math.ceil(total / 5) * 5;
+              const opciones = [
+                { val: bajo, diff: total - bajo },
+                { val: alto, diff: alto - total },
+                ...(total > 10 && a5 !== alto ? [{ val: a5, diff: a5 - total }] : []),
+              ].filter(o => Math.abs(o.diff) < 3 && o.val > 0);
+              const uniq = [...new Map(opciones.map(o => [o.val, o])).values()];
+              if (uniq.length === 0) return null;
+              return (
+                <div className="hidden lg:flex items-center gap-1 ml-2">
+                  <span className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase">Redondear:</span>
+                  {uniq.map(o => (
+                    <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
+                      className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-[var(--surface-sunken)] hover:bg-primary hover:text-white transition-colors">
+                      S/{o.val}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
 
-          {/* Sugerencia de redondeo — legible, compacta */}
-          {total % 1 !== 0 && (() => {
-            const bajo = Math.floor(total);
-            const alto = Math.ceil(total);
-            const a5 = Math.ceil(total / 5) * 5;
-            const opciones = [
-              { val: bajo, diff: total - bajo },
-              { val: alto, diff: alto - total },
-              ...(total > 10 && a5 !== alto ? [{ val: a5, diff: a5 - total }] : []),
-            ].filter(o => Math.abs(o.diff) < 3 && o.val > 0);
-            const uniq = [...new Map(opciones.map(o => [o.val, o])).values()];
-            if (uniq.length === 0) return null;
-            return (
-              <div className="flex items-center justify-center gap-1.5 mt-2 flex-wrap">
-                <span className="text-xs text-[var(--text-tertiary)]">Redondear a</span>
-                {uniq.map(o => (
-                  <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
-                    className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary hover:text-white transition-colors">
-                    S/{o.val}
-                  </button>
-                ))}
-              </div>
-            );
-          })()}
-
+          {/* Cerrar (derecha) */}
           <button
             onClick={onCancel}
             aria-label="Cerrar"
-            className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="shrink-0 h-11 w-11 rounded-xl flex items-center justify-center bg-[var(--surface-sunken)] hover:bg-[var(--data-error-500)]/15 hover:text-[var(--data-error-500)] text-[var(--text-secondary)] transition-colors"
           >
-            <X className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />
-          </button>
-
-          {/* Toggle voz discreto */}
-          <button onClick={() => { const next = !voiceEnabled; setVoiceEnabled(next); try { localStorage.setItem("pos-voice-total", String(next)); } catch {} }}
-            className="absolute top-4 left-4 p-2 rounded-lg opacity-60 hover:opacity-100 hover:bg-gray-100 dark:hover:bg-accent transition-all" title={voiceEnabled ? "Desactivar voz" : "Activar voz"}>
-            {voiceEnabled ? <Volume2 className="h-4 w-4 text-[var(--text-tertiary)]" /> : <VolumeX className="h-4 w-4 text-[var(--text-tertiary)]" />}
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/*
-          Brandon 2026-05-16: body en grid 12 columnas para desktop (lg+).
-          Mobile mantiene single-column. Reorganiza el flujo:
-            Col izquierda (7/12): Descuento + Métodos pago + Billetes + Vuelto
-            Col derecha (5/12):    Cliente + Comprobante
-          Resultado: TODO el flujo visible sin scroll en 1080p+.
+          Body en grid 12 columnas (desktop iPad POS layout):
+            Col 1 (lg:5): Métodos pago + monto + billetes + vuelto
+            Col 2 (lg:4): Cliente (search + new form)
+            Col 3 (lg:3): Comprobante + Descuento collapse
+          Mobile: single column con scroll.
         */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-5 sm:px-6 py-5 grid grid-cols-1 lg:grid-cols-12 gap-x-6 gap-y-5">
-            <div className="lg:col-span-7 space-y-5 min-w-0">
+          <div className="px-4 sm:px-5 py-4 grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
+            <div className="lg:col-span-5 space-y-3 min-w-0">
 
           {/* Descuento — collapsible */}
           <div>
@@ -728,7 +737,7 @@ export default function POSPaymentModal({
               <>
                 {/* Single payment - method selector grid */}
                 {isSinglePayment && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
                     {METHODS.map((m) => (
                       <button
                         key={m.id}
@@ -1034,13 +1043,10 @@ export default function POSPaymentModal({
             </div>
           )}
 
-            </div>{/* fin columna izquierda */}
+            </div>{/* fin col 1 — Pagos */}
 
-            {/*
-              Columna derecha: cliente + comprobante. En mobile sigue
-              apilado debajo del flow de pagos. En lg+ va a la derecha.
-            */}
-            <div className="lg:col-span-5 space-y-5 min-w-0">
+            {/* Col 2 — Cliente */}
+            <div className="lg:col-span-3 space-y-3 min-w-0">
 
           {/* Customer search */}
           <div>
@@ -1178,12 +1184,23 @@ export default function POSPaymentModal({
             />
           </div>
 
+            </div>{/* fin col 2 — Cliente */}
+
+            {/* Col 3 — Comprobante */}
+            <div className="lg:col-span-4 space-y-3 min-w-0">
+
           {/* Tipo de comprobante */}
           <div>
-            <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-3">
+            <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-2">
               Comprobante
             </p>
-            <div className="flex flex-wrap gap-2">
+            {/*
+              Brandon 2026-05-16 v2: grid 3 columnas fijo en lugar de
+              flex-wrap, así los chips Ticket/Boleta/Factura quedan
+              en la primera fila y Cotización/Proforma en la segunda,
+              sin solaparse aunque la columna sea estrecha.
+            */}
+            <div className="grid grid-cols-3 gap-1.5">
               {(["ticket", "boleta", "factura", "cotizacion", "proforma"] as ComprobanteTipo[]).map(
                 (tipo) => {
                   const labels: Record<ComprobanteTipo, string> = {
@@ -1204,7 +1221,7 @@ export default function POSPaymentModal({
                         }
                       }}
                       className={cn(
-                        "flex-1 min-w-[calc(33%-8px)] py-2.5 rounded-lg text-sm font-semibold border transition-all",
+                        "py-2 rounded-lg text-xs font-semibold border transition-all truncate",
                         comprobanteTipo === tipo
                           ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
                           : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
@@ -1258,12 +1275,12 @@ export default function POSPaymentModal({
               </div>
             )}
           </div>
-            </div>{/* fin columna derecha */}
+            </div>{/* fin col 3 — Comprobante */}
           </div>{/* fin grid 12 cols */}
         </div>{/* fin body scroll */}
 
-        {/* Footer — CTA grande y claro, sticky */}
-        <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 dark:bg-surface/30">
+        {/* Footer sticky con CTA full-width verde */}
+        <div className="shrink-0 px-5 sm:px-6 py-3 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
           {isFiado && !customerPhone && (
             <p className="text-sm text-[var(--data-error-500)] font-semibold text-center mb-3">
               Selecciona un cliente para continuar
