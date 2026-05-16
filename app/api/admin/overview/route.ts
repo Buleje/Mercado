@@ -269,10 +269,17 @@ export async function GET(req: NextRequest) {
     const sparklineIso = buckets.map((b) => b.iso);
 
     // Heatmap: últimos 30d (no depende del rango — tendencia larga)
+    // Brandon 2026-05-16 (audit P1): fix timezone. Antes `getDay()` y
+    // `getHours()` usaban la hora local del servidor (UTC en Vercel). Los
+    // pedidos hechos a las 8pm Pucallpa caían en el bucket de la 1am del
+    // día siguiente (Pucallpa es UTC-5, sin DST). Ahora aplicamos offset
+    // manual para que el heatmap muestre la hora REAL del bodeguero.
+    const LIMA_OFFSET_MS = -5 * 60 * 60 * 1000;
     const heatmapRaw: Record<string, number> = {};
     for (const o of last30dOrders) {
-      const day = (o.createdAt.getDay() + 6) % 7;
-      const hour = o.createdAt.getHours();
+      const local = new Date(o.createdAt.getTime() + LIMA_OFFSET_MS);
+      const day = (local.getUTCDay() + 6) % 7;
+      const hour = local.getUTCHours();
       const key = `${day}-${hour}`;
       heatmapRaw[key] = (heatmapRaw[key] ?? 0) + 1;
     }

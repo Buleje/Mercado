@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
+import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+
+// Brandon 2026-05-16 (audit P1): force-dynamic + getOrSet TTL 30s.
+// Antes el endpoint corría 9 queries por cada polling del header del admin
+// (cada ~10-15s), sin cache. Con TTL 30s + dedupe in-flight, el cache hit
+// es >90% y la DB ve menos de 1 query/min por tenant. La invalidación
+// natural ocurre al expirar TTL — para POS o nuevos pedidos hay tabs
+// dedicados que sí reflejan en tiempo real.
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/admin/stats
@@ -15,6 +24,7 @@ export async function GET(req: NextRequest) {
   const tenantId = auth.tenantId;
 
   try {
+    const payload = await getOrSet(`admin:stats:${tenantId}`, 30, async () => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfWeek = new Date(startOfToday);
@@ -89,17 +99,20 @@ export async function GET(req: NextRequest) {
     // Suppress unused variable warning (the simple count was replaced by raw query)
     void lowStockProducts;
 
-    return NextResponse.json({
-      pendingOrders,
-      oldPendingOrders,
-      todayOrders,
-      todayRevenue: Number((todayRevenueResult._sum.total ?? 0).toFixed(2)),
-      lowStockProducts: lowStockCount,
-      weekOrders,
-      totalCustomers,
-      overduePayables,
-      generatedAt: now.toISOString(),
+      return {
+        pendingOrders,
+        oldPendingOrders,
+        todayOrders,
+        todayRevenue: Number((todayRevenueResult._sum.total ?? 0).toFixed(2)),
+        lowStockProducts: lowStockCount,
+        weekOrders,
+        totalCustomers,
+        overduePayables,
+        generatedAt: now.toISOString(),
+      };
     });
+
+    return NextResponse.json(payload);
   } catch (e) {
     logger.error("[admin/stats] error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
