@@ -13,7 +13,9 @@ import {
   Tooltip,
   Legend,
   LabelList,
+  ReferenceArea,
 } from "recharts";
+import type { ReactNode } from "react";
 import {
   CHART_GRID_STROKE,
   CHART_AXIS_COLOR,
@@ -55,7 +57,10 @@ interface SeriesConfig {
 }
 
 interface Props {
-  data: Array<Record<string, string | number>>;
+  // Permite booleans para flags derivados (ej: isWeekend, _isPico) que el
+  // tooltip lee vía `tooltipExtras`. Recharts ignora los keys que no son
+  // dataKey de un Bar/Line/Area, así que es seguro.
+  data: Array<Record<string, string | number | boolean>>;
   xKey: string;
   /** Bars zero-based (buenas para contar) */
   bars?: SeriesConfig[];
@@ -85,6 +90,24 @@ interface Props {
    * formateado como "1.2k" si >= 1000, sino el número directo.
    */
   valueFormat?: (value: number, seriesKey: string) => string;
+  /**
+   * Brandon mayo 2026: bandas de referencia en el eje X. Útil para destacar
+   * fines de semana, feriados, periodos especiales. Las bandas van detrás
+   * de bars/lines/areas, no interrumpen interacción.
+   */
+  referenceAreas?: Array<{
+    x1: string | number;
+    x2: string | number;
+    fillKey?: ColorKey;
+    opacity?: number;
+    label?: string;
+  }>;
+  /**
+   * Brandon mayo 2026: render extra debajo del tooltip — ej "↑ 12% sobre
+   * promedio". Recibe la entry completa de data. Pasado tal cual a
+   * ChartTooltip.
+   */
+  tooltipExtras?: (entry: Record<string, unknown>) => ReactNode;
   className?: string;
 }
 
@@ -117,6 +140,8 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
   // hover ni leer ejes. Caller puede pasar showValues={false} para opt-out.
   showValues = true,
   valueFormat,
+  referenceAreas = [],
+  tooltipExtras,
   className,
 }: Props) {
   const hasRightAxis = [...bars, ...lines, ...areas].some((s) => s.yAxis === "right");
@@ -203,9 +228,27 @@ export const BulejeComposedChart = memo(function BulejeComposedChart({
             />
           )}
           <Tooltip
-            content={<ChartTooltip format={tooltipFormat} />}
+            content={<ChartTooltip format={tooltipFormat} extras={tooltipExtras} />}
             cursor={{ fill: "var(--rule-soft)", opacity: 0.5 }}
           />
+
+          {/* Reference areas — fondos para destacar fines de semana, feriados, etc.
+              Van detrás de areas/bars/lines pero no interfieren con interacción. */}
+          {referenceAreas.map((ra, i) => {
+            const fill = resolveColor(ra.fillKey ?? "amber");
+            return (
+              <ReferenceArea
+                key={`ref-${i}-${ra.x1}-${ra.x2}`}
+                x1={ra.x1}
+                x2={ra.x2}
+                yAxisId="left"
+                fill={fill}
+                fillOpacity={ra.opacity ?? 0.08}
+                stroke="none"
+                ifOverflow="hidden"
+              />
+            );
+          })}
           {showLegend && (
             <Legend
               wrapperStyle={{

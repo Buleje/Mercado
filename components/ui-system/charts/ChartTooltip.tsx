@@ -32,9 +32,16 @@ interface TooltipProps {
     payload?: Record<string, unknown>;
   }>;
   format?: (value: number | string, name?: string) => string;
+  /**
+   * Brandon mayo 2026: render extra debajo de las rows del tooltip. Recibe
+   * el `payload[0].payload` (entry completa de data) y puede retornar
+   * info derivada — ej: "↑ 12% sobre promedio". Se separa con un
+   * divider del bloque principal.
+   */
+  extras?: (entry: Record<string, unknown>) => React.ReactNode;
 }
 
-export function ChartTooltip({ active, label, payload, format }: TooltipProps) {
+export function ChartTooltip({ active, label, payload, format, extras }: TooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
 
   // Intento elevar el label a "Viernes 1 de Mayo" usando el iso del payload
@@ -73,6 +80,11 @@ export function ChartTooltip({ active, label, payload, format }: TooltipProps) {
           );
         })}
       </div>
+      {extras && payload[0]?.payload && (
+        <div className="mt-2.5 pt-2.5 border-t border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)]">
+          {extras(payload[0].payload)}
+        </div>
+      )}
     </div>
   );
 }

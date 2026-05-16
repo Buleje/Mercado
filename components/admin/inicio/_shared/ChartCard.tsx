@@ -32,6 +32,12 @@ interface ChartCardProps {
   badge?: ReactNode;
   /** Subtitulo bajo el titulo. */
   subtitle?: string;
+  /**
+   * Brandon mayo 2026 v7: bajada plain-language (Feynman) que explica
+   * para qué sirve el chart, no qué muestra técnicamente. Pensada para
+   * un bodeguero de 50 años sin jerga.
+   */
+  description?: string;
   /** Si true, muestra empty state en lugar de children. */
   isEmpty?: boolean;
   /** Texto del empty state. */
@@ -51,6 +57,7 @@ export function ChartCard({
   height = 280,
   badge,
   subtitle,
+  description,
   isEmpty = false,
   emptyText = "Sin datos",
   EmptyIcon = BarChart3,
@@ -77,6 +84,11 @@ export function ChartCard({
             {subtitle && (
               <p className="text-sm font-medium text-[var(--text-tertiary)] dark:text-muted mt-1 truncate">
                 {subtitle}
+              </p>
+            )}
+            {description && (
+              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed font-medium">
+                {description}
               </p>
             )}
           </div>

@@ -90,7 +90,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       const label = mStart.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
       const period = orders.filter(
         (o) =>
-          o.status !== "cancelado" &&
+          o.status === "entregado" &&
           new Date(o.createdAt) >= mStart &&
           new Date(o.createdAt) <= mEnd,
       );
@@ -108,7 +108,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
     const last30 = nowMs - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<string | number, { name: string; pedidos: number; unidades: number; ingresos: number }>();
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
       .forEach((o) =>
         o.items.forEach((it) => {
           const p = products.find((x) => x.id === it.id);
@@ -161,7 +161,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
     const curStart = now - 7 * 24 * 60 * 60 * 1000;
     const prevStart = now - 14 * 24 * 60 * 60 * 1000;
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => {
         const t = new Date(o.createdAt).getTime();
         if (t >= curStart) {
@@ -198,7 +198,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
     ];
     const matrix = BUCKETS.map(() => [0, 0, 0, 0, 0, 0, 0]);
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
       .forEach((o) => {
         const d = new Date(o.createdAt);
         const dow = (d.getDay() + 6) % 7;
@@ -221,16 +221,29 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
   const fmtS = (v: number) =>
     `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
 
+  // Brandon mayo 2026 v7: hasData REAL por chart — antes estaba hardcoded a
+  // true y la regla "sin datos = oculto" no se cumplía a nivel sub-chart
+  // (sí a nivel módulo). Ahora cada chart se auto-oculta si está vacío y se
+  // muestra en el grupo "Sin datos" del modal de gestión.
+  const hasFunnel = funnel.recibidos > 0;
+  const hasMonthly = monthly.total > 0;
+  const hasTopProducts = topProducts.rows.length > 0;
+  const hasRatings = ratings.total > 0;
+  const hasComparison = comp.some((c) => c.current > 0 || c.previous > 0);
+  const heatmapTotal = heatmap.matrix.flat().reduce((s, v) => s + v, 0);
+  const hasHeatmap = heatmapTotal > 0;
+
   const sections: DraggableItem[] = [
     {
       id: "funnel-pedidos",
       render: () => (
         <DashboardSection
           chartId="marketplace.advanced.funnel-pedidos"
-          hasData={true}
-          defaultVisible={false}
-kicker="Funnel · rango activo"
+          hasData={hasFunnel}
+          defaultVisible
+          kicker="Funnel · rango activo"
           title="De pedido recibido a entregado"
+          description="Cuántos pedidos te llegan y a cuántos les das salida. Si la mayoría se cae antes de confirmar, fijate qué está pasando en ese paso."
           kpis={[
             { label: "Recibidos", value: String(funnel.recibidos), tone: "primary" },
             { label: "Entregados", value: String(funnel.entregados), tone: "success" },
@@ -291,9 +304,12 @@ kicker="Funnel · rango activo"
       span: "full",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Ingresos · rango activo"
-          title="Tendencia mensual marketplace"
+          chartId="marketplace.advanced.ingresos-6m"
+          hasData={hasMonthly}
+          defaultVisible
+          kicker="Ingresos · últimos 6 meses"
+          title="Cómo viene tu facturación mensual"
+          description="La plata que entró por marketplace los últimos 6 meses. Si sube mes a mes, estás sumando clientes nuevos. Si baja, revisá promos o stock."
           kpis={[
             { label: "Total 6m", value: fmtS(monthly.total), tone: "primary" },
             { label: "Promedio mes", value: fmtS(monthly.prom), tone: "neutral" },
@@ -324,9 +340,12 @@ kicker="Funnel · rango activo"
       span: "full",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="marketplace.advanced.top-productos-marketplace"
+          hasData={hasTopProducts}
+          defaultVisible
           kicker="Top 10 productos · rango activo"
           title="Los productos que más venden en marketplace"
+          description="Tus 10 productos estrella. Acá enfocá tu stock y tus promos — son los que te hacen plata todos los días."
           kpis={[
             {
               label: "Líder",
@@ -375,10 +394,11 @@ kicker="Funnel · rango activo"
       render: () => (
         <DashboardSection
           chartId="marketplace.advanced.ratings-marketplace"
-          hasData={true}
-          defaultVisible={false}
-kicker="Satisfacción · todos los periodos"
-          title="Distribución de reseñas"
+          hasData={hasRatings}
+          defaultVisible
+          kicker="Satisfacción · todos los periodos"
+          title="Qué nota te dan tus clientes"
+          description="Si el promedio está en 4★ o más, la gente vuelve a comprarte. Si ves 1★ o 2★, llamalos para entender qué falló — un cliente bien tratado vale por diez."
           kpis={[
             { label: "Total reseñas", value: String(ratings.total), tone: "primary" },
             { label: "Promedio", value: Number(ratings.promedio).toFixed(1), tone: "success" },
@@ -414,10 +434,11 @@ kicker="Satisfacción · todos los periodos"
       render: () => (
         <DashboardSection
           chartId="marketplace.advanced.comparativa-semanal-mkt"
-          hasData={true}
-          defaultVisible={false}
-kicker="Comparativa · ingresos semana a semana"
-          title="Esta semana vs pasada"
+          hasData={hasComparison}
+          defaultVisible
+          kicker="Comparativa · ingresos semana a semana"
+          title="Esta semana vs la pasada"
+          description="Compará día por día contra la semana anterior. Si la línea de esta semana va arriba, estás creciendo; si va abajo, hay que revisar qué cambió."
         >
           <BulejeComparisonOverlay
             data={comp}
@@ -441,9 +462,12 @@ kicker="Comparativa · ingresos semana a semana"
           heatmap.peak.idx >= 0 ? heatmap.buckets[heatmap.peak.idx].label : "—";
         return (
           <DashboardSection
-          hideHeader
+            chartId="marketplace.advanced.heatmap-marketplace"
+            hasData={hasHeatmap}
+            defaultVisible
             kicker="Heatmap · franja × día · 30d"
             title="Cuándo entran más pedidos"
+            description="En qué hora y día caen los pedidos. Reforzá personal o stock en la franja pico — perder un pedido en hora alta cuesta mucho más que en la calma."
             kpis={[
               {
                 label: "Total pedidos 30d",
