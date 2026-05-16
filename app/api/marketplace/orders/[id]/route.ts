@@ -19,16 +19,21 @@ const orderRepo = new PrismaOrderRepository();
 
 // ── Valid marketplace order status transitions ────────────────────────────────
 
+// Brandon mayo 2026 v7 (Nivel B): `preparando` agregado como paso intermedio
+// real entre confirmar y salir a entregar (la bodega arma el pedido). Brandon
+// pidió que cocina/almacén pueda marcar este estado sin tener que saltar a
+// "en_camino" antes de que esté listo.
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  pendiente: ["confirmado", "cancelado"],
-  confirmado: ["en_camino", "cancelado"],
-  en_camino: ["entregado", "cancelado"],
-  entregado: [],
-  cancelado: [],
+  pendiente:  ["confirmado", "cancelado"],
+  confirmado: ["preparando", "en_camino", "cancelado"],
+  preparando: ["en_camino", "cancelado"],
+  en_camino:  ["entregado", "cancelado"],
+  entregado:  [],
+  cancelado:  [],
 };
 
 const PatchSchema = z.object({
-  status: z.enum(["pendiente", "confirmado", "en_camino", "entregado", "cancelado"]),
+  status: z.enum(["pendiente", "confirmado", "preparando", "en_camino", "entregado", "cancelado"]),
   cancelReason: z.string().max(500).optional(),
 });
 
@@ -158,6 +163,11 @@ async function patchHandler(
       title: "✅ Pedido confirmado",
       body: `Tu pedido ha sido confirmado.`,
       emoji: "✅",
+    },
+    preparando: {
+      title: "👨‍🍳 Estamos preparando tu pedido",
+      body: `Tu pedido se está preparando, pronto saldrá a entregarse.`,
+      emoji: "👨‍🍳",
     },
     en_camino: {
       title: "🚚 Tu pedido va en camino",
