@@ -131,12 +131,30 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; iso: string;
   return buckets;
 }
 
+/**
+ * TODO Brandon 2026-05-16 (audit P1 regla 1): migrar las 9 queries de
+ * abajo a una clase dedicada `lib/db/overview.db.ts`. Hoy las dejamos
+ * aquí porque son específicas de este endpoint (rangos custom, heatmap,
+ * top products, alerts compuestas) y mover sin perder aggregation
+ * lógica requiere ~2h. Como mitigación inmediata:
+ *  - Cada .catch ahora loguea con context (regla 7).
+ *  - El catch general NO devuelve `error.message` al cliente (info
+ *    disclosure de Prisma internals).
+ */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
 
   const { prisma } = await import("@/lib/prisma");
+  const { logger } = await import("@/lib/logger");
+
+  const logCatch = (op: string) => (err: unknown) => {
+    logger.warn(`[admin/overview] ${op} failed`, {
+      tenantId,
+      err: err instanceof Error ? err.message : String(err),
+    });
+  };
 
   // ── Parse query params ─────────────────────────────────────────────────────
   const url = new URL(req.url);
@@ -172,14 +190,20 @@ export async function GET(req: NextRequest) {
           where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo }, status: "entregado" },
           select: { total: true, customerPhone: true, createdAt: true },
         })
-        .catch(() => [] as Array<{ total: number; customerPhone: string | null; createdAt: Date }>),
+        .catch((err): Array<{ total: number; customerPhone: string | null; createdAt: Date }> => {
+          logCatch("rangeOrders")(err);
+          return [];
+        }),
 
       prisma.order
         .findMany({
           where: { tenantId, createdAt: { gte: prevFrom, lte: prevTo }, status: "entregado" },
           select: { total: true },
         })
-        .catch(() => [] as Array<{ total: number }>),
+        .catch((err): Array<{ total: number }> => {
+          logCatch("prevOrders")(err);
+          return [];
+        }),
 
       prisma.order
         .count({
@@ -190,7 +214,7 @@ export async function GET(req: NextRequest) {
             status: { in: ["pendiente", "confirmado", "preparando", "en_camino"] },
           },
         })
-        .catch(() => 0),
+        .catch((err): number => { logCatch("activeOrders")(err); return 0; }),
 
       prisma.order
         .findMany({
@@ -198,13 +222,16 @@ export async function GET(req: NextRequest) {
           select: { createdAt: true },
           take: 5000,
         })
-        .catch(() => [] as Array<{ createdAt: Date }>),
+        .catch((err): Array<{ createdAt: Date }> => {
+          logCatch("last30dOrders")(err);
+          return [];
+        }),
 
       prisma.product
         .count({
           where: { tenantId, stock: { lte: 5, gt: 0 }, active: true },
         })
-        .catch(() => 0),
+        .catch((err): number => { logCatch("criticalStock")(err); return 0; }),
 
       prisma.product
         .count({
@@ -217,13 +244,13 @@ export async function GET(req: NextRequest) {
             active: true,
           },
         })
-        .catch(() => 0),
+        .catch((err): number => { logCatch("expiring")(err); return 0; }),
 
       prisma.fiado
         .count({
           where: { tenantId, status: "VENCIDO" },
         })
-        .catch(() => 0),
+        .catch((err): number => { logCatch("overdueCredit")(err); return 0; }),
 
       prisma.orderItem
         .groupBy({
@@ -236,13 +263,16 @@ export async function GET(req: NextRequest) {
           orderBy: { _sum: { quantity: "desc" } },
           take: 5,
         })
-        .catch(() => [] as Array<{ productId: number | null; _sum: { quantity: number | null } }>),
+        .catch((err): Array<{ productId: number | null; _sum: { quantity: number | null } }> => {
+          logCatch("topProducts")(err);
+          return [];
+        }),
 
       prisma.customer
         .count({
           where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo } },
         })
-        .catch(() => 0),
+        .catch((err): number => { logCatch("newCustomers")(err); return 0; }),
     ]);
 
     // ── Aggregates ─────────────────────────────────────────────────────────
@@ -414,11 +444,16 @@ export async function GET(req: NextRequest) {
       },
     );
   } catch (error) {
+    // Brandon 2026-05-16 (audit P2 info disclosure): antes devolvíamos
+    // `error.message` al cliente — podía exponer nombres de tablas,
+    // estructura de queries Prisma o detalles internos de DB. Ahora
+    // logueamos en server y devolvemos solo un código genérico.
+    logger.error("[admin/overview] unhandled error", {
+      tenantId,
+      err: error instanceof Error ? { message: error.message, stack: error.stack } : String(error),
+    });
     return NextResponse.json(
-      {
-        error: "Error generando overview",
-        detail: error instanceof Error ? error.message : "Unknown",
-      },
+      { error: "Error generando overview" },
       { status: 500 },
     );
   }

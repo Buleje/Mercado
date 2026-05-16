@@ -247,6 +247,9 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
 
   // ── 2. INVENTARIO — stock, valor, SKUs por categoría ─────────────────────
   const invChart = useMemo(() => {
+    // Brandon 2026-05-16 (audit P1): valor de inventario calculado SOLO
+    // con costPrice real. Antes `p.costPrice ?? p.price * 0.7` inflaba el
+    // valor de inventario para productos sin costo cargado.
     const m = new Map<string, { stock: number; valor: number; skus: number }>();
     products.forEach((p) => {
       if (!p.active) return;
@@ -254,7 +257,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       const cur = m.get(cat) ?? { stock: 0, valor: 0, skus: 0 };
       const stk = p.stock ?? 0;
       cur.stock += stk;
-      cur.valor += stk * (p.costPrice ?? p.price * 0.7);
+      if (p.costPrice != null) cur.valor += stk * p.costPrice;
       cur.skus += 1;
       m.set(cat, cur);
     });
@@ -271,8 +274,10 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
 
   const invKpis = useMemo(() => {
     const activos = products.filter((p) => p.active);
+    // Brandon 2026-05-16 (audit P1): mismo principio — solo productos con
+    // costPrice real cuentan al valor de inventario.
     const valor = activos.reduce(
-      (s, p) => s + (p.stock ?? 0) * (p.costPrice ?? p.price * 0.7),
+      (s, p) => s + (p.costPrice != null ? (p.stock ?? 0) * p.costPrice : 0),
       0,
     );
     const criticos = activos.filter(
@@ -389,14 +394,24 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
   }, [customers, orders, sales, rangeFromMs, rangeToMs]);
 
   // ── 5. PRODUCTOS — unidades + ingresos + margen top-7 en el rango ──────
+  // Brandon 2026-05-16 (audit P1): margen calculado solo cuando hay
+  // costPrice REAL del producto. Antes usaba `price * 0.7` como fallback,
+  // un margen 30% ficticio que distorsionaba decisiones comerciales.
+  // Ahora: si un producto no tiene costPrice cargado, el item suma a
+  // unidades + ingresos pero NO a margen (margenIncompleto=true).
+  // El bodeguero ve un número REAL y debe cargar costos para precisión.
   const prodChart = useMemo(() => {
     const m = new Map<
       string | number,
-      { name: string; unidades: number; ingresos: number; margen: number }
+      { name: string; unidades: number; ingresos: number; margen: number; margenIncompleto: boolean }
     >();
     const priceCost = (id: string | number) => {
       const p = products.find((x) => x.id === id);
-      return { price: p?.price ?? 0, cost: p?.costPrice ?? (p?.price ?? 0) * 0.7, name: p?.name ?? "—" };
+      return {
+        price: p?.price ?? 0,
+        cost: p?.costPrice ?? null,
+        name: p?.name ?? "—",
+      };
     };
     orders
       .filter((o) => {
@@ -412,10 +427,16 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             unidades: 0,
             ingresos: 0,
             margen: 0,
+            margenIncompleto: false,
           };
+          const unitPrice = it.price ?? pc.price;
           cur.unidades += it.quantity;
-          cur.ingresos += it.quantity * (it.price ?? pc.price);
-          cur.margen += it.quantity * ((it.price ?? pc.price) - pc.cost);
+          cur.ingresos += it.quantity * unitPrice;
+          if (pc.cost != null) {
+            cur.margen += it.quantity * (unitPrice - pc.cost);
+          } else {
+            cur.margenIncompleto = true;
+          }
           m.set(it.id, cur);
         }),
       );
@@ -432,10 +453,16 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             unidades: 0,
             ingresos: 0,
             margen: 0,
+            margenIncompleto: false,
           };
+          const unitPrice = it.price ?? pc.price;
           cur.unidades += it.quantity;
-          cur.ingresos += it.quantity * (it.price ?? pc.price);
-          cur.margen += it.quantity * ((it.price ?? pc.price) - pc.cost);
+          cur.ingresos += it.quantity * unitPrice;
+          if (pc.cost != null) {
+            cur.margen += it.quantity * (unitPrice - pc.cost);
+          } else {
+            cur.margenIncompleto = true;
+          }
           m.set(it.productId, cur);
         }),
       );
@@ -446,7 +473,8 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
         producto: v.name.length > 16 ? v.name.slice(0, 15) + "…" : v.name,
         unidades: v.unidades,
         ingresos: Math.round(v.ingresos),
-        margen: Math.round(v.margen),
+        margen: v.margenIncompleto && v.margen === 0 ? null : Math.round(v.margen),
+        margenIncompleto: v.margenIncompleto,
       }));
   }, [products, orders, sales, rangeFromMs, rangeToMs]);
 

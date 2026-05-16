@@ -217,15 +217,23 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   // Weekly data desde sparkline — labels dinámicos según rango.
   // Brandon mayo 2026 v3: iso propagado del API (sparklineIso) para que el
   // tooltip muestre "Domingo 2 de mayo" en lugar de "01 May".
-  const lastSpark = hero.sparkline[hero.sparkline.length - 1] || 1;
+  //
+  // Brandon 2026-05-16 (audit P1): fix math fake. Antes
+  //   pedidos[i] = (ventas[i] / lastSpark) * ordersInRange
+  // donde lastSpark era el ÚLTIMO valor del sparkline. Si el último día
+  // estaba en 0, fallback a 1 → produced 15000 pedidos para una bodega
+  // con 3 pedidos reales en el rango. Bug verificado por code-reviewer.
+  // Ahora: distribución proporcional sobre el TOTAL del sparkline.
+  // Si sumSpark === 0 (sin ventas en el rango), pedidos/clientes = 0.
+  const sumSpark = hero.sparkline.reduce((s, v) => s + v, 0);
   const sparkLabels = hero.sparklineLabels ?? [];
   const sparkIso = hero.sparklineIso ?? [];
   const weeklyData = hero.sparkline.map((ventas, i) => ({
     day: sparkLabels[i] ?? `${i + 1}`,
     iso: sparkIso[i] ?? "",
     ventas: Math.round(ventas),
-    pedidos: Math.max(1, Math.round((ventas / lastSpark) * ordersInRange)) || 0,
-    clientes: Math.max(1, Math.round((ventas / lastSpark) * uniqueCustomers)) || 0,
+    pedidos: sumSpark > 0 ? Math.round((ventas / sumSpark) * ordersInRange) : 0,
+    clientes: sumSpark > 0 ? Math.round((ventas / sumSpark) * uniqueCustomers) : 0,
   }));
 
   // Meta proyectada según preset activo
