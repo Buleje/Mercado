@@ -1072,6 +1072,34 @@ body {
  */
 .dark [data-admin-shell="true"] {
   background-color: #0d1117 !important;
+  /* Re-forzar las vars semantic surfaces porque en este scope se
+     override-ean a oklch light por algun layer intermedio de Tailwind 4. */
+  --surface-canvas: #0d1117;
+  --surface-sunken: #161b22;
+  --surface-raised: #1c2230;
+  --rule-base: #2e3645;
+  --rule-soft: #232a38;
+  --text-primary: #f0f3f7;
+  --text-secondary: #b8c0cc;
+  --text-tertiary: #8590a3;
+}
+/* bg-[var(--surface-raised)] arbitrary values en Tailwind 4 a veces resuelven
+   en el momento de generar la utility a la var del :root (light). Forzamos
+   en dark con !important a la version dark hardcoded. */
+.dark [data-admin-shell="true"] .bg-\[var\(--surface-raised\)\] {
+  background-color: #1c2230 !important;
+}
+.dark [data-admin-shell="true"] .bg-\[var\(--surface-canvas\)\] {
+  background-color: #0d1117 !important;
+}
+.dark [data-admin-shell="true"] .bg-\[var\(--surface-sunken\)\] {
+  background-color: #161b22 !important;
+}
+.dark [data-admin-shell="true"] .border-\[var\(--rule-base\)\] {
+  border-color: #2e3645 !important;
+}
+.dark [data-admin-shell="true"] .border-\[var\(--rule-soft\)\] {
+  border-color: #232a38 !important;
 }
 
 /* ── Dark mode defensive overrides para admin shell ─────────────────────────
