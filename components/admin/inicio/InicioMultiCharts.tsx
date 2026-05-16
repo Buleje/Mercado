@@ -482,9 +482,14 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
     const activos = products.filter((p) => p.active).length;
     const best = prodChart[0]?.producto ?? "—";
     const ingresos = prodChart.reduce((s, r) => s + r.ingresos, 0);
-    const margen = prodChart.reduce((s, r) => s + r.margen, 0);
-    const margenPct = ingresos > 0 ? Math.round((margen / ingresos) * 100) : 0;
-    return { activos, best, ingresos, margenPct };
+    // Brandon 2026-05-16 (audit P1 UI): solo sumamos margen de items que
+    // tienen costPrice real (margen != null). Si algún row está incompleto,
+    // marcamos margenIncompleto para que la UI muestre "—" o un asterisco
+    // que indique "faltan datos de costo en algunos productos".
+    const margen = prodChart.reduce((s, r) => s + (r.margen ?? 0), 0);
+    const hasIncomplete = prodChart.some((r) => r.margenIncompleto);
+    const margenPct = ingresos > 0 && !hasIncomplete ? Math.round((margen / ingresos) * 100) : null;
+    return { activos, best, ingresos, margenPct, margenIncompleto: hasIncomplete };
   }, [products, prodChart]);
 
   const fmtPEN = (v: number) =>
@@ -674,9 +679,19 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
             },
             { label: "Ingresos top-7", value: fmtPEN(prodKpis.ingresos), tone: "primary" },
             {
-              label: "Margen prom.",
-              value: `${prodKpis.margenPct}%`,
-              tone: prodKpis.margenPct >= 25 ? "success" : "warning",
+              // Brandon 2026-05-16 (audit P1 UI): si hay productos sin
+              // costPrice, mostramos "—" en lugar de un porcentaje falso.
+              // El bodeguero entiende que falta cargar costos.
+              label: prodKpis.margenIncompleto ? "Margen prom. *" : "Margen prom.",
+              value: prodKpis.margenPct == null ? "—" : `${prodKpis.margenPct}%`,
+              tone: prodKpis.margenPct == null
+                ? "neutral"
+                : prodKpis.margenPct >= 25
+                  ? "success"
+                  : "warning",
+              hint: prodKpis.margenIncompleto
+                ? "Falta costo en algunos productos. Cargá costPrice para ver el margen real."
+                : undefined,
             },
           ]}
         >

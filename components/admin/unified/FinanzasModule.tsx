@@ -35,6 +35,48 @@ import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
+/**
+ * Brandon 2026-05-16 (audit P1 fetch dedup): module-level cache para
+ * los endpoints más volumétricos de este módulo. Antes 3 sub-componentes
+ * fetchéaban `/api/sales?limit=5000` y `/api/expenses/summary` en paralelo
+ * al mount → 3 roundtrips con 15k filas totales de payload. Con dedupe:
+ *  - Solo 1 fetch in-flight por endpoint (resto subscribe a la misma Promise).
+ *  - TTL 30s mantiene la respuesta caliente para sub-componentes que
+ *    se montan poco después (cambio de tab dentro de Finanzas).
+ *  - invalidateFinanzasCache() expone limpieza manual si el user clickea
+ *    "Actualizar" en algún sub-tab.
+ */
+type CacheEntry<T> = { value: T; expiresAt: number };
+const finanzasCache = new Map<string, CacheEntry<unknown>>();
+const finanzasInFlight = new Map<string, Promise<unknown>>();
+const FINANZAS_TTL_MS = 30_000;
+
+async function fetchFinanzas<T>(url: string, fallback: T): Promise<T> {
+  const hit = finanzasCache.get(url) as CacheEntry<T> | undefined;
+  if (hit && Date.now() < hit.expiresAt) return hit.value;
+  const inFlight = finanzasInFlight.get(url) as Promise<T> | undefined;
+  if (inFlight) return inFlight;
+  const promise = (async () => {
+    try {
+      const res = await fetch(url);
+      const data = res.ok ? ((await res.json()) as T) : fallback;
+      finanzasCache.set(url, { value: data as unknown, expiresAt: Date.now() + FINANZAS_TTL_MS });
+      return data;
+    } catch {
+      return fallback;
+    } finally {
+      finanzasInFlight.delete(url);
+    }
+  })();
+  finanzasInFlight.set(url, promise as Promise<unknown>);
+  return promise;
+}
+
+export function invalidateFinanzasCache() {
+  finanzasCache.clear();
+  finanzasInFlight.clear();
+}
+
 const PLTab = dynamic(() => import("@/components/admin/PLTab"), { loading: S });
 const ExpensesTab = dynamic(() => import("@/components/admin/ExpensesTab"), { loading: S });
 const ProfitabilityTab = dynamic(() => import("@/components/admin/ProfitabilityTab"), { loading: S });
@@ -108,9 +150,10 @@ function HealthSemaphore() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Brandon 2026-05-16 (audit P1): usa fetchFinanzas para dedupe + cache.
     Promise.all([
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
+      fetchFinanzas<{ totalMonth?: number; total?: number; monthly?: Array<{ month: string; total: number }> } | null>("/api/expenses/summary", null),
+      fetchFinanzas<{ ventasMes?: number; salesMonth?: number; cashToday?: number; efectivoHoy?: number; fiadosVencidosMonto?: number; payablesVencidosMonto?: number } | null>("/api/analytics/kpis-v2", null),
     ])
       .then(([expenses, kpis]) => {
         const ingresos = kpis?.ventasMes ?? kpis?.salesMonth ?? 0;
@@ -184,9 +227,10 @@ function ComparativoMensual() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Brandon 2026-05-16 (audit P1): dedupe + cache 30s.
     Promise.all([
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/sales?limit=5000").then(r => r.ok ? r.json() : []),
+      fetchFinanzas<{ totalMonth?: number; monthly?: Array<{ month: string; total: number }> } | null>("/api/expenses/summary", null),
+      fetchFinanzas<Array<{ createdAt?: string; total: number }>>("/api/sales?limit=5000", []),
     ])
       .then(([expenses, sales]) => {
         const now = new Date();
@@ -281,8 +325,8 @@ function PuntoEquilibrio() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
     ])
       .then(([expenses, kpis]) => {
         const gastosMes = expenses?.totalMonth ?? expenses?.total ?? 0;
@@ -516,8 +560,8 @@ function ProyeccionCierreMes() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
     ])
       .then(([expenses, kpis]) => {
         const now = new Date();
@@ -599,8 +643,8 @@ function ResumenFiscal() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
     ])
       .then(([kpis, expenses]) => {
         const ventas = kpis?.ventasMes ?? kpis?.salesMonth ?? 0;
@@ -668,9 +712,9 @@ function ResumenFiscal() {
 
 function generarReporteBancario() {
   Promise.all([
-    fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-    fetch("/api/sales?limit=5000").then(r => r.ok ? r.json() : []),
-    fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
+    fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
+    fetchFinanzas<unknown[]>("/api/sales?limit=5000", []),
+    fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
   ])
     .then(([expenses, sales, kpis]) => {
       const now = new Date();
@@ -832,9 +876,9 @@ function FinanzasDashboard() {
 
   useEffect(() => {
     Promise.allSettled([
-      fetch("/api/analytics/kpis-v2").then(r => r.ok ? r.json() : null),
-      fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null),
-      fetch("/api/sales?limit=5000").then(r => r.ok ? r.json() : []),
+      fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
+      fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
+      fetchFinanzas<unknown[]>("/api/sales?limit=5000", []),
       fetch("/api/expenses?limit=2000").then(r => r.ok ? r.json() : []),
       fetch("/api/payables").then(r => r.ok ? r.json() : []),
       fetch("/api/fiados?status=ACTIVO").then(r => r.ok ? r.json() : []),

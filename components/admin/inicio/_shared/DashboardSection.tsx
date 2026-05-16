@@ -8,6 +8,10 @@ export interface SectionKPI {
   label: string;
   value: string;
   tone?: "primary" | "warning" | "success" | "neutral";
+  // Brandon 2026-05-16 (audit P1 UI): hint opcional para tooltips/info
+  // explicando por qué un KPI muestra "—" o un asterisco (ej. faltan
+  // datos de costo). Se muestra como title="..." en el wrapper.
+  hint?: string;
 }
 
 interface Props {
@@ -124,6 +128,7 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
             <div
               key={k.label}
               className="rounded-xl border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5"
+              title={k.hint}
             >
               <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
                 {k.label}
