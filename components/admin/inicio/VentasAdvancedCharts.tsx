@@ -76,7 +76,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       return { price: p?.price ?? 0, name: p?.name ?? "—" };
     };
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
       .forEach((o) =>
         o.items.forEach((it) => {
           const pc = priceCost(it.id);
@@ -129,7 +129,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       const k = `${day}-${hour}`;
       m.set(k, (m.get(k) ?? 0) + value);
     };
-    orders.filter((o) => o.status !== "cancelado").forEach((o) => add(o.createdAt, Number(o.total ?? 0)));
+    orders.filter((o) => o.status === "entregado").forEach((o) => add(o.createdAt, Number(o.total ?? 0)));
     sales.forEach((s) => add(s.createdAt, Number(s.total ?? 0)));
     m.forEach((value, k) => {
       const [day, hour] = k.split("-").map(Number);
@@ -156,7 +156,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       return t >= wkB_start && t < wkA_start;
     };
     const collect = (filter: (iso: string) => boolean) => {
-      const oA = orders.filter((o) => o.status !== "cancelado" && filter(o.createdAt));
+      const oA = orders.filter((o) => o.status === "entregado" && filter(o.createdAt));
       const sA = sales.filter((s) => filter(s.createdAt));
       const total = oA.reduce((a, o) => a + Number(o.total ?? 0), 0) + sA.reduce((a, s) => a + Number(s.total ?? 0), 0);
       const tickets = oA.length + sA.length;
@@ -200,7 +200,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       inner.set(pc.cat, (inner.get(pc.cat) ?? 0) + qty * (price ?? pc.price));
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => o.items.forEach((it) => add(o.createdAt, it.id, it.quantity, it.price)));
     sales.forEach((s) =>
       s.items.forEach((it) => add(s.createdAt, it.productId, it.quantity, it.price)),
@@ -258,7 +258,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       return null;
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => {
         const b = bucket(o.createdAt);
         if (!b) return;

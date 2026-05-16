@@ -156,10 +156,17 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
         )}
       </div>
 
-      {/* Insight 3: Tendencia */}
+      {/* Insight 3: Ritmo dentro del rango.
+          Brandon mayo 2026 v5: renombrado de "¿Estás creciendo?" a "Ritmo
+          de los últimos días" — el título anterior contradecía visualmente
+          al heroDelta del hero (ej. "↑277% vs mes pasado" arriba y
+          "↘ Bajaste 90%" acá, generaba confusión). Ahora la card es
+          explícita: NO compara contra el período anterior (eso es el hero),
+          sino que muestra si las ventas dentro del rango actual van
+          acelerando o desacelerando. */}
       <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
         <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
-          ¿Estás creciendo?
+          Ritmo últimos días
         </p>
         {tendencyPct == null ? (
           <p className="text-base sm:text-lg font-extrabold text-[var(--text-tertiary)] leading-tight">
@@ -168,19 +175,19 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
         ) : tendencyPct >= 5 ? (
           <>
             <p className="text-base sm:text-lg font-extrabold text-[var(--data-success-500)] tabular-nums leading-tight">
-              ↗ Subiste {Math.abs(tendencyPct).toFixed(0)}%
+              ↗ Acelerando {Math.abs(tendencyPct).toFixed(0)}%
             </p>
             <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
-              vendiste más esta segunda mitad
+              los últimos días vendiste más que al inicio
             </p>
           </>
         ) : tendencyPct <= -5 ? (
           <>
             <p className="text-base sm:text-lg font-extrabold text-[var(--data-error-500)] tabular-nums leading-tight">
-              ↘ Bajaste {Math.abs(tendencyPct).toFixed(0)}%
+              ↘ Desacelerando {Math.abs(tendencyPct).toFixed(0)}%
             </p>
             <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
-              vendiste menos esta segunda mitad
+              los últimos días vendiste menos que al inicio
             </p>
           </>
         ) : (

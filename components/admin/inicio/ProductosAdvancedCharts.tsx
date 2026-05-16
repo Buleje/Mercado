@@ -86,7 +86,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       return p?.costPrice ?? (p?.price ?? price ?? 0) * 0.7;
     };
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
       .forEach((o) =>
         o.items.forEach((it) => {
           const p = products.find((x) => x.id === it.id);
@@ -169,7 +169,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       return p?.costPrice ?? (p?.price ?? price ?? 0) * 0.7;
     };
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
       .forEach((o) =>
         o.items.forEach((it) => {
           const cat = productToCat.get(it.id);
@@ -224,7 +224,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       totals.set(id, cur);
     };
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last14)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last14)
       .forEach((o) =>
         o.items.forEach((it) => {
           addToTotal(it.id, it.name, (it.price ?? 0) * it.quantity);
@@ -253,7 +253,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       inner.set(idStr, (inner.get(idStr) ?? 0) + rev);
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) =>
         o.items.forEach((it) =>
           addCell(o.createdAt, it.id, (it.price ?? 0) * it.quantity),
@@ -316,7 +316,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       buckets[b.idx][b.isCurrent ? "current" : "previous"] += qty;
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) =>
         add(o.createdAt, o.items.reduce((a, i) => a + i.quantity, 0)),
       );
@@ -363,7 +363,7 @@ export const ProductosAdvancedCharts = memo(function ProductosAdvancedCharts() {
       matrix[catIdx][dow] += qty;
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => o.items.forEach((it) => add(o.createdAt, it.id, it.quantity)));
     sales.forEach((s) =>
       s.items.forEach((it) => add(s.createdAt, it.productId, it.quantity)),

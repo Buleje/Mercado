@@ -93,7 +93,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const ingresos30d =
       orders
-        .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+        .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
         .reduce((a, o) => a + Number(o.total ?? 0), 0) +
       sales
         .filter((s) => new Date(s.createdAt).getTime() >= last30)
@@ -128,7 +128,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const m = new Map<string, number>();
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
       .forEach((o) => {
         const key = PAY_LABELS[o.paymentMethod ?? "efectivo"] ?? (o.paymentMethod ?? "Efectivo");
         m.set(key, (m.get(key) ?? 0) + Number(o.total ?? 0));
@@ -169,7 +169,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       inner.set(label, (inner.get(label) ?? 0) + amount);
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => add(o.createdAt, o.paymentMethod ?? "efectivo", Number(o.total ?? 0)));
     sales.forEach((s) => add(s.createdAt, s.payment ?? "efectivo", Number(s.total ?? 0)));
     const methodTotals = new Map<string, number>();
@@ -223,7 +223,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
     };
     // Ingresos netos (ventas - compras) por día
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => {
         const b = bucket(o.createdAt);
         if (!b) return;
@@ -261,7 +261,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       return byDate.get(k)!;
     };
     orders
-      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last14)
+      .filter((o) => o.status === "entregado" && new Date(o.createdAt).getTime() >= last14)
       .forEach((o) => {
         const r = ensure(dayKey(o.createdAt));
         r.ingresos += Number(o.total ?? 0);
@@ -316,7 +316,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       byDate.set(k, (byDate.get(k) ?? 0) + delta);
     };
     orders
-      .filter((o) => o.status !== "cancelado")
+      .filter((o) => o.status === "entregado")
       .forEach((o) => add(o.createdAt, Number(o.total ?? 0)));
     sales.forEach((s) => add(s.createdAt, Number(s.total ?? 0)));
     purchases.forEach((p) => {
@@ -352,6 +352,7 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
           defaultVisible={false}
 kicker="Cash runway · rango activo"
           title="Días de operación con balance actual"
+          description="Si parara hoy de vender, cuántos días aguantarías pagando gastos fijos con tu balance actual. Menos de 30 días = riesgo — recortá costos o levantá caja YA."
           kpis={[
             {
               label: "Runway",
@@ -398,6 +399,7 @@ kicker="Cash runway · rango activo"
           defaultVisible={false}
 kicker="Pareto · métodos de pago · rango activo"
           title="Qué métodos concentran el cash"
+          description="Los métodos de pago ordenados por monto. Si un solo medio (ej. Yape) trae el 80% de tu cash, dependés de él — preparate si se cae el sistema y tené alternativa lista."
           kpis={[
             { label: "Total 30d", value: fmtS(pareto.total), tone: "primary" },
             { label: "Métodos para 80%", value: String(pareto.metodosFor80), tone: "success" },
@@ -438,6 +440,7 @@ kicker="Pareto · métodos de pago · rango activo"
           defaultVisible={false}
 kicker="Evolución de métodos · rango activo"
           title="Composición diaria de cobros por método"
+          description="Cada barra es un día y los colores son los métodos de pago. Si el efectivo sigue siendo gigante, prepará un objetivo: «pasar de 60% efectivo a 30% efectivo» en 3 meses."
           kpis={[
             { label: "Días con data", value: String(metodosStacked.rows.length), tone: "neutral" },
             { label: "Métodos", value: String(metodosStacked.methods.length), tone: "neutral" },
@@ -486,6 +489,7 @@ kicker="Evolución de métodos · rango activo"
           defaultVisible={false}
 kicker="Comparativa · semana a semana"
           title="Balance neto — esta semana vs pasada"
+          description="Compará el balance (ingresos menos egresos) de esta semana contra la pasada, día por día. Si esta semana cae, identificá qué día fue y por qué — ese aprendizaje vale oro."
         >
           <BulejeComparisonOverlay
             data={compSemana}
@@ -510,6 +514,7 @@ kicker="Comparativa · semana a semana"
           defaultVisible={false}
 kicker="Evolución del margen · rango activo"
           title="Utilidad neta y margen día a día"
+          description="Cuánta ganancia limpia (después de gastos) sacaste cada día. Si la barra sube pero el margen % baja, vendés más pero ganás peor — revisá precios o costos."
           kpis={[
             {
               label: "Margen prom.",
@@ -561,6 +566,7 @@ kicker="Evolución del margen · rango activo"
           defaultVisible={false}
 kicker="Balance acumulado · rango activo"
           title="Trayectoria de caja (running total)"
+          description="Cómo evoluciona tu balance día tras día sumando todo. La línea siempre debería subir; si baja días seguidos significa que estás consumiendo el capital del negocio."
           kpis={[
             { label: "Final", value: fmtS(runningBalance.finalAcc), tone: runningBalance.finalAcc >= 0 ? "success" : "warning" },
             { label: "Máximo", value: fmtS(runningBalance.maxAcc), tone: "success" },
@@ -588,5 +594,13 @@ kicker="Balance acumulado · rango activo"
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="caja-advanced-order" layout="grid" />;
+  return (
+    <DraggableSections
+      items={sections}
+      storageKey="caja-advanced-order"
+      layout="grid"
+      gap={4}
+      minColumnWidth="22rem"
+    />
+  );
 });

@@ -152,9 +152,9 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
     const prevTo = new Date(dateRange.from.getTime() - 1);
     const inPrev = (iso: string) => { const d = new Date(iso); return d >= prevFrom && d <= prevTo; };
 
-    const periodOrders = orders.filter(o => o.status !== "cancelado" && inRange(o.createdAt));
+    const periodOrders = orders.filter(o => o.status === "entregado" && inRange(o.createdAt));
     const periodSales = sales.filter(s => inRange(s.createdAt));
-    const prevOrders = orders.filter(o => o.status !== "cancelado" && inPrev(o.createdAt));
+    const prevOrders = orders.filter(o => o.status === "entregado" && inPrev(o.createdAt));
     const prevSales = sales.filter(s => inPrev(s.createdAt));
 
     const ventasHoy = periodOrders.reduce((a, o) => a + o.total, 0) + periodSales.reduce((a, s) => a + s.total, 0);
@@ -251,7 +251,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
     // ── Stock alerts (days remaining projection) ──
     const now = new Date();
     const d30 = new Date(now); d30.setDate(d30.getDate() - 30);
-    const recentOrders = orders.filter(o => new Date(o.createdAt) >= d30 && o.status !== "cancelado");
+    const recentOrders = orders.filter(o => new Date(o.createdAt) >= d30 && o.status === "entregado");
     const recentSales = sales.filter(s => new Date(s.createdAt) >= d30);
     const sold30 = new Map<number, number>();
     recentOrders.forEach(o => o.items.forEach(i => sold30.set(i.id, (sold30.get(i.id) ?? 0) + i.quantity)));
@@ -317,7 +317,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
     const sparkUtilidad = last7.map(([, v]) => v.ventas - v.costo);
     const sparkTickets: number[] = [];
     const dailyTicketMap = new Map<string, number>();
-    orders.filter(o => o.status !== "cancelado").forEach(o => { const k = dateKey(o.createdAt); dailyTicketMap.set(k, (dailyTicketMap.get(k) ?? 0) + 1); });
+    orders.filter(o => o.status === "entregado").forEach(o => { const k = dateKey(o.createdAt); dailyTicketMap.set(k, (dailyTicketMap.get(k) ?? 0) + 1); });
     sales.forEach(s => { const k = dateKey(s.createdAt); dailyTicketMap.set(k, (dailyTicketMap.get(k) ?? 0) + 1); });
     last7.forEach(([dk]) => sparkTickets.push(dailyTicketMap.get(dk) ?? 0));
 
@@ -416,7 +416,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
   const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const productSales30 = new Map<number | string, number>();
   orders
-    .filter(o => o.status !== "cancelado" && new Date(o.createdAt).getTime() >= last30)
+    .filter(o => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
     .forEach(o => o.items.forEach(i => productSales30.set(i.id, (productSales30.get(i.id) ?? 0) + i.quantity)));
   sales
     .filter(s => new Date(s.createdAt).getTime() >= last30)

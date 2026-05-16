@@ -146,12 +146,14 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
   const sections: DraggableItem[] = [
     {
       id: "valor-categoria",
+      span: "full",
       render: () => (
         <DashboardSection
           chartId="inventario.valor-categoria"
           hasData={true}
           kicker="Valor del inventario · por categoría"
           title="Cuánto vale y cuánto hay por categoría"
+          description="Plata trabada y unidades por categoría."
           kpis={[
             { label: "Valor total", value: fmtS(data.valorInventario), tone: "primary" },
             { label: "Categoría líder", value: catTop.top?.nombre ?? "—", tone: "success" },
@@ -194,9 +196,11 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       span: "full",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="inventario.movimiento-diario"
+          hasData={true}
           kicker="Movimiento · rango activo"
           title="Entradas y salidas de stock"
+          description="Entradas (compras) y salidas (ventas) por día."
           kpis={[
             { label: "Salidas 14d", value: fmtU(movKpis.totalSalidas), tone: "primary" },
             { label: "Entradas 14d", value: fmtU(movKpis.totalEntradas), tone: "success" },
@@ -225,12 +229,14 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
     },
     {
       id: "top-salidas",
+      span: "full",
       render: () => (
         <DashboardSection
           chartId="inventario.top-salidas"
           hasData={true}
           kicker="Productos · más rotación · periodo"
           title="Top 10 productos por unidades salidas"
+          description="Productos con más rotación."
           kpis={[
             {
               label: "Líder",
@@ -264,8 +270,10 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
         <DashboardSection
           chartId="inventario.distribucion-stock"
           hasData={true}
+          defaultVisible={false}
           kicker="Distribución · SKUs por rango de stock"
           title="Cuántos productos hay en cada rango"
+          description="SKUs agrupados por rango de stock."
           kpis={[
             { label: "Total SKUs", value: String(data.totalProductos), tone: "primary" },
             {
@@ -317,6 +325,7 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
           defaultVisible={false}
           kicker="Cobertura · días restantes top-10"
           title="Días de stock para los productos más expuestos"
+          description="Días de stock restante. Rojo = reponer YA."
           kpis={[
             {
               label: "En crítico",
@@ -353,9 +362,11 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       span: "full",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="inventario.stockout-proyeccion"
+          hasData={true}
           kicker="Proyección · cuándo se agota"
           title="Días hasta agotarse · top 10 riesgo"
+          description="Cuándo se agota cada SKU al ritmo actual."
           rightSlot={
             reorderCandidates.length > 0 ? (
               <div className="flex items-center gap-2">
@@ -422,7 +433,13 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
 
   return (
     <>
-      <DraggableSections items={sections} storageKey="inventario-base-order" layout="column" gap={4} />
+      <DraggableSections
+        items={sections}
+        storageKey="inventario-base-order"
+        layout="grid"
+        gap={4}
+        minColumnWidth="22rem"
+      />
       <ReorderModal
         open={reorderOpen}
         candidates={reorderCandidates}

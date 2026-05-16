@@ -13,6 +13,14 @@ export interface SectionKPI {
 interface Props {
   kicker: string;
   title: string;
+  /**
+   * Brandon mayo 2026 v6: bajada en lenguaje plano (1 línea) que explica
+   * para qué sirve el chart, no qué muestra técnicamente. Pensada para que
+   * un bodeguero de 50 años entienda sin jerga. Ej: "Acá ves quién es tu
+   * mejor cliente del mes. Llamalo y agradecele — vuelven más cuando los
+   * tratás como persona."
+   */
+  description?: string;
   kpis?: SectionKPI[];
   /** right-aligned header slot (ej: badge de tendencia, action button) */
   rightSlot?: ReactNode;
@@ -57,7 +65,7 @@ interface Props {
  *
  * Se usa en Resumen, Ventas base y Ventas advanced para consistencia total.
  */
-export function DashboardSection({ kicker, title, kpis, rightSlot, children, className, hideHeader, chartId, hasData = true, defaultVisible = true }: Props) {
+export function DashboardSection({ kicker, title, description, kpis, rightSlot, children, className, hideHeader, chartId, hasData = true, defaultVisible = true }: Props) {
   // Si el chart se registró con un id, consultar visibility. Si no tiene
   // chartId, siempre visible (back-compat con secciones legacy).
   const { visible } = useChartRegistration(chartId ?? "__none__", {
@@ -65,7 +73,14 @@ export function DashboardSection({ kicker, title, kpis, rightSlot, children, cla
     hasData,
     defaultVisible,
   });
-  if (chartId && !visible) return null;
+  // Brandon mayo 2026 v6: marker "ghost" para que el wrapper draggable
+  // pueda detectar mediante CSS `:has([data-chart-hidden])` y colapsar
+  // el slot del grid. Retornar `null` directo dejaba el wrapper en DOM
+  // pero vacío → huecos blancos enormes al lado de charts visibles
+  // impares cuando los compañeros estaban ocultos por defaultVisible=false.
+  if (chartId && !visible) {
+    return <div data-chart-hidden="true" style={{ display: "none" }} aria-hidden />;
+  }
 
   return (
     <section
@@ -94,6 +109,11 @@ export function DashboardSection({ kicker, title, kpis, rightSlot, children, cla
             <CardTitle className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
               {title}
             </CardTitle>
+            {description && (
+              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed font-medium">
+                {description}
+              </p>
+            )}
           </div>
           {rightSlot && <div className="flex-shrink-0 pr-10">{rightSlot}</div>}
         </header>

@@ -83,12 +83,14 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
   const sections: DraggableItem[] = [
     {
       id: "top-10-clientes",
+      span: "full",
       render: () => (
         <DashboardSection
           chartId="clientes.top-10-clientes"
           hasData={true}
           kicker="Ranking · top 10 clientes del periodo"
           title="Quién más te compra"
+          description="Tus 10 clientes que más gastan."
           kpis={[
             { label: "Top-10 gastó", value: fmtS(topKpis.total), tone: "primary" },
             { label: "Pedidos top-10", value: String(topKpis.pedidos), tone: "neutral" },
@@ -119,6 +121,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
           defaultVisible={false}
           kicker="Retención · rango activo"
           title="Nuevos vs recurrentes por mes"
+          description="Nuevos vs recurrentes por mes."
           kpis={[
             { label: "Total 6m", value: String(retencionKpis.total), tone: "primary" },
             { label: "Nuevos 6m", value: String(retencionKpis.nuevos), tone: "success" },
@@ -156,9 +159,11 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       span: "full",
       render: () => (
         <DashboardSection
-          hideHeader
+          chartId="clientes.clientes-por-dia"
+          hasData={true}
           kicker="Actividad · rango activo"
           title="Clientes nuevos y activos por día"
+          description="Clientes nuevos y activos por día."
           kpis={[
             { label: "Nuevos 14d", value: String(porDiaKpis.nuevos), tone: "success" },
             { label: "Día pico", value: porDiaKpis.pico.dia, tone: "success" },
@@ -191,6 +196,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
           hasData={true}
           kicker="Distribución · gasto histórico"
           title="Cuántos clientes en cada rango de gasto"
+          description="Clientes por rango de gasto histórico."
           kpis={[
             { label: "Total clientes", value: String(gastoKpis.total), tone: "primary" },
             { label: "Rango líder", value: gastoKpis.top.rango, tone: "success" },
@@ -237,6 +243,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
           hasData={true}
           kicker="Frecuencia · en el periodo"
           title="Cuántas veces compran tus clientes"
+          description="Veces que volvieron en el periodo."
           kpis={[
             { label: "Total activos", value: String(freqKpis.total), tone: "primary" },
             { label: "Fieles (4+)", value: String(freqKpis.loyal), tone: "success" },
@@ -276,6 +283,7 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
           defaultVisible={false}
           kicker="Ticket promedio · top clientes"
           title="Cuánto gastan por visita"
+          description="Gasto promedio por visita."
           kpis={[
             {
               label: "Top 1",
@@ -323,5 +331,18 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="clientes-base-order" layout="column" gap={4} />;
+  // Brandon mayo 2026 v6: layout="grid" — los charts sin span ocupan media
+  // fila (distribución de gasto + frecuencia quedan lado a lado).
+  // Los charts con span="full" (clientes-por-dia) siguen full-width.
+  // minColumnWidth="22rem" para que las 2 cols aparezcan aún con la barra
+  // lateral del admin reduciendo el ancho útil del contenido.
+  return (
+    <DraggableSections
+      items={sections}
+      storageKey="clientes-base-order"
+      layout="grid"
+      gap={4}
+      minColumnWidth="22rem"
+    />
+  );
 }

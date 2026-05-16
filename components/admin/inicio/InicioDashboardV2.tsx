@@ -186,9 +186,14 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   const fromMs = dateRange?.from?.getTime() ?? now;
   const daysInRange = Math.max(1, Math.ceil((toMs - fromMs) / (24 * 60 * 60 * 1000)) + 1);
   const dayOfMonth = dayOfMonthRef.current ?? 1;
-  // Target: 10% sobre promedio diario × días del rango, con piso mínimo 10k (mensual) / 300 (diario)
-  const metaFloor = presetKey === "diario" ? 300 : presetKey === "semanal" ? 2500 : presetKey === "anual" ? 120000 : 10000;
-  const metaRango = Math.max(metaFloor, avgDaily * daysInRange * 1.1);
+  // Meta: 20% sobre proyección realista del promedio diario × días del rango.
+  // Brandon mayo 2026 v5: removido el piso fijo (S/10k mensual, S/300 diario,
+  // etc.) que generaba metas imposibles ("5% avanzado" con S/10k cuando el
+  // negocio vendía S/32/día). Ahora la meta se basa en la realidad del negocio:
+  // promedio diario actual × días × 1.2 (stretch de 20%). Si el promedio es
+  // cero, usamos un piso mínimo bajo de S/30/día para que la barra exista.
+  const dailyBaseline = Math.max(avgDaily, 30);
+  const metaRango = dailyBaseline * daysInRange * 1.2;
   // Acumulado real = totalRange del backend (no simulado)
   const acumRango = heroValue;
   // Proyección: extrapola el promedio diario al rango completo
@@ -196,7 +201,12 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   const metaPct = Math.min(100, Math.round((acumRango / metaRango) * 100));
   const proyPct = Math.min(150, Math.round((proyectado / metaRango) * 100));
 
-  // Hora pico (últimos 7d combinando orders + sales)
+  // Hora pico (últimos 7d combinando orders + sales).
+  // Brandon mayo 2026 v5: ocultar la pill cuando no hay info real. Antes
+  // mostraba "00:00" si no había datos o si todos los eventos tenían hora
+  // 00:00 (bug timezone) — confundía al dueño ("¿la gente compra a
+  // medianoche?"). Ahora solo aparece si hay >= 5 eventos y el pico no
+  // está concentrado únicamente en medianoche.
   const allOrdersForPeak = (sharedRaw?.data?.orders ?? []) as Array<{ createdAt: string; status: string }>;
   const allSalesForPeak = (sharedRaw?.data?.sales ?? []) as Array<{ createdAt: string }>;
   const hourCount = new Array(24).fill(0);
@@ -207,8 +217,14 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   allSalesForPeak.forEach((s) => {
     hourCount[new Date(s.createdAt).getHours()] += 1;
   });
+  const totalPeakEvents = hourCount.reduce((a, b) => a + b, 0);
   const peakHour = hourCount.indexOf(Math.max(...hourCount, 1));
-  const peakHourLabel = `${String(peakHour).padStart(2, "0")}:00`;
+  // Si el pico cae en 00:00 lo tratamos como ruido — ninguna bodega tiene
+  // pico real a medianoche en Perú; suele ser bug de timezone en el seed o
+  // datos con createdAt sin hora real. Tampoco mostramos la pill si hay
+  // menos de 5 eventos (muestra muy chica para llamar a algo "hora pico").
+  const hasMeaningfulPeak = totalPeakEvents >= 5 && peakHour !== 0;
+  const peakHourLabel = hasMeaningfulPeak ? `${String(peakHour).padStart(2, "0")}:00` : null;
 
   return (
     <div className="space-y-4">
@@ -246,14 +262,16 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap shrink-0">
-              <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
-                <span className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Hora pico
+              {peakHourLabel && (
+                <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
+                  <span className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                    Hora pico
+                  </span>
+                  <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
+                    {peakHourLabel}
+                  </span>
                 </span>
-                <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
-                  {peakHourLabel}
-                </span>
-              </span>
+              )}
               <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
                 <span className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   {PRESET_PROYECCION[presetKey] ?? PRESET_PROYECCION.mensual}
@@ -341,6 +359,9 @@ function ResumenVentasSection({ weeklyData, rangeTxt }: ResumenVentasSectionProp
         <CardTitle className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           Cuánto vendiste, cuántos pedidos y cuántos clientes te compraron
         </CardTitle>
+        <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed font-medium">
+          Barras negras = plata que entró cada día. Línea = pedidos que recibiste. Área celeste = clientes únicos. Cuando las 3 suben juntas tu negocio crece sano; cuando solo sube la plata pero los clientes caen, dependés de pocos compradores.
+        </p>
       </header>
       <BulejeComposedChart
         data={weeklyData}

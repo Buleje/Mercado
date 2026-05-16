@@ -84,14 +84,14 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     const active = products.filter(p => p.active);
 
     // Filter by date range
-    const periodOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= from && new Date(o.createdAt) <= to);
+    const periodOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= from && new Date(o.createdAt) <= to);
     const periodSales = sales.filter(s => new Date(s.createdAt) >= from && new Date(s.createdAt) <= to);
 
     // Previous period for delta
     const rangeDays = Math.max(1, Math.round((to.getTime() - from.getTime()) / 86400000));
     const prevFrom = new Date(from.getTime() - rangeDays * 86400000);
     const prevTo = new Date(from.getTime() - 1);
-    const prevOrders = orders.filter(o => o.status !== "cancelado" && new Date(o.createdAt) >= prevFrom && new Date(o.createdAt) <= prevTo);
+    const prevOrders = orders.filter(o => o.status === "entregado" && new Date(o.createdAt) >= prevFrom && new Date(o.createdAt) <= prevTo);
     const prevSales = sales.filter(s => new Date(s.createdAt) >= prevFrom && new Date(s.createdAt) <= prevTo);
 
     // KPIs
@@ -135,7 +135,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     // Stockout projection (30-day based)
     const last30 = new Date(now - 30 * 86400000);
     const prodSales30d = new Map<number, number>();
-    orders.filter(o => new Date(o.createdAt) >= last30 && o.status !== "cancelado").forEach(o =>
+    orders.filter(o => new Date(o.createdAt) >= last30 && o.status === "entregado").forEach(o =>
       o.items.forEach(i => { prodSales30d.set(i.id, (prodSales30d.get(i.id) ?? 0) + i.quantity); })
     );
     sales.filter(s => new Date(s.createdAt) >= last30).forEach(s =>
