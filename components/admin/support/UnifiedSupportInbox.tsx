@@ -87,7 +87,7 @@ export function UnifiedSupportInbox() {
       // Fire-and-forget (regla #7) — optimistic UI
       fetch(`/api/admin/support/inbox/${id}/resolve`, { method: "PATCH" })
         .then(() => loadInbox())
-        .catch(() => {})
+        .catch((err) => console.warn("[UnifiedSupportInbox] resolve failed:", err))
         .finally(() => setResolving((prev) => { const s = new Set(prev); s.delete(id); return s; }));
     },
     [loadInbox],

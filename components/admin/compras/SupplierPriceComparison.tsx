@@ -248,7 +248,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
       .then((data) => {
         if (!cancelled && data) setComparaciones(data.comparaciones ?? []);
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[SupplierPriceComparison] fetch failed:", err))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [productId]);

@@ -97,7 +97,7 @@ function CategoryTreemapView() {
       .then(data => {
         if (Array.isArray(data)) setProducts(data.filter((p: TreemapProduct) => p.active));
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[InventarioAlmacenesModule] products fetch failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

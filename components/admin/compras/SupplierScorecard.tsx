@@ -81,7 +81,7 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
       .then((res) => {
         if (!cancelled && res) setData(res);
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[SupplierScorecard] fetch failed:", err))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [supplierId]);

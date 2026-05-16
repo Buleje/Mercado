@@ -242,7 +242,9 @@ export default function DashboardTab() {
                   osc.start();
                   osc.stop(ctx.currentTime + 0.35);
                 } else {
-                  ctx.close().catch(() => {});
+                  // AudioContext.close() puede fallar si el ctx ya está cerrado
+                  // por el browser — best-effort, no afecta funcionalidad.
+                  ctx.close().catch(() => { /* AudioContext already closed */ });
                 }
               }
             } catch { /* optional sound — silently skip */ }
