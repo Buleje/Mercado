@@ -5,6 +5,10 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — endpoint
+// nuclear de eliminación con cookies (requireAdmin) + CSRF + step-up auth.
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/admin/clear-data
  * Nuclear delete: removes business data from tables in FK-safe order.

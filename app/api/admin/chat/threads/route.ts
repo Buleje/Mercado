@@ -7,6 +7,10 @@ import { reportCriticalError } from "@/lib/sentry-alerts";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — depende
+// de cookies + query params + datos en tiempo real (threads de chat).
+export const dynamic = "force-dynamic";
+
 const StatusSchema = z.enum(["open", "closed", "archived", "blocked"]);
 
 const CloseBody = z.object({
