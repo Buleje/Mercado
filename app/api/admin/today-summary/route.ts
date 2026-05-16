@@ -3,11 +3,20 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
 
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — el endpoint
+// depende de cookies (requireAdmin) y datos en tiempo real del día.
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/admin/today-summary
  *
  * Resumen ejecutivo del día: ventas, pedidos, alertas, stock bajo.
  * Usado por el widget "Mi Negocio Hoy" en el admin.
+ *
+ * @cajero ok — Brandon 2026-05-16 (audit Info): cajero puede leer porque
+ * el widget aparece en su pantalla de Ventas/Caja para que entienda el
+ * contexto del día. Es solo-lectura, no modifica nada. PII está enmascarada
+ * o agregada (counts/sums) — no expone teléfonos crudos.
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);

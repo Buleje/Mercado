@@ -4,8 +4,19 @@ import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-// ── GET /api/admin/sunat/invoices — listar comprobantes emitidos ───────────
+// Brandon 2026-05-16 (audit Info): force-dynamic obligatorio — query
+// params + cookies (requireAdmin) + queries en tiempo real.
+export const dynamic = "force-dynamic";
 
+/**
+ * GET /api/admin/sunat/invoices — listar comprobantes emitidos.
+ *
+ * @cajero ok — Brandon 2026-05-16 (audit Info): el cajero necesita ver
+ * los comprobantes que él mismo emite durante su turno para reimprimirlos
+ * o verificar el estado SUNAT (pendiente/aceptado/rechazado). Es legítimo
+ * para su flujo de caja, no expone PII de clientes (solo nombres y RUC
+ * para boletas/facturas).
+ */
 export async function GET(req: NextRequest) {
   const rateLimitResponse = applyRateLimit(req, "MODERATE", "sunat-invoices");
   if (rateLimitResponse) return rateLimitResponse;
