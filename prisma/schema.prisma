@@ -49,6 +49,13 @@ model Tenant {
   emailVerified          Boolean   @default(false)
   emailVerifyToken       String?   @unique
   emailVerifyExpires     DateTime?
+  // ── Delivery network (Brandon mayo 2026 v7) ──────────
+  // Si true, los pedidos del tenant se ofrecen a la red de repartidores
+  // Buleje (DeliveryPartner cross-tenant) y la tienda aparece en /delivery-app.
+  // Si false (default), solo el delivery propio del negocio atiende los pedidos
+  // — no se crean DeliveryOffer para terceros, ni la tienda aparece en el mapa
+  // ni en hot-zones del rider.
+  useThirdPartyDelivery  Boolean   @default(false)
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 
