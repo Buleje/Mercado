@@ -405,7 +405,7 @@ export default function PromotionsTab() {
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ phones, title: sendPromo.name, message: sendPromo.description || msg, promoId: sendPromo.id }),
-    }).catch(() => {});
+    }).catch((err) => console.warn("[PromotionsTab] campaigns/notify POST failed:", err));
 
     // Open first WhatsApp link
     sendWhatsApp(phones[0], msg);

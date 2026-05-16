@@ -75,6 +75,16 @@ export async function PATCH(
         return NextResponse.json({ ok: true });
 
       case "delete":
+        // Brandon 2026-05-16 (audit P2 roles hardening): solo admin/manager
+        // pueden eliminar reviews. Antes el role check de arriba aceptaba
+        // cajero pero softDelete debería ser decisión gerencial (afecta
+        // reputación del producto en marketplace).
+        if (auth.role !== "admin" && auth.role !== "manager") {
+          return NextResponse.json(
+            { error: "Solo administradores pueden eliminar reseñas" },
+            { status: 403 },
+          );
+        }
         await ReviewsMarketplaceDB.softDelete(auth.tenantId, reviewId);
         return NextResponse.json({ ok: true });
     }

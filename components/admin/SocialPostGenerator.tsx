@@ -108,7 +108,7 @@ export default function SocialPostGenerator() {
         const list = Array.isArray(data) ? data : (data.products ?? []);
         setProducts(list);
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[SocialPostGenerator] products fetch failed:", err))
       .finally(() => setLoadingProducts(false));
   }, []);
 

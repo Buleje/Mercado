@@ -82,7 +82,7 @@ export function useOrdersData(): OrdersDataState & OrdersDataActions {
         if (d?.businessLon) setStoreLon(d.businessLon);
         if (d?.businessName) setStoreName(d.businessName);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[useOrdersData] settings fetch failed:", err));
   }, []);
 
   return {

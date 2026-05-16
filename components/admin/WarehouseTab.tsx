@@ -201,7 +201,7 @@ export default function WarehouseTab() {
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "adjust", productId: Number(s.productId), newStock: newQty }),
-    }).catch(() => {});
+    }).catch((err) => console.warn("[WarehouseTab] inventory-movements adjust failed:", err));
   };
 
   const handleCreateWarehouse = () => {
@@ -243,7 +243,7 @@ export default function WarehouseTab() {
           });
         }
       })
-      .catch(() => {})
+      .catch((err) => console.warn("[WarehouseTab] DELETE warehouse failed:", err))
       .finally(() => setDeletingId(null));
   };
 
@@ -357,13 +357,13 @@ export default function WarehouseTab() {
         unit: transferForm.unit,
         notes: transferForm.notes.trim(),
       }),
-    }).catch(() => {});
+    }).catch((err) => console.warn("[WarehouseTab] transfer POST failed:", err));
     // Also record as inventory movement
     fetch("/api/inventory-movements", {
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ productId: Number(srcLine.productId), type: "transferencia", quantity: qty, notes: noteText }),
-    }).catch(() => {});
+    }).catch((err) => console.warn("[WarehouseTab] inventory-movements transfer failed:", err));
   }
 
   const totalValue = warehouseStock.reduce((s, w) => s + w.totalValue, 0);
