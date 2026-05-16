@@ -219,6 +219,8 @@ export {
   Battery,
   Beaker,
   Bike,
+  Car,
+  Footprints,
   BookOpen,
   BookOpenText,
   BookTemplate,
