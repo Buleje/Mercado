@@ -281,10 +281,10 @@ export default function TabHoy({ onTabChange }: Props) {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--surface-sunken)] p-5 sm:p-6">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--surface-sunken)] dark:from-[var(--surface-raised)] dark:to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--text-primary)]">
-            <Sparkles className="h-5 w-5 text-white" />
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] dark:bg-[var(--accent)]">
+            <Sparkles className="h-5 w-5 text-white dark:text-[var(--surface-canvas)]" />
           </span>
           <div className="flex-1">
             <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] leading-tight">
