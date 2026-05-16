@@ -502,7 +502,7 @@ export default function POSPaymentModal({
       variant="pos"
       hideCloseButton
     >
-      <div className="relative flex flex-col h-full bg-[var(--surface-sunken)] dark:bg-surface">
+      <div className="relative flex flex-col h-full bg-gradient-to-br from-[var(--surface-sunken)] to-[var(--surface-raised)] dark:from-surface dark:to-[var(--surface-raised)]">
         {/* Customer list overlay */}
         {showCustomerList && (
           <CustomerListPanel
@@ -515,86 +515,106 @@ export default function POSPaymentModal({
         )}
 
         {/*
-          Brandon 2026-05-16 v2 — Rediseño estilo iPad POS:
-          Header con grid horizontal compacto (h-20):
-            LEFT: voice toggle + label "TOTAL A COBRAR"
-            CENTER: monto grande S/X.XX inline con #items
-            RIGHT: chip descuento (si aplica) + close
-          Resultado: header pasa de ~140px (vertical) a ~80px horizontal.
+          Brandon 2026-05-16 v3 — Rediseño visual PREMIUM:
+          Header hero con accent-soft fondo + total display gigante.
+          Botones voice/close como pills con backdrop. Chip descuento
+          y redondeo dentro del hero. Look estilo "checkout Stripe".
         */}
-        <div className="shrink-0 px-5 sm:px-6 py-3 border-b-2 border-[var(--rule-base)] bg-[var(--surface-raised)] flex items-center gap-4">
-          {/* Voice toggle (izquierda) */}
-          <button
-            onClick={() => { const next = !voiceEnabled; setVoiceEnabled(next); try { localStorage.setItem("pos-voice-total", String(next)); } catch {} }}
-            className="shrink-0 h-11 w-11 rounded-xl flex items-center justify-center bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] transition-colors opacity-70 hover:opacity-100"
-            title={voiceEnabled ? "Desactivar voz" : "Activar voz"}
-            aria-label="Toggle voz"
-          >
-            {voiceEnabled ? <Volume2 className="h-5 w-5 text-[var(--text-secondary)]" /> : <VolumeX className="h-5 w-5 text-[var(--text-tertiary)]" />}
-          </button>
+        <div className="shrink-0 relative overflow-hidden border-b-2 border-[var(--rule-base)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+          {/* Glow decorativo de fondo (sutil) */}
+          <div className="absolute inset-0 pointer-events-none opacity-50 bg-[radial-gradient(ellipse_at_center,var(--accent-soft),transparent_70%)]" />
 
-          {/* Centro: label + total + items */}
-          <div className="flex-1 min-w-0 flex items-baseline gap-3">
-            <p className="text-[10px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-[0.15em] whitespace-nowrap">
-              Total a cobrar
-            </p>
-            <p className="text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
-              {fmt(total)}
-            </p>
-            <p className="text-sm text-[var(--text-tertiary)] whitespace-nowrap">
-              · {cartCount} {cartCount === 1 ? "articulo" : "articulos"}
-            </p>
-            {discountAmount > 0 && (
-              <span className="text-xs font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-2 py-1 rounded-full whitespace-nowrap">
-                −{fmt(discountAmount)} dto
-              </span>
-            )}
-            {/* Redondeo chips inline */}
-            {total % 1 !== 0 && (() => {
-              const bajo = Math.floor(total);
-              const alto = Math.ceil(total);
-              const a5 = Math.ceil(total / 5) * 5;
-              const opciones = [
-                { val: bajo, diff: total - bajo },
-                { val: alto, diff: alto - total },
-                ...(total > 10 && a5 !== alto ? [{ val: a5, diff: a5 - total }] : []),
-              ].filter(o => Math.abs(o.diff) < 3 && o.val > 0);
-              const uniq = [...new Map(opciones.map(o => [o.val, o])).values()];
-              if (uniq.length === 0) return null;
-              return (
-                <div className="hidden lg:flex items-center gap-1 ml-2">
-                  <span className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase">Redondear:</span>
-                  {uniq.map(o => (
-                    <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
-                      className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-[var(--surface-sunken)] hover:bg-primary hover:text-white transition-colors">
-                      S/{o.val}
-                    </button>
-                  ))}
+          <div className="relative px-5 sm:px-6 py-4 flex items-center gap-4">
+            {/* Voice toggle (izquierda) */}
+            <button
+              onClick={() => { const next = !voiceEnabled; setVoiceEnabled(next); try { localStorage.setItem("pos-voice-total", String(next)); } catch {} }}
+              className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-[var(--surface-raised)]/80 backdrop-blur hover:bg-[var(--surface-raised)] shadow-sm transition-colors text-[var(--text-secondary)] hover:text-[var(--accent)]"
+              title={voiceEnabled ? "Desactivar voz" : "Activar voz"}
+              aria-label="Toggle voz"
+            >
+              {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </button>
+
+            {/* Centro: label + total + chip items */}
+            <div className="flex-1 min-w-0 flex flex-col">
+              <p className="text-[10px] font-extrabold text-[var(--accent-dark)] dark:text-[var(--accent)] uppercase tracking-[0.18em] mb-0.5">
+                Total a cobrar
+              </p>
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <p className="text-4xl lg:text-5xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
+                  {fmt(total)}
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-bold border border-[var(--rule-soft)] shadow-sm">
+                    <Receipt className="h-3.5 w-3.5" />
+                    {cartCount} {cartCount === 1 ? "articulo" : "articulos"}
+                  </span>
+                  {discountAmount > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--data-error-500)]/15 text-[var(--data-error-500)] text-xs font-extrabold shadow-sm">
+                      <Percent className="h-3 w-3" />
+                      −{fmt(discountAmount)} dto
+                    </span>
+                  )}
                 </div>
-              );
-            })()}
-          </div>
+                {/* Redondeo chips inline */}
+                {total % 1 !== 0 && (() => {
+                  const bajo = Math.floor(total);
+                  const alto = Math.ceil(total);
+                  const a5 = Math.ceil(total / 5) * 5;
+                  const opciones = [
+                    { val: bajo, diff: total - bajo },
+                    { val: alto, diff: alto - total },
+                    ...(total > 10 && a5 !== alto ? [{ val: a5, diff: a5 - total }] : []),
+                  ].filter(o => Math.abs(o.diff) < 3 && o.val > 0);
+                  const uniq = [...new Map(opciones.map(o => [o.val, o])).values()];
+                  if (uniq.length === 0) return null;
+                  return (
+                    <div className="hidden lg:flex items-center gap-1">
+                      <span className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase tracking-wide">Redondear:</span>
+                      {uniq.map(o => (
+                        <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
+                          className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-[var(--surface-raised)] hover:bg-[var(--accent)] hover:text-white shadow-sm transition-colors">
+                          S/{o.val}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
 
-          {/* Cerrar (derecha) */}
-          <button
-            onClick={onCancel}
-            aria-label="Cerrar"
-            className="shrink-0 h-11 w-11 rounded-xl flex items-center justify-center bg-[var(--surface-sunken)] hover:bg-[var(--data-error-500)]/15 hover:text-[var(--data-error-500)] text-[var(--text-secondary)] transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+            {/* Cerrar (derecha) */}
+            <button
+              onClick={onCancel}
+              aria-label="Cerrar"
+              className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-[var(--surface-raised)]/80 backdrop-blur hover:bg-[var(--data-error-500)] hover:text-white text-[var(--text-secondary)] shadow-sm transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/*
-          Body en grid 12 columnas (desktop iPad POS layout):
-            Col 1 (lg:5): Métodos pago + monto + billetes + vuelto
-            Col 2 (lg:4): Cliente (search + new form)
-            Col 3 (lg:3): Comprobante + Descuento collapse
-          Mobile: single column con scroll.
+          v3 body: cada columna es un CARD elegante (rounded-2xl + shadow)
+          con header de sección (icono circular + título). Cards separados
+          por gap-4. Padding interno generoso.
+
+          Col 1 (lg:5) — 💳 Pago
+          Col 2 (lg:3) — 👤 Cliente
+          Col 3 (lg:4) — 🧾 Comprobante
         */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 sm:px-5 py-4 grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
-            <div className="lg:col-span-5 space-y-3 min-w-0">
+          <div className="px-4 sm:px-5 py-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+            {/* COL 1 — Card Pago */}
+            <div className="lg:col-span-5 min-w-0 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-[var(--rule-soft)] flex items-center gap-2.5">
+                <span className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)]">
+                  <Banknote className="h-4 w-4" />
+                </span>
+                <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Pago</h3>
+              </div>
+              <div className="px-4 py-3 space-y-3 min-w-0">
 
           {/* Descuento — collapsible */}
           <div>
@@ -735,24 +755,34 @@ export default function POSPaymentModal({
               />
             ) : (
               <>
-                {/* Single payment - method selector grid */}
+                {/* Single payment - method selector grid (v3 visual) */}
                 {isSinglePayment && (
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
-                    {METHODS.map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => updateMethod(0, m.id)}
-                        className={cn(
-                          "flex flex-col items-center gap-2 px-3 py-4 rounded-xl border text-sm font-semibold transition-all",
-                          paymentLines[0].method === m.id
-                            ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
-                            : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
-                        )}
-                      >
-                        <m.icon className="h-6 w-6" />
-                        {m.label}
-                      </button>
-                    ))}
+                    {METHODS.map((m) => {
+                      const selected = paymentLines[0].method === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => updateMethod(0, m.id)}
+                          className={cn(
+                            "group relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border-2 text-xs font-extrabold transition-all overflow-hidden",
+                            selected
+                              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-[0_4px_12px_-4px_var(--accent)]"
+                              : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-raised)] hover:-translate-y-0.5"
+                          )}
+                        >
+                          <span className={cn(
+                            "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
+                            selected
+                              ? "bg-[var(--accent)] text-white"
+                              : "bg-[var(--surface-raised)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
+                          )}>
+                            <m.icon className="h-4 w-4" />
+                          </span>
+                          <span className="uppercase tracking-wide">{m.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -1043,10 +1073,19 @@ export default function POSPaymentModal({
             </div>
           )}
 
-            </div>{/* fin col 1 — Pagos */}
+              </div>{/* fin contenido card Pago */}
+            </div>{/* fin Card Pago */}
 
-            {/* Col 2 — Cliente */}
-            <div className="lg:col-span-3 space-y-3 min-w-0">
+            {/* COL 2 — Card Cliente */}
+            <div className="lg:col-span-3 min-w-0 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-[var(--rule-soft)] flex items-center gap-2.5">
+                <span className="h-8 w-8 rounded-full bg-[var(--data-success-500)]/15 flex items-center justify-center text-[var(--data-success-500)]">
+                  <User className="h-4 w-4" />
+                </span>
+                <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Cliente</h3>
+                {isFiado && <span className="ml-auto text-[10px] font-extrabold text-[var(--data-error-500)] uppercase">Requerido</span>}
+              </div>
+              <div className="px-4 py-3 space-y-3 min-w-0">
 
           {/* Customer search */}
           <div>
@@ -1184,10 +1223,18 @@ export default function POSPaymentModal({
             />
           </div>
 
-            </div>{/* fin col 2 — Cliente */}
+              </div>{/* fin contenido card Cliente */}
+            </div>{/* fin Card Cliente */}
 
-            {/* Col 3 — Comprobante */}
-            <div className="lg:col-span-4 space-y-3 min-w-0">
+            {/* COL 3 — Card Comprobante */}
+            <div className="lg:col-span-4 min-w-0 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-[var(--rule-soft)] flex items-center gap-2.5">
+                <span className="h-8 w-8 rounded-full bg-[var(--data-warning-500)]/15 flex items-center justify-center text-[var(--data-warning-500)]">
+                  <Receipt className="h-4 w-4" />
+                </span>
+                <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Comprobante</h3>
+              </div>
+              <div className="px-4 py-3 space-y-3 min-w-0">
 
           {/* Tipo de comprobante */}
           <div>
@@ -1275,12 +1322,17 @@ export default function POSPaymentModal({
               </div>
             )}
           </div>
-            </div>{/* fin col 3 — Comprobante */}
+              </div>{/* fin contenido card Comprobante */}
+            </div>{/* fin Card Comprobante */}
           </div>{/* fin grid 12 cols */}
         </div>{/* fin body scroll */}
 
-        {/* Footer sticky con CTA full-width verde */}
-        <div className="shrink-0 px-5 sm:px-6 py-3 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        {/*
+          Footer premium: shadow superior + gradient sutil + CTA con
+          glow accent. Botón Confirmar imponente con icon grande +
+          monto destacado.
+        */}
+        <div className="shrink-0 px-5 sm:px-6 py-3.5 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.06)]">
           {isFiado && !customerPhone && (
             <p className="text-sm text-[var(--data-error-500)] font-semibold text-center mb-3">
               Selecciona un cliente para continuar
@@ -1290,24 +1342,33 @@ export default function POSPaymentModal({
             onClick={handleConfirm}
             disabled={!canConfirm}
             className={cn(
-              "w-full py-4 rounded-xl font-bold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 text-white",
+              "group relative w-full py-4 rounded-2xl font-extrabold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between px-6 text-white overflow-hidden",
               isFiado
-                ? "bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]"
-                : "bg-primary hover:bg-primary-dark"
+                ? "bg-[var(--data-warning-500)] hover:brightness-110 shadow-[0_8px_24px_-8px_var(--data-warning-500)]"
+                : "bg-gradient-to-r from-[var(--accent)] to-[var(--accent-dark)] hover:brightness-110 shadow-[0_8px_24px_-8px_var(--accent)]"
             )}
           >
-            {processing ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : isFiado ? (
-              <HandCoins className="h-5 w-5" />
-            ) : (
-              <Receipt className="h-5 w-5" />
+            <span className="flex items-center gap-2.5">
+              {processing ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : isFiado ? (
+                <HandCoins className="h-5 w-5" />
+              ) : (
+                <Receipt className="h-5 w-5" />
+              )}
+              <span>
+                {processing
+                  ? "Procesando..."
+                  : isFiado
+                  ? "Registrar fiado"
+                  : "Confirmar venta"}
+              </span>
+            </span>
+            {!processing && (
+              <span className="text-2xl tabular-nums tracking-tight">
+                {fmt(total)}
+              </span>
             )}
-            {processing
-              ? "Procesando..."
-              : isFiado
-              ? `Registrar fiado ${fmt(total)}`
-              : `Confirmar venta ${fmt(total)}`}
           </button>
         </div>
       </div>
