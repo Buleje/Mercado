@@ -276,10 +276,10 @@ export default function DeliveryRoutesTab() {
     loadRoutes();
     fetch("/api/admin-users").then(r => r.ok ? r.json() : []).then((users: Array<{ id: string; name: string; role: string; active: boolean }>) => {
       setRiders(users.filter(u => u.active));
-    }).catch(() => {});
+    }).catch((err) => console.warn("[DeliveryRoutesTab] admin-users fetch failed:", err));
     fetch("/api/admin/delivery-zones").then(r => r.ok ? r.json() : null).then((data: Zone[] | null) => {
       if (data && data.length > 0) startTransition(() => setZones(data));
-    }).catch(() => {});
+    }).catch((err) => console.warn("[DeliveryRoutesTab] delivery-zones fetch failed:", err));
   }, []);
 
   const updateRouteStatus = (routeId: string, newStatus: Route["status"]) => {
@@ -307,7 +307,7 @@ export default function DeliveryRoutesTab() {
         ...(assignedRiders[routeId] ? { riderName: assignedRiders[routeId] } : {}),
         ...(deliveredAt ? { deliveredAt } : {}),
       }),
-    }).catch(() => {});
+    }).catch((err) => console.warn("[DeliveryRoutesTab] PATCH order status failed:", err));
   };
 
   const effectiveRider = (r: Route) => assignedRiders[r.id] || r.riderName || null;

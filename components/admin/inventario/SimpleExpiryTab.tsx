@@ -68,7 +68,7 @@ export default function SimpleExpiryTab() {
     fetch("/api/batches")
       .then(r => r.json())
       .then((d: unknown) => setBatches(Array.isArray(d) ? d : []))
-      .catch(() => {})
+      .catch((err) => console.warn("[SimpleExpiryTab] /api/batches failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

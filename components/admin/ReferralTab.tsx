@@ -80,7 +80,9 @@ export default function ReferralTab() {
   }, [referrals]);
 
   const handleCopy = (code: string) => {
-    navigator.clipboard.writeText(code).catch(() => {});
+    // Clipboard puede fallar por permisos del browser — best-effort,
+    // el UI muestra "copiado" igual y el user puede reintentar.
+    navigator.clipboard.writeText(code).catch(() => { /* clipboard best-effort */ });
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   };

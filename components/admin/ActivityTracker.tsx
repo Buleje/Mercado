@@ -128,7 +128,7 @@ export async function trackActivity(
     method: "POST",
     headers: csrfHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(entry),
-  }).catch(() => {});
+  }).catch((err) => console.warn("[ActivityTracker] log POST failed:", err));
 
   // 3. Toast notification
   if (!silent) {
