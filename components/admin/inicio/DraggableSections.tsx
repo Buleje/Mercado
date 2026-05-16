@@ -124,8 +124,11 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
       if (cleanOrder.some((id, i) => id !== items[i]?.id) || cleanHidden.length > 0) {
         firstDragRef.current = false; // ya interactuó antes
       }
-    } catch {
-      /* ignore */
+    } catch (err) {
+      // Brandon 2026-05-16 (audit P1): antes era `catch { /* ignore */ }`.
+      // En Safari privado o storage lleno, la lectura falla silenciosamente
+      // y el layout default reaparece sin que el user sepa por qué.
+      console.warn("[DraggableSections] no se pudo leer layout guardado:", err);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
@@ -135,8 +138,10 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
     if (!storageKey) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
-    } catch {
-      /* ignore */
+    } catch (err) {
+      // Storage lleno o bloqueado (Safari privado, modo incógnito iOS).
+      // El user reordena pero los cambios NO persisten al recargar.
+      console.warn("[DraggableSections] no se pudo guardar layout (storage lleno o bloqueado):", err);
     }
   }
 

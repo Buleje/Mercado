@@ -127,7 +127,8 @@ function ProductFormModal({
     fetch("/api/tags?entity=product")
       .then(r => r.ok ? r.json() : [])
       .then((data: Array<{ name: string; color: TagColor }>) => setAvailableTags(data))
-      .catch(() => {});
+      // Brandon 2026-05-16 (audit P1 regla 7): logger en lugar de silencio.
+      .catch((err) => console.warn("[ProductsAdminTab] tags fetch failed:", err));
   }, []);
 
   const addTag = (name: string, color: TagColor) => {

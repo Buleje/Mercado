@@ -74,6 +74,11 @@ const PRESET_PROYECCION: Record<string, string> = {
 export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  // Brandon 2026-05-16 (audit P1): estado separado para errores de red /
+  // 500 server. Antes el catch silencioso dejaba `data=null` que el empty
+  // state interpretaba como "sin ventas" — el bodeguero veía "Registrar
+  // venta" en lugar de un banner de error real.
+  const [fetchError, setFetchError] = useState<string | null>(null);
   // Hook llamado SIEMPRE — antes de cualquier early return (Rules of Hooks).
   const sharedRaw = useDashboardData();
   // Date.now() via useRef lazy-init — evita react-hooks/purity violation
@@ -97,19 +102,41 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   }, [dateRange?.from, dateRange?.to, dateRange?.preset]);
 
   useEffect(() => {
+    // Brandon 2026-05-16 (audit P1): agregado AbortController para
+    // cancelar fetches en vuelo cuando el usuario cambia el rango
+    // rápidamente. Antes el flag `active` evitaba el setState post-unmount
+    // pero el fetch igual viajaba a la red — múltiples fetches consumían
+    // BW/CPU innecesariamente.
+    const controller = new AbortController();
     let active = true;
     setLoading(true);
-    fetch(`/api/admin/overview${rangeQuery}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        if (active && json && !json.error) setData(json as OverviewData);
+    setFetchError(null);
+    fetch(`/api/admin/overview${rangeQuery}`, { signal: controller.signal })
+      .then(async (r) => {
+        if (!r.ok) {
+          setFetchError(`Error del servidor (${r.status}). Reintentá en unos segundos.`);
+          return null;
+        }
+        return r.json();
       })
-      .catch(() => { /* silent fallback */ })
+      .then((json) => {
+        if (!active) return;
+        if (json && !json.error) {
+          setData(json as OverviewData);
+        } else if (json?.error) {
+          setFetchError(typeof json.error === "string" ? json.error : "Respuesta inválida.");
+        }
+      })
+      .catch((err) => {
+        if (!active || err?.name === "AbortError") return;
+        setFetchError("Error de red. Verificá tu conexión.");
+      })
       .finally(() => {
         if (active) setLoading(false);
       });
     return () => {
       active = false;
+      controller.abort();
     };
   }, [rangeQuery]);
 
@@ -122,6 +149,29 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
           <SkeletonEditorial height={320} rounded="xl" />
           <SkeletonEditorial height={320} rounded="xl" />
         </div>
+      </div>
+    );
+  }
+
+  // Brandon 2026-05-16 (audit P1): diferenciar error de red vs "sin datos".
+  // Antes ambos casos caían al mismo banner gris → el bodeguero no sabía
+  // si reintentar o llamar a soporte.
+  if (fetchError) {
+    return (
+      <div className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 p-6 text-center">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-error-500)] mb-2">
+          No se pudo cargar el resumen
+        </p>
+        <p className="text-sm font-semibold text-[var(--text-primary)] mb-4">
+          {fetchError}
+        </p>
+        <button
+          type="button"
+          onClick={() => { setFetchError(null); setLoading(true); /* effect re-corre por cambio en setLoading? no — uso reload */ window.location.reload(); }}
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-extrabold hover:opacity-90 transition-opacity"
+        >
+          Reintentar
+        </button>
       </div>
     );
   }

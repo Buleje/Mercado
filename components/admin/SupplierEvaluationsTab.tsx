@@ -34,7 +34,8 @@ export default function SupplierEvaluationsTab() {
     fetch(`/api/supplier-evaluations?supplierId=${selected}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (active && d) setData(d); })
-      .catch(() => {});
+      // Brandon 2026-05-16 (audit P1 regla 7): logger en lugar de silencio.
+      .catch((err) => console.warn("[SupplierEvaluationsTab] fetch failed:", err));
     return () => { active = false; };
   }, [selected, evalTick]);
 

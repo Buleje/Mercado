@@ -108,18 +108,33 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
   const sessionCookie =
     req.cookies.get("buleje-admin-sess")?.value ??
     req.cookies.get("bsm-admin-sess")?.value;
+  let sessionPayload: Awaited<ReturnType<typeof getSessionPayload>> | null = null;
   if (sessionCookie) {
-    const payload = await getSessionPayload(sessionCookie);
-    if (payload?.tenantId && payload.tenantId !== DEFAULT_TENANT_ID) {
-      return payload.tenantId;
+    sessionPayload = await getSessionPayload(sessionCookie);
+    if (sessionPayload?.tenantId && sessionPayload.tenantId !== DEFAULT_TENANT_ID) {
+      return sessionPayload.tenantId;
     }
   }
 
-  // Source 2: active-tenant cookie (set during login/impersonation with
-  // canonical Tenant.id — CUID, not slug).
+  // Source 2: active-tenant cookie (impersonation by superadmin/owner).
+  // SECURITY 2026-05-16 (audit P2 hardening): antes esta cookie se aceptaba
+  // de cualquier request — un atacante con XSS podía setearla y mover el
+  // tenant del JWT sin necesidad de credenciales válidas. Ahora solo se
+  // honra cuando hay JWT firmado vigente Y el role permite impersonación.
+  // Para usuarios normales con JWT.tenantId === "main" (caso raro de
+  // bootstrap), la cookie se ignora — la API igual requiere auth y
+  // retornará 401 si no corresponde.
   const activeTenantCookie = req.cookies.get("active-tenant")?.value;
   if (activeTenantCookie && activeTenantCookie !== DEFAULT_TENANT_ID) {
-    return activeTenantCookie;
+    const role = sessionPayload?.role;
+    const canImpersonate = role === "owner" || role === "superadmin";
+    if (sessionPayload && canImpersonate) {
+      return activeTenantCookie;
+    }
+    // Sin JWT vigente o role no autorizado: ignoramos la cookie y caemos
+    // a Source 3 (referer) o baseTenant. Loguear para detectar abuso.
+    // (no logger here — middleware corre en edge, sin acceso al logger
+    // estructurado. Se puede agregar via @vercel/otel span si se requiere.)
   }
 
   // Source 3 (LOWEST): Referer header contains /t/[slug]/.
