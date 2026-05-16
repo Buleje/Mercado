@@ -306,6 +306,10 @@ export default function AdminLoginPage() {
                   className="w-full h-14 pl-12 pr-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
                   placeholder="qaadmin"
                   autoComplete="username"
+                  data-bwignore="true"
+                  data-1p-ignore="true"
+                  data-lpignore="true"
+                  data-form-type="other"
                 />
               </div>
             </div>
@@ -330,6 +334,10 @@ export default function AdminLoginPage() {
                   className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
                   placeholder="••••••••"
                   autoComplete="current-password"
+                  data-bwignore="true"
+                  data-1p-ignore="true"
+                  data-lpignore="true"
+                  data-form-type="other"
                   required
                 />
                 <button

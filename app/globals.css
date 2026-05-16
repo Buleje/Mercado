@@ -2724,3 +2724,27 @@ body:has(header.store-header) > nav[aria-label="Breadcrumb"] {
 body.tenant-storefront > nav[aria-label="Breadcrumb"] {
   display: none !important;
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+   ADMIN DASHBOARD — colapsar wrappers de charts ocultos + estirar último impar
+   Brandon (2026-05-15): cuando un chart tiene defaultVisible=false (o el
+   usuario lo ocultó), DashboardSection retorna un `<div data-chart-hidden>`
+   en vez de null para que el wrapper draggable lo detecte y se colapse del
+   grid — sin esto, quedaban huecos blancos enormes al lado de los charts
+   visibles "impares".
+   ──────────────────────────────────────────────────────────────────────── */
+.draggable-section:has(> div > div > div > [data-chart-hidden]),
+.draggable-section:has([data-chart-hidden]) {
+  display: none !important;
+}
+
+/* Si la cantidad de halves visibles es IMPAR, el último queda alone en su
+   fila — lo estiramos a ancho completo. Si es PAR, los halves parean
+   normalmente. Combinamos:
+     - `:nth-child(2n+1 of S)` → la posición es impar contando solo halves visibles
+     - `:nth-last-child(1 of S)` → es el último half visible
+   Esto evita el bug donde, con 2 halves visibles, el último se estiraba
+   rompiendo el pareo. Soporte: Chrome 111+, Safari 9+, Firefox 113+. */
+.draggable-section:nth-child(2n+1 of .draggable-section:not([data-fullspan="true"]):not(:has([data-chart-hidden]))):nth-last-child(1 of .draggable-section:not([data-fullspan="true"]):not(:has([data-chart-hidden]))) {
+  grid-column: 1 / -1;
+}
