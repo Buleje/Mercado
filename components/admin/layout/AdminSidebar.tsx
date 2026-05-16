@@ -25,7 +25,7 @@ import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
 import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useTenant } from "@/contexts/tenant-context";
-import { SIDEBAR_STYLE_PRESETS } from "@/lib/admin-template";
+import { SIDEBAR_STYLE_PRESETS, type DefaultSidebarStyle } from "@/lib/admin-template";
 import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
 import {
   getVerticalConfig,
@@ -297,13 +297,19 @@ export function AdminSidebar({
 
   // ── Estilo default del sidebar heredado del superadmin (plantilla) ──
   // El superadmin elige en /superadmin/plantilla un estilo (buleje / ejecutivo
-  // / sereno / vibrante / personalizado). Cuando cambia, el sidebar del tenant
-  // refleja el nuevo theme + accent — salvo que el estilo sea "personalizado",
-  // que respeta lo que el dueño haya configurado localmente.
+  // / sereno / vibrante / personalizado). El admin SIEMPRE refleja lo que el
+  // superadmin guardó — sin excepciones — para evitar drift visual entre las
+  // dos vistas.
+  //
+  // Brandon 2026-05-16: antes "personalizado" hacía `return` y dejaba el
+  // sidebar con lo que tuviera en localStorage (casi siempre "buleje"). Eso
+  // provocaba que superadmin mostrara "Personalizado" seleccionado pero admin
+  // se viera "Estilo Buleje". Ahora "personalizado" mapea al preset buleje
+  // como base — el cliente puede ajustar después desde el panel admin.
   React.useEffect(() => {
     const style = template.defaultSidebarStyle ?? "buleje";
-    if (style === "personalizado") return;
-    const preset = SIDEBAR_STYLE_PRESETS[style];
+    const presetKey = (style === "personalizado" ? "buleje" : style) as Exclude<DefaultSidebarStyle, "personalizado">;
+    const preset = SIDEBAR_STYLE_PRESETS[presetKey];
     if (!preset) return;
     if (sidebarTheme !== preset.theme) {
       setSidebarTheme(preset.theme);
