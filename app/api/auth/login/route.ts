@@ -15,7 +15,19 @@ import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 
 type LegacyAdminUser = { id: string; username: string; password: string; role: AdminRole; name: string };
 
-// F2/F5 — dummy hash para igualación de timing side-channel
+// F2/F5 — dummy hash para igualación de timing side-channel.
+//
+// IMPORTANTE: este string NO es un hash bcrypt válido — es un dummy con
+// formato bcrypt-compatible (prefijo $2a$10$) que se usa SOLO como input
+// para bcrypt.compare() cuando el usuario no existe en DB. El propósito
+// es igualar el tiempo de cómputo entre "usuario inexistente" (rápido)
+// y "usuario válido + password incorrecto" (lento, bcrypt). Así un
+// atacante NO puede enumerar usuarios midiendo response time.
+//
+// NO es secreto y NO debe usarse para almacenar nada — comparar contra
+// él SIEMPRE devuelve false (ningún input genera ese hash). Si en el
+// futuro alguien lo usa por error en otro contexto pensando que es un
+// hash real, este comentario advierte.
 const DUMMY_HASH = "$2a$10$dummyhashforsidechannelresistance0000000000000000";
 // F1 — lockout per-username
 const LOGIN_LOCKOUT_MAX = 5;

@@ -31,9 +31,24 @@ export const dynamic = "force-dynamic";
  *   - insight — heurística IA según el rango + comparativa
  */
 
+/**
+ * Brandon 2026-05-16 (audit P2 timezone): parseDate acepta ISO con offset.
+ * Si el cliente envía `2026-05-01T00:00:00-05:00` (medianoche Pucallpa),
+ * Node lo normaliza a `2026-05-01T05:00:00Z` (UTC) preservando el instante.
+ * Si el cliente solo envía `2026-05-01` (sin offset), Node lo interpreta
+ * como UTC midnight — y los pedidos hechos a las 7-11pm del día anterior
+ * Lima caen DENTRO del rango por error.
+ * Solución: cuando recibimos una fecha sin offset (`YYYY-MM-DD`), asumimos
+ * que el cliente quiere medianoche local de Lima (UTC-5) y agregamos T05:00:00Z.
+ * Esto cubre el caso más común (filtros del UI) sin romper requests que
+ * sí mandan offset explícito.
+ */
 function parseDate(s: string | null): Date | null {
   if (!s) return null;
-  const d = new Date(s);
+  // Detecta "YYYY-MM-DD" sin tiempo ni offset → asume midnight Lima.
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(s);
+  const normalized = dateOnly ? `${s}T00:00:00-05:00` : s;
+  const d = new Date(normalized);
   return isNaN(d.getTime()) ? null : d;
 }
 
