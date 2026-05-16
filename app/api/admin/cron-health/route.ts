@@ -10,6 +10,13 @@ import { logger } from "@/lib/logger";
  * avg duration, and dead letters pending.
  *
  * Admin-only.
+ *
+ * @platform-shared ok — Brandon 2026-05-16 (audit Info): CronHealthLog
+ * y CronDeadLetter son tablas plataforma-wide (los cron jobs no son
+ * por-tenant). Un admin de un tenant puede inferir el ritmo de cron de
+ * la plataforma pero no datos de otros tenants. Aceptable como info
+ * para diagnóstico de salud. Si en el futuro queremos restringir más,
+ * mover a /api/superadmin/cron-health.
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);

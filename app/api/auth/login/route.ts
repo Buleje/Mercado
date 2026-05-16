@@ -244,7 +244,14 @@ export async function POST(req: Request) {
     // Fire-and-forget — no bloquear la respuesta.
     try {
       const { logActivity } = await import("@/lib/activity-logger");
-      const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? null;
+      // Brandon 2026-05-16 (audit P2 log poisoning): trim al 1er IP de la
+      // lista xff (Vercel agrega varios proxies en chain) + slice(0,45)
+      // para evitar que un atacante inyecte comas o strings largos que
+      // contaminen los logs de auditoría Ley 29733.
+      const ipRaw = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        ?? req.headers.get("x-real-ip")
+        ?? null;
+      const ip = ipRaw ? ipRaw.slice(0, 45) : null;
       logActivity(
         "login_success",
         "admin",

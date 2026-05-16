@@ -1008,7 +1008,9 @@ export default function SettingsModule({
             onClick={() => {
               const text = `🔐 Credenciales de acceso al panel\n\n👤 Usuario: admin\n🔑 Contraseña: ${storedAdminPw}\n🌐 Link: ${window.location.origin}/admin/login`;
               if (navigator.share) {
-                navigator.share({ title: "Credenciales del Panel", text }).catch(() => {});
+                // navigator.share() rechaza la promesa si el user cancela
+                // el bottom-sheet del browser — silencio aceptable (best-effort).
+                navigator.share({ title: "Credenciales del Panel", text }).catch(() => { /* user cancelled share */ });
               } else {
                 navigator.clipboard.writeText(text);
                 alert("Credenciales copiadas al portapapeles");

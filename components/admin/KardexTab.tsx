@@ -177,7 +177,7 @@ export default function KardexTab() {
         const items = Array.isArray(d) ? d : (d as { items?: unknown[] })?.items;
         setWarehouses(Array.isArray(items) ? items.map((w: { id: string; name: string }) => ({ id: w.id, name: w.name })) : []);
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[KardexTab] warehouses fetch failed:", err));
   }, []);
 
   useEffect(() => {

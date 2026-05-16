@@ -159,7 +159,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
     fetch(`/api/customers/${encodeURIComponent(phone)}/favorite-products`)
       .then(r => r.ok ? r.json() : [])
       .then((data: FavoriteProduct[]) => setFavorites(data))
-      .catch(() => {})
+      .catch((err) => console.warn("[Customer360Tab] favorites fetch failed:", err))
       .finally(() => setLoading(false));
   }, [phone]);
 

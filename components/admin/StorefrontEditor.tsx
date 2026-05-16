@@ -458,7 +458,7 @@ function SectionEditorModal({
 
           setAllProducts(normalized);
         })
-      .catch(() => {})
+      .catch((err) => console.warn("[StorefrontEditor] products fetch failed:", err))
       .finally(() => setLoading(false));
   }, []);
 

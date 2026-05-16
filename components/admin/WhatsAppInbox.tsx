@@ -114,7 +114,7 @@ export default function WhatsAppInbox() {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ phone }),
-      }).catch(() => {});
+      }).catch((err) => console.warn("[WhatsAppInbox] mark-read failed:", err));
       // Actualizar badge en lista
       setConversations((prev) =>
         prev.map((c) => (c.phone === phone ? { ...c, unread: 0 } : c)),
