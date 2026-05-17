@@ -68,6 +68,19 @@ type MejorPagadorMes = {
   total: number;
 };
 
+/**
+ * Vista del módulo Fiados — sub-tab activo.
+ * Audit 2026-05-17: agregamos navegación interna porque FiadosModule tenía
+ * 10+ widgets en una sola scroll vertical. Cada vista muestra sólo lo que
+ * le toca.
+ *
+ *  - "all"      → comportamiento legacy (renderiza todo, default por compat).
+ *  - "resumen"  → KPI + progreso + proyección + banners (pagaron, mejor pagador, más antiguo).
+ *  - "analisis" → gráfica tendencia 12m + ranking riesgo + calendario + tags por zona.
+ *  - "deudores" → ninguna sección de FiadoStats (la tabla la pinta FiadosModule).
+ */
+export type FiadoStatsView = "all" | "resumen" | "analisis" | "deudores";
+
 type FiadoStatsProps = {
   fiados: Fiado[];
   loading: boolean;
@@ -85,6 +98,8 @@ type FiadoStatsProps = {
   statusFilter: FiadoStatus | "";
   setStatusFilter: (v: FiadoStatus | "") => void;
   FiadoTendenciaCobro: React.ComponentType;
+  /** Sub-tab activo. Default "all" para preservar el render legacy. */
+  view?: FiadoStatsView;
 };
 
 /**
@@ -101,13 +116,19 @@ const STATUS_META: Record<FiadoStatus, { label: string; variant: "warning" | "su
 
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
-export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, search, setSearch, setSelected, setShowQuickClient, statusFilter, setStatusFilter, FiadoTendenciaCobro }: FiadoStatsProps) {
+export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, search, setSearch, setSelected, setShowQuickClient, statusFilter, setStatusFilter, FiadoTendenciaCobro, view = "all" }: FiadoStatsProps) {
   const [calMes, setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [calDiaSeleccionado, setCalDiaSeleccionado] = useState<string | null>(null);
 
+  // Sub-tab visibility flags. KPI inline (header bar) se muestra SIEMPRE
+  // excepto en "deudores" (la tabla ya tiene sus propios contadores).
+  const showHeaderKpi = view === "all" || view === "resumen" || view === "analisis";
+  const showResumen = view === "all" || view === "resumen";
+  const showAnalisis = view === "all" || view === "analisis";
+
   return (
     <>
-      {!loading && fiados.length > 0 && (() => {
+      {showHeaderKpi && !loading && fiados.length > 0 && (() => {
         const now = new Date();
         now.setHours(0, 0, 0, 0);
         const todayStart = now.getTime();
@@ -169,8 +190,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora QW-11f: Progreso de cobro del mes */}
-      {!loading && (tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0 || totalSaldo > 0) && (() => {
+      {/* Mejora QW-11f: Progreso de cobro del mes — tab Resumen */}
+      {showResumen && !loading && (tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0 || totalSaldo > 0) && (() => {
         const meta = tendenciaMorosidad.prestadoEsteMes + totalSaldo;
         const cobrado = tendenciaMorosidad.cobradoEsteMes;
         const pct = meta > 0 ? Math.min(100, Math.round((cobrado / meta) * 100)) : 0;
@@ -197,8 +218,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora 19 (ronda 3): Proyección de cobro */}
-      {!loading && fiados.length > 0 && (
+      {/* Mejora 19 (ronda 3): Proyección de cobro — tab Resumen */}
+      {showResumen && !loading && fiados.length > 0 && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" />
@@ -236,8 +257,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         </div>
       )}
 
-      {/* Mejora QW-11g: Fiados agrupados por zona/tipo */}
-      {!loading && fiados.length > 0 && (() => {
+      {/* Mejora QW-11g: Fiados agrupados por zona/tipo — tab Análisis */}
+      {showAnalisis && !loading && fiados.length > 0 && (() => {
         // Agrupar por prefijo del nombre (zona aproximada)
         // ADR-074 Phase 2: todos los tags usan el mismo surface neutro +
         // icono neutral. El tipo de zona se identifica por el ICONO, no
@@ -281,8 +302,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora P-9: Clientes que pagaron esta semana */}
-      {!loading && pagosEstaSemana.total > 0 && (() => {
+      {/* Mejora P-9: Clientes que pagaron esta semana — tab Resumen */}
+      {showResumen && !loading && pagosEstaSemana.total > 0 && (() => {
         const allPaid = pagosEstaSemana.pagaron === pagosEstaSemana.total;
         const mostPaid = pagosEstaSemana.pagaron > pagosEstaSemana.total / 2;
         const tone = allPaid ? "success" : mostPaid ? "success" : "neutral";
@@ -304,8 +325,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora P-10: Mejor pagador del mes */}
-      {!loading && mejorPagadorMes && (
+      {/* Mejora P-10: Mejor pagador del mes — tab Resumen */}
+      {showResumen && !loading && mejorPagadorMes && (
         <div
           className="rounded-xl border border-[var(--rule-soft)] px-4 py-2.5 flex items-center gap-2"
           style={{ background: "color-mix(in oklch, var(--data-success) 10%, transparent)" }}
@@ -316,8 +337,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         </div>
       )}
 
-      {/* Mejora QW-7: Fiado mas antiguo destacado */}
-      {fiadoMasAntiguo && (
+      {/* Mejora QW-7: Fiado mas antiguo destacado — tab Resumen */}
+      {showResumen && fiadoMasAntiguo && (
         <div
           className="rounded-xl border border-[var(--rule-soft)] p-3 flex flex-col sm:flex-row sm:items-center gap-2"
           style={{ background: "color-mix(in oklch, var(--data-error) 8%, transparent)" }}
@@ -353,11 +374,11 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
       {/* NOTE: Search + status chips se renderizan en FiadosModule (parent) — NO duplicar aquí */}
 
-      {/* Mejora 16: Gráfica de cobro mensual */}
-      <FiadoTendenciaCobro />
+      {/* Mejora 16: Gráfica de cobro mensual — tab Análisis */}
+      {showAnalisis && <FiadoTendenciaCobro />}
 
-      {/* Mejora 19: Ranking de deudores por riesgo */}
-      {(() => {
+      {/* Mejora 19: Ranking de deudores por riesgo — tab Análisis */}
+      {showAnalisis && (() => {
         const activos = fiados.filter(f => (f.status === "ACTIVO" || f.status === "VENCIDO") && f.saldo > 0);
         if (activos.length === 0) {
           return (
@@ -447,8 +468,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         );
       })()}
 
-      {/* Mejora M2: Calendario de Vencimientos de Fiados */}
-      {(() => {
+      {/* Mejora M2: Calendario de Vencimientos de Fiados — tab Análisis */}
+      {showAnalisis && (() => {
         const activosConVence = fiados.filter(f => (f.status === "ACTIVO" || f.status === "VENCIDO") && f.fechaVence);
         const sinVence = fiados.filter(f => (f.status === "ACTIVO" || f.status === "VENCIDO") && !f.fechaVence).length;
 

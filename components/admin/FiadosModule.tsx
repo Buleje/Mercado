@@ -293,6 +293,30 @@ export default function FiadosModule() {
     try { return (localStorage.getItem("table-density") as "compact" | "normal" | "wide") || "normal"; } catch { return "normal"; }
   });
 
+  // Audit 2026-05-17: sub-tabs dentro del módulo Fiados.
+  // Antes había 10+ widgets en una sola vista scrollable. Ahora se reparten
+  // en 3 vistas con persistencia para que el dueño abra siempre donde estaba.
+  type FiadoTab = "resumen" | "deudores" | "analisis";
+  const [activeTab, setActiveTab] = useState<FiadoTab>(() => {
+    try {
+      const stored = localStorage.getItem("fiados-tab") as FiadoTab | null;
+      if (stored === "resumen" || stored === "deudores" || stored === "analisis") return stored;
+    } catch { /* localStorage bloqueado */ }
+    return "resumen";
+  });
+  const setTab = (t: FiadoTab) => {
+    setActiveTab(t);
+    try { localStorage.setItem("fiados-tab", t); } catch { /* ignore */ }
+  };
+
+  // Conteos para badges de tabs (se actualizan en vivo con los filtros).
+  const vencidosTotales = fiados.filter(f => f.status === "VENCIDO" || (f.fechaVence && new Date(f.fechaVence) < new Date() && f.status === "ACTIVO")).length;
+  const TABS: Array<{ key: FiadoTab; label: string; description: string; badge?: number }> = [
+    { key: "resumen", label: "Resumen", description: "KPIs, proyección y banners" },
+    { key: "deudores", label: "Deudores", description: "Tabla con buscador", badge: fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length },
+    { key: "analisis", label: "Análisis", description: "Gráficos, ranking, calendario", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
+  ];
+
   // IDEA 1: Libreta Digital — Vista que replica la libreta de fiados de papel.
   // Round 21 cleanup: removed unused _libretaPage state — feature postpuesta
   // sin caller actual. Re-añadir si paginación se prioriza.
@@ -880,8 +904,52 @@ export default function FiadosModule() {
         icon={HandCoins}
       />
 
-      {/* Fila única — Buscador + filtros + contador + acciones (compacto, 1 row). */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Sub-tabs · Audit 2026-05-17 */}
+      <nav
+        role="tablist"
+        aria-label="Vistas del módulo Fiados"
+        className="flex flex-wrap gap-1 border-b border-[var(--rule-base)] -mb-2"
+      >
+        {TABS.map((t) => {
+          const isActive = activeTab === t.key;
+          return (
+            <button
+              key={t.key}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`fiados-panel-${t.key}`}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                "relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors -mb-px border-b-2",
+                isActive
+                  ? "text-[var(--text-primary)] border-primary"
+                  : "text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)] hover:border-[var(--rule-base)]",
+              )}
+            >
+              <span>{t.label}</span>
+              {t.badge != null && t.badge > 0 && (
+                <span
+                  className={cn(
+                    "inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold tabular-nums",
+                    isActive
+                      ? "bg-primary/15 text-primary"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                  )}
+                >
+                  {t.badge}
+                </span>
+              )}
+              <span className="hidden md:inline text-xs font-normal text-[var(--text-tertiary)]">
+                · {t.description}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Fila única — Buscador + filtros + contador + acciones (compacto, 1 row).
+          Solo visible en tab Deudores (los filtros afectan la tabla). */}
+      {activeTab === "deudores" && <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
           <input
@@ -952,16 +1020,46 @@ export default function FiadosModule() {
           <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
           Nuevo fiado
         </button>
-      </div>
+      </div>}
 
-      {/* Stats, KPIs, Calendar, Risk Ranking, Projections */}
-      <FiadoStats fiados={fiados} loading={loading} totalSaldo={totalSaldo} tendenciaMorosidad={tendenciaMorosidad} proyeccionCobro={proyeccionCobro} fiadoMasAntiguo={fiadoMasAntiguo} pagosEstaSemana={pagosEstaSemana} mejorPagadorMes={mejorPagadorMes} openDetail={openDetail} search={search} setSearch={setSearch} setSelected={setSelected} statusFilter={statusFilter} setStatusFilter={setStatusFilter} FiadoTendenciaCobro={FiadoTendenciaCobroChart} />
+      {/* Toolbar compacto para tabs Resumen/Análisis (sin buscador, solo acciones). */}
+      {activeTab !== "deudores" && (
+        <div className="flex flex-wrap items-center gap-2 justify-end">
+          <AdminTooltip content="Recargar la lista de fiados">
+            <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-sunken)] transition-colors">
+              <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
+            </button>
+          </AdminTooltip>
+          <ModuleActionMenu
+            label="Opciones"
+            items={[
+              { label: "Mapa de deudores", icon: MapPin, onClick: () => setShowDebtorsMap(true), description: "Ver ubicacion de quienes te deben" },
+              { label: "Lista de cobro", icon: Printer, onClick: handleImprimirListaCobro, description: "Imprimir hoja de ruta diaria" },
+              { label: "Exportar deudores", icon: Download, onClick: handleExportarDeudores, description: "Excel con saldos y dias", dividerBefore: true },
+            ]}
+          />
+          <button
+            onClick={() => setShowNew(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Nuevo fiado
+          </button>
+        </div>
+      )}
 
-      {/* Única vista: lista. Se eliminaron Cobranza/Libreta/Kanban por
-          duplicar info de FiadoStats sin aportar valor. */}
+      {/* Panel del tab activo */}
+      <div
+        role="tabpanel"
+        id={`fiados-panel-${activeTab}`}
+        aria-labelledby={`fiados-tab-${activeTab}`}
+        className="space-y-6"
+      >
+      {/* Stats — pasa `view` para que FiadoStats renderice solo los widgets de cada tab. */}
+      <FiadoStats view={activeTab} fiados={fiados} loading={loading} totalSaldo={totalSaldo} tendenciaMorosidad={tendenciaMorosidad} proyeccionCobro={proyeccionCobro} fiadoMasAntiguo={fiadoMasAntiguo} pagosEstaSemana={pagosEstaSemana} mejorPagadorMes={mejorPagadorMes} openDetail={openDetail} search={search} setSearch={setSearch} setSelected={setSelected} statusFilter={statusFilter} setStatusFilter={setStatusFilter} FiadoTendenciaCobro={FiadoTendenciaCobroChart} />
 
-      {/* UX Mejora 20: Density toggle */}
-      {<div className="flex items-center gap-1 mb-2">
+      {/* UX Mejora 20: Density toggle — solo en tab Deudores */}
+      {activeTab === "deudores" && <div className="flex items-center gap-1 mb-2">
         <span className="text-xs font-bold text-[var(--text-tertiary)] mr-1">Densidad:</span>
         {(["compact", "normal", "wide"] as const).map(d => (
           <button
@@ -974,8 +1072,8 @@ export default function FiadosModule() {
         ))}
       </div>}
 
-      {/* Table — UX Mejora 18: Sticky header + Mejora 19: Sortable columns */}
-      {<div className={cn("bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
+      {/* Table — UX Mejora 18: Sticky header + Mejora 19: Sortable columns — solo tab Deudores */}
+      {activeTab === "deudores" && <div className={cn("bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -1129,6 +1227,8 @@ export default function FiadosModule() {
           </>
         )}
       </div>}
+      </div>
+      {/* end tabpanel */}
 
       {/* ── Detail Sheet (side panel) ──────────────────────────────────────────── */}
       <AnimatePresence>
