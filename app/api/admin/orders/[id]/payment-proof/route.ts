@@ -26,7 +26,11 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdmin(req);
+  // Audit 2026-05-17 Q-P0-3: roles explícitos.
+  // Aprobar/ver comprobantes de pago es decisión financiera que SOLO
+  // management-tier debería tomar. cajero NO debe ver comprobantes de
+  // otras ventas (PII + monto).
+  const auth = await requireAdmin(req, ["owner", "admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -61,9 +65,17 @@ export async function GET(
       return NextResponse.json({ proof: null });
     }
 
+    // Audit 2026-05-17 Q-P0-1: findFirst con tenantId (defense-in-depth).
+    // Antes findUnique({ where: { id } }) sin tenantId. Guard previo via
+    // `order.tenantId === auth.tenantId` cubre HOY, pero si alguien
+    // refactoriza y mueve la lectura antes del guard hay leak. Defense
+    // in-depth: filtra por tenantId (superadmin bypass mantiene el patrón
+    // del bloque anterior).
     // eslint-disable-next-line no-restricted-properties -- ya validamos tenant arriba; PaymentApproval no tiene clase DB dedicada todavía
-    const approval = await prisma.paymentApproval.findUnique({
-      where: { id: order.paymentApprovalId },
+    const approval = await prisma.paymentApproval.findFirst({
+      where: isSuperadmin
+        ? { id: order.paymentApprovalId }
+        : { id: order.paymentApprovalId, tenantId: auth.tenantId },
       select: {
         id: true,
         imageUrl: true,

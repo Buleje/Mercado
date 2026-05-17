@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { invalidateAdminCache } from "@/lib/admin-cache";
 import type {
   Supplier as PSupplier,
   PurchaseOrder as PPurchaseOrder,
@@ -86,6 +87,8 @@ export const SuppliersDB = {
     const row = await prisma.supplier.create({
       data: { id: s.id, name: s.name, ruc: s.ruc, phone: s.phone, email: s.email, address: s.address, notes: s.notes, tenantId },
     });
+    // Audit 2026-05-17 Q-P0-4: invalida cache para que POS vea proveedor nuevo
+    invalidateAdminCache.afterPurchase(tenantId);
     return mapSupplier(row);
   },
   async update(tenantId: string, id: string, patch: Partial<DbSupplier>): Promise<DbSupplier | null> {
@@ -98,6 +101,8 @@ export const SuppliersDB = {
   },
   async delete(tenantId: string, id: string): Promise<void> {
     await prisma.supplier.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[purchases.db] supplier delete failed", { error: String(err), id, tenantId }));
+    // Audit 2026-05-17 Q-P0-4
+    invalidateAdminCache.afterPurchase(tenantId);
   },
 };
 
@@ -124,6 +129,8 @@ export const PurchasesDB = {
       },
       include: { items: true },
     });
+    // Audit 2026-05-17 Q-P0-4: stock + dashboards refrescan
+    invalidateAdminCache.afterPurchase(tenantId);
     return mapPurchaseOrder(row);
   },
   async update(tenantId: string, id: string, patch: Partial<DbPurchaseOrder>): Promise<DbPurchaseOrder | null> {
@@ -139,10 +146,14 @@ export const PurchasesDB = {
     if (patch.discount !== undefined) data.discount = patch.discount;
     await prisma.purchaseOrder.updateMany({ where: { id, tenantId }, data });
     const row = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, include: { items: true } });
+    // Audit 2026-05-17 Q-P0-4: update status (recibido) cambia stock visible
+    invalidateAdminCache.afterPurchase(tenantId);
     return row ? mapPurchaseOrder(row) : null;
   },
   async delete(tenantId: string, id: string): Promise<void> {
     await prisma.purchaseOrder.deleteMany({ where: { id, tenantId } }).catch((err) => logger.error("[purchases.db] purchaseOrder delete failed", { error: String(err), id, tenantId }));
+    // Audit 2026-05-17 Q-P0-4
+    invalidateAdminCache.afterPurchase(tenantId);
   },
 };
 

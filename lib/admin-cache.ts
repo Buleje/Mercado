@@ -71,4 +71,16 @@ export const invalidateAdminCache = {
     invalidate(`admin:stats:${tenantId}`);
     invalidateByPrefix(`admin:overview:${tenantId}`);
   },
+
+  /**
+   * Llamar tras Purchase / Supplier write.
+   * Audit 2026-05-17 Q-P0-4: purchases.db.ts no invalidaba cache → POS
+   * mostraba inventario incorrecto tras recibir mercadería.
+   * Invalida: stats (lowStock), overview (top products), payable (compras pendientes).
+   */
+  afterPurchase(tenantId: string): void {
+    invalidate(`admin:stats:${tenantId}`);
+    invalidateByPrefix(`admin:overview:${tenantId}`);
+    invalidateByPrefix(`admin:dashboard:${tenantId}`);
+  },
 };

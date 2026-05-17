@@ -95,7 +95,6 @@ export const PayablesDB = {
   },
   async addPayment(tenantId: string, id: string, payment: DbPayment): Promise<DbPayable | null> {
     // F2: race lock — todo dentro de $transaction para evitar doble pago concurrente
-    // eslint-disable-next-line no-restricted-properties -- $transaction tenant-scoped via tenantId en WHERE.
     return await prisma.$transaction(async (tx) => {
       const current = await tx.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
       if (!current) return null;
@@ -114,8 +113,13 @@ export const PayablesDB = {
       });
 
       const status = sumPaid >= currentAmountNum ? "pagado" : sumPaid > 0 ? "parcial" : "pendiente";
-      await tx.payable.update({
-        where: { id },
+      // Audit 2026-05-17 B-P0-3: updateMany con tenantId (defense-in-depth).
+      // Antes `update({ where: { id } })` sin tenantId. El guard previo via
+      // `findFirst({ id, tenantId })` cubre HOY, pero si alguien refactoriza
+      // y quita el findFirst hay cross-tenant write. updateMany scoped
+      // garantiza DB-level que solo el row del tenant correcto se actualice.
+      await tx.payable.updateMany({
+        where: { id, tenantId },
         data: { paidAmount: sumPaid, status },
       });
 
