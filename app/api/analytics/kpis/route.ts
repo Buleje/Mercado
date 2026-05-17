@@ -4,16 +4,24 @@ import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { getOrSet } from "@/lib/cache";
 
 /**
  * GET /api/analytics/kpis
  * Returns 6 real-time business KPIs in a single parallel call.
+ *
+ * Audit 2026-05-17 P-P0-5: cacheado con TTL 30s.
+ * Endpoint llamado cada 30s por polling del DashboardTab → sin cache
+ * disparaba +40% CPU DB en horas pico. Con TTL 30s la mayoría de hits
+ * golpean cache.
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
   try {
+    const cacheKey = `admin:kpis:${auth.tenantId}`;
+    const payload = await getOrSet<Record<string, unknown>>(cacheKey, 30, async () => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterdayStart = new Date(todayStart);
@@ -26,6 +34,10 @@ export async function GET(req: NextRequest) {
 
     const tenantFilter = { tenantId: auth.tenantId };
 
+    // Audit 2026-05-17 P-P0-2: stockCritico unificado en el mismo Promise.all.
+    // Antes había 2 round-trips: el count del Promise.all (inútil porque
+    // Prisma no compara campos) + un findMany aislado fuera. Ahora una sola
+    // findMany dentro del Promise.all elimina el round-trip extra (~100-200ms).
     const [
       ventasHoy,
       ventasAyer,
@@ -35,7 +47,7 @@ export async function GET(req: NextRequest) {
       costosMesItems,
       costosMesAnteriorItems,
       fiadosPendientes,
-      _stockCritico,
+      productsForStockCheck,
     ] = await withDbRetry(() => Promise.all([
       // 1. Ventas hoy
       prisma.sale.aggregate({
@@ -82,34 +94,19 @@ export async function GET(req: NextRequest) {
         _sum: { saldo: true },
         _count: { id: true },
       }),
-      // 9. Stock crítico
-      prisma.product.count({
+      // 9. Stock crítico — Prisma no compara campos, traemos stock+stockMin y comparamos JS
+      prisma.product.findMany({
         where: {
           ...tenantFilter,
           active: true,
           deletedAt: null,
           stockMin: { not: null },
           stock: { not: null },
-          AND: [
-            // Prisma doesn't support field comparison directly,
-            // so we filter in-memory below
-          ],
         },
+        select: { stock: true, stockMin: true },
       }),
     ]));
 
-    // Stock crítico: need to compare stock <= stockMin, Prisma can't do field comparison
-    // Re-query with both fields and filter in JS
-    const productsForStockCheck = await withDbRetry(() => prisma.product.findMany({
-      where: {
-        ...tenantFilter,
-        active: true,
-        deletedAt: null,
-        stockMin: { not: null },
-        stock: { not: null },
-      },
-      select: { stock: true, stockMin: true },
-    }));
     const stockCriticoCount = productsForStockCheck.filter(
       (p) => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin
     ).length;
@@ -158,7 +155,7 @@ export async function GET(req: NextRequest) {
 
     const fiadoSaldo = toNumOrZero(fiadosPendientes._sum.saldo);
 
-    return NextResponse.json({
+    return {
       ingresosHoy: {
         valor: Math.round(ingresosHoy * 100) / 100,
         cambio: pctChange(ingresosHoy, ingresosAyer),
@@ -182,7 +179,9 @@ export async function GET(req: NextRequest) {
       stockCritico: {
         valor: stockCriticoCount,
       },
+    };
     });
+    return NextResponse.json(payload);
   } catch (e) {
     logger.error("[analytics/kpis] GET error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
