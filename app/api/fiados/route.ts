@@ -33,22 +33,47 @@ const ListFiadosSchema = z.object({
   search: z.string().max(200).optional(),
 });
 
-/** Resolve a customer by phone (exact) or name (partial match). Returns phone (PK). */
-async function resolveCustomerId(tenantId: string, input: string): Promise<string | null> {
+/**
+ * Resultado del lookup de cliente para crear fiado.
+ *
+ * Audit 2026-05-17 (P0-2): antes esta función hacía `findFirst` por name y
+ * devolvía el primero, sin avisar si había múltiples matches. En una bodega
+ * con varias "María" o "Carlos" la deuda se cargaba al cliente equivocado
+ * silenciosamente. Ahora detectamos ambigüedad y forzamos al caller a elegir.
+ */
+type ResolveCustomerResult =
+  | { kind: "found"; phone: string }
+  | { kind: "ambiguous"; matches: Array<{ phone: string; name: string }> }
+  | { kind: "not_found" };
+
+/** Resolve a customer by phone (exact) or name (unambiguous match). */
+async function resolveCustomerId(tenantId: string, input: string): Promise<ResolveCustomerResult> {
+  const trimmed = input.trim();
+
+  // 1. Exact phone lookup — siempre unívoco.
   // SECURITY 2026-05-07 (X4): Customer.phone es @unique global → siempre con
   // tenantId scope. Usa CustomersDB para lookup exacto por phone (regla #1).
-  const byPhone = await CustomersDB.getByPhone(input, tenantId);
-  if (byPhone) return byPhone.phone;
+  const byPhone = await CustomersDB.getByPhone(trimmed, tenantId);
+  if (byPhone) return { kind: "found", phone: byPhone.phone };
 
-  // Name search no esta en CustomersDB — fallback a query directa scoped.
+  // 2. Si parece teléfono pero no existe, NO hacer fallback a name (sería
+  // demasiado permisivo — un input de 7+ dígitos puede contener un nombre).
+  if (/^\+?\d{7,}$/.test(trimmed)) {
+    return { kind: "not_found" };
+  }
+
+  // 3. Name search — debe ser UNÍVOCO. take=2 para detectar ambigüedad sin
+  // gastar query grande; cap interno a 5 para reporting.
   // eslint-disable-next-line no-restricted-properties -- legacy: name search no centralizado en CustomersDB; refactor a CustomersDB.searchByName pendiente.
-  const byName = await prisma.customer.findFirst({
-    where: { name: { contains: input, mode: "insensitive" }, tenantId },
-    select: { phone: true },
+  const byName = await prisma.customer.findMany({
+    where: { name: { contains: trimmed, mode: "insensitive" }, tenantId },
+    select: { phone: true, name: true },
+    orderBy: { name: "asc" },
+    take: 5,
   });
-  if (byName) return byName.phone;
-
-  return null;
+  if (byName.length === 0) return { kind: "not_found" };
+  if (byName.length > 1) return { kind: "ambiguous", matches: byName };
+  return { kind: "found", phone: byName[0].phone };
 }
 
 // GET /api/fiados — list fiados for tenant
@@ -143,8 +168,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Resolve customer — buscar por phone o nombre
-    let resolvedPhone = await resolveCustomerId(auth.tenantId, parsed.data.customerId);
+    // Resolve customer — buscar por phone (exacto) o nombre (unívoco).
+    // Audit 2026-05-17 P0-2: si el nombre matchea >1 cliente devolvemos 409
+    // con la lista de matches para que el frontend exija aclaración.
+    const resolved = await resolveCustomerId(auth.tenantId, parsed.data.customerId);
+    if (resolved.kind === "ambiguous") {
+      return NextResponse.json(
+        {
+          error: `Hay ${resolved.matches.length} clientes con ese nombre. Usa el número de teléfono específico.`,
+          ambiguous: true,
+          matches: resolved.matches,
+        },
+        { status: 409 },
+      );
+    }
+    let resolvedPhone: string | null = resolved.kind === "found" ? resolved.phone : null;
     if (!resolvedPhone) {
       // Si no encontró, usar el input directamente si parece teléfono
       const input = parsed.data.customerId.trim();

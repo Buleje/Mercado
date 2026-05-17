@@ -296,9 +296,11 @@ export default function FiadosModule() {
   // IDEA 1: Libreta Digital — Vista que replica la libreta de fiados de papel.
   // Round 21 cleanup: removed unused _libretaPage state — feature postpuesta
   // sin caller actual. Re-añadir si paginación se prioriza.
-  const [showQuickFiado, setShowQuickFiado] = useState(false);
-  const [quickFiadoForm, setQuickFiadoForm] = useState({ nombre: "", producto: "", monto: "" });
-  const [quickFiadoCreating, setQuickFiadoCreating] = useState(false);
+  // Audit 2026-05-17 P0-2: removed dead QuickFiado states (showQuickFiado,
+  // quickFiadoForm, quickFiadoCreating) + handleQuickFiado handler. El form
+  // enviaba `customerId: nombre.trim()` y el backend resolvía por contains →
+  // si había 2 clientes con el mismo nombre, la deuda se cargaba al primer
+  // match. Eliminado para evitar reactivación accidental.
 
   // Agrupar fiados por cliente para la vista libreta
   const libretaClientes = useMemo(() => {
@@ -324,34 +326,6 @@ export default function FiadosModule() {
     }
     return Array.from(map.values()).sort((a, b) => b.totalDeuda - a.totalDeuda);
   }, [fiados]);
-
-  const handleQuickFiado = async () => {
-    if (quickFiadoCreating) return;
-    const monto = parseFloat(quickFiadoForm.monto);
-    if (!quickFiadoForm.nombre.trim() || isNaN(monto) || monto <= 0) return;
-    setQuickFiadoCreating(true);
-    try {
-      const res = await fetch("/api/fiados", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          customerId: quickFiadoForm.nombre.trim(),
-          total: monto,
-          descripcion: quickFiadoForm.producto.trim() || undefined,
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Error al crear fiado" }));
-        setError(err.error || "Error al crear fiado rápido");
-        setQuickFiadoCreating(false);
-        return;
-      }
-      setShowQuickFiado(false);
-      setQuickFiadoForm({ nombre: "", producto: "", monto: "" });
-      fetchFiados();
-    } catch { setError("Error de conexion al crear fiado"); }
-    setQuickFiadoCreating(false);
-  };
 
   // Mejora 20 (ronda 3): Debtors map modal
   const [showDebtorsMap, setShowDebtorsMap] = useState(false);

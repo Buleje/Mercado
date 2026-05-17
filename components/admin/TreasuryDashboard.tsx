@@ -306,7 +306,7 @@ export default function TreasuryDashboard() {
               value={fmt(kpis.porCobrar)}
               icon={ArrowUpRight}
               color="#f97316"
-              subtitle={`${fiados.filter(f => f.status !== "pagado").length} clientes pendientes`}
+              subtitle={`${fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length} clientes pendientes`}
             />
             <KPICard
               label="Por pagar"
