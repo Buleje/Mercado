@@ -570,7 +570,7 @@ export default function StoreDetailClient({
           {/* Sidebar desktop — sticky, vertical, scroll interno si hay muchas categorias */}
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-[5.5rem]">
-              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 shadow-sm max-h-[calc(100vh-7rem)] overflow-y-auto">
+              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 shadow-sm max-h-[calc(100dvh-7rem)] overflow-y-auto">
                 <StoreCategoriesSidebar
                   categories={categories}
                   activeCategory={filterCategory}

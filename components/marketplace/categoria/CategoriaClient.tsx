@@ -244,7 +244,7 @@ export default function CategoriaClient({
       >
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 lg:gap-8">
           {/* Sidebar desktop — MK-03: sticky para que no se pierdan al scroll */}
-          <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
             <CategoryFilters
               slug={slug}
               categoria={categoria}

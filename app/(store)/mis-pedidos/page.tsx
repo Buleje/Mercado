@@ -1530,7 +1530,7 @@ export default function MisPedidosPage() {
         {identified && orders !== null && !loading && (
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 mt-6">
             {/* ─── SIDEBAR ───────────────────────────────────── */}
-            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:pr-1">
               <div className="relative">
                 <Search
                   className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted"

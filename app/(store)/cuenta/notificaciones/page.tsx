@@ -848,7 +848,7 @@ export default function NotificacionesPage() {
       >
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           {/* ─── SIDEBAR ─────────────────────────────────── */}
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:pr-1">
             <FilterPills
               current={activeTab}
               counts={tabCounts}

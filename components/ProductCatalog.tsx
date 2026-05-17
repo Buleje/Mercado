@@ -634,7 +634,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
 
         {/* ── SIDEBAR de categorías (desktop only) ──────────── */}
         <aside className="hidden lg:block">
-          <div className="sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 pr-2">
+          <div className="sticky top-32 max-h-[calc(100dvh-9rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 pr-2">
             <div className="bg-[var(--surface-raised)] rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 shadow-[var(--shadow-sm)]">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)]">Categorías</h3>
