@@ -24,6 +24,9 @@
     },
     "app/api/cron/credit-score-recalc/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/cron/vendor-identity-recheck/route.ts": {
+      "maxDuration": 300
     }
   },
   "git": {
@@ -304,6 +307,10 @@
     {
       "path": "/api/cron/weekly-email-report",
       "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/vendor-identity-recheck",
+      "schedule": "0 7 * * *"
     }
   ]
 }
