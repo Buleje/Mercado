@@ -123,10 +123,18 @@ export const FiadosDB = {
       include: { cuotas: { orderBy: { createdAt: "asc" } } },
       orderBy: { createdAt: "desc" },
     });
-    // Fetch customer names separately to avoid relation errors
+    // Fetch customer names separately to avoid relation errors with multi-tenant extension.
+    //
+    // Audit 2026-05-17 P2-2: tenantId AGREGADO al where. Hoy `Customer.phone`
+    // es @unique global (TD-040 Phase 1), pero cuando Phase 3 contract lo
+    // relaje a @@unique([tenantId, phone]) sin este filtro devolveríamos
+    // names de OTROS tenants. Defense-in-depth ahora antes de la migración.
     const customerPhones = [...new Set(rows.map(r => r.customerId))];
     const customers = customerPhones.length > 0
-      ? await prisma.customer.findMany({ where: { phone: { in: customerPhones } }, select: { phone: true, name: true } })
+      ? await prisma.customer.findMany({
+          where: { tenantId, phone: { in: customerPhones } },
+          select: { phone: true, name: true },
+        })
       : [];
     const customerMap = new Map(customers.map(c => [c.phone, c.name]));
     return rows.map(r => mapFiado({ ...r, customer: { name: customerMap.get(r.customerId) || null } }));

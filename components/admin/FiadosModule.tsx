@@ -413,7 +413,11 @@ export default function FiadosModule() {
             bloqueado,
           });
         }
-      } catch {
+      } catch (err) {
+        // Audit 2026-05-17 P2-4: antes silent; ahora console.warn para que el
+        // dueño no tenga el log en blanco si el customer-resumen falla en prod.
+        // El fallback (cliente nuevo) es intencional cuando no existe historial.
+        console.warn("[FiadosModule] cliente-resumen lookup failed, treating as nuevo", err);
         setClienteResumen(null);
         setClienteEsNuevo(true);
       } finally {
@@ -483,8 +487,11 @@ export default function FiadosModule() {
         const detail: Fiado = await res.json();
         setSelected(detail);
       }
-    } catch {
-      // Use list data as fallback
+    } catch (err) {
+      // Audit 2026-05-17 P2-4: console.warn en lugar de silent. El fallback
+      // (usar la data del listado) es intencional para que el modal abra
+      // igual aunque el detail endpoint falle.
+      console.warn("[FiadosModule] detail fetch failed, using list data as fallback", err);
     } finally {
       setDetailLoading(false);
     }

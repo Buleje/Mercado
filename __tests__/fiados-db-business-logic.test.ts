@@ -50,8 +50,14 @@ beforeEach(() => {
 });
 
 // ─── validateForNewFiado: Regla 1 — bloquear si >=3 vencidos ──────────────────
+//
+// Audit 2026-05-17 P2-5: el doc-comment de validateForNewFiado dice
+// "Bloqueo si tiene >= 3 fiados con status VENCIDO" — coherente con esto:
+// 2 vencidos es el borde permitido, 3+ bloquea. El nombre original "máx 2"
+// confundía porque sonaba a "permite hasta 2 más"; ahora se lee igual que
+// el doc del código.
 
-describe("FiadosDB.validateForNewFiado — Regla 1: máx 2 vencidos", () => {
+describe("FiadosDB.validateForNewFiado — Regla 1: bloquea con 3+ vencidos", () => {
   it("permite cuando hay 0 vencidos", async () => {
     mockCount.mockResolvedValue(0);
     mockAggregate.mockResolvedValue({ _sum: { saldo: null } });
