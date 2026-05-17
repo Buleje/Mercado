@@ -77,7 +77,10 @@ const COMMON_PARAMS = {
 function successTx() {
   mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
     fn({
-      product:          { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      product:          {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
       order:            { create:     vi.fn().mockResolvedValue({}) },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon:           { update: vi.fn(), findUnique: vi.fn() },

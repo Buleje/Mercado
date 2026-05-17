@@ -112,11 +112,11 @@ describe("RiderScoreCard — tiers", () => {
     expect(screen.getByText("Diamante")).toBeDefined();
   });
 
-  it("muestra 'Nivel maximo alcanzado' cuando tier es Diamante", async () => {
+  it("muestra 'Nivel máximo alcanzado' cuando tier es Diamante", async () => {
     mockFetchScore(9500);
     render(<RiderScoreCard {...BASE_PROPS} score={9500} />);
     await flushFetch();
-    expect(screen.getByText(/Nivel maximo alcanzado/)).toBeDefined();
+    expect(screen.getByText(/Nivel máximo alcanzado/)).toBeDefined();
   });
 
   it("muestra 'Faltan X pts para Y' cuando NO es tier máximo", async () => {
@@ -201,18 +201,20 @@ describe("RiderScoreCard — badges de gamificación", () => {
     expect(screen.getByText("Cumplidor")).toBeDefined();
   });
 
-  it("muestra badge 'Crecimiento' (locked)", async () => {
+  it("muestra badge 'Centurión' (locked con 42 viajes)", async () => {
     mockFetchScore(1000);
     render(<RiderScoreCard {...BASE_PROPS} score={1000} />);
     await flushFetch();
-    expect(screen.getByText("Crecimiento")).toBeDefined();
+    expect(screen.getByText("Centurión")).toBeDefined();
   });
 
   it("badge locked tiene aria-label con 'bloqueado'", async () => {
+    // Brandon 2026-05-17: BASE_PROPS.totalAccepted=42 hace que Centurión esté
+    // en progreso (42% de 100), NO bloqueado. Para que esté locked debe ser 0.
     mockFetchScore(1000);
-    render(<RiderScoreCard {...BASE_PROPS} score={1000} />);
+    render(<RiderScoreCard {...BASE_PROPS} totalAccepted={0} score={1000} />);
     await flushFetch();
-    const lockedBadge = screen.getByLabelText(/crecimiento.*bloqueado/i);
+    const lockedBadge = screen.getByLabelText(/centurión.*bloqueado/i);
     expect(lockedBadge).toBeDefined();
   });
 

@@ -15,16 +15,18 @@ vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn() }));
 
 const {
-  mockTransferFindMany, mockTransferCreate, mockTransferUpdate, mockTransferCount,
-  mockTransferFindUnique, mockWhFindUnique, mockLocationAggregate, mockLocationFindFirst,
+  mockTransferFindMany, mockTransferCreate, mockTransferUpdateMany, mockTransferCount,
+  mockTransferFindFirst, mockTransferFindFirstOrThrow,
+  mockWhFindFirst, mockLocationAggregate, mockLocationFindFirst,
   mockLocationUpdate, mockLocationCreate, mockProductUpdate, mockTransaction,
 } = vi.hoisted(() => ({
   mockTransferFindMany: vi.fn(),
   mockTransferCreate: vi.fn(),
-  mockTransferUpdate: vi.fn(),
+  mockTransferUpdateMany: vi.fn(),
   mockTransferCount: vi.fn(),
-  mockTransferFindUnique: vi.fn(),
-  mockWhFindUnique: vi.fn(),
+  mockTransferFindFirst: vi.fn(),
+  mockTransferFindFirstOrThrow: vi.fn(),
+  mockWhFindFirst: vi.fn(),
   mockLocationAggregate: vi.fn(),
   mockLocationFindFirst: vi.fn(),
   mockLocationUpdate: vi.fn(),
@@ -38,12 +40,13 @@ vi.mock("@/lib/prisma", () => ({
     transfer: {
       findMany: mockTransferFindMany,
       create: mockTransferCreate,
-      update: mockTransferUpdate,
+      updateMany: mockTransferUpdateMany,
       count: mockTransferCount,
-      findUnique: mockTransferFindUnique,
+      findFirst: mockTransferFindFirst,
+      findFirstOrThrow: mockTransferFindFirstOrThrow,
     },
     warehouse: {
-      findUnique: mockWhFindUnique,
+      findFirst: mockWhFindFirst,
     },
     location: {
       aggregate: mockLocationAggregate,
@@ -170,7 +173,7 @@ describe("POST /api/admin/warehouse-transfers", () => {
 
   it("returns 404 when origin warehouse not found", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockWhFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(TO_WH);
+    mockWhFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(TO_WH);
     const res = await POST(makeReq("POST", "https://host/api/admin/warehouse-transfers", {
       fromWarehouseId: "wh-999", toWarehouseId: "wh-2", productId: 10, quantity: 50,
     }));
@@ -179,7 +182,7 @@ describe("POST /api/admin/warehouse-transfers", () => {
 
   it("creates transfer successfully", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockWhFindUnique
+    mockWhFindFirst
       .mockResolvedValueOnce(FROM_WH)
       .mockResolvedValueOnce(TO_WH);
     mockLocationAggregate.mockResolvedValue({ _sum: { qty: 0 } }); // no location records → skip check
@@ -197,7 +200,7 @@ describe("POST /api/admin/warehouse-transfers", () => {
 
   it("returns 409 when insufficient stock in origin warehouse", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockWhFindUnique
+    mockWhFindFirst
       .mockResolvedValueOnce(FROM_WH)
       .mockResolvedValueOnce(TO_WH);
     mockLocationAggregate.mockResolvedValue({ _sum: { qty: 10 } }); // only 10 in stock
@@ -246,7 +249,17 @@ describe("PATCH /api/admin/warehouse-transfers", () => {
 
   it("updates status to completado", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockTransferUpdate.mockResolvedValue({ ...BASE_TRANSFER, status: "completado", deliveredDate: NOW });
+    // findFirst para stock-check previo (existing found, originLoc null → sin 409)
+    mockTransferFindFirst.mockResolvedValue(BASE_TRANSFER);
+    mockLocationFindFirst.mockResolvedValue(null); // sin record → stock no trackeado, pasa
+    mockTransferUpdateMany.mockResolvedValue({ count: 1 });
+    const updatedTransfer = { ...BASE_TRANSFER, status: "completado", deliveredDate: NOW, fromWarehouse: FROM_WH, toWarehouse: TO_WH };
+    mockTransferFindFirstOrThrow.mockResolvedValue(updatedTransfer);
+    // Para el bloque de ajuste de location (Promise.all de 2 findFirst)
+    mockLocationFindFirst.mockResolvedValue(null);
+    mockTransaction.mockResolvedValue([]);
+    mockLocationAggregate.mockResolvedValue({ _sum: { qty: 0 } });
+    mockProductUpdate.mockResolvedValue({});
     const res = await PATCH(makeReq("PATCH", "https://host/api/admin/warehouse-transfers", { id: "tr-1", status: "completado" }));
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -255,7 +268,10 @@ describe("PATCH /api/admin/warehouse-transfers", () => {
 
   it("updates status to cancelado", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockTransferUpdate.mockResolvedValue({ ...BASE_TRANSFER, status: "cancelado" });
+    // status=cancelado NO pasa por el bloque findFirst de stock-check
+    mockTransferUpdateMany.mockResolvedValue({ count: 1 });
+    const updatedTransfer = { ...BASE_TRANSFER, status: "cancelado", fromWarehouse: FROM_WH, toWarehouse: TO_WH };
+    mockTransferFindFirstOrThrow.mockResolvedValue(updatedTransfer);
     const res = await PATCH(makeReq("PATCH", "https://host/api/admin/warehouse-transfers", { id: "tr-1", status: "cancelado" }));
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -264,17 +280,18 @@ describe("PATCH /api/admin/warehouse-transfers", () => {
 
   it("adjusts location stock when completing transfer (both locations exist)", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    const completedTransfer = { ...BASE_TRANSFER, status: "completado", deliveredDate: NOW };
-    mockTransferFindUnique.mockResolvedValue(BASE_TRANSFER);
-    mockTransferUpdate.mockResolvedValue(completedTransfer);
-
+    const completedTransfer = { ...BASE_TRANSFER, status: "completado", deliveredDate: NOW, fromWarehouse: FROM_WH, toWarehouse: TO_WH };
+    // transfer.findFirst (stock pre-check): existing found, originLoc qty=100 >= 50 → pasa
+    mockTransferFindFirst.mockResolvedValue(BASE_TRANSFER);
     const fromLoc = { id: "loc-1", qty: 100, warehouseId: "wh-1", productId: 10, tenantId: "main" };
     const toLoc   = { id: "loc-2", qty: 20,  warehouseId: "wh-2", productId: 10, tenantId: "main" };
-    // 3 calls: (1) stock-check origin, (2) fromLoc adjustment, (3) toLoc adjustment
+    // 3 calls: (1) stock-check originLoc, (2) fromLoc en Promise.all, (3) toLoc en Promise.all
     mockLocationFindFirst
       .mockResolvedValueOnce(fromLoc)  // stock check — qty 100 >= quantity 50, passes
-      .mockResolvedValueOnce(fromLoc)  // fromLoc
-      .mockResolvedValueOnce(toLoc);   // toLoc
+      .mockResolvedValueOnce(fromLoc)  // fromLoc (Promise.all)
+      .mockResolvedValueOnce(toLoc);   // toLoc (Promise.all)
+    mockTransferUpdateMany.mockResolvedValue({ count: 1 });
+    mockTransferFindFirstOrThrow.mockResolvedValue(completedTransfer);
     mockTransaction.mockResolvedValue([]);
     mockLocationAggregate.mockResolvedValue({ _sum: { qty: 120 } });
     mockProductUpdate.mockResolvedValue({});
@@ -290,16 +307,16 @@ describe("PATCH /api/admin/warehouse-transfers", () => {
 
   it("creates destination location when it does not exist", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    const completedTransfer = { ...BASE_TRANSFER, status: "completado", deliveredDate: NOW };
-    mockTransferFindUnique.mockResolvedValue(BASE_TRANSFER);
-    mockTransferUpdate.mockResolvedValue(completedTransfer);
-
+    const completedTransfer = { ...BASE_TRANSFER, status: "completado", deliveredDate: NOW, fromWarehouse: FROM_WH, toWarehouse: TO_WH };
+    mockTransferFindFirst.mockResolvedValue(BASE_TRANSFER);
     const fromLoc = { id: "loc-1", qty: 100, warehouseId: "wh-1", productId: 10, tenantId: "main" };
-    // 3 calls: (1) stock-check origin (sufficient), (2) fromLoc, (3) toLoc (not found)
+    // 3 calls: (1) stock-check originLoc (sufficient), (2) fromLoc en Promise.all, (3) toLoc (not found)
     mockLocationFindFirst
       .mockResolvedValueOnce(fromLoc)  // stock check passes
-      .mockResolvedValueOnce(fromLoc)  // fromLoc
+      .mockResolvedValueOnce(fromLoc)  // fromLoc (Promise.all)
       .mockResolvedValueOnce(null);    // toLoc — not found, will be created
+    mockTransferUpdateMany.mockResolvedValue({ count: 1 });
+    mockTransferFindFirstOrThrow.mockResolvedValue(completedTransfer);
     mockTransaction.mockResolvedValue([]);
     mockLocationAggregate.mockResolvedValue({ _sum: { qty: 50 } });
     mockProductUpdate.mockResolvedValue({});
@@ -315,10 +332,13 @@ describe("PATCH /api/admin/warehouse-transfers", () => {
 
   it("succeeds even when no location records exist (best-effort)", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockTransferFindUnique.mockResolvedValue(BASE_TRANSFER);
-    mockTransferUpdate.mockResolvedValue({ ...BASE_TRANSFER, status: "completado", deliveredDate: NOW });
-    // All findFirst calls return null: stock check skipped (no record = untracked), fromLoc unset, toLoc created
+    // transfer.findFirst: existing found but originLoc=null → stock not tracked, pasa sin 409
+    mockTransferFindFirst.mockResolvedValue(BASE_TRANSFER);
+    // All findFirst calls return null: stock check skipped (no record = untracked), fromLoc=null, toLoc=null → create
     mockLocationFindFirst.mockResolvedValue(null);
+    mockTransferUpdateMany.mockResolvedValue({ count: 1 });
+    const completedTransfer = { ...BASE_TRANSFER, status: "completado", deliveredDate: NOW, fromWarehouse: FROM_WH, toWarehouse: TO_WH };
+    mockTransferFindFirstOrThrow.mockResolvedValue(completedTransfer);
     mockTransaction.mockResolvedValue([]);
     mockLocationAggregate.mockResolvedValue({ _sum: { qty: 0 } });
     mockProductUpdate.mockResolvedValue({});
@@ -334,9 +354,11 @@ describe("PATCH /api/admin/warehouse-transfers", () => {
 
   it("skips stock adjustment entirely when transaction throws (best-effort)", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockTransferFindUnique.mockResolvedValue(BASE_TRANSFER);
-    mockTransferUpdate.mockResolvedValue({ ...BASE_TRANSFER, status: "completado", deliveredDate: NOW });
+    mockTransferFindFirst.mockResolvedValue(BASE_TRANSFER);
     mockLocationFindFirst.mockResolvedValue(null); // stock check skipped; fromLoc=null; toLoc=null
+    mockTransferUpdateMany.mockResolvedValue({ count: 1 });
+    const completedTransfer = { ...BASE_TRANSFER, status: "completado", deliveredDate: NOW, fromWarehouse: FROM_WH, toWarehouse: TO_WH };
+    mockTransferFindFirstOrThrow.mockResolvedValue(completedTransfer);
     mockTransaction.mockRejectedValue(new Error("DB error"));
     mockProductUpdate.mockResolvedValue({});
 
@@ -348,29 +370,30 @@ describe("PATCH /api/admin/warehouse-transfers", () => {
   it("returns 409 when origin has insufficient stock", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
     // BASE_TRANSFER.quantity = 50; origin only has 10
-    mockTransferFindUnique.mockResolvedValue(BASE_TRANSFER);
+    mockTransferFindFirst.mockResolvedValue(BASE_TRANSFER);
     mockLocationFindFirst.mockResolvedValueOnce({ id: "loc-1", qty: 10, warehouseId: "wh-1", productId: 10, tenantId: "main" });
 
     const res = await PATCH(makeReq("PATCH", "https://host/api/admin/warehouse-transfers", { id: "tr-1", status: "completado" }));
     expect(res.status).toBe(409);
     const body = await res.json();
     expect(body.error).toMatch(/insuficiente/i);
-    // transfer.update must NOT have been called
-    expect(mockTransferUpdate).not.toHaveBeenCalled();
+    // transfer.updateMany must NOT have been called
+    expect(mockTransferUpdateMany).not.toHaveBeenCalled();
   });
 
   it("recalculates Product.stock as sum of all Location.qty after completion", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    const completedTransfer = { ...BASE_TRANSFER, status: "completado", deliveredDate: NOW };
-    mockTransferFindUnique.mockResolvedValue(BASE_TRANSFER);
-    mockTransferUpdate.mockResolvedValue(completedTransfer);
-
+    const completedTransfer = { ...BASE_TRANSFER, status: "completado", deliveredDate: NOW, fromWarehouse: FROM_WH, toWarehouse: TO_WH };
+    mockTransferFindFirst.mockResolvedValue(BASE_TRANSFER);
     const fromLoc = { id: "loc-1", qty: 100, warehouseId: "wh-1", productId: 10, tenantId: "main" };
     const toLoc   = { id: "loc-2", qty: 20,  warehouseId: "wh-2", productId: 10, tenantId: "main" };
+    // 3 calls: (1) stock-check originLoc, (2) fromLoc en Promise.all, (3) toLoc en Promise.all
     mockLocationFindFirst
       .mockResolvedValueOnce(fromLoc)
       .mockResolvedValueOnce(fromLoc)
       .mockResolvedValueOnce(toLoc);
+    mockTransferUpdateMany.mockResolvedValue({ count: 1 });
+    mockTransferFindFirstOrThrow.mockResolvedValue(completedTransfer);
     mockTransaction.mockResolvedValue([]);
     // After transaction, all Location.qty for product 10 sums to 170
     mockLocationAggregate.mockResolvedValue({ _sum: { qty: 170 } });

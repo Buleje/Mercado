@@ -79,7 +79,11 @@ describe("resolveTenantMultiSource", () => {
     expect(tenant).toBe("tenant-cuid-legacy");
   });
 
-  it("falls back to active-tenant cookie when no JWT", async () => {
+  it("active-tenant cookie sin JWT NO se honra (audit 2026-05-16 P2)", async () => {
+    // SECURITY 2026-05-16: la cookie active-tenant solo se acepta cuando hay
+    // JWT vigente Y role es owner/superadmin. Sin JWT, un atacante con XSS
+    // podría setear la cookie y mover el tenant sin credenciales. Ahora cae
+    // a baseTenant ("main") y la API igual retornará 401 si no auth.
     const req = makeReq("/api/products", {
       cookies: {
         "active-tenant": "tenant-cuid-from-cookie",
@@ -87,7 +91,7 @@ describe("resolveTenantMultiSource", () => {
     });
 
     const tenant = await resolveTenantMultiSource(req, "main");
-    expect(tenant).toBe("tenant-cuid-from-cookie");
+    expect(tenant).toBe("main");
   });
 
   it("falls back to Referer slug when no JWT and no cookie", async () => {
@@ -105,16 +109,32 @@ describe("resolveTenantMultiSource", () => {
     expect(tenant).toBe("main");
   });
 
-  it("skips JWT with tenantId='main' and uses cookie", async () => {
+  it("skips JWT con tenantId='main' y usa cookie SI role permite impersonación", async () => {
+    // SECURITY 2026-05-16: cookie active-tenant solo se honra cuando JWT
+    // tiene role owner o superadmin (impersonación legítima).
     const req = makeReq("/api/products", {
       cookies: {
-        "buleje-admin-sess": makeToken({ tenantId: "main" }),
+        "buleje-admin-sess": makeToken({ tenantId: "main", role: "owner" }),
         "active-tenant": "tenant-cuid-456",
       },
     });
 
     const tenant = await resolveTenantMultiSource(req, "main");
     expect(tenant).toBe("tenant-cuid-456");
+  });
+
+  it("JWT con tenantId='main' y role normal IGNORA la cookie", async () => {
+    // Caso edge: usuario normal con JWT bootstrap. Cookie no se acepta para
+    // impersonación. Ver L127-141 de lib/middleware/tenant.ts.
+    const req = makeReq("/api/products", {
+      cookies: {
+        "buleje-admin-sess": makeToken({ tenantId: "main", role: "admin" }),
+        "active-tenant": "tenant-cuid-789",
+      },
+    });
+
+    const tenant = await resolveTenantMultiSource(req, "main");
+    expect(tenant).toBe("main");
   });
 
   it("non-main baseTenant is returned immediately (subdomain resolution)", async () => {

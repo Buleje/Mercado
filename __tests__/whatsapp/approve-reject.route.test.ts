@@ -14,6 +14,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: vi.fn(() => null),
+  applyRateLimitWithTenant: vi.fn(() => null),
+  getClientIp: vi.fn(() => "127.0.0.1"),
+}));
+
 vi.mock("@/lib/logger", () => ({
   logger: {
     info: vi.fn(),

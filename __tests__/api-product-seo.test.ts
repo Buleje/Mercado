@@ -16,7 +16,11 @@ vi.mock("@/lib/logger", () => ({
 
 // ── requireAdmin ──────────────────────────────────────────────────────────────
 const { mockRequireAdmin } = vi.hoisted(() => ({ mockRequireAdmin: vi.fn() }));
-vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
+// La ruta importa tanto `requireAdmin` como `tryAdmin` desde este módulo.
+vi.mock("@/lib/require-admin", () => ({
+  requireAdmin: mockRequireAdmin,
+  tryAdmin: vi.fn().mockResolvedValue(null),
+}));
 
 // ── cache ─────────────────────────────────────────────────────────────────────
 const { mockInvalidateByPrefix } = vi.hoisted(() => ({ mockInvalidateByPrefix: vi.fn() }));

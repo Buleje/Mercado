@@ -69,6 +69,11 @@ vi.mock("@/components/marketplace/MarketplaceCart", () => ({
   default: () => null,
 }));
 
+vi.mock("@/contexts/customer-context", () => ({
+  useCustomer: () => ({ customer: null }),
+  CustomerProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 // ── Mock fetch global ─────────────────────────────────────────────────────────
 
 const mockFetch = vi.fn();

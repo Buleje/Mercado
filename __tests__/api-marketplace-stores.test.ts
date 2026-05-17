@@ -136,7 +136,12 @@ describe("GET /api/marketplace/stores", () => {
 
     // Verificar que Prisma recibió el filtro correcto
     const callArgs = mockStoreFindMany.mock.calls[0][0];
-    expect(callArgs.where).toMatchObject({ isPublished: true, zone: "Centro" });
+    // La ruta usa `{ equals: zone, mode: "insensitive" }` para empatar
+    // variantes de capitalización ("centro" == "Centro").
+    expect(callArgs.where).toMatchObject({
+      isPublished: true,
+      zone: { equals: "Centro", mode: "insensitive" },
+    });
   });
 
   it("filtra por category", async () => {

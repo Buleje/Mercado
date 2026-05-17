@@ -242,17 +242,27 @@ describe("POST /api/auth/login", () => {
     it("returns 200 via settings fallback when DB has no users and bcrypt-hashed settings password matches", async () => {
       // Security: settings fallback solo acepta adminPassword si esta bcrypt-hashed
       // (mismo checkPassword fail-closed). Usamos un hash dummy y forzamos compare=true.
-      mockFindMany.mockResolvedValue([]);
-      mockSettingsGet.mockResolvedValue({ adminPassword: BCRYPT_HASH });
-      mockCompare.mockResolvedValue(true);
+      // Brandon 2026-05-17: pentest F3 (2026-05-07) gateó este fallback con
+      // process.env.LEGACY_LOGIN. En prod debe estar AUSENTE; en tests lo
+      // activamos explícito para cubrir la lógica histórica.
+      const originalLegacy = process.env.LEGACY_LOGIN;
+      process.env.LEGACY_LOGIN = "1";
+      try {
+        mockFindMany.mockResolvedValue([]);
+        mockSettingsGet.mockResolvedValue({ adminPassword: BCRYPT_HASH });
+        mockCompare.mockResolvedValue(true);
 
-      // Round 13: handler requiere username explícito tras hardening.
-      const res = await POST(makeReq({ username: "admin", password: "adminpass123" }));
+        // Round 13: handler requiere username explícito tras hardening.
+        const res = await POST(makeReq({ username: "admin", password: "adminpass123" }));
 
-      expect(res.status).toBe(200);
-      const body = await res.json();
-      expect(body.ok).toBe(true);
-      expect(body.role).toBe("admin");
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.ok).toBe(true);
+        expect(body.role).toBe("admin");
+      } finally {
+        if (originalLegacy === undefined) delete process.env.LEGACY_LOGIN;
+        else process.env.LEGACY_LOGIN = originalLegacy;
+      }
     });
 
     it("returns 401 via settings fallback when settings adminPassword is plain-text (fail-closed)", async () => {

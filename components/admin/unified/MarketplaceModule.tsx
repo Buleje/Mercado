@@ -61,6 +61,7 @@ import { useMarketplaceCoupons } from "@/components/admin/marketplace/hooks/use-
 import { useMarketplaceReviews } from "@/components/admin/marketplace/hooks/use-marketplace-reviews";
 import { useMarketplaceTienda } from "@/components/admin/marketplace/hooks/use-marketplace-tienda";
 import CategoryZonePicker from "@/components/admin/unified/marketplace/CategoryZonePicker";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // Dynamic import del tab de precios competitivos
 const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitivePricingTab"));
@@ -295,7 +296,8 @@ function DashboardVendorTab() {
     try {
       const res = await fetch(`/api/marketplace/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        // Brandon 2026-05-17 (audit csrf): mutating fetch debe incluir CSRF token.
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ status: "confirmado" }),
       });
       if (res.ok && data) {
@@ -3807,7 +3809,8 @@ function MarketplaceFidelidadTab() {
     try {
       const res = await fetch("/api/marketplace/loyalty", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // Brandon 2026-05-17 (audit csrf): mutating fetch debe incluir CSRF token.
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           action: "earn",
           phone: data.phone,

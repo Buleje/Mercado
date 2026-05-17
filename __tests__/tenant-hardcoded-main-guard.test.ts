@@ -20,7 +20,7 @@ const ALLOWED_BASELINE: Record<string, number> = {
   "app/api/cron/marketplace-sla-watchdog/route.ts": 1, // Platform-wide SLA watchdog cron — same pattern as marketplace-weekly-report
   "app/api/cron/marketplace-weekly-report/route.ts": 1,
   "app/api/daily-digest/route.ts": 1,                  // WhatsApp fallback when no tenant resolved
-  "app/api/marketplace/drivers/apply/route.ts": 2,     // Platform admin notifications (DB write + WhatsApp admin)
+  "app/api/marketplace/drivers/apply/route.ts": 4,     // Driver es cross-tenant (plataforma marketplace): findFirst, create x2 + WhatsApp admin notif
   "app/api/price-comparison/route.ts": 1,
   "lib/db/inventory.db.ts": 1,
 };

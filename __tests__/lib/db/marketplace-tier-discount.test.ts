@@ -103,6 +103,7 @@ function setupTransaction(capturedNotes: Array<string | null>) {
     let capturedThisCall: string | null = null;
     const tx = {
       product: {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       order: {

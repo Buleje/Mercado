@@ -16,16 +16,27 @@ import { NextRequest } from "next/server";
 // inside each test) is sufficient.
 vi.stubEnv("AUTH_SECRET", "test-auth-secret-abcdefghijklmnop");
 
-// Prisma mock — the three methods the route touches.
+// Rate-limit mock — always allow.
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: vi.fn(() => null),
+  applyRateLimitWithTenant: vi.fn(() => null),
+  getClientIp: vi.fn(() => "127.0.0.1"),
+}));
+
+// Prisma mock — all methods the route touches (findFirst, create, deleteMany).
 const mockFindUnique = vi.fn();
+const mockFindFirst = vi.fn();
 const mockUpsert = vi.fn();
+const mockCreate = vi.fn();
 const mockDeleteMany = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     savedCart: {
       findUnique: (...args: unknown[]) => mockFindUnique(...args),
+      findFirst: (...args: unknown[]) => mockFindFirst(...args),
       upsert: (...args: unknown[]) => mockUpsert(...args),
+      create: (...args: unknown[]) => mockCreate(...args),
       deleteMany: (...args: unknown[]) => mockDeleteMany(...args),
     },
   },
@@ -55,7 +66,9 @@ function makeRequest(
 describe("/api/cart/[phone] — RED-009 auth gate", () => {
   beforeEach(() => {
     mockFindUnique.mockReset();
+    mockFindFirst.mockReset();
     mockUpsert.mockReset();
+    mockCreate.mockReset();
     mockDeleteMany.mockReset();
   });
 
@@ -64,7 +77,7 @@ describe("/api/cart/[phone] — RED-009 auth gate", () => {
     const res = await GET(req, { params: paramsFor(PHONE) });
 
     expect(res.status).toBe(404);
-    expect(mockFindUnique).not.toHaveBeenCalled();
+    expect(mockFindFirst).not.toHaveBeenCalled();
   });
 
   it("returns the saved cart on an authenticated GET", async () => {
@@ -75,7 +88,8 @@ describe("/api/cart/[phone] — RED-009 auth gate", () => {
     ];
     const updatedAt = new Date("2026-04-09T12:00:00.000Z");
 
-    mockFindUnique.mockResolvedValue({
+    // Route uses findFirst (with tenantId guard — Security P1 Round 23).
+    mockFindFirst.mockResolvedValue({
       customerPhone: PHONE,
       itemsJson: JSON.stringify(savedItems),
       updatedAt,
@@ -89,9 +103,7 @@ describe("/api/cart/[phone] — RED-009 auth gate", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.items).toEqual(savedItems);
-    expect(mockFindUnique).toHaveBeenCalledWith({
-      where: { customerPhone: PHONE },
-    });
+    expect(mockFindFirst).toHaveBeenCalled();
   });
 
   it("clears the saved cart on an authenticated DELETE", async () => {
@@ -107,8 +119,11 @@ describe("/api/cart/[phone] — RED-009 auth gate", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
-    expect(mockDeleteMany).toHaveBeenCalledWith({
-      where: { customerPhone: PHONE },
-    });
+    // Route includes tenantId guard in the DELETE where clause (Security P1).
+    expect(mockDeleteMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ customerPhone: PHONE }),
+      }),
+    );
   });
 });

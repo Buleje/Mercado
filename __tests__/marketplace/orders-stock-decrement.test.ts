@@ -77,12 +77,18 @@ const COMMON_PARAMS = {
  * Crea una transacción con el comportamiento indicado para product.updateMany.
  * count=1 → éxito (stock suficiente)
  * count=0 → stock insuficiente (lanza Error)
+ *
+ * product.findFirst retorna { stock: 10 } para que pase el guard `current.stock < item.quantity`.
+ * Si updateMany retorna count=0 se lanza el error de race condition.
  */
 function makeTx(updateManyCount: number) {
   mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
     const mockProductUpdateMany = vi.fn().mockResolvedValue({ count: updateManyCount });
     const tx = {
-      product:          { updateMany: mockProductUpdateMany },
+      product:          {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: mockProductUpdateMany,
+      },
       order:            { create:     vi.fn().mockResolvedValue({}) },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon:           { update: vi.fn(), findUnique: vi.fn() },
@@ -115,7 +121,10 @@ describe("MarketplaceOrdersDB.createFromCart — stock decrement", () => {
     const txArg = mockTransaction.mock.calls[0][0];
     const mockProductUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
     const captureTx = {
-      product:          { updateMany: mockProductUpdateMany },
+      product: {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: mockProductUpdateMany,
+      },
       order:            { create: vi.fn().mockResolvedValue({}) },
       commissionLedger: { create: vi.fn().mockResolvedValue({}) },
       coupon:           { update: vi.fn(), findUnique: vi.fn() },
@@ -154,7 +163,10 @@ describe("MarketplaceOrdersDB.createFromCart — stock decrement", () => {
         return Promise.resolve({ count: 1 });
       });
       const tx = {
-        product:          { updateMany: mockProductUpdateMany },
+        product:          {
+          findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+          updateMany: mockProductUpdateMany,
+        },
         order:            { create: vi.fn().mockResolvedValue({}) },
         commissionLedger: { create: vi.fn().mockResolvedValue({}) },
         coupon:           { update: vi.fn(), findUnique: vi.fn() },
@@ -178,7 +190,10 @@ describe("MarketplaceOrdersDB.createFromCart — stock decrement", () => {
         return Promise.resolve({ count: 1 });
       });
       const tx = {
-        product:          { updateMany: mockProductUpdateMany },
+        product:          {
+          findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+          updateMany: mockProductUpdateMany,
+        },
         order:            { create: vi.fn().mockResolvedValue({}) },
         commissionLedger: { create: vi.fn().mockResolvedValue({}) },
         coupon:           { update: vi.fn(), findUnique: vi.fn() },
@@ -202,7 +217,10 @@ describe("MarketplaceOrdersDB.createFromCart — stock decrement", () => {
         return Promise.resolve({ count: 1 });
       });
       const tx = {
-        product:          { updateMany: mockProductUpdateMany },
+        product: {
+          findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+          updateMany: mockProductUpdateMany,
+        },
         order:            { create: vi.fn().mockResolvedValue({}) },
         commissionLedger: { create: vi.fn().mockResolvedValue({}) },
         coupon:           { update: vi.fn(), findUnique: vi.fn() },

@@ -81,7 +81,10 @@ const COMMON_PARAMS = {
 function successTx() {
   mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
     const tx = {
-      product:          { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      product:          {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
       order:            { create:     vi.fn().mockResolvedValue({}) },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon:           {
@@ -122,7 +125,10 @@ describe("MarketplaceOrdersDB.createFromCart — cupones", () => {
     // Dentro de la tx se llamó coupon.update
     const txArg = mockTransaction.mock.calls[0][0];
     const tx = {
-      product:          { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      product:          {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
       order:            { create:     vi.fn().mockResolvedValue({}) },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon: {
@@ -187,7 +193,10 @@ describe("MarketplaceOrdersDB.createFromCart — cupones", () => {
     // Simular que dentro de la tx la re-verificación detecta overflow
     mockTransaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
       const tx = {
-        product:          { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+        product: {
+          findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
         order:            { create:     vi.fn().mockResolvedValue({}) },
         commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
         coupon: {
@@ -237,7 +246,10 @@ describe("MarketplaceOrdersDB.createFromCart — loyalty points", () => {
 
     const txArg = mockTransaction.mock.calls[0][0];
     const tx = {
-      product:          { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      product:          {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
       order:            { create:     vi.fn().mockResolvedValue({}) },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon:           { update: vi.fn(), findUnique: vi.fn() },

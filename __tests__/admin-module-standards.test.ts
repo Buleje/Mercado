@@ -30,6 +30,11 @@ const NO_TABS_MODULES = [
   // GiftCards y Lives son single-view — no tienen sub-tabs, no necesitan AdminTabBar
   "GiftCardsAdminModule.tsx",
   "LivesAdminModule.tsx",
+  // Brandon 2026-05-17: drive de archivos (DocumentosModule) y funnel de leads
+  // dashboard (LeadsFunnelModule) son single-view sin sub-tabs internos.
+  // Añadidos en commits posteriores al estándar — opt-out documentado.
+  "DocumentosModule.tsx",
+  "LeadsFunnelModule.tsx",
 ];
 // Módulos con header custom (no usan AdminModuleHeader, patrón legítimo documentado)
 const CUSTOM_HEADER_MODULES = [
@@ -40,6 +45,9 @@ const CUSTOM_HEADER_MODULES = [
   "POSCajaModule.tsx",
   // CRMClientesModule (round 15): wrapper custom con CardTitle + tabs propios.
   "CRMClientesModule.tsx",
+  // Brandon 2026-05-17: LeadsFunnelModule usa wrapper space-y-6 (más spacing
+  // por densidad de KPIs + filtros + tabla). Patrón legítimo opt-out.
+  "LeadsFunnelModule.tsx",
 ];
 // Módulos que legítimamente usan dark: classes (dark mode habilitado).
 // Round 15 (2026-05-09): expandida tras audit. La regla era restrictiva pero
@@ -57,6 +65,7 @@ const DARK_MODE_MODULES = [
   "FinanzasModule.tsx",
   "GiftCardsAdminModule.tsx",
   "InventarioAlmacenesModule.tsx",
+  "LeadsFunnelModule.tsx",
   "LivesAdminModule.tsx",
   "MarketplaceModule.tsx",
   "MetasLogrosModule.tsx",

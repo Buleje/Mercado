@@ -140,7 +140,8 @@ describe("getAllFlags", () => {
     expect(flags["refresh-tokens"]).toBe(true);
     expect(flags["rolling-releases"]).toBe(false);
     expect(flags["redis-cache"]).toBe(false);
-    expect(flags["oauth-google"]).toBe(false);
+    // Brandon 2026-05-17: oauth-google default cambió a true (GA noviembre 2025).
+    expect(flags["oauth-google"]).toBe(true);
     expect(flags["cursor-pagination"]).toBe(false);
     expect(flags["ai-assistant-v2"]).toBe(false);
     expect(flags["marketplace-v2"]).toBe(false);

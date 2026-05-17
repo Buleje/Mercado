@@ -231,11 +231,15 @@ describe("orchestrator", () => {
     const { orchestrator } = orchestratorMod;
     orchestrator.reset();
 
+    // Brandon 2026-05-17: bypassPermissionCheck obligatorio en tests para
+    // saltarse el RBAC gate (audit AI #1, 2026-05-06). Subtasks internas
+    // usan el mismo flag en prod.
     const result = await orchestrator.executeSync({
       domain: "inventory",
       action: "check-stock",
       payload: {},
       tenantId: "t1",
+      bypassPermissionCheck: true,
     });
 
     expect(result.success).toBe(true);
@@ -251,6 +255,7 @@ describe("orchestrator", () => {
       action: "list",
       payload: {},
       tenantId: "t1",
+      bypassPermissionCheck: true,
     });
 
     expect(result.success).toBe(false);

@@ -141,8 +141,14 @@ describe("PaymentApprovalDb", () => {
 
     it("delta <5% (exacto) → status permanece pending", async () => {
       // expectedAmount=100, detectedAmount=104 → delta=4 → 4% < 5% → pending
+      // Brandon 2026-05-17: el handler ejecuta 2 $queryRawUnsafe — getById
+      // (devolver el row) y el dedupe de yapeOpCode (devolver [] para no
+      // marcar review_required por reuso). Antes mockResolvedValue (always)
+      // devolvía el row para AMBAS, gateándolo a review_required.
       const row = makeApprovalRow({ expectedAmount: "100.00" });
-      mockQueryRaw.mockResolvedValue([row]);
+      mockQueryRaw
+        .mockResolvedValueOnce([row]) // getById
+        .mockResolvedValueOnce([]); // dedupe yapeOpCode: no hay reuso
 
       await PaymentApprovalDb.setVisionResult("pap_test_001", {
         detectedAmount: 104.0,
@@ -185,8 +191,11 @@ describe("PaymentApprovalDb", () => {
 
     it("delta exactamente 5% → permanece pending (boundary — no supera)", async () => {
       // expectedAmount=100, detectedAmount=105 → delta=5 → pct=0.05 → NOT > 0.05 → pending
+      // Brandon 2026-05-17: idem dedupe yapeOpCode — segundo query devuelve [].
       const row = makeApprovalRow({ expectedAmount: "100.00" });
-      mockQueryRaw.mockResolvedValue([row]);
+      mockQueryRaw
+        .mockResolvedValueOnce([row]) // getById
+        .mockResolvedValueOnce([]); // dedupe yapeOpCode
 
       await PaymentApprovalDb.setVisionResult("pap_test_001", {
         detectedAmount: 105.0,
