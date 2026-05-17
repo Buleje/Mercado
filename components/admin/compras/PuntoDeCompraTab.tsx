@@ -594,7 +594,7 @@ export default function PuntoDeCompraTab() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-220px)] min-h-[500px]">
+    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-220px)] min-h-[500px]">
       {/* ════════════════════════════════════════════════════════════════════
          LEFT PANEL — Product Catalog
          ════════════════════════════════════════════════════════════════════ */}

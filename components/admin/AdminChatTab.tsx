@@ -100,7 +100,7 @@ export default function AdminChatTab() {
   if (loading) return <LoadingState />;
 
   return (
-    <div className={cn("flex flex-col min-h-100", expanded ? "fixed inset-0 z-50 bg-[var(--surface-raised)] p-4" : "h-[calc(100vh-280px)]")}>
+    <div className={cn("flex flex-col min-h-100", expanded ? "fixed inset-0 z-50 bg-[var(--surface-raised)] p-4" : "h-[calc(100dvh-280px)]")}>
       {expanded && (
         <div className="flex items-center justify-between mb-3 pb-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">

@@ -57,7 +57,7 @@ export default function AsistenteIAModule() {
       {tab === "sugerencias" && <SugerenciasIAModule />}
       {tab === "metas" && <MetasLogrosModule />}
       {tab === "chat-ia" && (
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] min-h-[600px] h-[calc(100vh-220px)]">
+        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] min-h-[600px] h-[calc(100dvh-220px)]">
           <AIAssistant embedded />
         </div>
       )}
