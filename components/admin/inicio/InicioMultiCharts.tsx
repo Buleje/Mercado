@@ -473,7 +473,13 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
         producto: v.name.length > 16 ? v.name.slice(0, 15) + "…" : v.name,
         unidades: v.unidades,
         ingresos: Math.round(v.ingresos),
-        margen: v.margenIncompleto && v.margen === 0 ? null : Math.round(v.margen),
+        // Brandon 2026-05-17 (audit tsc): BulejeComposedChart espera
+        // Record<string, string|number|boolean> y no acepta null. Antes
+        // devolvíamos null para "datos faltantes" pero rompía el tipo del
+        // chart. Ahora el área "margen" es 0 cuando está incompleto y el
+        // flag margenIncompleto + asterisco "*" en el label superior +
+        // hint del KPI ya comunican al usuario que es estimado.
+        margen: v.margenIncompleto && v.margen === 0 ? 0 : Math.round(v.margen),
         margenIncompleto: v.margenIncompleto,
       }));
   }, [products, orders, sales, rangeFromMs, rangeToMs]);

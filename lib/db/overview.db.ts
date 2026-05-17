@@ -18,6 +18,7 @@ import "server-only";
  */
 
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export interface OverviewQueryOpts {
   tenantId: string;
@@ -146,9 +147,17 @@ export const OverviewDB = {
       }),
     ]);
 
+    // Brandon 2026-05-17 (audit tsc): Order.total es Decimal en Prisma 7 pero
+    // el interface OverviewRawData declara number. Sin coerción explícita los
+    // 47 errores de FinanzasModule cascadean (TS infiere {} al consumir).
+    // toNumOrZero normaliza Decimal | string | null → number.
     return {
-      rangeOrders,
-      prevOrders,
+      rangeOrders: rangeOrders.map((o) => ({
+        total: toNumOrZero(o.total),
+        customerPhone: o.customerPhone,
+        createdAt: o.createdAt,
+      })),
+      prevOrders: prevOrders.map((o) => ({ total: toNumOrZero(o.total) })),
       activeOrders,
       last30dOrders,
       criticalStockCount,
