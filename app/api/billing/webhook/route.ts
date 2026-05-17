@@ -5,6 +5,7 @@ import { constructWebhookEvent, planFromSubscription } from "@/lib/stripe";
 import type Stripe from "stripe";
 import { logger } from "@/lib/logger";
 import { enqueueWebhookEvent } from "@/lib/stripe-webhook-queue";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/webhook
@@ -13,8 +14,16 @@ import { enqueueWebhookEvent } from "@/lib/stripe-webhook-queue";
 // the event and return 200 so Stripe does NOT add its own retries on top of
 // ours. A cron job at /api/billing/webhook-replay drains the queue with
 // exponential back-off.
+//
+// Audit 2026-05-17 04-P0-1: rate-limit agregado para prevenir DoS.
+// Antes: 1000 req/s sin firma válida consumían HMAC + Prisma create.
+// Stripe paga retries, vos pagás compute. STRICT cap (10 req/min por IP)
+// es seguro porque Stripe nunca envía más de 1 evento por segundo a una IP.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const _rl = applyRateLimit(req, "STRICT", "stripe-webhook");
+  if (_rl) return _rl;
+
   const sig = req.headers.get("stripe-signature");
   if (!sig) {
     return NextResponse.json({ error: "Missing Stripe signature" }, { status: 400 });

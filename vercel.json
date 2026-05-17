@@ -6,6 +6,24 @@
   "functions": {
     "app/api/**": {
       "maxDuration": 30
+    },
+    "app/api/cron/churn-score/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/agent-tasks/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/demand-forecast/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/marketplace-stockout-predictions/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/marketplace-anomaly-detection/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/credit-score-recalc/route.ts": {
+      "maxDuration": 300
     }
   },
   "git": {

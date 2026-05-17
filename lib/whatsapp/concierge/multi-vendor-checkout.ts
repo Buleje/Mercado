@@ -134,9 +134,17 @@ async function createPaymentApproval(params: {
         UPDATE "Order"
         SET "paymentApprovalId" = ${id}
         WHERE id = ${orderId}
-      `.catch(() => {
-        // Silently ignore — column added in migration_add_payment_approval_link
-        // which may not be deployed yet.
+      `.catch((err) => {
+        // Audit 2026-05-17 01-P0-2: antes silent. Si la columna no existe en
+        // prod (migration_add_payment_approval_link no aplicada), las
+        // órdenes WhatsApp quedan sin paymentApprovalId y superadmin no
+        // puede trazarlas para aprobar el pago Yape — dinero en limbo.
+        // Ahora logger.warn para que el error quede visible en Sentry.
+        logger.warn("[multi-vendor-checkout] UPDATE Order.paymentApprovalId failed", {
+          orderId,
+          approvalId: id,
+          err: err instanceof Error ? err.message : String(err),
+        });
       });
     }
   }

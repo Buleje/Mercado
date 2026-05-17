@@ -457,7 +457,15 @@ export async function POST(req: NextRequest) {
             { tenantId: store.tenantId, context: "marketplace-order-vendor-notify" },
           ).catch((err) => logger.error("[marketplace/orders] vendor whatsapp failed", { error: String(err), tenantId: store.tenantId }));
         }
-      } catch { /* silencioso */ }
+      } catch (err) {
+        // Audit 2026-05-17 01-P0-3: antes silent — si el lookup del store falla
+        // o la notif al vendor revienta, el vendor NO se entera del pedido y
+        // queda pendiente sin acción. logger.warn para Sentry visibility.
+        logger.warn("[marketplace/orders] vendor notification block failed", {
+          orderId: order?.id,
+          err: err instanceof Error ? err.message : String(err),
+        });
+      }
     })();
 
     // Fire-and-forget: earn loyalty points (1 point per S/1 spent)
@@ -538,7 +546,17 @@ export async function POST(req: NextRequest) {
             ).catch((err) => logger.error("[marketplace/orders] welcome coupon whatsapp failed", { error: String(err), tenantId: store.tenantId }));
           }
         }
-      } catch { /* silencioso */ }
+      } catch (err) {
+        // Audit 2026-05-17 01-P0-3: antes silent — si coupon.create falla
+        // (P2002 unique violation, DB down, etc.) el error queda oculto y
+        // el comprador NO recibe su cupón de bienvenida. logger.warn permite
+        // diagnóstico via Sentry.
+        logger.warn("[marketplace/orders] welcome coupon block failed", {
+          orderId: order?.id,
+          customerPhone,
+          err: err instanceof Error ? err.message : String(err),
+        });
+      }
     })();
 
     return NextResponse.json(
