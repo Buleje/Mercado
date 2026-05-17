@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { enqueueActivityLog } from "@/lib/queue";
+
+const PhoneSchema = z.string().min(7).max(20).regex(/^\+?[0-9\- ]+$/, "Teléfono inválido");
 
 /**
  * GET /api/customers/[phone]/last-purchase
@@ -11,17 +16,32 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> },
 ) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
+  const rl = applyRateLimit(req, "MODERATE", "customers-phone-last-purchase");
+  if (rl) return rl;
+
   const { phone } = await params;
+
+  const phoneParsed = PhoneSchema.safeParse(phone);
+  if (!phoneParsed.success) {
+    return NextResponse.json({ error: "Teléfono inválido" }, { status: 400 });
+  }
+  const safePhone = phoneParsed.data;
+
+  // SECURITY 2026-05-17 (audit C1): nunca fallback a "main".
+  // Lecturas de PII de cliente deben fallar 401 si el JWT no trae tenantId.
+  if (!auth.tenantId) {
+    return NextResponse.json({ error: "Sesión sin tenant válido" }, { status: 401 });
+  }
   const tenantId = auth.tenantId;
 
   try {
     // Try Sale first (POS sales)
     // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped en where; migration a lib/db pendiente.
     const lastSale = await prisma.sale.findFirst({
-      where: { customerPhone: phone, tenantId },
+      where: { customerPhone: safePhone, tenantId },
       orderBy: { createdAt: "desc" },
       include: {
         items: {
@@ -33,6 +53,15 @@ export async function GET(
     });
 
     if (lastSale) {
+      enqueueActivityLog({
+        action: "leer",
+        resource: "cliente_pii",
+        resourceId: safePhone,
+        userId: auth.username,
+        tenantId,
+        details: { description: `Lectura PII cliente ${safePhone.slice(-4)} desde /api/customers/${safePhone}/last-purchase` },
+        timestamp: new Date().toISOString(),
+      }).catch(() => { /* fire-and-forget */ });
       return NextResponse.json({
         type: "sale",
         id: lastSale.id,
@@ -53,7 +82,7 @@ export async function GET(
     // Fallback: try Order
     // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped en where; migration a lib/db pendiente.
     const lastOrder = await prisma.order.findFirst({
-      where: { customerPhone: phone, tenantId },
+      where: { customerPhone: safePhone, tenantId },
       orderBy: { createdAt: "desc" },
       include: {
         items: {
@@ -65,6 +94,15 @@ export async function GET(
     });
 
     if (lastOrder) {
+      enqueueActivityLog({
+        action: "leer",
+        resource: "cliente_pii",
+        resourceId: safePhone,
+        userId: auth.username,
+        tenantId,
+        details: { description: `Lectura PII cliente ${safePhone.slice(-4)} desde /api/customers/${safePhone}/last-purchase` },
+        timestamp: new Date().toISOString(),
+      }).catch(() => { /* fire-and-forget */ });
       return NextResponse.json({
         type: "order",
         id: lastOrder.id,
@@ -84,7 +122,11 @@ export async function GET(
 
     return NextResponse.json(null);
   } catch (e) {
+    // Degradado intencional (audit 2026-05-17): la "última compra" es info
+    // opcional para enriquecer el POS. Si Prisma falla devolvemos null+200
+    // en vez de 503 — el cliente entiende "no hay datos" en lugar de crashear
+    // el modal de cobro. El error queda en logs para diagnóstico.
     logger.error("[customers/phone/last-purchase] GET error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "Database error" }, { status: 503 });
+    return NextResponse.json(null);
   }
 }

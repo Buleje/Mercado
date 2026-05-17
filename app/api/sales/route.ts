@@ -69,8 +69,14 @@ export async function GET(req: NextRequest) {
 
     let data = await withDbRetry(() => SalesDB.getAll(auth.tenantId));
 
-    // Filter: cashierId
-    if (cashierIdParam) {
+    // SECURITY 2026-05-17 (audit A3): cajero solo puede ver SUS ventas.
+    // Antes el query param `?cashierId=X` se aceptaba sin validar — un cajero
+    // podía listar ventas de cualquier compañero del tenant (PII financiero
+    // + montos de comisión + clientes asignados). Roles management ven todo.
+    const isCajeroOnly = auth.role === "cajero";
+    if (isCajeroOnly) {
+      data = data.filter((s) => s.cashierId === auth.username);
+    } else if (cashierIdParam) {
       data = data.filter((s) => s.cashierId === cashierIdParam);
     }
 
@@ -207,6 +213,25 @@ async function salesHandler(
     );
   }
   const finalTotal = Math.max(0, total - discountAmount);
+
+  // SECURITY 2026-05-17 (audit C3): amountPaid debe ser >= finalTotal para
+  // métodos no-fiado. Antes el server aceptaba `amountPaid=1` con `total=24.9`,
+  // creando ventas con `change` negativo (deuda silenciosa que descuadraba
+  // el arqueo de turno). Fiado es la única excepción permitida — esa deuda
+  // se traquea explícitamente en la tabla Fiado.
+  const payment = data.payment ?? "efectivo";
+  const requiresFullPayment = payment !== "fiado";
+  if (requiresFullPayment && data.amountPaid != null) {
+    // Tolerancia de 1 céntimo por redondeo de IGV cliente↔server.
+    if (data.amountPaid + 0.01 < finalTotal) {
+      return NextResponse.json(
+        {
+          error: `Monto pagado (S/${data.amountPaid.toFixed(2)}) es menor que el total (S/${finalTotal.toFixed(2)}). Usá fiado si la deuda es intencional.`,
+        },
+        { status: 400 },
+      );
+    }
+  }
 
   // Validate customerPhone: only set it if the customer actually exists in DB
   // (the Sale.customerPhone is a FK → Customer.phone; passing an unknown phone throws a FK error)

@@ -27,10 +27,16 @@ const DevolucionSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "sales-devolucion"); if (_rl) return _rl;
-  const auth = await requireAdmin(req, ["admin", "cajero"]);
+  const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
-  // tenantId garantizado por requireAdmin (canonical CUID del JWT).
+  // SECURITY 2026-05-17 (audit C1): nunca fallback a "main".
+  // Un JWT canónico sin tenantId aplicaba devoluciones contra el tenant "main"
+  // por defecto — vector de cross-tenant write. Tampoco se permitía owner/manager
+  // devolver (A13: solo admin+cajero), se incluyen ahora para alinear con /sales POST.
+  if (!auth.tenantId) {
+    return NextResponse.json({ error: "Sesión sin tenant válido" }, { status: 401 });
+  }
   const tenantId = auth.tenantId;
 
   try {
@@ -188,9 +194,22 @@ export async function POST(req: NextRequest) {
       items: returnItems,
     });
   } catch (e) {
-    logger.error("[sales/devolucion] POST error", { err: e instanceof Error ? e.message : String(e) });
+    const msg = e instanceof Error ? e.message : String(e);
+    logger.error("[sales/devolucion] POST error", { err: msg });
+
+    // Errores de negocio conocidos (lanzados explícitamente dentro de la tx)
+    // son seguros de mostrar al cliente como 400.
+    const isBusinessError =
+      msg.startsWith("Qty solicitada") ||
+      msg.startsWith("Stock insuficiente");
+
+    if (isBusinessError) {
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+
+    // Errores infraestructurales (Prisma P-codes, FK violations, etc.) → mensaje genérico.
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Error al procesar la devolucion" },
+      { error: "Error al procesar la devolucion" },
       { status: 500 },
     );
   }

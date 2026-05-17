@@ -86,17 +86,19 @@ function calcularVuelto(monto: number): string {
   return result.join(" + ");
 }
 
+// Colores reales de billetes/monedas peruanos para que cada denominación
+// se distinga a simple vista, independiente del brand del tenant.
 const DENOM_VISUAL: Record<number, { color: string; shape: "rect" | "circle"; label: string }> = {
-  200: { color: "bg-[var(--accent-muted)] text-white", shape: "rect", label: "S/200" },
-  100: { color: "bg-[var(--accent-soft)] text-white", shape: "rect", label: "S/100" },
-  50:  { color: "bg-[var(--data-warning-500)] text-white", shape: "rect", label: "S/50" },
-  20:  { color: "bg-[var(--accent-soft)] text-white", shape: "rect", label: "S/20" },
-  10:  { color: "bg-[var(--data-warning-500)] text-white", shape: "rect", label: "S/10" },
-  5:   { color: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)]", shape: "circle", label: "S/5" },
-  2:   { color: "bg-gray-300 text-[var(--text-primary)]", shape: "circle", label: "S/2" },
-  1:   { color: "bg-[var(--data-warning-500)] text-white", shape: "circle", label: "S/1" },
-  0.5: { color: "bg-gray-400 text-white", shape: "circle", label: "S/.50" },
-  0.2: { color: "bg-gray-500 text-white", shape: "circle", label: "S/.20" },
+  200: { color: "bg-indigo-700 text-white",  shape: "rect",   label: "S/200" },
+  100: { color: "bg-emerald-600 text-white", shape: "rect",   label: "S/100" },
+  50:  { color: "bg-violet-600 text-white",  shape: "rect",   label: "S/50"  },
+  20:  { color: "bg-orange-500 text-white",  shape: "rect",   label: "S/20"  },
+  10:  { color: "bg-sky-500 text-white",     shape: "rect",   label: "S/10"  },
+  5:   { color: "bg-yellow-400 text-yellow-900", shape: "circle", label: "S/5"   },
+  2:   { color: "bg-gray-300 text-gray-800", shape: "circle", label: "S/2"   },
+  1:   { color: "bg-gray-400 text-white",    shape: "circle", label: "S/1"   },
+  0.5: { color: "bg-amber-700 text-white",   shape: "circle", label: "S/.50" },
+  0.2: { color: "bg-amber-800 text-white",   shape: "circle", label: "S/.20" },
 };
 
 function VueltoVisual({ monto }: { monto: number }) {
@@ -251,7 +253,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {c.categoria && (
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-primary/15 text-primary">
                       {c.categoria}
                     </span>
                   )}
@@ -260,7 +262,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                       Fiado S/{Number(c.creditBalance).toFixed(2)}
                     </span>
                   ) : (
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-success-500)]/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
                       Sin deuda
                     </span>
                   )}
@@ -515,20 +517,20 @@ export default function POSPaymentModal({
         )}
 
         {/*
-          Brandon 2026-05-16 v3 — Rediseño visual PREMIUM:
-          Header hero con accent-soft fondo + total display gigante.
-          Botones voice/close como pills con backdrop. Chip descuento
-          y redondeo dentro del hero. Look estilo "checkout Stripe".
+          Brandon 2026-05-17 — Header hero neutro del proyecto Buleje
+          (independiente del brand naranja del tenant mi-pollo).
+          Fondo surface elegante + primary teal para el acento + glow
+          radial sutil del primary. Total display gigante intacto.
         */}
-        <div className="shrink-0 relative overflow-hidden border-b-2 border-[var(--rule-base)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-          {/* Glow decorativo de fondo (sutil) */}
-          <div className="absolute inset-0 pointer-events-none opacity-50 bg-[radial-gradient(ellipse_at_center,var(--accent-soft),transparent_70%)]" />
+        <div className="shrink-0 relative overflow-hidden border-b border-[var(--rule-base)] bg-gradient-to-b from-[var(--surface-raised)] to-[var(--surface-sunken)] dark:from-[var(--surface-raised)] dark:to-surface">
+          {/* Glow decorativo de fondo (sutil, primary del proyecto) */}
+          <div className="absolute inset-0 pointer-events-none opacity-60 bg-[radial-gradient(ellipse_at_top_left,rgba(15,118,110,0.10),transparent_60%)] dark:bg-[radial-gradient(ellipse_at_top_left,rgba(52,212,190,0.10),transparent_60%)]" />
 
           <div className="relative px-5 sm:px-6 py-4 flex items-center gap-4">
             {/* Voice toggle (izquierda) */}
             <button
               onClick={() => { const next = !voiceEnabled; setVoiceEnabled(next); try { localStorage.setItem("pos-voice-total", String(next)); } catch {} }}
-              className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-[var(--surface-raised)]/80 backdrop-blur hover:bg-[var(--surface-raised)] shadow-sm transition-colors text-[var(--text-secondary)] hover:text-[var(--accent)]"
+              className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:border-primary/40 shadow-sm transition-colors text-[var(--text-secondary)] hover:text-primary"
               title={voiceEnabled ? "Desactivar voz" : "Activar voz"}
               aria-label="Toggle voz"
             >
@@ -537,7 +539,7 @@ export default function POSPaymentModal({
 
             {/* Centro: label + total + chip items */}
             <div className="flex-1 min-w-0 flex flex-col">
-              <p className="text-[10px] font-extrabold text-[var(--accent-dark)] dark:text-[var(--accent)] uppercase tracking-[0.18em] mb-0.5">
+              <p className="text-[10px] font-extrabold text-primary uppercase tracking-[0.18em] mb-0.5">
                 Total a cobrar
               </p>
               <div className="flex items-baseline gap-3 flex-wrap">
@@ -545,7 +547,7 @@ export default function POSPaymentModal({
                   {fmt(total)}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-bold border border-[var(--rule-soft)] shadow-sm">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20 shadow-sm">
                     <Receipt className="h-3.5 w-3.5" />
                     {cartCount} {cartCount === 1 ? "articulo" : "articulos"}
                   </span>
@@ -573,7 +575,7 @@ export default function POSPaymentModal({
                       <span className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase tracking-wide">Redondear:</span>
                       {uniq.map(o => (
                         <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
-                          className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-[var(--surface-raised)] hover:bg-[var(--accent)] hover:text-white shadow-sm transition-colors">
+                          className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:bg-primary hover:text-white hover:border-primary shadow-sm transition-colors">
                           S/{o.val}
                         </button>
                       ))}
@@ -587,7 +589,7 @@ export default function POSPaymentModal({
             <button
               onClick={onCancel}
               aria-label="Cerrar"
-              className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-[var(--surface-raised)]/80 backdrop-blur hover:bg-[var(--data-error-500)] hover:text-white text-[var(--text-secondary)] shadow-sm transition-colors"
+              className="shrink-0 h-10 w-10 rounded-full flex items-center justify-center bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:bg-[var(--data-error-500)] hover:text-white hover:border-[var(--data-error-500)] text-[var(--text-secondary)] shadow-sm transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -609,7 +611,7 @@ export default function POSPaymentModal({
             {/* COL 1 — Card Pago */}
             <div className="lg:col-span-5 min-w-0 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--rule-soft)] flex items-center gap-2.5">
-                <span className="h-8 w-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)]">
+                <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                   <Banknote className="h-4 w-4" />
                 </span>
                 <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Pago</h3>
@@ -767,15 +769,15 @@ export default function POSPaymentModal({
                           className={cn(
                             "group relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border-2 text-xs font-extrabold transition-all overflow-hidden",
                             selected
-                              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-[0_4px_12px_-4px_var(--accent)]"
-                              : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-raised)] hover:-translate-y-0.5"
+                              ? "border-primary bg-primary/10 text-primary shadow-[0_4px_12px_-4px_rgba(15,118,110,0.4)]"
+                              : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:border-primary/40 hover:bg-[var(--surface-raised)] hover:-translate-y-0.5"
                           )}
                         >
                           <span className={cn(
                             "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
                             selected
-                              ? "bg-[var(--accent)] text-white"
-                              : "bg-[var(--surface-raised)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
+                              ? "bg-primary text-white"
+                              : "bg-[var(--surface-raised)] text-[var(--text-secondary)] group-hover:bg-primary/10 group-hover:text-primary",
                           )}>
                             <m.icon className="h-4 w-4" />
                           </span>
@@ -795,19 +797,42 @@ export default function POSPaymentModal({
 
                   const handlePrintQR = () => {
                     if (!savedNumber) return;
+                    // SECURITY 2026-05-17 (audit C4): validar formato estricto antes
+                    // de imprimir. localStorage puede contener payloads contaminados
+                    // de sesiones previas (legacy sin sanitize). Si el número no es
+                    // 100% dígitos opcional con + inicial → abortar impresión.
+                    if (!/^\+?\d{6,15}$/.test(savedNumber)) {
+                      alert("Número inválido para QR. Solo dígitos (opcional + al inicio).");
+                      return;
+                    }
                     const w = window.open("", "_blank", "width=400,height=500");
                     if (!w) return;
-                    w.document.write(`
-                      <html><head><title>QR ${isYape ? "Yape" : "Plin"}</title>
-                      <style>body{text-align:center;font-family:sans-serif;padding:40px}h2{color:${isYape ? "#7c3aed" : "color-mix(in oklab, var(--accent) 70%, white)"}}img{margin:20px auto}</style>
-                      </head><body>
-                      <h2>Paga con ${isYape ? "Yape" : "Plin"}</h2>
-                      <img src="https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${encodeURIComponent(savedNumber)}&choe=UTF-8" width="250" height="250" />
-                      <p style="font-size:18px;font-weight:bold">${savedNumber}</p>
-                      <p style="font-size:14px;color:#666">Total: ${fmt(total)}</p>
-                      </body></html>
-                    `);
-                    w.document.close();
+                    // DOM API en lugar de document.write con interpolación —
+                    // textContent escapa automáticamente cualquier markup.
+                    const doc = w.document;
+                    doc.title = `QR ${isYape ? "Yape" : "Plin"}`;
+                    const style = doc.createElement("style");
+                    style.textContent = `body{text-align:center;font-family:sans-serif;padding:40px}h2{color:${isYape ? "#7c3aed" : "#0891b2"}}img{margin:20px auto}`;
+                    doc.head.appendChild(style);
+                    const h2 = doc.createElement("h2");
+                    h2.textContent = `Paga con ${isYape ? "Yape" : "Plin"}`;
+                    const img = doc.createElement("img");
+                    img.src = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${encodeURIComponent(savedNumber)}&choe=UTF-8`;
+                    img.width = 250;
+                    img.height = 250;
+                    img.alt = "QR";
+                    const numP = doc.createElement("p");
+                    numP.style.fontSize = "18px";
+                    numP.style.fontWeight = "bold";
+                    numP.textContent = savedNumber;
+                    const totP = doc.createElement("p");
+                    totP.style.fontSize = "14px";
+                    totP.style.color = "#666";
+                    totP.textContent = `Total: ${fmt(total)}`;
+                    doc.body.appendChild(h2);
+                    doc.body.appendChild(img);
+                    doc.body.appendChild(numP);
+                    doc.body.appendChild(totP);
                     w.print();
                   };
 
@@ -815,12 +840,12 @@ export default function POSPaymentModal({
                     <div className={cn(
                       "rounded-xl p-3 mb-3 border",
                       isYape
-                        ? "bg-[var(--surface-sunken)] border-[var(--rule-base)]"
-                        : "bg-teal-50 dark:bg-teal-950/20 border-teal-100 dark:border-teal-800/30"
+                        ? "bg-purple-50 dark:bg-purple-950/20 border-purple-100 dark:border-purple-800/30"
+                        : "bg-cyan-50 dark:bg-cyan-950/20 border-cyan-100 dark:border-cyan-800/30"
                     )}>
                       <p className={cn(
                         "text-xs font-bold mb-2 text-center",
-                        isYape ? "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" : "text-[var(--accent-dark)] dark:text-teal-400"
+                        isYape ? "text-purple-700 dark:text-purple-300" : "text-cyan-700 dark:text-cyan-300"
                       )}>
                         {isYape ? "Yape" : "Plin"} &middot; {fmt(total)}
                       </p>
@@ -843,8 +868,8 @@ export default function POSPaymentModal({
                             className={cn(
                               "px-3 py-2 text-xs font-bold rounded-lg hover:opacity-80 transition-opacity",
                               isYape
-                                ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                                : "bg-teal-100 dark:bg-teal-900/30 text-[var(--accent)]"
+                                ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                                : "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300"
                             )}
                             title="Imprimir QR"
                           >
@@ -981,7 +1006,7 @@ export default function POSPaymentModal({
                     <div className="flex flex-wrap gap-2">
                       {[200, 100, 50, 20, 10].map(b => (
                         <button key={b} onClick={() => addBillete(b)}
-                          className="px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-semibold cursor-pointer hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors">
+                          className="px-3 py-1.5 rounded-lg bg-[var(--data-success-500)]/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-sm font-semibold cursor-pointer hover:bg-[var(--data-success-500)]/20 dark:hover:bg-[var(--data-success-500)]/25 transition-colors border border-[var(--data-success-500)]/20">
                           S/{b}
                         </button>
                       ))}
@@ -1046,7 +1071,7 @@ export default function POSPaymentModal({
 
           {/* Change display */}
           {vuelto > 0 && (
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 text-center">
+            <div className="bg-[var(--data-success-500)]/10 dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 text-center">
               <p className="text-sm text-[var(--data-success-500)] font-semibold uppercase tracking-wide">
                 Vuelto
               </p>
@@ -1105,7 +1130,7 @@ export default function POSPaymentModal({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowNewCustomer(!showNewCustomer)}
-                  className="text-sm font-semibold text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                  className="text-sm font-semibold text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/10 dark:hover:bg-[var(--data-success-500)]/15 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   Nuevo
@@ -1122,7 +1147,7 @@ export default function POSPaymentModal({
 
             {/* Formulario inline nuevo cliente — grande y legible */}
             {showNewCustomer && (
-              <div className="mb-3 p-5 rounded-2xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 space-y-4">
+              <div className="mb-3 p-5 rounded-2xl bg-[var(--data-success-500)]/8 dark:bg-[var(--data-success-500)]/12 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-[var(--data-success-500)]/15 flex items-center justify-center">
                     <Plus className="h-5 w-5 text-[var(--data-success-500)]" />
@@ -1345,7 +1370,7 @@ export default function POSPaymentModal({
               "group relative w-full py-4 rounded-2xl font-extrabold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between px-6 text-white overflow-hidden",
               isFiado
                 ? "bg-[var(--data-warning-500)] hover:brightness-110 shadow-[0_8px_24px_-8px_var(--data-warning-500)]"
-                : "bg-gradient-to-r from-[var(--accent)] to-[var(--accent-dark)] hover:brightness-110 shadow-[0_8px_24px_-8px_var(--accent)]"
+                : "bg-gradient-to-r from-primary to-[var(--color-primary-dark)] hover:brightness-110 shadow-[0_8px_24px_-8px_rgba(15,118,110,0.6)]"
             )}
           >
             <span className="flex items-center gap-2.5">

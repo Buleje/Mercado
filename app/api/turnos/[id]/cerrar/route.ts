@@ -19,7 +19,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const _rl = await applyRateLimit(req, "MODERATE", "turnos-X-cerrar"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  // Brandon 2026-05-17 (audit C1): lista de roles explícita. Cerrar turno
+  // es una acción financiera — solo personal de staff puede ejecutarla.
+  const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -41,6 +43,19 @@ export async function POST(
     }
     if (existing.status !== "ABIERTO") {
       return NextResponse.json({ error: "El turno ya está cerrado" }, { status: 422 });
+    }
+
+    // SECURITY 2026-05-17 (audit A1): cajero solo puede cerrar SU turno.
+    // Antes cualquier cajero del tenant podía cerrar el turno de otro cajero
+    // con un `cierreEfectivo` falsificado → vector de fraude laboral
+    // (culpar al compañero por una diferencia inventada).
+    // Roles management (admin/owner/manager) siguen pudiendo cerrar cualquier turno.
+    const isCajeroOnly = auth.role === "cajero";
+    if (isCajeroOnly && existing.adminUserId !== auth.username) {
+      return NextResponse.json(
+        { error: "No tenés permiso para cerrar el turno de otro cajero" },
+        { status: 403 },
+      );
     }
 
     // SECURITY 2026-05-07 (T2): aggregate scoped por cashierId del turno.

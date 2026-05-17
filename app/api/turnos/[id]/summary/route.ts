@@ -32,6 +32,18 @@ export async function GET(
       return NextResponse.json({ error: "Turno no encontrado" }, { status: 404 });
     }
 
+    // SECURITY 2026-05-17 (audit A2): cajero solo puede ver SU summary.
+    // Antes cualquier cajero del tenant podía consultar ventasTotal, top
+    // productos y métodos de pago de un compañero. Sigue el mismo patrón
+    // que el cierre de turno (A1) y /api/turnos/activo.
+    const isCajeroOnly = auth.role === "cajero";
+    if (isCajeroOnly && turno.adminUserId !== auth.username) {
+      return NextResponse.json(
+        { error: "No tenés permiso para ver el resumen de otro cajero" },
+        { status: 403 },
+      );
+    }
+
     // T2: scoped por cashierId del turno + ventana temporal abrioEn..(cerroEn|now).
     // Para turnos cerrados usa cerroEn como upper bound; para abiertos usa now.
     const lowerBound = turno.abrioEn;
