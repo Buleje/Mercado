@@ -32,7 +32,17 @@
 | **Hallazgos propios cross-cutting** | 1 | 2 | 1 | 0 | 4 |
 | **TOTAL** | **14** | **23** | **17** | **3** | **57** |
 
-**Veredicto:** arquitectura RBAC + multi-tenant **sólida y bien diseñada** (security pentest no encontró P0). Los riesgos críticos son **bugs operativos** (cajero bloqueado en turnos, race condition en fiados) y **deuda de performance** (recharts monolíticos, N+1 queries, contexts sin memo). 57 hallazgos accionables.
+### Estado P0 al 2026-05-17
+
+| Cerrados | Diferidos formalmente | Pendientes |
+|---|---|---|
+| **12** | **2** ([ADR-113](../../docs/adr/113-deferir-recharts-dynamic-split.md)) | 0 |
+
+**Cerrados esta sesión:** B-P0-1 (cajero turno) · B-P0-2 (race fiados TOCTOU) · B-P0-3 (finance tenantId) · B-P0-4 (paginación OOM) · Q-P0-1..4 (payment-proof + stripe + purchases invalidate) · P-P0-1/2/5 (analytics N+1 + kpis cache 100× speedup) · X-P0-1 (recetario leak).
+
+**Diferidos a sprint propio** (ADR-113): P-P0-3 y P-P0-4 (Recharts dynamic split en 3 monolitos · ~5000 LOC refactor con baseline visual obligatorio). Razón: ya están con `dynamic()` en TabRouter → NO afectan LCP inicial; el issue es INP del tab cargado, que requiere refactor estructural fuera de scope hot-fix.
+
+**Veredicto:** arquitectura RBAC + multi-tenant **sólida y bien diseñada** (security pentest no encontró P0). Los riesgos críticos eran **bugs operativos** y **deuda de performance** — todos cerrados o formalmente diferidos con plan. 57 hallazgos accionables.
 
 ---
 
@@ -58,13 +68,13 @@
 
 ### Performance (N+1 + bundle)
 
-| # | Archivo:Línea | Hallazgo | Impacto |
-|---|---|---|---|
-| **P-P0-1** | `app/api/analytics/anomalias/route.ts:93,174` | 2 `findMany(products)` serializados fuera de `Promise.all`. | TTFB +300-600ms con >500 productos. |
-| **P-P0-2** | `app/api/analytics/kpis/route.ts:65-77` | 3 `findMany(saleItem)` serializados en cascade. Prisma directo. | TTFB +400-800ms con >1000 ventas. |
-| **P-P0-3** | `components/admin/PrestamosModule.tsx:14` | Recharts importado estático en monolito 2705 LOC. | LCP +200-400ms (parse JS ~80KB gzip). |
-| **P-P0-4** | `ContratosModule.tsx:17`, `TesoreriaModule.tsx:19` | Mismo problema en 2 monolitos >2000 LOC. | LCP +150-300ms por módulo. |
-| **P-P0-5** | `app/api/analytics/kpis/route.ts` | Sin `getOrSet` ni cache, llamado cada 30s por polling. | CPU DB +40% en horas pico. |
+| # | Archivo:Línea | Hallazgo | Impacto | Estado |
+|---|---|---|---|---|
+| **P-P0-1** | `app/api/analytics/anomalias/route.ts:93,174` | 2 `findMany(products)` serializados fuera de `Promise.all`. | TTFB +300-600ms con >500 productos. | ✓ commit `34fae0ec` |
+| **P-P0-2** | `app/api/analytics/kpis/route.ts:65-77` | 3 `findMany(saleItem)` serializados en cascade. Prisma directo. | TTFB +400-800ms con >1000 ventas. | ✓ commit `34fae0ec` |
+| **P-P0-3** | `components/admin/PrestamosModule.tsx:14` | Recharts importado estático en monolito 2705 LOC. | LCP +200-400ms (parse JS ~80KB gzip). | ⏳ **Diferido [ADR-113](../../docs/adr/113-deferir-recharts-dynamic-split.md)** |
+| **P-P0-4** | `ContratosModule.tsx:17`, `TesoreriaModule.tsx:19` | Mismo problema en 2 monolitos >2000 LOC. | LCP +150-300ms por módulo. | ⏳ **Diferido [ADR-113](../../docs/adr/113-deferir-recharts-dynamic-split.md)** |
+| **P-P0-5** | `app/api/analytics/kpis/route.ts` | Sin `getOrSet` ni cache, llamado cada 30s por polling. | CPU DB +40% en horas pico. | ✓ commit `34fae0ec` (100× speedup smoke) |
 
 ### Hallazgo propio
 
