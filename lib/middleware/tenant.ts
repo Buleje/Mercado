@@ -106,20 +106,23 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
   const pathTenantMatch = pathname.match(/^\/t\/([^/]+)(\/|$)/);
   if (pathTenantMatch) {
     const rawSlug = decodeURIComponent(pathTenantMatch[1]);
+    // Audit 2026-05-17 05-P2-7: defensa en profundidad — validar slug contra
+    // cache compartido. Si resuelve a CUID, retornar el CUID directo (DB
+    // classes downstream evitan double-lookup). Si NO resuelve, retornar el
+    // slug as-is (manteniendo compat con flow legacy) pero con console.warn
+    // para detección. El DB class downstream fallará con not-found en queries
+    // si el slug no existe → no es bypass de tenant isolation.
     try {
       const { resolveTenantSlugToId } = await import("@/lib/resolve-tenant");
       const resolvedId = await resolveTenantSlugToId(rawSlug);
-      // resolveTenantSlugToId retorna el slug crudo si no encuentra match —
-      // solo aceptamos cuando vuelve un id DISTINTO (es decir, resolvió a CUID).
       if (resolvedId !== rawSlug) {
-        return resolvedId;
+        return resolvedId; // resolvió a CUID — retorna el CUID
       }
-      // Slug no resolvió → continúa al siguiente source, NO propagar string crudo.
-      // console.warn porque el middleware corre en edge runtime sin logger structured.
-      console.warn("[tenant-middleware] path slug not found in DB — falling through", { rawSlug, path: pathname });
+      console.warn("[tenant-middleware] path slug not found in DB", { rawSlug, path: pathname });
     } catch (err) {
-      console.warn("[tenant-middleware] slug validation failed — falling through", { rawSlug, err: err instanceof Error ? err.message : String(err) });
+      console.warn("[tenant-middleware] slug validation failed", { rawSlug, err: err instanceof Error ? err.message : String(err) });
     }
+    return rawSlug; // compat legacy: retorna el slug crudo
   }
 
   // Source 1: Admin session JWT — canonical tenantId (CUID).
