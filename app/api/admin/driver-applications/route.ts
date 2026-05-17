@@ -146,8 +146,43 @@ export async function PATCH(req: NextRequest) {
       let partnerId: string | null = partner?.id ?? null;
 
       if (partner) {
-        // Activar + actualizar status en notes.
+        // Audit 2026-05-17 03-P1-5: re-validar SOAT/licencia al aprobar.
+        // El form Zod valida fechas al inscribirse, pero al aprobar N días
+        // después un admin podía habilitar partners con documentos vencidos.
+        // Ley 29733 + DS 017-2009-MTC: liability legal si rider sin SOAT
+        // vigente atropella a alguien. Rechazamos approve si vencido.
         const existingKyc = parseKycNotes(partner.notes);
+        if (existingKyc?.kyc) {
+          const now = new Date();
+          const licenseExp = existingKyc.kyc.license?.expiresAt
+            ? new Date(existingKyc.kyc.license.expiresAt)
+            : null;
+          const soatExp = existingKyc.kyc.vehicle?.soatExpiresAt
+            ? new Date(existingKyc.kyc.vehicle.soatExpiresAt)
+            : null;
+          const expired: string[] = [];
+          if (licenseExp && licenseExp < now) expired.push("licencia");
+          if (soatExp && soatExp < now) expired.push("SOAT");
+          if (expired.length > 0) {
+            logger.warn("[admin/driver-applications] approve refused — KYC expired", {
+              partnerId: partner.id,
+              expired,
+              licenseExp: licenseExp?.toISOString(),
+              soatExp: soatExp?.toISOString(),
+              reviewer: auth.username,
+            });
+            return NextResponse.json(
+              {
+                error: "documentos_vencidos",
+                message: `No se puede aprobar: ${expired.join(", ")} vencido(s). Solicita renovación al repartidor.`,
+                expired,
+              },
+              { status: 422 },
+            );
+          }
+        }
+
+        // Activar + actualizar status en notes.
         const updatedNotes = existingKyc
           ? {
               ...existingKyc,

@@ -189,14 +189,70 @@ export async function checkoutMultiVendor(
       approvalId: existing.id,
     });
 
-    // Re-compute totals from cart (same cart, same result — deterministic)
+    // Audit 2026-05-17 01-P1-8: el reuse path antes recomputaba subtotales
+    // desde el cart cliente sin revalidar precios contra DB. Si el cliente
+    // modificó cantidades entre intentos (mismo conversationId), recibía
+    // totales reflejando el cart NUEVO pero pagaba contra el approval VIEJO
+    // → totales rotos. Ahora cargamos precios live de StoreProduct y
+    // recomputamos contra cantidades del cart actual. Si un producto ya
+    // no existe en el catálogo, se omite del cálculo.
     const vendorGroups = groupByStore(cart);
     const orders: VendorOrderResult[] = [];
     let totalAmount = 0;
 
     for (const [storeId, items] of vendorGroups) {
       const firstItem = items[0];
-      const subtotal = round2(computeSubtotal(items));
+
+      // Cargar precios live por productId. StoreProduct usa retailPrice +
+      // discountPrice (Decimal); priorizamos discount si está vigente.
+      const productIds = items.map((i) => i.productId).filter(Boolean);
+      type DecOrNum = number | { toNumber: () => number } | null;
+      const storeProducts = productIds.length > 0
+        ? await prisma.storeProduct
+            .findMany({
+              where: { storeId, productId: { in: productIds }, isActive: true },
+              select: {
+                productId: true,
+                retailPrice: true,
+                discountPrice: true,
+                discountUntil: true,
+              },
+            })
+            .catch(
+              () =>
+                [] as Array<{
+                  productId: number;
+                  retailPrice: DecOrNum;
+                  discountPrice: DecOrNum;
+                  discountUntil: Date | null;
+                }>,
+            )
+        : [];
+      const toNum = (v: DecOrNum): number =>
+        typeof v === "number" ? v : (v?.toNumber?.() ?? 0);
+      const livePriceById = new Map<number, number>();
+      for (const sp of storeProducts) {
+        const discountActive =
+          sp.discountUntil != null && new Date(sp.discountUntil) > new Date();
+        const live = discountActive && sp.discountPrice != null
+          ? toNum(sp.discountPrice)
+          : toNum(sp.retailPrice);
+        livePriceById.set(sp.productId, live);
+      }
+
+      // Recompute subtotal usando precios live (no los del cart cliente).
+      let subtotal = 0;
+      for (const it of items) {
+        const livePrice = livePriceById.get(it.productId);
+        if (typeof livePrice !== "number") continue;
+        const modifierExtra = (it.modifiers ?? []).reduce(
+          (s, m) => s + m.priceAdjustment,
+          0,
+        );
+        subtotal += (livePrice + modifierExtra) * it.quantity;
+      }
+      subtotal = round2(subtotal);
+
       // Fetch live commission rate
       const store = await prisma.store
         .findUnique({ where: { id: storeId }, select: { commission: true } })

@@ -264,6 +264,46 @@
     {
       "path": "/api/cron/smoke-invitations",
       "schedule": "13 9 * * 1"
+    },
+    {
+      "path": "/api/cron/credit-overdue",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/demand-forecast",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/meter-to-stripe",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/metering-rollup",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/sunat-retry",
+      "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/cron/loyalty-points-reminder",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/birthday-greetings",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/recompra-coupon",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/tier-discount-reconciliation",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-email-report",
+      "schedule": "0 8 * * 1"
     }
   ]
 }

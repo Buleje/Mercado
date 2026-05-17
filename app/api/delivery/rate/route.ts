@@ -60,6 +60,20 @@ export async function POST(req: NextRequest) {
     }
   } else if (token && !orderId) {
     return NextResponse.json({ error: "orderId requerido para verificar token" }, { status: 400 });
+  } else if (process.env.DELIVERY_RATE_REQUIRE_TOKEN === "true") {
+    // Audit 2026-05-17 03-P1-2: flag-driven enforcement. Cuando se setee
+    // DELIVERY_RATE_REQUIRE_TOKEN=true en prod, request sin token → 403.
+    // Activar tras confirmar que todos los links de calificación incluyen
+    // token HMAC. Sin esto, atacante con orderId enumerable puede dejar
+    // 1 estrella en cualquier delivery del marketplace.
+    logger.warn("[delivery/rate] rejected — token required", {
+      assignmentId: parsed.data.assignmentId,
+      ip: req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown",
+    });
+    return NextResponse.json(
+      { error: "Token requerido", message: "Usa el link enviado por WhatsApp." },
+      { status: 403 },
+    );
   } else {
     // Backwards-compat: sin token se permite con warning para medir adopción.
     logger.warn("[delivery/rate] legacy unauthenticated request", {

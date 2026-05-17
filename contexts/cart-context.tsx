@@ -238,10 +238,19 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   // FIX 2026-05-07: cargar Set de productIds válidos del tenant para que
   // addItem pueda rechazar productos cross-tenant antes de añadirlos.
   // Fire-and-forget; si falla, addItem permite todo (no romper UX).
+  //
+  // Audit 2026-05-17 01-P1-9: en tenantSlug==="main" (marketplace global)
+  // intencionalmente NO filtramos por ids del tenant porque el carrito
+  // agrega productos de múltiples tiendas (cross-store). La validación de
+  // pertenencia se hace SIEMPRE en backend (lib/db/orders.db.ts +
+  // marketplace/orders endpoint validan storeId/tenantId server-side).
+  // Si llegara un id de otro tenant, backend rechaza con 422; lo único que
+  // se degrada es UX (no se filtra previo a la POST). NO es bypass de
+  // tenant isolation — es trade-off de UX explícito documentado.
   useEffect(() => {
     const s = tenantSlug;
     if (!s || s === "main") {
-      validProductIdsRef.current = null; // sin filtro en main (cross-store legacy)
+      validProductIdsRef.current = null; // marketplace cross-store: backend valida
       return;
     }
     // FIX 2026-05-07 (P0 #5): se eliminó un fetch "fantasma" a

@@ -244,15 +244,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Block orders to stores in vacation mode
+    // Block orders to stores in vacation mode.
+    // Audit 2026-05-17 01-P1-4: antes catch {} silencioso enmascaraba errores
+    // de DB. Slug es globally unique hoy, pero un bug futuro de registro
+    // que rompa esa invariante pasaría inadvertido. Ahora logger.warn explícito.
     let targetStore: { id: string; vacationMode: boolean; vacationMessage: string | null } | null = null;
     try {
       targetStore = await prisma.store.findUnique({
         where: { slug: storeSlug },
         select: { id: true, vacationMode: true, vacationMessage: true },
       });
-    } catch {
-      // Store table may not exist yet — skip vacation check
+    } catch (err) {
+      logger.warn("[marketplace/orders] vacation-check store lookup failed", {
+        storeSlug,
+        err: err instanceof Error ? err.message : String(err),
+      });
     }
     if (targetStore?.vacationMode) {
       return NextResponse.json(
