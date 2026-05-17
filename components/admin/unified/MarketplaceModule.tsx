@@ -91,6 +91,29 @@ const TableSkeleton = () => (
   </div>
 );
 
+// ── SortIcon top-level ───────────────────────────────────────────────────────
+// Brandon 2026-05-17: extraído de 2 definiciones inline dentro de
+// MarketplaceProductosTab (L1202) y MarketplaceOrdenesTab (L2140). La regla
+// "Cannot create components during render" del lint las bloqueaba — cada
+// render del parent creaba un componente nuevo, perdiendo identidad y
+// causando re-mount innecesario de las flechas en cada tipeo del query.
+function SortIcon({
+  k,
+  currentKey,
+  currentDir,
+}: {
+  k: string;
+  currentKey: string;
+  currentDir: "asc" | "desc";
+}) {
+  if (currentKey !== k) return <ChevronDown className="h-3 w-3 opacity-30" aria-hidden />;
+  return currentDir === "asc" ? (
+    <ChevronUp className="h-3 w-3 text-[var(--accent)]" aria-hidden />
+  ) : (
+    <ChevronDown className="h-3 w-3 text-[var(--accent)]" aria-hidden />
+  );
+}
+
 // ── Types (interfaces compartidas con los hooks via re-export de tipos) ──
 interface StoreData {
   id?: string;
@@ -1199,15 +1222,6 @@ function MarketplaceProductosTab() {
     if (result.ok) setEditingPrice(null);
   }
 
-  function SortIcon({ k }: { k: SortKey }) {
-    if (sortKey !== k) {
-      return <ChevronDown className="h-3 w-3 opacity-30" aria-hidden />;
-    }
-    return sortDir === "asc"
-      ? <ChevronUp className="h-3 w-3 text-[var(--accent)]" aria-hidden />
-      : <ChevronDown className="h-3 w-3 text-[var(--accent)]" aria-hidden />;
-  }
-
   return (
     <div className="space-y-4">
       {/* ── KPI strip — pulso del marketplace al primer vistazo ─────── */}
@@ -1400,7 +1414,7 @@ function MarketplaceProductosTab() {
                       onClick={() => clickHeader("name")}
                       className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors"
                     >
-                      Producto <SortIcon k="name" />
+                      Producto <SortIcon k="name" currentKey={sortKey} currentDir={sortDir} />
                     </button>
                   </th>
                   <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -1409,7 +1423,7 @@ function MarketplaceProductosTab() {
                       onClick={() => clickHeader("retailPrice")}
                       className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors ml-auto"
                     >
-                      Precio retail <SortIcon k="retailPrice" />
+                      Precio retail <SortIcon k="retailPrice" currentKey={sortKey} currentDir={sortDir} />
                     </button>
                   </th>
                   <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hidden md:table-cell">
@@ -1418,7 +1432,7 @@ function MarketplaceProductosTab() {
                       onClick={() => clickHeader("wholesalePrice")}
                       className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors ml-auto"
                     >
-                      Mayorista <SortIcon k="wholesalePrice" />
+                      Mayorista <SortIcon k="wholesalePrice" currentKey={sortKey} currentDir={sortDir} />
                     </button>
                   </th>
                   <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -1427,7 +1441,7 @@ function MarketplaceProductosTab() {
                       onClick={() => clickHeader("stock")}
                       className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors ml-auto"
                     >
-                      Stock <SortIcon k="stock" />
+                      Stock <SortIcon k="stock" currentKey={sortKey} currentDir={sortDir} />
                     </button>
                   </th>
                   <th className="text-center px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Estado</th>
@@ -2137,13 +2151,6 @@ function MarketplaceOrdenesTab() {
     }
   }
 
-  function SortIcon({ k }: { k: OrdersSortKey }) {
-    if (sortKey !== k) return <ChevronDown className="h-3 w-3 opacity-30" aria-hidden />;
-    return sortDir === "asc"
-      ? <ChevronUp className="h-3 w-3 text-[var(--accent)]" aria-hidden />
-      : <ChevronDown className="h-3 w-3 text-[var(--accent)]" aria-hidden />;
-  }
-
   function clearFilters() {
     setQuery("");
     setStatusFilter("todos");
@@ -2549,7 +2556,7 @@ function MarketplaceOrdenesTab() {
                       onClick={() => clickHeader("total")}
                       className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors ml-auto"
                     >
-                      Total <SortIcon k="total" />
+                      Total <SortIcon k="total" currentKey={sortKey} currentDir={sortDir} />
                     </button>
                   </th>
                   <th className="text-center px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -2558,7 +2565,7 @@ function MarketplaceOrdenesTab() {
                       onClick={() => clickHeader("status")}
                       className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors mx-auto"
                     >
-                      Estado <SortIcon k="status" />
+                      Estado <SortIcon k="status" currentKey={sortKey} currentDir={sortDir} />
                     </button>
                   </th>
                   <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -2567,7 +2574,7 @@ function MarketplaceOrdenesTab() {
                       onClick={() => clickHeader("createdAt")}
                       className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors ml-auto"
                     >
-                      Fecha <SortIcon k="createdAt" />
+                      Fecha <SortIcon k="createdAt" currentKey={sortKey} currentDir={sortDir} />
                     </button>
                   </th>
                   <th className="text-right px-3 py-3 w-32 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Acciones</th>
