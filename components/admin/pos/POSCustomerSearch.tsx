@@ -194,8 +194,25 @@ export default function POSCustomerSearch({
       .catch(() => { setCustomerNotes(""); setLoyaltyPoints(0); });
     setLoadingLastPurchase(true);
     fetch(`/api/customers/${encodeURIComponent(selectedPhone)}/last-purchase`)
-      .then(r => r.json())
-      .then(data => setLastPurchase(data || null))
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: unknown) => {
+        // Validar shape antes de aceptar: el endpoint puede devolver
+        // null (sin compras) o un objeto con items[]. Cualquier otra cosa
+        // (ej. { error } en 5xx, body vacío, JSON corrupto) se trata como
+        // "no hay compras" — protege el render que lee items.length.
+        if (
+          data &&
+          typeof data === "object" &&
+          "items" in data &&
+          Array.isArray((data as { items: unknown }).items) &&
+          "date" in data &&
+          "total" in data
+        ) {
+          setLastPurchase(data as LastPurchase);
+        } else {
+          setLastPurchase(null);
+        }
+      })
       .catch(() => setLastPurchase(null))
       .finally(() => setLoadingLastPurchase(false));
 
@@ -385,11 +402,11 @@ export default function POSCustomerSearch({
           </div>
         )}
         {/* Mejora 17: Producto que suele comprar */}
-        {lastPurchase && lastPurchase.items.length > 0 && (
+        {lastPurchase && Array.isArray(lastPurchase.items) && lastPurchase.items.length > 0 && (
           <div className="flex items-center gap-1.5 px-2 py-1">
             <span className="text-sm text-[var(--text-tertiary)] dark:text-muted">
-              🛒 Suele comprar: <span className="font-bold text-[var(--text-secondary)]">{lastPurchase.items[0].name}</span>
-              {lastPurchase.items.length > 1 && <span>, {lastPurchase.items[1].name}</span>}
+              🛒 Suele comprar: <span className="font-bold text-[var(--text-secondary)]">{lastPurchase.items[0]?.name ?? "—"}</span>
+              {lastPurchase.items.length > 1 && lastPurchase.items[1]?.name && <span>, {lastPurchase.items[1].name}</span>}
             </span>
           </div>
         )}
@@ -424,7 +441,7 @@ export default function POSCustomerSearch({
             </div>
           </div>
         )}
-        {lastPurchase && !loadingLastPurchase && (
+        {lastPurchase && Array.isArray(lastPurchase.items) && !loadingLastPurchase && (
           <div className="bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               Última compra: {getRelativeTime(lastPurchase.date)} — {lastPurchase.items.map(i => i.name).slice(0, 3).join(", ")}

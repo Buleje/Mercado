@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { LoadingState } from "@buleje/design-system";
-import { Mic, MicOff, Volume2, X, CheckCircle, AlertCircle } from "@buleje/design-system/icons";
+import { Mic, MicOff, Volume2, X, CheckCircle, AlertCircle, ShieldAlert } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Speech Recognition shim types ────────────────────────────────────────────
@@ -24,7 +24,7 @@ interface VoiceCommandPOSProps {
   className?: string;
 }
 
-type VoiceState = "idle" | "listening" | "processing" | "success" | "error";
+type VoiceState = "idle" | "listening" | "processing" | "success" | "error" | "blocked";
 
 interface ParsedCommand {
   type: "add" | "checkout" | "unknown";
@@ -99,6 +99,75 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
   useEffect(() => {
     const SpeechRec = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     setSupported(!!SpeechRec);
+
+    // Chequeo proactivo del estado de permiso. Si el navegador ya negó el
+    // permiso de micrófono en una sesión anterior, marcamos "blocked" para
+    // mostrar la UI de instrucciones de inmediato (en vez de fallar al
+    // hacer click). navigator.permissions no está en todos los navegadores
+    // viejos — si falla, queda en idle hasta que el usuario intente.
+    if (typeof navigator !== "undefined" && navigator.permissions?.query) {
+      navigator.permissions.query({ name: "microphone" as PermissionName })
+        .then((status) => {
+          if (status.state === "denied") {
+            setVoiceState("blocked");
+            setStatusMsg("Microfono bloqueado por el navegador");
+          }
+          // Re-evalua si cambia (usuario desbloquea desde el icono de URL)
+          status.onchange = () => {
+            if (status.state === "granted") {
+              setVoiceState("idle");
+              setStatusMsg("");
+            } else if (status.state === "denied") {
+              setVoiceState("blocked");
+              setStatusMsg("Microfono bloqueado por el navegador");
+            }
+          };
+        })
+        // Permissions API es opcional; si falla queda idle hasta que el usuario
+        // intente y getUserMedia maneja el error real. Log solo para diagnóstico.
+        .catch((err) => {
+          if (typeof console !== "undefined") {
+            console.debug("[VoiceCommandPOS] Permissions.query mic fallback", err);
+          }
+        });
+    }
+  }, []);
+
+  /**
+   * Solicita permiso explícito de micrófono ANTES de iniciar SpeechRecognition.
+   * Por qué: SpeechRecognition pide permiso pero el navegador puede silenciar
+   * el prompt si fue denegado previamente, dejando al usuario sin saber qué
+   * pasó. getUserMedia dispara el prompt nativo de Chrome de manera visible.
+   * Soltamos el stream de inmediato (no usamos el audio crudo — recognition
+   * lo captura internamente).
+   */
+  const requestMicPermission = useCallback(async (): Promise<boolean> => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      // Sin API de mediaDevices intentamos directamente con recognition
+      return true;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+      return true;
+    } catch (err) {
+      const name = (err as { name?: string })?.name ?? "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        setVoiceState("blocked");
+        setStatusMsg("Microfono bloqueado por el navegador");
+        return false;
+      }
+      if (name === "NotFoundError" || name === "OverconstrainedError") {
+        setVoiceState("error");
+        setStatusMsg("No se detecto microfono en este equipo");
+        setTimeout(() => setVoiceState("idle"), 3500);
+        return false;
+      }
+      setVoiceState("error");
+      setStatusMsg("No se pudo acceder al microfono");
+      setTimeout(() => setVoiceState("idle"), 3500);
+      return false;
+    }
   }, []);
 
   const stopListening = useCallback(() => {
@@ -158,12 +227,16 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
     [onAddProduct, onCheckout]
   );
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     if (!supported) return;
 
     const SpeechRec = window.SpeechRecognition ?? window.webkitSpeechRecognition;
-
     if (!SpeechRec) return;
+
+    // Permiso explícito primero — si está bloqueado, dejamos la UI en
+    // "blocked" con instrucciones (no intentamos arrancar recognition).
+    const allowed = await requestMicPermission();
+    if (!allowed) return;
 
     stopListening();
 
@@ -196,10 +269,34 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
       }
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      const errKind = event?.error ?? "";
+      if (errKind === "not-allowed" || errKind === "service-not-allowed") {
+        setVoiceState("blocked");
+        setStatusMsg("Microfono bloqueado por el navegador");
+        return;
+      }
+      if (errKind === "no-speech") {
+        setVoiceState("error");
+        setStatusMsg("No escuche nada — intenta de nuevo");
+        setTimeout(() => setVoiceState("idle"), 2500);
+        return;
+      }
+      if (errKind === "audio-capture") {
+        setVoiceState("error");
+        setStatusMsg("No se detecto microfono en este equipo");
+        setTimeout(() => setVoiceState("idle"), 3500);
+        return;
+      }
+      if (errKind === "network") {
+        setVoiceState("error");
+        setStatusMsg("Sin internet — el reconocimiento de voz requiere conexion");
+        setTimeout(() => setVoiceState("idle"), 3500);
+        return;
+      }
       setVoiceState("error");
-      setStatusMsg("Error de micrófono");
-      setTimeout(() => setVoiceState("idle"), 2000);
+      setStatusMsg("Error de microfono");
+      setTimeout(() => setVoiceState("idle"), 2500);
     };
 
     recognition.onend = () => {
@@ -218,7 +315,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
         setStatusMsg("Tiempo agotado");
       }
     }, 8000);
-  }, [supported, stopListening, handleCommand, voiceState]);
+  }, [supported, stopListening, handleCommand, voiceState, requestMicPermission]);
 
   useEffect(() => () => stopListening(), [stopListening]);
 
@@ -242,12 +339,15 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
           "border focus:outline-none focus:ring-2 focus:ring-primary/40",
           voiceState === "listening"
             ? "bg-primary text-white border-primary animate-pulse"
+            : voiceState === "blocked"
+            ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)]"
             : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:border-primary"
         )}
-        aria-label="Venta por voz"
+        aria-label={voiceState === "blocked" ? "Microfono bloqueado — abrir instrucciones" : "Venta por voz"}
+        title={voiceState === "blocked" ? "Microfono bloqueado — click para ver como desbloquear" : undefined}
       >
-        <Mic className="h-4 w-4" />
-        <span className="hidden sm:inline">Voz</span>
+        {voiceState === "blocked" ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+        <span className="hidden sm:inline">{voiceState === "blocked" ? "Voz bloqueada" : "Voz"}</span>
       </button>
 
       {/* Panel */}
@@ -266,8 +366,37 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
 
           {/* Body */}
           <div className="p-4 space-y-4">
+            {/* Blocked instructions — solo se muestra si el navegador denegó
+                el permiso. Es el aviso que Brandon estaba viendo: ahora con
+                pasos claros para desbloquearlo en Chrome. */}
+            {voiceState === "blocked" && (
+              <div className="rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 p-3">
+                <div className="flex items-start gap-2 mb-2">
+                  <ShieldAlert className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" strokeWidth={2} />
+                  <div>
+                    <p className="text-sm font-bold text-[var(--data-warning-500)]">Microfono bloqueado</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">
+                      Tu navegador no esta dejando que la pagina use el microfono.
+                    </p>
+                  </div>
+                </div>
+                <ol className="text-xs text-[var(--text-secondary)] dark:text-muted space-y-1.5 ml-1 list-decimal list-inside">
+                  <li>Click en el <strong>icono de candado</strong> (o tune) a la izquierda de la URL</li>
+                  <li>Buscar <strong>Microfono</strong> y cambiar a <strong>Permitir</strong></li>
+                  <li>Recargar la pagina (F5 o Ctrl+R)</li>
+                </ol>
+                <button
+                  type="button"
+                  onClick={() => { void requestMicPermission(); }}
+                  className="mt-3 w-full py-2 rounded-lg text-xs font-bold text-white bg-[var(--data-warning-500)] hover:opacity-90 transition-opacity"
+                >
+                  Reintentar permiso
+                </button>
+              </div>
+            )}
+
             {/* Mic button */}
-            <div className="flex flex-col items-center gap-3">
+            <div className={cn("flex flex-col items-center gap-3", voiceState === "blocked" && "opacity-40 pointer-events-none")}>
               <button
                 type="button"
                 onClick={voiceState === "listening" ? stopListening : startListening}

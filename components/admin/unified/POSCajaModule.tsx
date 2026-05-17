@@ -16,6 +16,7 @@ const MODULE_ID = "ventas-caja";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const POSView                = dynamic(() => import("@/components/admin/POSView"),                { loading: S });
+const SalesHistoryTab        = dynamic(() => import("@/components/admin/SalesHistoryTab"),        { loading: S });
 const CashRegisterTab        = dynamic(() => import("@/components/admin/CashRegisterTab"),        { loading: S });
 const CashAuditTab           = dynamic(() => import("@/components/admin/CashAuditTab"),           { loading: S });
 const FiadosModule           = dynamic(() => import("@/components/admin/FiadosModule"),           { loading: S });
@@ -28,12 +29,13 @@ import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
 
 // ── Tabs reordenados en flujo lógico del día ──────────────────────────────────
 const TABS = [
-  { id: "pos"               as const, label: "Vender",            shortLabel: "POS",     hint: "Punto de venta",      icon: ShoppingCart,  desc: "Busca productos, cobra y genera comprobantes" },
-  { id: "turnos"            as const, label: "Turnos",            shortLabel: "Turnos",  hint: "Control de personal", icon: Clock,         desc: "Abre y cierra turnos de trabajo del equipo" },
-  { id: "caja-registradora" as const, label: "Caja Registradora", shortLabel: "Caja",    hint: "Gestión de efectivo", icon: Wallet,        desc: "Movimientos de efectivo, retiros e ingresos" },
-  { id: "cuentas-cobrar"    as const, label: "Me deben",          shortLabel: "Fiados",  hint: "Créditos a clientes", icon: HandCoins,     desc: "Créditos otorgados, cobros y seguimiento" },
-  { id: "arqueo"            as const, label: "Cuadrar Caja",      shortLabel: "Cuadre",      hint: "Cierre del día",      icon: Scale,         desc: "Conteo de billetes y cierre del día" },
-  { id: "comisiones"        as const, label: "Comisiones",        shortLabel: "Comisiones",  hint: "Cálculo comisiones",  icon: Users,         desc: "Calcula comisiones de vendedores" },
+  { id: "pos"               as const, label: "Vender",            shortLabel: "POS",       hint: "Punto de venta",      icon: ShoppingCart,  desc: "Busca productos, cobra y genera comprobantes" },
+  { id: "historial"         as const, label: "Historial",         shortLabel: "Historial", hint: "Todas las ventas",    icon: History,       desc: "POS + tienda + marketplace en un solo lugar" },
+  { id: "turnos"            as const, label: "Turnos",            shortLabel: "Turnos",    hint: "Control de personal", icon: Clock,         desc: "Abre y cierra turnos de trabajo del equipo" },
+  { id: "caja-registradora" as const, label: "Caja Registradora", shortLabel: "Caja",      hint: "Gestión de efectivo", icon: Wallet,        desc: "Movimientos de efectivo, retiros e ingresos" },
+  { id: "cuentas-cobrar"    as const, label: "Me deben",          shortLabel: "Fiados",    hint: "Créditos a clientes", icon: HandCoins,     desc: "Créditos otorgados, cobros y seguimiento" },
+  { id: "arqueo"            as const, label: "Cuadrar Caja",      shortLabel: "Cuadre",    hint: "Cierre del día",      icon: Scale,         desc: "Conteo de billetes y cierre del día" },
+  { id: "comisiones"        as const, label: "Comisiones",        shortLabel: "Comisiones", hint: "Cálculo comisiones", icon: Users,         desc: "Calcula comisiones de vendedores" },
 ];
 
 // Índices tras los cuales insertar separador visual (entre grupos lógicos)
@@ -353,6 +355,7 @@ export default function POSCajaModule() {
 
       {/* ── CAMBIO 7: Renderizado de contenido por tab ───────────────── */}
       {sub === "pos"               && <POSView />}
+      {sub === "historial"         && <SalesHistoryTab />}
       {sub === "turnos"            && <TurnosModule />}
       {sub === "caja-registradora" && <CashRegisterTab />}
       {sub === "cuentas-cobrar"    && <FiadosModule />}

@@ -1808,10 +1808,10 @@ export default function POSView() {
               </div>
             ) : (
               <div className={cn(
-                "grid gap-2",
+                "grid gap-1.5",
                 expanded
-                  ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7"
-                  : "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4"
+                  ? "grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8"
+                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-5"
               )}>
                 {filtered.map(p => {
                   const inCart = cart.find(i => i.product.id === p.id);
@@ -1822,38 +1822,38 @@ export default function POSView() {
                       onClick={() => !outOfStock && addToCart(p)}
                       disabled={outOfStock}
                       className={cn(
-                        "bg-[var(--surface-raised)] rounded-xl border p-2 text-left transition-all hover:shadow-[var(--shadow-sm)] relative",
+                        "bg-[var(--surface-raised)] rounded-lg border p-1.5 text-left transition-all hover:shadow-[var(--shadow-sm)] relative",
                         inCart ? "border-primary ring-1 ring-primary/20" : "border-[var(--rule-soft)] hover:border-[var(--rule-base)]",
                         outOfStock && "opacity-40 cursor-not-allowed"
                       )}
                     >
-                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 dark:bg-surface mb-1.5 relative">
-                        <Image src={p.image || "/products/placeholder.svg"} alt={p.name} fill sizes="120px" className="object-cover" loading="lazy" />
+                      <div className="aspect-[5/4] rounded-md overflow-hidden bg-gray-50 dark:bg-surface mb-1 relative">
+                        <Image src={p.image || "/products/placeholder.svg"} alt={p.name} fill sizes="(max-width:768px) 25vw, 160px" className="object-cover" loading="lazy" />
                         <span
                           role="button"
                           tabIndex={0}
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
                           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); toggleFavorite(p.id); } }}
-                          className="absolute top-1 left-1 h-6 w-6 rounded-full bg-white/90 dark:bg-[var(--surface-raised)]/90 backdrop-blur-sm flex items-center justify-center hover:bg-white dark:hover:bg-[var(--surface-raised)] transition-colors z-10 cursor-pointer"
+                          className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white/90 dark:bg-[var(--surface-raised)]/90 backdrop-blur-sm flex items-center justify-center hover:bg-white dark:hover:bg-[var(--surface-raised)] transition-colors z-10 cursor-pointer"
                         >
-                          <Star className={cn("h-3.5 w-3.5", favorites.includes(p.id) ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-muted")} />
+                          <Star className={cn("h-3 w-3", favorites.includes(p.id) ? "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-muted")} />
                         </span>
                         {inCart && (
-                          <div className="absolute top-1 right-1 h-5 w-5 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
+                          <div className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
                             {inCart.quantity}
                           </div>
                         )}
                         {outOfStock && (
                           <div className="absolute inset-0 bg-[var(--surface-raised)]/60 flex items-center justify-center">
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-2 py-0.5 rounded-full">Agotado</span>
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded">Agotado</span>
                           </div>
                         )}
                       </div>
-                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{p.name}</p>
+                      <p className="text-xs font-semibold leading-tight text-[var(--text-primary)] dark:text-[var(--text-primary)] line-clamp-2 min-h-[2.2em]">{p.name}</p>
                       <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-sm font-extrabold text-primary">{fmt(p.price)}</span>
+                        <span className="text-xs font-extrabold text-primary tabular-nums">{fmt(p.price)}</span>
                         {p.stock != null && (
-                          <span className={cn("text-[length:var(--ts-2xs)]", p.stock <= (p.stockMin || 5) ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                          <span className={cn("text-[length:var(--ts-2xs)] tabular-nums", p.stock <= (p.stockMin || 5) ? "text-[var(--data-warning-500)] font-semibold" : "text-[var(--text-tertiary)] dark:text-muted")}>
                             {p.stock}
                           </span>
                         )}

@@ -6,6 +6,24 @@ interface SpeechRecognitionEvent extends Event {
   resultIndex: number;
 }
 
+// Webkit + estandar moderno: el event que llega a `onerror` trae `error`
+// como string con códigos definidos (W3C Web Speech API).
+type SpeechRecognitionErrorCode =
+  | "no-speech"
+  | "aborted"
+  | "audio-capture"
+  | "network"
+  | "not-allowed"
+  | "service-not-allowed"
+  | "bad-grammar"
+  | "language-not-supported"
+  | string;
+
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: SpeechRecognitionErrorCode;
+  readonly message?: string;
+}
+
 interface SpeechRecognitionResultList {
   readonly length: number;
   item(index: number): SpeechRecognitionResult;
@@ -30,7 +48,7 @@ interface SpeechRecognition extends EventTarget {
   interimResults: boolean;
   maxAlternatives: number;
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: Event) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
   onstart: (() => void) | null;
   start(): void;

@@ -1,0 +1,24 @@
+=== READ endpoints (sin write, seguros) ===
+GET   /api/sales                                         200  0.663682s  [{"id":"f2544af0-9b14-4f75-94d2-54ebeafd6399","items":[{"productId":1252382,"name":"Test","price":24.9,"costPrice":19.5,"quantity":1,"unit":"u"}],"total":24.9,"totalCogs":19.5,"payment":"efectivo","am
+GET   /api/sales?limit=10                                200  1.124928s  [{"id":"f2544af0-9b14-4f75-94d2-54ebeafd6399","items":[{"productId":1252382,"name":"Test","price":24.9,"costPrice":19.5,"quantity":1,"unit":"u"}],"total":24.9,"totalCogs":19.5,"payment":"efectivo","am
+GET   /api/sales/export?format=csv                       200  1.415651s  id,fecha,hora,num_productos,total,costo_total,margen,margen_pct,metodo_pago,monto_pagado,vuelto,comprobante,ruc,descuento,cajero,telefono_cliente f2544af0-9b14-4f75-94d2-54ebeafd6399,2026-05-17,09:36 
+GET   /api/turnos                                        200  0.380363s  []
+GET   /api/turnos/activo                                 200  0.652400s  {"turnoActivo":false,"turno":null}
+GET   /api/admin/transactions                            200  1.428421s  {"items":[{"id":"f2544af0-9b14-4f75-94d2-54ebeafd6399","source":"pos","createdAt":"2026-05-17T14:36:48.559Z","customerName":null,"customerPhone":null,"total":24.9,"payment":"efectivo","status":"comple
+GET   /api/admin/transactions?limit=5                    200  2.113176s  {"items":[{"id":"f2544af0-9b14-4f75-94d2-54ebeafd6399","source":"pos","createdAt":"2026-05-17T14:36:48.559Z","customerName":null,"customerPhone":null,"total":24.9,"payment":"efectivo","status":"comple
+
+=== Customer phone endpoints (telefono de prueba) ===
+GET   /api/customers/999999999/fiado-resumen             200  0.605447s  {"montoPendiente":0,"cantidadFiados":0,"diasVencido":0,"hasFiadosVencidos":false}
+GET   /api/customers/999999999/last-purchase             200  2.733179s  null
+GET   /api/customers/999999999/orders                    200  0.202724s  []
+
+=== IDOR / sin auth (debería 401 o 307) ===
+GET /api/sales SIN AUTH: 401
+GET /api/admin/transactions SIN AUTH: 401
+POST /api/sales/devolucion SIN AUTH: 403
+
+=== Validation: POST /api/sales con payload vacio (debería 400) ===
+POST  /api/sales                                         400  0.323115s  {"error":{"items":["Invalid input: expected array, received undefined"]}}
+
+=== Validation: POST devolucion con saleId inventado ===
+POST  /api/sales/devolucion                              400  0.342592s  {"error":"Datos invalidos","issues":["Too small: expected array to have >=1 items","Invalid option: expected one of \"efectivo\"|\"credito\""]}
