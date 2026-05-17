@@ -12,14 +12,20 @@
   "categories": ["business", "shopping", "productivity"],
   "icons": [
     {
-      "src": "/brand/buleje-logo.png",
+      "src": "/brand/buleje-logo-mark.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/brand/buleje-logo.png",
-      "sizes": "192x192",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/buleje-logo.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },

@@ -12,12 +12,14 @@
  */
 
 const CUSTOMER_COOKIE = "buleje-customer-sess";
-// 365 días — sesión "remember me forever". Pero la seguridad real viene
-// de la rotación: cada visita autenticada re-emite el token con un
-// nuevo exp 365 días en el futuro (sliding expiration). Un usuario
-// activo nunca tiene que volver a loguearse; uno que no vuelve en >1
-// año entra de nuevo. Patrón usado por Amazon/Mercado Libre/Stripe.
-const CUSTOMER_SESSION_MS = 365 * 24 * 60 * 60 * 1000;
+// Audit 2026-05-17 05-P2-6: TTL reducido de 365d → 60d.
+// Antes: cookie filtrada = 1 año de acceso sin recourse (sin jti, sin
+// blacklist, sin rotación de AUTH_SECRET por defecto). 60d cubre el caso
+// "remember me" típico (compra mensual recurrente) sin exponer durante
+// un año entero si la cookie filtra. Sliding rotation a >50% del lifetime
+// mantiene usuarios activos sin re-login. Patrón Amazon/Mercado Libre
+// pueden tener 365d porque tienen MFA+device-binding; nosotros aún no.
+const CUSTOMER_SESSION_MS = 60 * 24 * 60 * 60 * 1000;
 /** Si pasó >50 % de la vida útil, rotamos al siguiente request. */
 const ROTATE_THRESHOLD_MS = CUSTOMER_SESSION_MS / 2;
 

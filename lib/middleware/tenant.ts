@@ -95,10 +95,31 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
   // navega a /t/mi-pollo/admin y el JWT pisa el path → datos de "main"
   // mezclados con UI de "mi-pollo". Esto es la guarda de aislamiento más
   // fuerte porque no se puede falsificar (la URL es explícita del usuario).
+  //
+  // Audit 2026-05-17 05-P2-7: validar slug contra resolveTenantSlugToId
+  // (mismo patrón usado downstream). Antes se aceptaba ARBITRARIO →
+  // si un atacante pegaba /t/inexistente/ el middleware retornaba el
+  // string crudo y algunos DB classes podían no detectarlo (silent failure
+  // con queries vacías). Ahora si no resuelve, logger.warn + caemos al
+  // siguiente source (JWT/cookie/header) en lugar de propagar el string.
   const pathname = req.nextUrl.pathname;
   const pathTenantMatch = pathname.match(/^\/t\/([^/]+)(\/|$)/);
   if (pathTenantMatch) {
-    return decodeURIComponent(pathTenantMatch[1]);
+    const rawSlug = decodeURIComponent(pathTenantMatch[1]);
+    try {
+      const { resolveTenantSlugToId } = await import("@/lib/resolve-tenant");
+      const resolvedId = await resolveTenantSlugToId(rawSlug);
+      // resolveTenantSlugToId retorna el slug crudo si no encuentra match —
+      // solo aceptamos cuando vuelve un id DISTINTO (es decir, resolvió a CUID).
+      if (resolvedId !== rawSlug) {
+        return resolvedId;
+      }
+      // Slug no resolvió → continúa al siguiente source, NO propagar string crudo.
+      // console.warn porque el middleware corre en edge runtime sin logger structured.
+      console.warn("[tenant-middleware] path slug not found in DB — falling through", { rawSlug, path: pathname });
+    } catch (err) {
+      console.warn("[tenant-middleware] slug validation failed — falling through", { rawSlug, err: err instanceof Error ? err.message : String(err) });
+    }
   }
 
   // Source 1: Admin session JWT — canonical tenantId (CUID).
