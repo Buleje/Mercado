@@ -7,16 +7,37 @@ import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
+// Audit 2026-05-17 01-P1-6: validación DNI/RUC peruano.
+//   DNI: 8 dígitos (persona natural).
+//   RUC: 11 dígitos, empieza con 10/15/17/20 (PJ + algunos especiales).
+// Formato-only; verificación RENIEC/SUNAT online queda como TODO post-apply
+// (lib/integrations/reniec.ts pendiente). Sin esto, atacante registraba
+// con datos falsos — ownerPhone era el único identificador real.
+const DNI_REGEX = /^\d{8}$/;
+const RUC_REGEX = /^(10|15|17|20)\d{9}$/;
+
 const RegisterSchema = z.object({
   ownerName:    z.string().min(2, "Nombre muy corto").max(80),
   ownerPhone:   z.string().min(6, "Teléfono muy corto").max(20),
   ownerEmail:   z.string().email("Email inválido").optional(),
+  ownerDni:     z.string()
+    .regex(DNI_REGEX, "DNI inválido (debe tener 8 dígitos)")
+    .optional(),
+  ownerRuc:     z.string()
+    .regex(RUC_REGEX, "RUC inválido (11 dígitos, empieza con 10/15/17/20)")
+    .optional(),
   storeName:    z.string().min(2, "Nombre de tienda muy corto").max(80),
   description:  z.string().max(500).optional(),
   category:     z.string().max(50).optional(),
   zone:         z.string().max(80).optional(),
   address:      z.string().max(200).optional(),
-});
+}).refine(
+  (data) => data.ownerDni || data.ownerRuc,
+  {
+    message: "Debes proporcionar DNI o RUC del titular",
+    path: ["ownerDni"],
+  },
+);
 
 /**
  * POST /api/marketplace/stores/apply
@@ -42,7 +63,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { ownerName, ownerPhone, ownerEmail, storeName, description, category, zone, address: _address } = parsed.data;
+    const { ownerName, ownerPhone, ownerEmail, ownerDni, ownerRuc, storeName, description, category, zone, address: _address } = parsed.data;
+
+    // Audit 2026-05-17 01-P1-6: registrar DNI/RUC para audit trail de Ley
+    // 29733. La verificación contra RENIEC/SUNAT online es TODO; por ahora
+    // logueamos para que el superadmin pueda contrastar manualmente en el
+    // panel de aprobación. NO se persiste en Store.* todavía — vive en logs.
+    logger.info("[marketplace/stores/apply] vendor identity", {
+      ownerName: ownerName.slice(0, 30),
+      phoneSuffix: ownerPhone.slice(-4),
+      identityType: ownerRuc ? "RUC" : "DNI",
+      identityLast4: (ownerRuc ?? ownerDni ?? "").slice(-4),
+      storeName: storeName.slice(0, 40),
+    });
 
     // Create Tenant REAL + Store via DB class en una transacción.
     // ADR-023: el tenantId ya NO es sintético — se crea un row real en Tenant

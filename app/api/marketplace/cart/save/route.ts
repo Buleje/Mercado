@@ -47,7 +47,33 @@ export async function POST(req: NextRequest) {
     const phoneLimited = applyRateLimit(req, "STRICT", `cart-save-${phoneSuffix}`);
     if (phoneLimited) return phoneLimited;
 
-    await MarketplaceAbandonedCartsDB.save(parsed.data);
+    // Audit 2026-05-17 01-P1-5: recomputar total server-side antes de
+    // persistir. Antes, el total venía del cliente y se guardaba tal cual
+    // → atacante manipulaba el total mostrado en analytics de abandoned
+    // carts (no era fraude de cobro, pero ensuciaba KPIs). Ahora derivamos
+    // del array items (price * quantity) y persistimos ese valor. Logueamos
+    // mismatch >1% sin rechazar (abandoned cart, no es payment).
+    const computedTotal = parsed.data.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
+    const clientTotal = parsed.data.total;
+    const mismatchPct = clientTotal > 0
+      ? Math.abs(computedTotal - clientTotal) / clientTotal
+      : 0;
+    if (mismatchPct > 0.01) {
+      logger.warn("[marketplace/cart/save] total mismatch client vs server", {
+        clientTotal,
+        computedTotal,
+        mismatchPct: mismatchPct.toFixed(4),
+        phoneSuffix,
+      });
+    }
+
+    await MarketplaceAbandonedCartsDB.save({
+      ...parsed.data,
+      total: Math.round(computedTotal * 100) / 100,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

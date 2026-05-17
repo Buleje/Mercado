@@ -106,6 +106,8 @@ const VALID_PAYLOAD = {
   ownerName:  "Juan Pérez",
   ownerPhone: "+51987654321",
   ownerEmail: "juan@bodega.pe",
+  // Audit 2026-05-17 01-P1-6: DNI obligatorio (o RUC) en stores/apply
+  ownerDni:   "12345678",
   storeName:  "Bodega Don Juan",
   description: "La mejor bodega del barrio",
   category:   "Abarrotes",
