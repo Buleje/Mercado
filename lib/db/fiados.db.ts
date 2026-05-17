@@ -240,6 +240,42 @@ export const FiadosDB = {
     return mapFiado(row);
   },
 
+  /**
+   * Crea un Fiado DENTRO de una transacción Prisma existente.
+   *
+   * Audit 2026-05-17 POS↔Fiado integration: usar este método cuando el
+   * Fiado debe nacer atómico junto a otra entidad (típicamente una Sale con
+   * payment=fiado). Si la Sale revierte, el Fiado también — evita "deuda
+   * fantasma" (Sale.payment=fiado registrada sin row en tabla Fiado).
+   *
+   * NOTA: este método NO valida scoring crediticio. Llamar primero a
+   * `validateForNewFiado()` antes de abrir la transacción (no tiene sentido
+   * meter esas 3 queries de scoring en el lock de la tx de Sale).
+   */
+  async createInTransaction(
+    tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+    data: {
+      tenantId: string;
+      customerId: string;
+      total: number;
+      descripcion?: string;
+      fechaVence?: Date;
+    },
+  ): Promise<DbFiado> {
+    const row = await tx.fiado.create({
+      data: {
+        tenantId: data.tenantId,
+        customerId: data.customerId,
+        total: data.total,
+        saldo: data.total,
+        descripcion: data.descripcion,
+        fechaVence: data.fechaVence,
+      },
+      include: { cuotas: true },
+    });
+    return mapFiado(row);
+  },
+
   async registerPago(
     tenantId: string,
     fiadoId: string,

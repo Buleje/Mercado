@@ -1368,33 +1368,14 @@ export default function POSView() {
         setLastSaleDetails(saleDetailsForWhatsApp);
         setLastSaleInfo({ total: effectiveTotal, time: new Date(), id: sale.id, minutesAgo: 0 });
 
-        // ── CREAR FIADO automáticamente si el pago fue "fiado" ──
-        if (effectivePayment === "fiado") {
-          const fiadoPhone = phone || customerPhone;
-          if (fiadoPhone) {
-            const itemNames = cart.map(i => `${i.product.name} x${i.quantity}`).join(", ");
-            try {
-              const fiadoRes = await fetch("/api/fiados", {
-                method: "POST",
-                headers: csrfHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({
-                  customerId: fiadoPhone,
-                  total: effectiveTotal,
-                  descripcion: itemNames,
-                }),
-              });
-              if (fiadoRes.ok) {
-                if (process.env.NODE_ENV === "development") console.log("[POS] Fiado registrado correctamente para", fiadoPhone);
-              } else {
-                const err = await fiadoRes.json().catch(() => ({}));
-                console.warn("[POS] Error registrando fiado:", err.error || "Error desconocido");
-              }
-            } catch (fiadoErr) {
-              console.warn("[POS] Error de red al crear fiado:", fiadoErr);
-            }
-          } else {
-            console.warn("[POS] Venta con fiado SIN cliente — no se puede registrar deuda. Selecciona un cliente.");
-          }
+        // Audit 2026-05-17 (POS↔Fiado integration): la creación del Fiado
+        // ahora vive server-side dentro de la misma transacción de Sale
+        // (atómico). Antes este bloque hacía un POST /api/fiados separado
+        // que podía fallar dejando deuda fantasma. Si payment==="fiado" el
+        // backend devuelve `sale.fiadoId` y bloquea la venta con 400 si no
+        // hay phone o si el scoring crediticio rechaza al cliente.
+        if (sale.fiadoId && process.env.NODE_ENV === "development") {
+          console.log("[POS] Fiado creado atómico:", sale.fiadoId);
         }
 
         // Mejora QW-11a: limpiar backup carrito
