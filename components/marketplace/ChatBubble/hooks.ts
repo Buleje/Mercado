@@ -89,17 +89,45 @@ export function usePublicChat(storeSlug: string) {
       return;
     }
     let cancelled = false;
+    let pollInterval = 6000;
+    let es: EventSource | null = null;
+
+    // Brandon 2026-05-16 (realtime): SSE primario via /api/chat/public/stream.
+    // Si conecta, el polling baja a 60s (fallback). Si SSE cae, vuelve a 6s.
+    try {
+      const qs = new URLSearchParams({
+        threadId: session.threadId,
+        storeSlug,
+        customerPhone: session.customerPhone,
+      });
+      es = new EventSource(`/api/chat/public/stream?${qs.toString()}`);
+      es.addEventListener("open", () => {
+        pollInterval = 60_000;
+      });
+      es.addEventListener("error", () => {
+        pollInterval = 6000;
+      });
+      es.addEventListener("chat_message", () => {
+        // Refetch los mensajes — el server-side guarda el thread completo,
+        // refrescamos para mantener orden y markAsRead.
+        void pollMessages();
+      });
+    } catch {
+      /* SSE no disponible — polling cubre */
+    }
+
     const loop = async () => {
       if (cancelled) return;
       await pollMessages();
-      pollTimerRef.current = setTimeout(loop, 6000);
+      pollTimerRef.current = setTimeout(loop, pollInterval);
     };
     loop();
     return () => {
       cancelled = true;
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+      try { es?.close(); } catch { /* ignore */ }
     };
-  }, [session, pollMessages]);
+  }, [session, pollMessages, storeSlug]);
 
   /**
    * Abre (o recupera) un thread para este buyer. Si ya hay sesión guardada,

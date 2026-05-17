@@ -32,15 +32,33 @@ export function useChatThreads(initialStatus: ThreadStatus | "all" = "open") {
 
   useEffect(() => {
     let cancelled = false;
+    let pollMs = 8000;
+    let es: EventSource | null = null;
+
+    // Brandon 2026-05-16 (realtime): SSE primario sobre el canal admin
+    // existente (/api/admin/sse) — eventos chat_message_new y
+    // chat_thread_opened disparan reload inmediato. Si SSE conecta,
+    // polling baja a 60s (fallback). Si cae, vuelve a 8s.
+    try {
+      es = new EventSource("/api/admin/sse");
+      es.addEventListener("open", () => { pollMs = 60_000; });
+      es.addEventListener("error", () => { pollMs = 8000; });
+      es.addEventListener("chat_thread_opened", () => { void load(); });
+      es.addEventListener("chat_message_new", () => { void load(); });
+    } catch {
+      /* SSE no disponible — polling cubre */
+    }
+
     const loop = async () => {
       if (cancelled) return;
       await load();
-      timerRef.current = setTimeout(loop, 8000);
+      timerRef.current = setTimeout(loop, pollMs);
     };
     loop();
     return () => {
       cancelled = true;
       if (timerRef.current) clearTimeout(timerRef.current);
+      try { es?.close(); } catch { /* ignore */ }
     };
   }, [load]);
 

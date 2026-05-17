@@ -66,6 +66,31 @@ export async function POST(
       metadataJson:  parsed.data.metadataJson,
     });
 
+    // Brandon 2026-05-16 (realtime):
+    //  - SSE al admin: para que otros admins conectados vean el mensaje
+    //    inmediato en su ChatTab (multi-cajero).
+    //  - chatBus: emite a streams SSE públicos suscritos al thread → el
+    //    cliente en el storefront recibe el mensaje sin esperar polling.
+    try {
+      const { emitAdminSSE } = await import("@/lib/sse-emitter");
+      emitAdminSSE(auth.tenantId, "chat_message_new", {
+        threadId,
+        senderType: "seller",
+        senderName: auth.username,
+        body: parsed.data.body,
+        messageId: message.id,
+        createdAt: message.createdAt,
+      });
+      const { emitChatPublic } = await import("@/lib/chat-public-bus");
+      emitChatPublic(auth.tenantId, threadId, {
+        id: message.id,
+        senderType: "seller",
+        senderName: auth.username,
+        body: parsed.data.body,
+        createdAt: message.createdAt,
+      });
+    } catch { /* fire-and-forget */ }
+
     return NextResponse.json({ data: message }, { status: 201 });
   } catch (err) {
     logger.error("[chat/messages] send failed", { err: String(err), threadId });
