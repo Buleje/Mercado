@@ -158,25 +158,26 @@ export const GET = withApiHandler("orders-list", async (req) => {
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── Legacy: offset pagination (kept for backward compatibility) ───────────
-  // Filters are pushed to the DB query (not in-memory) via getAllFiltered()
-  let orders = await withDbRetry(() =>
-    OrdersDB.getAllFiltered({
-      status:  statusFilter  ?? undefined,
-      since:   sinceParam    ?? undefined,
-      phone:   phoneParam    ?? undefined,
-      tenantId,
-    })
-  );
-
-  const total = orders.length;
+  // Audit 2026-05-17 B-P0-4: ahora skip/take Prisma-side cuando hay limit.
+  // Antes load all + slice → OOM con >50k órdenes.
 
   if (limitParam) {
     const limit = Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 1000);
     const page  = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
-    const start = (page - 1) * limit;
-    orders = orders.slice(start, start + limit);
 
-    return NextResponse.json(orders, {
+    const { OrdersPaginatedDB } = await import("@/lib/db/orders-paginated.db");
+    const { items, total } = await withDbRetry(() =>
+      OrdersPaginatedDB.listFiltered({
+        status: statusFilter ?? undefined,
+        since: sinceParam ?? undefined,
+        phone: phoneParam ?? undefined,
+        tenantId,
+        page,
+        limit,
+      })
+    );
+
+    return NextResponse.json(items, {
       headers: {
         "X-Total-Count": String(total),
         "X-Page": String(page),
@@ -185,6 +186,18 @@ export const GET = withApiHandler("orders-list", async (req) => {
       },
     });
   }
+
+  // Sin paginado: comportamiento legacy (devolver todo) — solo usado por
+  // exportaciones admin y endpoints internos. Mantener compat.
+  const orders = await withDbRetry(() =>
+    OrdersDB.getAllFiltered({
+      status:  statusFilter  ?? undefined,
+      since:   sinceParam    ?? undefined,
+      phone:   phoneParam    ?? undefined,
+      tenantId,
+    })
+  );
+  const total = orders.length;
 
   return NextResponse.json(orders, {
     headers: { "X-Total-Count": String(orders.length) },

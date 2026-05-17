@@ -103,7 +103,7 @@ vi.mock("@/lib/require-admin", () => ({
 // ── Mock: jsondb (OrdersDB, CouponsDB, PromotionsDB) ─────────────────────────
 const { mockOrdersAdd, mockOrdersGetAll, mockOrdersGetPage, mockOrdersGetAllFiltered,
         mockOrdersGetByCustomerPhone, mockCouponsGetByCode, mockCouponsRedeem,
-        mockCouponsAdd, mockPromotionsGetAll } = vi.hoisted(() => ({
+        mockCouponsAdd, mockPromotionsGetAll, mockOrdersPaginatedList } = vi.hoisted(() => ({
   mockOrdersAdd:                vi.fn(),
   mockOrdersGetAll:             vi.fn(),
   mockOrdersGetPage:            vi.fn(),
@@ -113,6 +113,7 @@ const { mockOrdersAdd, mockOrdersGetAll, mockOrdersGetPage, mockOrdersGetAllFilt
   mockCouponsRedeem:            vi.fn(async () => {}),
   mockCouponsAdd:               vi.fn(async () => {}),
   mockPromotionsGetAll:         vi.fn(),
+  mockOrdersPaginatedList:      vi.fn(),
 }));
 
 vi.mock("@/lib/jsondb", () => ({
@@ -130,6 +131,20 @@ vi.mock("@/lib/jsondb", () => ({
   },
   PromotionsDB: {
     getAll: mockPromotionsGetAll,
+  },
+}));
+
+// Audit 2026-05-17 B-P0-4: el route ahora usa OrdersPaginatedDB cuando hay limit.
+vi.mock("@/lib/db/orders-paginated.db", () => ({
+  OrdersPaginatedDB: {
+    listFiltered: mockOrdersPaginatedList,
+  },
+  OrdersDB: {
+    add:                mockOrdersAdd,
+    getAll:             mockOrdersGetAll,
+    getPage:            mockOrdersGetPage,
+    getAllFiltered:     mockOrdersGetAllFiltered,
+    getByCustomerPhone: mockOrdersGetByCustomerPhone,
   },
 }));
 
@@ -503,12 +518,13 @@ describe("GET /api/orders", () => {
   });
 
   it("returns paginated orders with X-Total-Count header when limit is set", async () => {
-    mockOrdersGetAllFiltered.mockResolvedValue([SAVED_ORDER]);
+    // Audit B-P0-4: ahora el route usa OrdersPaginatedDB.listFiltered
+    mockOrdersPaginatedList.mockResolvedValue({ items: [SAVED_ORDER], total: 1 });
     const res = await GET(makeGetReq("?limit=10&page=1"), defaultCtx);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
-    expect(res.headers.get("X-Total-Count")).toBeDefined();
+    expect(res.headers.get("X-Total-Count")).toBe("1");
     expect(res.headers.get("X-Page")).toBe("1");
     expect(res.headers.get("X-Limit")).toBe("10");
   });

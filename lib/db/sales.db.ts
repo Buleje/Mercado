@@ -107,6 +107,56 @@ export const SalesDB = {
       orderBy: { createdAt: "desc" },
     })).map(mapSale);
   },
+  /**
+   * Offset pagination DB-side (skip/take + count en $transaction).
+   *
+   * Audit 2026-05-17 B-P0-4: el route handler antiguo hacía
+   * `getAll() + sales.slice(start, start + limit)` — cargaba todas las
+   * ventas del tenant en RAM antes de cortar. Para tenants con >10k ventas
+   * eso es 30MB+ por request → OOM en Vercel Fluid 512MB.
+   *
+   * Soporta filtros: today, from, to, cashierId. Filtros aplicados Prisma-side.
+   */
+  async getAllFilteredPaginated(opts: {
+    tenantId: string;
+    page: number;
+    limit: number;
+    today?: boolean;
+    from?: Date;
+    to?: Date;
+    cashierId?: string;
+  }): Promise<{ items: DbSale[]; total: number }> {
+    const where: Record<string, unknown> = { tenantId: opts.tenantId };
+
+    const createdAt: Record<string, Date> = {};
+    if (opts.today) {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      createdAt.gte = startOfDay;
+    }
+    if (opts.from) createdAt.gte = opts.from;
+    if (opts.to) createdAt.lte = opts.to;
+    if (Object.keys(createdAt).length > 0) where.createdAt = createdAt;
+
+    if (opts.cashierId) where.cashierId = opts.cashierId;
+
+    const skip = Math.max(0, (opts.page - 1) * opts.limit);
+
+    const [rows, total] = await prisma.$transaction([
+      prisma.sale.findMany({
+        where,
+        omit: { idempotencyKey: true },
+        include: { items: true },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: opts.limit,
+      }),
+      prisma.sale.count({ where }),
+    ]);
+
+    return { items: rows.map(mapSale), total };
+  },
+
   async getById(tenantId: string, id: string): Promise<DbSale | null> {
     const row = await prisma.sale.findFirst({
       where: { id, tenantId },

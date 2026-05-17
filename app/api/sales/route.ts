@@ -69,47 +69,42 @@ export async function GET(req: NextRequest) {
     const cashierIdParam = searchParams.get("cashierId");
     const allParam = searchParams.get("all");
 
-    let data = await withDbRetry(() => SalesDB.getAll(auth.tenantId));
-
-    // SECURITY 2026-05-17 (audit A3): cajero solo puede ver SUS ventas.
+    // Audit 2026-05-17 B-P0-4: paginación + filtros Prisma-side (skip/take).
+    // Antes: getAll() + 3 array.filter() en JS + slice() — cargaba todas las
+    // ventas del tenant en RAM antes de cortar (OOM con >10k ventas).
+    //
+    // SECURITY (audit A3 mantenido): cajero solo puede ver SUS ventas.
     // Antes el query param `?cashierId=X` se aceptaba sin validar — un cajero
-    // podía listar ventas de cualquier compañero del tenant (PII financiero
-    // + montos de comisión + clientes asignados). Roles management ven todo.
+    // podía listar ventas de cualquier compañero del tenant. Roles management ven todo.
     const isCajeroOnly = auth.role === "cajero";
-    if (isCajeroOnly) {
-      data = data.filter((s) => s.cashierId === auth.username);
-    } else if (cashierIdParam) {
-      data = data.filter((s) => s.cashierId === cashierIdParam);
-    }
+    const effectiveCashierId = isCajeroOnly ? auth.username : cashierIdParam || undefined;
 
-    // Filter: today=1
-    if (todayParam === "1") {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      const cutoff = startOfDay.getTime();
-      data = data.filter((s) => new Date(s.createdAt).getTime() >= cutoff);
-    }
+    const fromDate = fromParam ? (() => {
+      const d = new Date(fromParam);
+      return Number.isNaN(d.getTime()) ? undefined : d;
+    })() : undefined;
+    const toDate = toParam ? (() => {
+      const d = new Date(toParam);
+      return Number.isNaN(d.getTime()) ? undefined : d;
+    })() : undefined;
 
-    // Filter: from / to
-    if (fromParam) {
-      const fromTs = new Date(fromParam).getTime();
-      if (!Number.isNaN(fromTs)) data = data.filter((s) => new Date(s.createdAt).getTime() >= fromTs);
-    }
-    if (toParam) {
-      const toTs = new Date(toParam).getTime();
-      if (!Number.isNaN(toTs)) data = data.filter((s) => new Date(s.createdAt).getTime() <= toTs);
-    }
-
-    const total = data.length;
-
-    // Pagination — default 500 cap, bypass solo con ?all=1
     if (allParam !== "1") {
       const limit = Math.min(Math.max(parseInt(limitParam ?? "500", 10) || 500, 1), 1000);
       const page = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
-      const start = (page - 1) * limit;
-      data = data.slice(start, start + limit);
 
-      return NextResponse.json(data, {
+      const { items, total } = await withDbRetry(() =>
+        SalesDB.getAllFilteredPaginated({
+          tenantId: auth.tenantId,
+          page,
+          limit,
+          today: todayParam === "1",
+          from: fromDate,
+          to: toDate,
+          cashierId: effectiveCashierId,
+        })
+      );
+
+      return NextResponse.json(items, {
         headers: {
           "X-Total-Count": String(total),
           "X-Page": String(page),
@@ -118,8 +113,22 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json(data, {
-      headers: { "X-Total-Count": String(total) },
+    // ?all=1 → comportamiento legacy (devolver todo). Solo permitido para
+    // exportaciones admin. Filtros aplicados Prisma-side via paginado de
+    // página única.
+    const { items: allData, total: allTotal } = await withDbRetry(() =>
+      SalesDB.getAllFilteredPaginated({
+        tenantId: auth.tenantId,
+        page: 1,
+        limit: 100000, // cap soft pero suficiente para exportes
+        today: todayParam === "1",
+        from: fromDate,
+        to: toDate,
+        cashierId: effectiveCashierId,
+      })
+    );
+    return NextResponse.json(allData, {
+      headers: { "X-Total-Count": String(allTotal) },
     });
   } catch (e) {
     logger.error("[sales] GET error", { err: e instanceof Error ? e.message : String(e), tenantId: auth.tenantId });
