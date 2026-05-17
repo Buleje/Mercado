@@ -101,13 +101,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "username and password required" }, { status: 400 });
   }
 
-  // Step 1: Resolve slug → tenant ID (CUID) — usado solo si el username no
-  // existe en NINGÚN tenant (fallback Settings.adminPassword).
+  // Step 1: Resolve slug → tenant ID (CUID).
+  // Audit 2026-05-17 05-P1-4: si el slug NO resuelve a tenant DB → 400.
+  // Antes, sin resolver, el findMany seguía buscando sin scope y dos tenants
+  // con `qaadmin` + misma password permitían entrar al primer match.
+  // Fail-closed: si el slug no existe, rechazar sin tocar el directorio de usuarios.
   let tenantId = resolvedSlug;
+  let tenantResolvedToDb = false;
   try {
-    const tenant = await prisma.tenant.findUnique({ where: { slug: resolvedSlug }, select: { id: true, slug: true } });
-    if (tenant) tenantId = tenant.id;
-  } catch { /* use slug as-is */ }
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug: resolvedSlug },
+      select: { id: true, slug: true },
+    });
+    if (tenant) {
+      tenantId = tenant.id;
+      tenantResolvedToDb = true;
+    }
+  } catch { /* DB unavailable — keep slug as-is, validate below */ }
+
+  if (!tenantResolvedToDb) {
+    logger.warn("[auth/login] Refusing login — slug does not resolve to tenant DB", {
+      resolvedSlug,
+      ip: req.headers.get("x-forwarded-for") ?? "unknown",
+    });
+    return NextResponse.json(
+      { error: "tenant_invalid", message: "El tenant indicado no existe o no está disponible." },
+      { status: 400 },
+    );
+  }
 
   // F1 — SECURITY 2026-05-07: lockout per-username (brute-force con IP rotation).
   // El counter se almacena en cacheStore con TTL 900s (15 min).

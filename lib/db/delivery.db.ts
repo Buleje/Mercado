@@ -829,26 +829,45 @@ export const DeliveryRouteStopsDB = {
       }
     });
 
-    // 4. Fuera de la transacción: emitir el tracking event del Order (si delivered/failed)
+    // 4. Fuera de la transacción: emitir el tracking event del Order (si delivered/failed).
+    //
+    // Audit 2026-05-17 03-P1-3: este UPDATE corre fuera de la tx anterior.
+    // Si DeliveryTrackingDB.add falla, DeliveryRouteStop quedó "delivered" pero
+    // Order.deliveryStatus se queda atrás → admin ve "en camino" mientras
+    // rider ya entregó. Para detectar el orphan state, ahora capturamos el
+    // error y lo reportamos a Sentry con contexto suficiente para reconciliación
+    // manual. NO re-lanza para no romper el flujo del rider (la fuente de
+    // verdad es DeliveryRouteStop, Order.deliveryStatus es proyección).
     if (params.status === "delivered" || params.status === "failed") {
-      await DeliveryTrackingDB.add({
-        tenantId: params.tenantId,
-        orderId: (
-          await prisma.$queryRawUnsafe<Array<{ orderId: string }>>(
-            `SELECT "orderId" FROM "DeliveryRouteStop" WHERE "id" = $1`,
-            params.stopId,
-          )
-        )[0]?.orderId ?? "",
-        status: params.status === "delivered" ? "delivered" : "failed",
-        description:
-          params.status === "delivered"
-            ? "Entregado en domicilio"
-            : params.failureReason ?? "Entrega fallida",
-        lat: params.lat,
-        lng: params.lng,
-        actorType: "driver",
-        photoUrl: params.proofPhotoUrl,
-      });
+      const orderRows = await prisma.$queryRawUnsafe<Array<{ orderId: string }>>(
+        `SELECT "orderId" FROM "DeliveryRouteStop" WHERE "id" = $1`,
+        params.stopId,
+      );
+      const orderId = orderRows[0]?.orderId ?? "";
+      try {
+        await DeliveryTrackingDB.add({
+          tenantId: params.tenantId,
+          orderId,
+          status: params.status === "delivered" ? "delivered" : "failed",
+          description:
+            params.status === "delivered"
+              ? "Entregado en domicilio"
+              : params.failureReason ?? "Entrega fallida",
+          lat: params.lat,
+          lng: params.lng,
+          actorType: "driver",
+          photoUrl: params.proofPhotoUrl,
+        });
+      } catch (err) {
+        logger.error("[DeliveryRouteStops] orphan state — tracking add failed", {
+          tenantId: params.tenantId,
+          stopId: params.stopId,
+          orderId,
+          status: params.status,
+          err: err instanceof Error ? err.message : String(err),
+          reconcileBy: "manual",
+        });
+      }
     }
 
     invalidateByPrefix(`delivery:stops:${params.tenantId}`);

@@ -114,6 +114,11 @@ describe("POST /api/auth/login", () => {
     // Default: DB returns no users; settings have no admin password
     mockFindMany.mockResolvedValue([]);
     mockTenantFindFirst.mockResolvedValue(null);
+    // Audit 2026-05-17 05-P1-4: el login ahora rechaza con 400 si el slug
+    // no resuelve a un tenant DB. Por default mockeamos que "main" SÍ existe
+    // para que los demás tests (que validan otros aspectos) sigan corriendo.
+    // Tests específicos del fix pueden override esto a null para validar 400.
+    mockTenantFindUnique.mockResolvedValue({ id: "main-tenant-cuid", slug: "main" });
     mockSettingsGet.mockResolvedValue({ adminPassword: null });
     mockCompare.mockResolvedValue(false);
   });

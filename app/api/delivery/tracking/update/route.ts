@@ -50,37 +50,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verificar que la asignación existe y pertenece al tenant + partner autenticado
-    const assignment = await prisma.deliveryAssignment.findUnique({
-      where: { orderId: orderId as string },
+    // Audit 2026-05-17 03-P1-1: antes findUnique({orderId}) cargaba data del
+    // assignment ANTES de validar tenant/partner — leak de tenantId/partnerId
+    // ajenos por timing. Además 2 códigos 403 distintos (tenant-mismatch vs
+    // partner-mismatch) permitían enumeration. Ahora findFirst con scope
+    // completo y 404 unificado: el atacante no distingue "no existe" de
+    // "existe pero no es tuyo".
+    const assignment = await prisma.deliveryAssignment.findFirst({
+      where: {
+        orderId: orderId as string,
+        tenantId,
+        partnerId,
+      },
     });
 
     if (!assignment) {
-      return NextResponse.json(
-        { error: "No hay delivery asignado para esta orden" },
-        { status: 404 }
-      );
-    }
-
-    // Cross-tenant guard: assignment must belong to the authenticated driver's tenant
-    if (assignment.tenantId !== tenantId) {
-      logger.warn("[tracking/update] Tenant mismatch", {
-        assignmentTenantId: assignment.tenantId,
-        driverTenantId: tenantId,
+      logger.warn("[tracking/update] Assignment not found or out of scope", {
         orderId,
         partnerId,
+        tenantId,
       });
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
-    }
-
-    // Ensure the assignment belongs to the authenticated driver (not another driver in same tenant)
-    if (assignment.partnerId !== partnerId) {
-      logger.warn("[tracking/update] Driver-assignment mismatch", {
-        assignmentPartnerId: assignment.partnerId,
-        requestPartnerId: partnerId,
-        orderId,
-      });
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return NextResponse.json(
+        { error: "No hay delivery asignado para esta orden" },
+        { status: 404 },
+      );
     }
 
     // Validate coordinates are within sane ranges (GPS spoofing mitigation)

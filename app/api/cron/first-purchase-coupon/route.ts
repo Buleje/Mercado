@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { withCronAuth } from "@/lib/cron-auth";
+import { withCronHealth } from "@/lib/cron/with-cron-health";
 import { logger } from "@/lib/logger";
 import { enqueueNotification } from "@/lib/queue";
 
@@ -9,8 +9,12 @@ import { enqueueNotification } from "@/lib/queue";
  *
  * Cron diario. Para cada cliente nuevo (registrado en las últimas 24h)
  * que NO tiene pedidos, genera un cupón de bienvenida del 10%.
+ *
+ * Audit 2026-05-17 08-P1-1: migrado de withCronAuth → withCronHealth para
+ * que las ejecuciones queden en CronHealthLog (consistencia con el resto
+ * de crons del audit P0-2). withCronHealth ya valida CRON_SECRET.
  */
-export const GET = withCronAuth("first-purchase-coupon", async (req) => {
+export const GET = withCronHealth("first-purchase-coupon", async (req: NextRequest) => {
   try {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);

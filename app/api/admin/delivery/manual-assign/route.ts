@@ -115,9 +115,13 @@ export async function POST(req: NextRequest) {
         ``,
         `Detalles: ${url}`,
       ].join("\n");
+      // Audit 2026-05-17 03-P1-4: context estandarizado a `delivery-assign-${id}`
+      // para que sendWhatsAppQueued deduplique correctamente si el admin asigna
+      // el mismo orderId desde POS y desde módulo delivery (rider recibía 2
+      // mensajes con contexts distintos antes).
       sendWhatsAppQueued(result.partnerPhone, wa, {
         tenantId: auth.tenantId,
-        context: `manual-assign-${result.assignmentId}`,
+        context: `delivery-assign-${result.assignmentId}`,
       }).catch((err) => logger.warn("[manual-assign] WhatsApp failed", { error: String(err) }));
     }
 
