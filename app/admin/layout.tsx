@@ -28,6 +28,9 @@ const TENANT_CACHE_GUARD_SCRIPT = `
     var owner = localStorage.getItem(ownerKey);
     if (owner === slug) return;
     var prefixes = ["poc-", "admin-", "dashboard-data-", "buleje-admin-", "morning-summary-"];
+    // Keys platform-global que NO se borran (config del superadmin, no del
+    // tenant). Mantener sincronizado con PLATFORM_GLOBAL_KEYS en lib/tenant-cache.ts.
+    var preserve = { "buleje-admin-template": 1, "buleje-admin-theme-set": 1 };
     var keys = [];
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
@@ -36,6 +39,7 @@ const TENANT_CACHE_GUARD_SCRIPT = `
     var removed = 0;
     for (var j = 0; j < keys.length; j++) {
       var key = keys[j];
+      if (preserve[key]) continue;
       for (var p = 0; p < prefixes.length; p++) {
         if (key.indexOf(prefixes[p]) === 0) {
           localStorage.removeItem(key);
@@ -72,7 +76,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Guard sincrónico anti-fuga cross-tenant — corre antes de cualquier
           componente React (incluso antes de que se monte AdminProviders). */}
       <script
-        // eslint-disable-next-line react/no-danger -- script blocking pre-hidratación, contenido constante
         dangerouslySetInnerHTML={{ __html: TENANT_CACHE_GUARD_SCRIPT }}
       />
       <AdminProviders>

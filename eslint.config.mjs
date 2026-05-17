@@ -157,6 +157,7 @@ const eslintConfig = defineConfig([
       "app/api/superadmin/**",
       "app/api/cron/**",
       "app/api/compliance/**",
+      "app/api/debug-tenant-leak/**",
       "scripts/**",
       "**/__tests__/**",
       "prisma/**",

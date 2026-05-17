@@ -262,19 +262,32 @@ const TENANT_MODELS = new Set([
 /**
  * Build the tenant-scoped extension for a given tenantId.
  * Extracted into a helper so we can capture the return type.
+ *
+ * NOTA crítica multi-tenant: Prisma 7 entrega `model` en PascalCase
+ * ("AdminUser") al callback de `$extends`. TENANT_MODELS está
+ * declarado en camelCase ("adminUser") porque ese es el nombre del
+ * accesor en el cliente. Normalizamos con `isScoped()` antes de
+ * verificar pertenencia — sin esto, NINGÚN modelo se filtra y todo
+ * el aislamiento multi-tenant queda anulado.
  */
 function buildTenantExtension(tenantId: string) {
+  const isScoped = (model: string): boolean => {
+    if (TENANT_MODELS.has(model)) return true;
+    const camel = model.charAt(0).toLowerCase() + model.slice(1);
+    return TENANT_MODELS.has(camel);
+  };
+
   return prisma.$extends({
     query: {
       $allModels: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async findMany({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) args.where = { tenantId, ...args.where };
+          if (isScoped(model)) args.where = { tenantId, ...args.where };
           return query(args);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async findFirst({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) args.where = { tenantId, ...args.where };
+          if (isScoped(model)) args.where = { tenantId, ...args.where };
           return query(args);
         },
         // findUnique only accepts unique constraints in `where`, so we cannot
@@ -283,14 +296,14 @@ function buildTenantExtension(tenantId: string) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async findUnique({ args, query, model }: any) {
           const row = await query(args);
-          if (!TENANT_MODELS.has(model) || row == null) return row;
+          if (!isScoped(model) || row == null) return row;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (row as any).tenantId === tenantId ? row : null;
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async findUniqueOrThrow({ args, query, model }: any) {
           const row = await query(args);
-          if (!TENANT_MODELS.has(model)) return row;
+          if (!isScoped(model)) return row;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if ((row as any).tenantId !== tenantId) {
             throw new Error(
@@ -301,22 +314,22 @@ function buildTenantExtension(tenantId: string) {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async count({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) args.where = { tenantId, ...args.where };
+          if (isScoped(model)) args.where = { tenantId, ...args.where };
           return query(args);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async aggregate({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) args.where = { tenantId, ...args.where };
+          if (isScoped(model)) args.where = { tenantId, ...args.where };
           return query(args);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async create({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) args.data = { ...args.data, tenantId };
+          if (isScoped(model)) args.data = { ...args.data, tenantId };
           return query(args);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async createMany({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model) && Array.isArray(args.data)) {
+          if (isScoped(model) && Array.isArray(args.data)) {
             args.data = (args.data as Record<string, unknown>[]).map((d) => ({
               ...d,
               tenantId,
@@ -326,13 +339,16 @@ function buildTenantExtension(tenantId: string) {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async upsert({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) {
+          if (isScoped(model)) {
             // Pre-check: if a row already matches the unique where but belongs
             // to a different tenant, refuse — otherwise upsert would overwrite
             // another tenant's data via the update branch.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const ext = (prisma as any).$extends({});
-            const existing = await ext[model].findUnique({ where: args.where });
+            const accessor = model.charAt(0).toLowerCase() + model.slice(1);
+            const existing = await ext[accessor].findUnique({
+              where: args.where,
+            });
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (existing && (existing as any).tenantId !== tenantId) {
               throw new Error(
@@ -345,22 +361,22 @@ function buildTenantExtension(tenantId: string) {
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async update({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) args.where = { ...args.where, tenantId };
+          if (isScoped(model)) args.where = { ...args.where, tenantId };
           return query(args);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async updateMany({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) args.where = { tenantId, ...args.where };
+          if (isScoped(model)) args.where = { tenantId, ...args.where };
           return query(args);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async delete({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) args.where = { ...args.where, tenantId };
+          if (isScoped(model)) args.where = { ...args.where, tenantId };
           return query(args);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async deleteMany({ args, query, model }: any) {
-          if (TENANT_MODELS.has(model)) args.where = { tenantId, ...args.where };
+          if (isScoped(model)) args.where = { tenantId, ...args.where };
           return query(args);
         },
       },
