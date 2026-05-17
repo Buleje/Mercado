@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { TurnosDB } from "@/lib/db/turnos.db";
+import { AdminUsersDB } from "@/lib/db/admin-users.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
@@ -50,12 +51,22 @@ export async function POST(
     // con un `cierreEfectivo` falsificado → vector de fraude laboral
     // (culpar al compañero por una diferencia inventada).
     // Roles management (admin/owner/manager) siguen pudiendo cerrar cualquier turno.
+    //
+    // Audit 2026-05-17 B-P0-1: antes se comparaba `existing.adminUserId !== auth.username`
+    // pero `Turno.adminUserId` referencia `AdminUser.id` (CUID) mientras
+    // `auth.username` es el username del JWT (string humano). Siempre distintos
+    // → cajero NUNCA podía cerrar su propio turno (403 garantizado). Ahora
+    // resolvemos el id real con AdminUsersDB.resolveIdByUsername (mismo patrón
+    // que /api/turnos/activo:25).
     const isCajeroOnly = auth.role === "cajero";
-    if (isCajeroOnly && existing.adminUserId !== auth.username) {
-      return NextResponse.json(
-        { error: "No tenés permiso para cerrar el turno de otro cajero" },
-        { status: 403 },
-      );
+    if (isCajeroOnly) {
+      const resolvedId = await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username);
+      if (!resolvedId || existing.adminUserId !== resolvedId) {
+        return NextResponse.json(
+          { error: "No tenés permiso para cerrar el turno de otro cajero" },
+          { status: 403 },
+        );
+      }
     }
 
     // SECURITY 2026-05-07 (T2): aggregate scoped por cashierId del turno.

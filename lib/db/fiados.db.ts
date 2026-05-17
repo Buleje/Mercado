@@ -548,29 +548,63 @@ export const FiadosDB = {
 
         for (const fiado of fiados) {
           if (remaining <= 0) break;
-          const saldo = Number(fiado.saldo);
-          const payment = Math.min(remaining, saldo);
-          const newSaldo = saldo - payment;
+          const saldoLeido = Number(fiado.saldo);
+          const paymentTentativo = Math.min(remaining, saldoLeido);
+          if (paymentTentativo <= 0) continue;
 
-          await tx.fiado.update({
-            where: { id: fiado.id, tenantId },
-            data: {
-              saldo: newSaldo,
-              status: newSaldo <= 0.01 ? "PAGADO" : "ACTIVO",
+          // Audit 2026-05-17 B-P0-2 (v2): TOCTOU guard real anti-overpayment.
+          //
+          // v1 (insuficiente): cambié SET por DECREMENT atómico. Eso mata el
+          // "doble write" pero NO el overpayment — si 2 reqs leen saldo=100
+          // y ambas calculan payment=30, ambas decrementan 30 y la cuota se
+          // registra a fin igual. saldo final OK, pero si N reqs paralelas
+          // leen el mismo saldo=100 y aplican >100 en decrements → saldo
+          // queda negativo y se cobran cuotas que exceden la deuda.
+          //
+          // v2 (correcto): updateMany con `where: { saldo: { gte: payment } }`.
+          // Prisma traduce a `UPDATE ... WHERE saldo >= payment` y devuelve
+          // count=0 si la condición no se cumple (TOCTOU clásico). Sólo
+          // creamos la cuota si el update efectivamente aplicó.
+          const result = await tx.fiado.updateMany({
+            where: {
+              id: fiado.id,
+              tenantId,
+              status: "ACTIVO",
+              saldo: { gte: paymentTentativo },
             },
+            data: { saldo: { decrement: paymentTentativo } },
           });
+
+          if (result.count === 0) {
+            // Otro cobro consumió el saldo antes que nosotros — skip y
+            // re-evaluar en el siguiente fiado del loop (si quedan).
+            continue;
+          }
+
+          // Re-leer saldo post-decrement para decidir status (PAGADO si <=0.01)
+          const after = await tx.fiado.findFirst({
+            where: { id: fiado.id, tenantId },
+            select: { saldo: true },
+          });
+          const saldoFinal = after ? Number(after.saldo) : 0;
+          if (saldoFinal <= 0.01) {
+            await tx.fiado.update({
+              where: { id: fiado.id, tenantId },
+              data: { status: "PAGADO" },
+            });
+          }
 
           const cuota = await tx.fiadoCuota.create({
             data: {
               fiadoId: fiado.id,
-              monto: payment,
+              monto: paymentTentativo,
               pagadoEn: new Date(),
               notas: notas || "Cobro desde POS",
             },
           });
 
-          payments.push({ id: cuota.id, fiadoId: fiado.id, monto: payment });
-          remaining -= payment;
+          payments.push({ id: cuota.id, fiadoId: fiado.id, monto: paymentTentativo });
+          remaining -= paymentTentativo;
         }
       });
     } catch (err) {

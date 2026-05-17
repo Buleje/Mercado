@@ -33,8 +33,11 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    // Audit 2026-05-17 X-P0-1: agregado tenantId al where para cerrar
+    // cross-tenant leak. Antes cualquier admin veía recetas de TODOS los
+    // tenants. POST sí pasaba tenantId — solo GET era leak.
     const notes = await prisma.note.findMany({
-      where: { title: "__RECETARIO__" },
+      where: { tenantId: auth.tenantId, title: "__RECETARIO__" },
       orderBy: { createdAt: "desc" },
     });
 
