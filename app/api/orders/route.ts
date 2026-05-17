@@ -969,6 +969,19 @@ export const POST = withApiHandler("orders-create", async (req) => {
       })();
     }
 
+    // Fase 4 perf (2026-05-16): invalidar cache admin para que dashboard/KPIs
+    // reflejen el nuevo pedido SIN esperar al TTL del getOrSet (15-30s).
+    // Antes: bodeguero hacía pedido y veía contador stale.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterOrder(tenantId);
+    } catch (err) {
+      logger.warn("[orders] admin cache invalidation failed", {
+        error: err instanceof Error ? err.message : String(err),
+        tenantId,
+      });
+    }
+
     // ── Auto-firmar customer-session ──────────────────────────────────────
     // UX 2026-05-06: tras un checkout exitoso con phone válido, firmamos la
     // cookie de sesión del cliente. Sin esto, /api/customers/[phone]/orders

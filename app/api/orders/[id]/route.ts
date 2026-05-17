@@ -119,6 +119,14 @@ async function patchOrder(
     const updated = await OrdersDB.update(auth.tenantId, id, updatePayload as Partial<DbOrder>);
     if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
 
+    // Fase 4 perf (2026-05-16): invalidar cache admin tras update (status,
+    // total, etc.). Sin esto los KPIs del dashboard mostraban datos stale
+    // hasta que expira el getOrSet TTL.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterOrder(auth.tenantId);
+    } catch { /* fire-and-forget */ }
+
     const statusChanged = parsed.data.status != null && parsed.data.status !== existing.status;
 
     // Log status change to history (fire-and-forget)
@@ -395,6 +403,11 @@ async function deleteOrder(
     const reqId = req.headers.get("x-request-id") ?? undefined;
     logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, auth.username, reqId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
     invalidate(`dashboard:${auth.tenantId}`);
+    // Fase 4 perf (2026-05-16): invalidación completa de caches admin.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterOrder(auth.tenantId);
+    } catch { /* fire-and-forget */ }
     return new NextResponse(null, { status: 204 });
   } catch (e) {
     logger.error("[orders/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });
