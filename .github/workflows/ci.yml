@@ -41,8 +41,10 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # non-blocking inicial — convertir a blocking tras 1 semana de baseline limpio
-        continue-on-error: true
+        # Audit 2026-05-17 08-P2-1: gitleaks ahora blocking. Round 28
+        # estableció baseline limpio; cualquier secret nuevo debe fallar
+        # el CI. Si hay false positives, agregarlos a .gitleaksignore
+        # con justificación, no a continue-on-error.
 
       - name: Lint
         run: npm run lint
