@@ -183,6 +183,13 @@ export async function POST(req: NextRequest) {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
     invalidate(`dashboard:${auth.tenantId}`);
+    // Fase 4 perf (2026-05-16): invalidación completa de caches admin tras
+    // crear producto. KPIs (overview, stats, eoq-suggest) refrescan al
+    // instante sin esperar TTL ciego.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterProduct(auth.tenantId);
+    } catch { /* fire-and-forget */ }
     return NextResponse.json(product, {
       headers: { "X-Api-Version": "v1" },
     });

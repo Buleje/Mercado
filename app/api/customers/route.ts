@@ -221,6 +221,12 @@ export async function POST(req: NextRequest) {
     } catch { /* createNotification not available */ }
 
     invalidate(`dashboard:${auth.tenantId}`);
+    // Fase 4 perf (2026-05-16): KPIs admin refrescan al instante tras
+    // crear/upsertear cliente (stats.totalCustomers, overview.newCustomers).
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterCustomer(auth.tenantId);
+    } catch { /* fire-and-forget */ }
     return NextResponse.json(record);
   } catch {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });

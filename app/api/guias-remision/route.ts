@@ -150,6 +150,12 @@ export async function POST(req: NextRequest) {
       tenantId: auth.tenantId,
     });
 
+    // Fase 4 perf (2026-05-16): doc-badges sidebar refresca al instante.
+    try {
+      const { invalidateAdminCache } = await import("@/lib/admin-cache");
+      invalidateAdminCache.afterDocument(auth.tenantId);
+    } catch { /* fire-and-forget */ }
+
     return NextResponse.json(guia, { status: 201 });
   } catch (e) {
     logger.error("[guias-remision] POST error", { error: String(e) });

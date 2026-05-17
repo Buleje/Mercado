@@ -46,5 +46,10 @@ export async function POST(req: NextRequest) {
     payments: [],
     createdAt: new Date().toISOString(),
   });
+  // Fase 4 perf (2026-05-16): refresh stats (overduePayables) + overview.
+  try {
+    const { invalidateAdminCache } = await import("@/lib/admin-cache");
+    invalidateAdminCache.afterPayable(auth.tenantId);
+  } catch { /* fire-and-forget */ }
   return NextResponse.json(payable, { status: 201 });
 }
