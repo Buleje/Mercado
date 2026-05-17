@@ -3,6 +3,44 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { logger } from "@/lib/logger";
 
+// ── Error classes ─────────────────────────────────────────────────────────────
+
+/**
+ * Race-condition o write-conflict detectado dentro de una transacción.
+ * Los handlers HTTP deben mapearlo a 409 Conflict (no 503), porque el
+ * caller puede reintentar de inmediato — la DB está sana, solo había
+ * contención.
+ *
+ * Prisma lo lanza con código P2034 (TransactionConflict). Algunas versiones
+ * de Postgres usan SQLSTATE 40001 (serialization_failure) o 40P01 (deadlock).
+ */
+export class FiadoConflictError extends Error {
+  readonly code = "FIADO_CONFLICT";
+  constructor(message: string) {
+    super(message);
+    this.name = "FiadoConflictError";
+  }
+}
+
+/**
+ * Detecta si un error es race-condition de Prisma/Postgres. Centraliza el
+ * pattern para que los handlers HTTP no tengan que conocer códigos internos.
+ */
+export function isPrismaConflict(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message;
+  // Prisma client: PrismaClientKnownRequestError with code P2034
+  // (también P2002 unique-violation puede surgir en algunas races pero rara
+  // vez se mapea a conflict aquí).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const code = (err as any).code;
+  if (code === "P2034") return true;
+  // Postgres SQLSTATE 40001 (serialization) o 40P01 (deadlock)
+  if (/40001|40P01/.test(msg)) return true;
+  if (/transaction conflict|could not serialize|deadlock detected/i.test(msg)) return true;
+  return false;
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type DbFiado = {
@@ -204,7 +242,12 @@ export const FiadosDB = {
     // cobros simultáneos que leían el saldo fuera de tx y calculaban en JS.
     // Ahora usamos `decrement` atómico + re-lectura post-decrement para
     // determinar el estado. Si el saldo baja de 0 (overpayment) se lanza error.
-    const updated = await prisma.$transaction(async (tx) => {
+    //
+    // Audit 2026-05-17 P1-3: conflictos de Prisma (P2034) ahora propagan como
+    // FiadoConflictError para que el handler responda 409 en vez de 503.
+    let updated: Awaited<ReturnType<typeof prisma.fiado.findUnique>> | null = null;
+    try {
+      updated = await prisma.$transaction(async (tx) => {
       const fiado = await tx.fiado.findFirst({ where: { id: fiadoId, tenantId } });
       if (!fiado) return null;
 
@@ -223,9 +266,11 @@ export const FiadosDB = {
         data: { saldo: { decrement: monto } },
       });
 
-      // Re-leer post-decrement para determinar status y detectar overpayment
-      const afterDecrement = await tx.fiado.findUnique({
-        where: { id: fiadoId },
+      // Re-leer post-decrement para determinar status y detectar overpayment.
+      // Audit 2026-05-17 P2-3: findFirst con tenantId (no findUnique sin
+      // tenantId) — defense-in-depth si el guard externo se rompe en refactor.
+      const afterDecrement = await tx.fiado.findFirst({
+        where: { id: fiadoId, tenantId },
         include: { cuotas: { orderBy: { createdAt: "asc" } } },
       });
       if (!afterDecrement) return null;
@@ -244,7 +289,13 @@ export const FiadosDB = {
       }
 
       return afterDecrement;
-    });
+      });
+    } catch (err) {
+      if (isPrismaConflict(err)) {
+        throw new FiadoConflictError("Race condition detectada — reintentar el pago");
+      }
+      throw err;
+    }
 
     return updated ? mapFiado(updated) : null;
   },
@@ -270,6 +321,154 @@ export const FiadosDB = {
   },
 
   /**
+   * Resumen de fiados activos de un cliente. Centraliza la lógica que
+   * antes vivía inline en /api/customers/[phone]/fiado-resumen (regla #1
+   * CLAUDE.md). 2 queries paralelas: aggregate + oldest.
+   *
+   * Audit 2026-05-17 P1-4.
+   */
+  async resumenByCustomer(
+    tenantId: string,
+    customerId: string,
+  ): Promise<{
+    montoPendiente: number;
+    cantidadFiados: number;
+    diasVencido: number;
+    hasFiadosVencidos: boolean;
+  }> {
+    const baseWhere = { tenantId, customerId, status: "ACTIVO" as const };
+
+    const [agg, oldest] = await Promise.all([
+      prisma.fiado.aggregate({
+        where: baseWhere,
+        _sum: { saldo: true },
+        _count: true,
+      }),
+      prisma.fiado.findFirst({
+        where: baseWhere,
+        orderBy: { createdAt: "asc" },
+        select: { createdAt: true, fechaVence: true },
+      }),
+    ]);
+
+    const montoPendiente = Number(agg._sum.saldo ?? 0);
+    const cantidadFiados = agg._count ?? 0;
+
+    let diasVencido = 0;
+    let hasFiadosVencidos = false;
+
+    if (oldest) {
+      const now = new Date();
+      diasVencido = Math.floor(
+        (now.getTime() - oldest.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      if (oldest.fechaVence && oldest.fechaVence < now) {
+        hasFiadosVencidos = true;
+      }
+    }
+
+    return { montoPendiente, cantidadFiados, diasVencido, hasFiadosVencidos };
+  },
+
+  /**
+   * Batch cobranza atómica sobre N fiados específicos. Centraliza la
+   * transacción que antes vivía inline en /api/fiados/cobro-masivo (regla
+   * #1 CLAUDE.md). tenantId siempre en el where de cada update —
+   * defense-in-depth.
+   *
+   * Lanza FiadoConflictError si Prisma detecta race-condition (P2034 o
+   * SQLSTATE 40001/40P01). Lanza Error genérico si algún fiadoId no existe
+   * o está cancelado.
+   *
+   * Audit 2026-05-17 P1-3 + P1-5.
+   */
+  async cobroMasivo(
+    tenantId: string,
+    payments: Array<{ fiadoId: string; monto: number }>,
+    notas?: string,
+  ): Promise<
+    Array<{
+      fiadoId: string;
+      montoPagado: number;
+      nuevoSaldo: number;
+      status: string;
+      customerId: string;
+    }>
+  > {
+    const results: Array<{
+      fiadoId: string;
+      montoPagado: number;
+      nuevoSaldo: number;
+      status: string;
+      customerId: string;
+    }> = [];
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        for (const payment of payments) {
+          const fiado = await tx.fiado.findFirst({
+            where: { id: payment.fiadoId, tenantId },
+          });
+          if (!fiado) {
+            throw new Error(`Fiado ${payment.fiadoId.slice(-6)} no encontrado`);
+          }
+          if (fiado.status !== "ACTIVO" && fiado.status !== "VENCIDO") {
+            throw new Error(`Fiado ${payment.fiadoId.slice(-6)} no esta activo`);
+          }
+
+          const currentSaldo = Number(fiado.saldo);
+          const paymentAmount = Math.min(payment.monto, currentSaldo);
+
+          // Decrement atómico: si dos requests pasan el findFirst con el mismo
+          // currentSaldo, el segundo decrement actualiza el saldo ya reducido
+          // por el primero — sin sobrescritura.
+          await tx.fiado.update({
+            where: { id: payment.fiadoId, tenantId },
+            data: { saldo: { decrement: paymentAmount } },
+          });
+
+          const updated = await tx.fiado.findFirst({
+            where: { id: payment.fiadoId, tenantId },
+            select: { saldo: true, status: true },
+          });
+          const finalSaldo = updated ? Number(updated.saldo) : 0;
+          const newStatus = finalSaldo <= 0.01 ? "PAGADO" : fiado.status;
+          if (newStatus !== fiado.status) {
+            await tx.fiado.update({
+              where: { id: payment.fiadoId, tenantId },
+              data: { status: newStatus },
+            });
+          }
+
+          await tx.fiadoCuota.create({
+            data: {
+              fiadoId: payment.fiadoId,
+              monto: paymentAmount,
+              pagadoEn: new Date(),
+              notas: notas || "Cobro masivo",
+            },
+          });
+
+          results.push({
+            fiadoId: payment.fiadoId,
+            montoPagado: paymentAmount,
+            nuevoSaldo: Math.max(0, finalSaldo),
+            status: newStatus,
+            customerId: fiado.customerId,
+          });
+        }
+      });
+    } catch (err) {
+      if (isPrismaConflict(err)) {
+        throw new FiadoConflictError("Race condition detectada — reintentar el cobro");
+      }
+      throw err;
+    }
+
+    return results;
+  },
+
+  /**
    * Collect a payment from a customer applied across their active fiados,
    * oldest-first. Atomic via $transaction. Returns a breakdown of payments
    * applied and any remaining amount (if the collection exceeded the debt).
@@ -289,44 +488,53 @@ export const FiadosDB = {
     // y los updates internos otro cobro concurrente podía modificar los mismos
     // fiados resultando en doble-cobro o saldo incorrecto.
     // tenantId en where de cada update: defense in depth multi-tenant.
+    //
+    // Audit 2026-05-17 P1-3: conflict de Prisma propaga como FiadoConflictError.
     let remaining = monto;
     const payments: Array<{ id: string; fiadoId: string; monto: number }> = [];
 
-    await prisma.$transaction(async (tx) => {
-      const fiados = await tx.fiado.findMany({
-        where: { tenantId, customerId, status: "ACTIVO" },
-        orderBy: { createdAt: "asc" },
+    try {
+      await prisma.$transaction(async (tx) => {
+        const fiados = await tx.fiado.findMany({
+          where: { tenantId, customerId, status: "ACTIVO" },
+          orderBy: { createdAt: "asc" },
+        });
+
+        if (fiados.length === 0) return;
+
+        for (const fiado of fiados) {
+          if (remaining <= 0) break;
+          const saldo = Number(fiado.saldo);
+          const payment = Math.min(remaining, saldo);
+          const newSaldo = saldo - payment;
+
+          await tx.fiado.update({
+            where: { id: fiado.id, tenantId },
+            data: {
+              saldo: newSaldo,
+              status: newSaldo <= 0.01 ? "PAGADO" : "ACTIVO",
+            },
+          });
+
+          const cuota = await tx.fiadoCuota.create({
+            data: {
+              fiadoId: fiado.id,
+              monto: payment,
+              pagadoEn: new Date(),
+              notas: notas || "Cobro desde POS",
+            },
+          });
+
+          payments.push({ id: cuota.id, fiadoId: fiado.id, monto: payment });
+          remaining -= payment;
+        }
       });
-
-      if (fiados.length === 0) return;
-
-      for (const fiado of fiados) {
-        if (remaining <= 0) break;
-        const saldo = Number(fiado.saldo);
-        const payment = Math.min(remaining, saldo);
-        const newSaldo = saldo - payment;
-
-        await tx.fiado.update({
-          where: { id: fiado.id, tenantId },
-          data: {
-            saldo: newSaldo,
-            status: newSaldo <= 0.01 ? "PAGADO" : "ACTIVO",
-          },
-        });
-
-        const cuota = await tx.fiadoCuota.create({
-          data: {
-            fiadoId: fiado.id,
-            monto: payment,
-            pagadoEn: new Date(),
-            notas: notas || "Cobro desde POS",
-          },
-        });
-
-        payments.push({ id: cuota.id, fiadoId: fiado.id, monto: payment });
-        remaining -= payment;
+    } catch (err) {
+      if (isPrismaConflict(err)) {
+        throw new FiadoConflictError("Race condition detectada — reintentar el cobro");
       }
-    });
+      throw err;
+    }
 
     return {
       totalCobrado: monto - remaining,

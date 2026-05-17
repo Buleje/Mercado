@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { FiadosDB, FiadoConflictError } from "@/lib/db/fiados.db";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -20,6 +20,10 @@ const CobroMasivoSchema = z.object({
 /**
  * POST /api/fiados/cobro-masivo
  * Process batch payment across multiple fiados in a single transaction.
+ *
+ * Audit 2026-05-17 P1-5: toda la lógica de transacción migrada a
+ * FiadosDB.cobroMasivo (regla #1 CLAUDE.md — no prisma directo en routes).
+ * P1-3: races detectadas como 409 Conflict (no 503).
  */
 export async function POST(req: NextRequest) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
@@ -40,71 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { payments, notas } = parsed.data;
-    const results: { fiadoId: string; montoPagado: number; nuevoSaldo: number; status: string; customerId: string }[] = [];
-
-    // Execute all payments in a single transaction.
-    // SECURITY 2026-05-07 (extension Y1): tenantId en update where + decrement
-    // atomic en lugar de read-then-write para cerrar races con cobros simultaneos
-    // del mismo fiado.
-    await prisma.$transaction(async (tx) => {
-      for (const payment of payments) {
-        const fiado = await tx.fiado.findFirst({
-          where: { id: payment.fiadoId, tenantId },
-        });
-
-        if (!fiado) {
-          throw new Error(`Fiado ${payment.fiadoId.slice(-6)} no encontrado`);
-        }
-
-        if (fiado.status !== "ACTIVO" && fiado.status !== "VENCIDO") {
-          throw new Error(`Fiado ${payment.fiadoId.slice(-6)} no esta activo`);
-        }
-
-        const currentSaldo = Number(fiado.saldo);
-        const paymentAmount = Math.min(payment.monto, currentSaldo);
-
-        // Decrement atomico: si dos requests pasan el findFirst con el mismo
-        // currentSaldo, el segundo decrement actualiza el saldo ya reducido
-        // por el primero — sin sobrescritura.
-        await tx.fiado.update({
-          where: { id: payment.fiadoId, tenantId },
-          data: { saldo: { decrement: paymentAmount } },
-        });
-
-        // Re-leer post-decrement para definir status real
-        const updated = await tx.fiado.findFirst({
-          where: { id: payment.fiadoId, tenantId },
-          select: { saldo: true, status: true },
-        });
-        const finalSaldo = updated ? Number(updated.saldo) : 0;
-        const newStatus = finalSaldo <= 0.01 ? "PAGADO" : fiado.status;
-        if (newStatus !== fiado.status) {
-          await tx.fiado.update({
-            where: { id: payment.fiadoId, tenantId },
-            data: { status: newStatus },
-          });
-        }
-
-        // Create cuota record
-        await tx.fiadoCuota.create({
-          data: {
-            fiadoId: payment.fiadoId,
-            monto: paymentAmount,
-            pagadoEn: new Date(),
-            notas: notas || "Cobro masivo",
-          },
-        });
-
-        results.push({
-          fiadoId: payment.fiadoId,
-          montoPagado: paymentAmount,
-          nuevoSaldo: Math.max(0, finalSaldo),
-          status: newStatus,
-          customerId: fiado.customerId,
-        });
-      }
-    });
-
+    const results = await FiadosDB.cobroMasivo(tenantId, payments, notas);
     const totalCobrado = results.reduce((s, r) => s + r.montoPagado, 0);
 
     // Score crediticio fire-and-forget — actualiza por cada cliente cobrado.
@@ -129,6 +69,12 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (e) {
+    if (e instanceof FiadoConflictError) {
+      return NextResponse.json(
+        { error: e.message, code: "FIADO_CONFLICT", retryable: true },
+        { status: 409 },
+      );
+    }
     logger.error("[fiados/cobro-masivo] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Error al procesar el cobro masivo" },

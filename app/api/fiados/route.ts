@@ -145,9 +145,15 @@ export async function GET(req: NextRequest) {
       headers: { "X-Total-Count": String(fiados.length) },
     });
   } catch (e) {
+    // Audit 2026-05-17 P1-2: antes devolvíamos `[] HTTP 200` "para que el
+    // frontend no se rompa" — pero eso mentía al dueño (KPIs en 0 cuando la
+    // DB estaba caída). Ahora devolvemos 503 con retryable:true y el frontend
+    // debe mostrar estado de error con botón "Reintentar".
     logger.error("[fiados] GET error", { err: e instanceof Error ? e.message : String(e) });
-    // Retornar array vacío en vez de 503 para que el frontend no se rompa
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json(
+      { error: "Error al cargar fiados", retryable: true },
+      { status: 503 },
+    );
   }
 }
 

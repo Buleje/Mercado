@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { FiadosDB } from "@/lib/db/fiados.db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -34,47 +34,8 @@ export async function GET(
   const tenantId = auth.tenantId;
 
   try {
-    // Aggregate active fiados
-    // eslint-disable-next-line no-restricted-properties -- aggregation tenant-scoped; migration to lib/db/fiados.db.ts pendiente.
-    const agg = await prisma.fiado.aggregate({
-      where: {
-        tenantId,
-        customerId: safePhone,
-        status: "ACTIVO",
-      },
-      _sum: { saldo: true },
-      _count: true,
-    });
-
-    const montoPendiente = Number(agg._sum.saldo ?? 0);
-    const cantidadFiados = agg._count ?? 0;
-
-    // Find oldest active fiado to calculate days overdue
-    let diasVencido = 0;
-    let hasFiadosVencidos = false;
-
-    if (cantidadFiados > 0) {
-      // eslint-disable-next-line no-restricted-properties -- lookup tenant-scoped; migration pendiente.
-      const oldest = await prisma.fiado.findFirst({
-        where: {
-          tenantId,
-          customerId: safePhone,
-          status: "ACTIVO",
-        },
-        orderBy: { createdAt: "asc" },
-        select: { createdAt: true, fechaVence: true },
-      });
-
-      if (oldest) {
-        const now = new Date();
-        diasVencido = Math.floor(
-          (now.getTime() - oldest.createdAt.getTime()) / (1000 * 60 * 60 * 24)
-        );
-        if (oldest.fechaVence && oldest.fechaVence < now) {
-          hasFiadosVencidos = true;
-        }
-      }
-    }
+    // Audit 2026-05-17 P1-4: migración a FiadosDB.resumenByCustomer (regla #1).
+    const resumen = await FiadosDB.resumenByCustomer(tenantId, safePhone);
 
     enqueueActivityLog({
       action: "leer",
@@ -85,12 +46,8 @@ export async function GET(
       details: { description: `Lectura PII cliente ${safePhone.slice(-4)} desde /api/customers/${safePhone}/fiado-resumen` },
       timestamp: new Date().toISOString(),
     }).catch(() => { /* fire-and-forget */ });
-    return NextResponse.json({
-      montoPendiente,
-      cantidadFiados,
-      diasVencido,
-      hasFiadosVencidos,
-    });
+
+    return NextResponse.json(resumen);
   } catch (e) {
     logger.error("[Fiado Resumen]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json(
