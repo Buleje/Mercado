@@ -119,7 +119,16 @@ export default function MainWithBackKey({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <main id="main-content" key={bumpKey}>
+    // Audit 2026-05-17 02-P2-5: pb-safe-area + spacing del BottomNav fijo.
+    // BottomNav tiene altura ~64px + su propio pb-[env(safe-area-inset-bottom)].
+    // El main debe reservar ese espacio para que el último item no quede
+    // tapado en iPhone con home bar / Android con gesture bar. En desktop
+    // el BottomNav está oculto (sm:hidden) → padding extra es inocuo.
+    <main
+      id="main-content"
+      key={bumpKey}
+      className="pb-[calc(72px+env(safe-area-inset-bottom))] sm:pb-0"
+    >
       {children}
     </main>
   );

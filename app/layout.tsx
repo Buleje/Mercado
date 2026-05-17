@@ -24,6 +24,10 @@ const InstrumentDisplay = Instrument_Serif({
   preload: true,
   weight: ["400"],
   style: ["normal", "italic"],
+  // Audit 2026-05-17 02-P2-7: fallback explícito previene FOIT en
+  // conexiones lentas (Pucallpa 3G). Georgia es el fallback serif más
+  // disponible cross-browser/OS.
+  fallback: ["Georgia", "Cambria", "Times New Roman", "serif"],
 });
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";

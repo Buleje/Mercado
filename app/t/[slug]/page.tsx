@@ -101,7 +101,12 @@ export async function generateMetadata({
     customization.metaDescription ??
     customization.heroSubtitle ??
     `Compra en ${displayName} con delivery rápido. Paga con Yape o efectivo.`;
-  const ogImage = customization.ogImageUrl ?? customization.heroImageUrl ?? undefined;
+  // Audit 2026-05-17 02-P2-4: fallback a /api/og?title=...&subtitle=...
+  // cuando el tenant no tiene OG personalizada. Antes, sin ogImage ni
+  // heroImage, el share en WhatsApp/FB no mostraba preview visual —
+  // muy mala UX en discovery. Ahora siempre hay una OG con 1200×630.
+  const ogFallback = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe"}/api/og?title=${encodeURIComponent(displayName)}&subtitle=${encodeURIComponent("Comprá con delivery rápido en Pucallpa")}`;
+  const ogImage = customization.ogImageUrl ?? customization.heroImageUrl ?? ogFallback;
 
   return {
     title: { absolute: title },

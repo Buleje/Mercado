@@ -192,6 +192,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
     marketplacePages.push(...storePages);
 
+    // Audit 2026-05-17 02-P2-3: incluir páginas /t/[slug] (storefronts
+    // white-label de tenants) en sitemap root. Antes solo se exponían
+    // /marketplace/${slug} y los tenants white-label quedaban fuera de
+    // Google. Reusamos la query de stores publicadas porque cada Store
+    // tiene un Tenant asociado (slug es la misma identidad).
+    const tenantPages = stores.map((s) => ({
+      url: `${baseUrl}/t/${s.slug}`,
+      lastModified: s.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+    marketplacePages.push(...tenantPages);
+
     // Fetch all active store products from all published stores
     const storeIds = stores.map((s) => s.id);
     if (storeIds.length > 0) {

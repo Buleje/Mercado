@@ -24,7 +24,8 @@ export async function GET(
   try {
     const { orderId } = await params;
 
-    // 1. Validar order existe
+    // 1. Validar order existe.
+    // eslint-disable-next-line no-restricted-properties -- Tracking público read-only; tenantId se valida vía session vs order.tenantId más abajo.
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       select: { id: true, tenantId: true, customerPhone: true },
@@ -39,8 +40,10 @@ export async function GET(
     // 2. Autorizar caller
     const admin = await tryAdmin(req);
     let authorized = false;
+    let viewerRole: "admin" | "customer" = "customer";
     if (admin && admin.tenantId === order.tenantId) {
       authorized = true;
+      viewerRole = "admin";
     } else {
       const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
       if (sessionToken) {
@@ -49,6 +52,7 @@ export async function GET(
         const orderPhone = (order.customerPhone ?? "").replace(/\D/g, "");
         if (sessionPhone && orderPhone && sessionPhone === orderPhone) {
           authorized = true;
+          viewerRole = "customer";
         }
       }
     }
@@ -56,6 +60,7 @@ export async function GET(
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
+    // eslint-disable-next-line no-restricted-properties -- Tracking público read-only; tenant ya autorizado arriba contra order.tenantId.
     const assignment = await prisma.deliveryAssignment.findUnique({
       where: { orderId },
       include: {
@@ -85,10 +90,21 @@ export async function GET(
       // notes no es JSON válido — ignorar
     }
 
+    // Audit 2026-05-17 03-P2-2: enmascarar partner.phone para customer.
+    // Ley 29733 PE — phone del rider es PII; cliente final no necesita el
+    // número exacto (recibe avisos por WhatsApp del rider iniciados desde
+    // el sistema). Si el customer comparte el link del tracking, no debe
+    // exponer el contacto directo. Admin sigue viendo full para soporte.
+    const partnerPhone = viewerRole === "admin"
+      ? assignment.partner.phone
+      : (assignment.partner.phone
+          ? `***-***-${assignment.partner.phone.replace(/\D/g, "").slice(-3)}`
+          : null);
+
     return NextResponse.json({
       status: assignment.status,
       partnerName: assignment.partner.name,
-      partnerPhone: assignment.partner.phone,
+      partnerPhone,
       fee: assignment.fee,
       pickedUpAt: assignment.pickedUpAt,
       deliveredAt: assignment.deliveredAt,

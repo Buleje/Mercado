@@ -138,7 +138,10 @@ async function getTopStores(): Promise<TopStore[]> {
 
 // ── JSON-LD B2C marketplace ──────────────────────────────────────────────────
 async function BulejeJsonLd() {
-  const { storeCount } = await getMarketplaceStats();
+  // Audit 2026-05-17 02-P2-2: storeCount ya no se usa aquí (aggregateRating
+  // removido por falta de reviewCount real). Mantener la función por si
+  // futuras Schema.org entries necesitan stats.
+  await getMarketplaceStats();
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -151,13 +154,11 @@ async function BulejeJsonLd() {
       target: "https://www.buleje.pe/tiendas?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.8",
-      reviewCount: Math.max(storeCount, 1).toString(),
-      bestRating: "5",
-      worstRating: "1",
-    },
+    // Audit 2026-05-17 02-P2-2: AggregateRating exige reviewCount con
+    // reseñas reales, no conteo de tiendas. Emitir un rating sintético es
+    // rich-snippet inválido en GSC. Hasta que tengamos un endpoint que
+    // agregue Review reales del marketplace, omitimos aggregateRating del
+    // WebSite schema. Se reintroducirá con datos verídicos.
     provider: {
       "@type": "Organization",
       name: "Buleje",

@@ -20,6 +20,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
+        // Audit 2026-05-17 02-P2-6: removido `/_next/` del disallow.
+        // Googlebot necesita cargar chunks JS para renderizar y indexar
+        // contenido client-side; bloquearlos impedía el render server-side
+        // de paths que dependen del bundle. Google ignora `/_next/static/`
+        // por defecto al rastrear, así que la entrada era inocua pero
+        // redundante y podía confundir a auditores SEO.
         disallow: [
           "/api/",
           "/admin/",
@@ -27,7 +33,6 @@ export default function robots(): MetadataRoute.Robots {
           "/checkout/",
           "/cuenta/",
           "/marketplace/mi-cuenta/",
-          "/_next/",
         ],
       },
       {
