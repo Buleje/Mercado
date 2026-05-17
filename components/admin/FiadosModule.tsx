@@ -311,10 +311,10 @@ export default function FiadosModule() {
 
   // Conteos para badges de tabs (se actualizan en vivo con los filtros).
   const vencidosTotales = fiados.filter(f => f.status === "VENCIDO" || (f.fechaVence && new Date(f.fechaVence) < new Date() && f.status === "ACTIVO")).length;
-  const TABS: Array<{ key: FiadoTab; label: string; description: string; badge?: number }> = [
-    { key: "resumen", label: "Resumen", description: "KPIs, proyección y banners" },
-    { key: "deudores", label: "Deudores", description: "Tabla con buscador", badge: fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length },
-    { key: "analisis", label: "Análisis", description: "Gráficos, ranking, calendario", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
+  const TABS: Array<{ key: FiadoTab; label: string; badge?: number }> = [
+    { key: "resumen", label: "Resumen" },
+    { key: "deudores", label: "Deudores", badge: fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length },
+    { key: "analisis", label: "Análisis", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
   ];
 
   // IDEA 1: Libreta Digital — Vista que replica la libreta de fiados de papel.
@@ -908,7 +908,7 @@ export default function FiadosModule() {
       <nav
         role="tablist"
         aria-label="Vistas del módulo Fiados"
-        className="flex flex-wrap gap-1 border-b border-[var(--rule-base)] -mb-2"
+        className="flex flex-wrap gap-1 border-b border-[var(--rule-base)]"
       >
         {TABS.map((t) => {
           const isActive = activeTab === t.key;
@@ -939,17 +939,16 @@ export default function FiadosModule() {
                   {t.badge}
                 </span>
               )}
-              <span className="hidden md:inline text-xs font-normal text-[var(--text-tertiary)]">
-                · {t.description}
-              </span>
             </button>
           );
         })}
       </nav>
 
       {/* Fila única — Buscador + filtros + contador + acciones (compacto, 1 row).
-          Solo visible en tab Deudores (los filtros afectan la tabla). */}
-      {activeTab === "deudores" && <div className="flex flex-wrap items-center gap-2">
+          Solo visible en tab Deudores (los filtros afectan la tabla).
+          Audit 2026-05-17 (UX): pt-2 para respiro extra entre el border del
+          tab nav y los filtros (antes pegados sin separación visual). */}
+      {activeTab === "deudores" && <div className="flex flex-wrap items-center gap-2 pt-2">
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
           <input
