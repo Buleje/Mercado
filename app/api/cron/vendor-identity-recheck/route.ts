@@ -204,14 +204,33 @@ export const GET = withCronHealth(
       alertSample: alerts.slice(0, 5).map((a) => `${a.kind}:${a.tenantSlug}`),
     });
 
-    return NextResponse.json({
-      ok: true,
-      processedAt: new Date().toISOString(),
+    // Persistir summary global para el dashboard /superadmin/vendor-health.
+    // TTL 25h cubre con margen el cron diario (07:00 UTC daily).
+    const summary: VendorHealthSummary = {
+      lastRunAt: new Date().toISOString(),
       total: vendors.length,
       checked,
       changed,
       errors,
       alerts,
-    });
+    };
+    cacheStore.set("vendor-health:summary", summary, 25 * 60 * 60);
+
+    return NextResponse.json({ ok: true, processedAt: summary.lastRunAt, ...summary });
   },
 );
+
+/** Shape persistido en cacheStore para el dashboard /superadmin/vendor-health. */
+export interface VendorHealthSummary {
+  lastRunAt: string;
+  total: number;
+  checked: number;
+  changed: number;
+  errors: number;
+  alerts: Array<{
+    vendorId: string;
+    tenantSlug: string | null;
+    kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
+    detail: string;
+  }>;
+}
