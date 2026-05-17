@@ -247,19 +247,22 @@ function AdminPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [hasSubSidebar, subSidebarTabs, tab, navigateTab]);
 
-  if (!authReady) {
-    return <LoadingState variant="fullscreen" message="" />;
-  }
-
   // Brandon 2026-05-16 (Fase 3 perf): estabilizar props del tabRouter con
   // useMemo. Antes el objeto inline se recreaba en cada render de AdminPage
   // (cualquier cambio de state) rompiendo el memo(AdminMainContent) y
   // disparando re-render fantasma del TabRouter + módulo activo.
   // Ahora identity-stable: solo cambia cuando alguna dep real cambia.
+  // IMPORTANTE: este hook DEBE ir ANTES del early return `if (!authReady)`
+  // para no violar rules of hooks (los renders pre/post auth ejecutarían
+  // counts distintos de hooks).
   const tabRouterProps = useMemo(
     () => ({ storeMode, onModeChange: setStoreModeState, visibleCategories, onSaveCategoryOrder: saveCategoryOrder, onboarding }),
     [storeMode, setStoreModeState, visibleCategories, saveCategoryOrder, onboarding],
   );
+
+  if (!authReady) {
+    return <LoadingState variant="fullscreen" message="" />;
+  }
 
   return (
     <TrialExpiredGuard>

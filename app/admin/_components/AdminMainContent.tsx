@@ -70,7 +70,15 @@ function AdminMainContentInner({
           monta el tab nuevo INMEDIATAMENTE sin esperar el exit del previo.
           Transición simplificada a sólo opacity (sin y/spring) para que no
           bloquee el primer paint del módulo nuevo. Ganancia ~160ms por click.
-          NOTE: no usar `filter` — crea containing block que rompe modales fixed. */}
+          NOTE: no usar `filter` — crea containing block que rompe modales fixed.
+
+          Fase 4 (ADR-113 TabMultiplexer keep-alive) DEFERIDA: la primera
+          implementación causaba "Rendered more hooks" errors porque varios
+          módulos del admin tienen hooks condicionales (early returns) que
+          no toleran que React reconcilie hermanos con types distintos.
+          Requiere primero auditar y normalizar el patrón de hooks en los
+          ~45 módulos del TabRouter. Ver components/admin/_components/TabMultiplexer.tsx
+          para el componente listo (sin usar) con la lógica LRU. */}
       <AnimatePresence mode="popLayout" initial={false}>
         <m.div
           key={tab}
