@@ -20,6 +20,8 @@ interface VendorHealthSummary {
   errors: number;
   /** Notifications nuevas creadas (dedup 24h) — opcional para summaries viejos */
   notifiedCount?: number;
+  /** Mensajes WhatsApp enviados al vendor — solo cuando notification.created=true */
+  waSentCount?: number;
   alerts: Array<{
     vendorId: string;
     tenantSlug: string | null;

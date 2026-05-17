@@ -54,9 +54,10 @@ vi.mock("@/lib/integrations/reniec", () => ({
   verifyDni: mockVerifyDni,
 }));
 
-const { mockFindMany, mockNotifCreateOrReuse } = vi.hoisted(() => ({
+const { mockFindMany, mockNotifCreateOrReuse, mockSendVendorWa } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
   mockNotifCreateOrReuse: vi.fn(async () => ({ id: "n-mock", created: true })),
+  mockSendVendorWa: vi.fn(async () => ({ sent: true, queued: true })),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -69,6 +70,10 @@ vi.mock("@/lib/db/notification-center.db", () => ({
   NotificationCenterDB: {
     createOrReuse: mockNotifCreateOrReuse,
   },
+}));
+
+vi.mock("@/lib/notifications/vendor-identity-alert", () => ({
+  sendVendorIdentityWhatsApp: mockSendVendorWa,
 }));
 
 import { GET } from "@/app/api/cron/vendor-identity-recheck/route";
@@ -366,6 +371,100 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
 
     await GET(makeReq());
     expect(mockNotifCreateOrReuse).not.toHaveBeenCalled();
+  });
+
+  it("WA enviado SOLO cuando notification.created=true (idempotencia)", async () => {
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "v-wa",
+        ruc: "20888888888",
+        contactDni: "88888888",
+        contactName: "X",
+        contactPhone: "51987111111",
+        businessName: "WA Vendor",
+        tenantId: "t-wa",
+        tenantSlug: "wa",
+      },
+    ]);
+    mockVerifyRuc.mockResolvedValueOnce({
+      ok: false,
+      source: "apisperu",
+      reason: "not_found",
+    });
+    mockIsInvoiceable.mockReturnValueOnce(false);
+    mockNotifCreateOrReuse.mockResolvedValueOnce({ id: "n1", created: true });
+
+    const r = await GET(makeReq());
+    const body = await r.json();
+
+    expect(mockSendVendorWa).toHaveBeenCalledTimes(1);
+    const waCall = (
+      mockSendVendorWa.mock.calls as unknown as Array<
+        [{ tenantId: string; vendorId: string; kind: string; contactPhone: string; rucLast4: string }]
+      >
+    )[0]?.[0];
+    expect(waCall).toBeDefined();
+    expect(waCall.tenantId).toBe("t-wa");
+    expect(waCall.vendorId).toBe("v-wa");
+    expect(waCall.kind).toBe("ruc-not-found");
+    expect(waCall.contactPhone).toBe("51987111111");
+    expect(waCall.rucLast4).toBe("8888");
+    expect(body.waSentCount).toBe(1);
+  });
+
+  it("WA NO enviado cuando notification se reusa (created=false)", async () => {
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "v-reuse",
+        ruc: "20999000111",
+        contactDni: null,
+        contactName: "X",
+        contactPhone: "51987222222",
+        businessName: "Reuse Vendor",
+        tenantId: "t-reuse",
+        tenantSlug: "reuse",
+      },
+    ]);
+    mockVerifyRuc.mockResolvedValueOnce({
+      ok: false,
+      source: "apisperu",
+      reason: "not_found",
+    });
+    mockIsInvoiceable.mockReturnValueOnce(false);
+    // Simula que ya existía notification → createOrReuse retorna created=false
+    mockNotifCreateOrReuse.mockResolvedValueOnce({ id: "existing", created: false });
+
+    const r = await GET(makeReq());
+    const body = await r.json();
+
+    expect(mockSendVendorWa).not.toHaveBeenCalled();
+    expect(body.notifiedCount).toBe(0);
+    expect(body.waSentCount).toBe(0);
+  });
+
+  it("vendor sin contactPhone → no intenta enviar WA aunque notification se cree", async () => {
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "v-no-phone",
+        ruc: "20111000222",
+        contactDni: null,
+        contactName: "X",
+        contactPhone: null,
+        businessName: "Sin Phone",
+        tenantId: "t-no-phone",
+        tenantSlug: "no-phone",
+      },
+    ]);
+    mockVerifyRuc.mockResolvedValueOnce({
+      ok: false,
+      source: "apisperu",
+      reason: "not_found",
+    });
+    mockIsInvoiceable.mockReturnValueOnce(false);
+    mockNotifCreateOrReuse.mockResolvedValueOnce({ id: "n", created: true });
+
+    await GET(makeReq());
+    expect(mockSendVendorWa).not.toHaveBeenCalled();
   });
 
   it("error en verifyRuc → contabiliza errors, no bloquea siguientes", async () => {

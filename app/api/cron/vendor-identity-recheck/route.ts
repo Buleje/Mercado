@@ -30,6 +30,7 @@ import { cacheStore } from "@/lib/cache";
 import { verifyRuc, isInvoiceable, type SunatRucResult } from "@/lib/integrations/sunat-ruc";
 import { verifyDni, type ReniecResult } from "@/lib/integrations/reniec";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
+import { sendVendorIdentityWhatsApp } from "@/lib/notifications/vendor-identity-alert";
 
 /** Snapshot persistido por vendor para detectar cambios entre runs. */
 interface VendorSnapshot {
@@ -67,6 +68,7 @@ export const GET = withCronHealth(
         ruc: true,
         contactDni: true,
         contactName: true,
+        contactPhone: true,
         businessName: true,
         tenantId: true,
         tenantSlug: true,
@@ -79,6 +81,7 @@ export const GET = withCronHealth(
     let changed = 0;
     let errors = 0;
     let notifiedCount = 0;
+    let waSentCount = 0;
     const alerts: Array<{
       vendorId: string;
       tenantSlug: string | null;
@@ -130,8 +133,10 @@ export const GET = withCronHealth(
 
       // Helper local: pushea alert al array Y crea notification persistente
       // en el panel del admin del tenant (idempotente — no duplica si ya
-      // existe una sin leer en las últimas 24h).
+      // existe una sin leer en las últimas 24h). Si la notification se creó
+      // NUEVA (no reuse), además envía WA al contactPhone del vendor.
       let notificationsCreated = 0;
+      let waSentDelta = 0;
       const emitAlert = async (
         kind: "ruc-changed" | "ruc-not-found" | "dni-not-found",
         severity: "HIGH" | "MEDIUM",
@@ -165,7 +170,32 @@ export const GET = withCronHealth(
             entityId: vendor.id,
             dedupWindowHours: 24,
           });
-          if (result.created) notificationsCreated++;
+          if (result.created) {
+            notificationsCreated++;
+            // Audit 2026-05-17 TD-058 capa 6: solo enviar WhatsApp al vendor
+            // si la notification se creó NUEVA. Si fue reusada (created=false)
+            // significa que en runs anteriores ya se notificó dentro de la
+            // ventana 24h → no spamear.
+            if (vendor.contactPhone) {
+              try {
+                const waRes = await sendVendorIdentityWhatsApp({
+                  tenantId: vendor.tenantId,
+                  vendorId: vendor.id,
+                  businessName: vendor.businessName,
+                  contactPhone: vendor.contactPhone,
+                  kind,
+                  rucLast4: vendor.ruc.slice(-4),
+                });
+                if (waRes.sent) waSentDelta++;
+              } catch (err) {
+                logger.warn("[cron/vendor-identity-recheck] WA send failed", {
+                  vendorId: vendor.id,
+                  tenantId: vendor.tenantId,
+                  err: err instanceof Error ? err.message : String(err),
+                });
+              }
+            }
+          }
         } catch (err) {
           logger.warn("[cron/vendor-identity-recheck] notification create failed", {
             vendorId: vendor.id,
@@ -212,10 +242,10 @@ export const GET = withCronHealth(
         }
       }
 
-      // Track notificationsCreated count para reportar en summary
-      if (notificationsCreated > 0) {
-        notifiedCount += notificationsCreated;
-      }
+
+      // Track counts for summary reporting.
+      if (notificationsCreated > 0) notifiedCount += notificationsCreated;
+      if (waSentDelta > 0) waSentCount += waSentDelta;
 
       cacheStore.set(snapKey, snapshot, SNAPSHOT_TTL_SEC);
     }
@@ -226,6 +256,7 @@ export const GET = withCronHealth(
       changed,
       errors,
       notifiedCount,
+      waSentCount,
       alertSample: alerts.slice(0, 5).map((a) => `${a.kind}:${a.tenantSlug}`),
     });
 
@@ -238,6 +269,7 @@ export const GET = withCronHealth(
       changed,
       errors,
       notifiedCount,
+      waSentCount,
       alerts,
     };
     cacheStore.set("vendor-health:summary", summary, 25 * 60 * 60);
@@ -255,6 +287,8 @@ export interface VendorHealthSummary {
   errors: number;
   /** Total de notifications NUEVAS creadas en este run (dedup idempotente) */
   notifiedCount: number;
+  /** Total de mensajes WhatsApp enviados al vendor (mismo gate idempotente) */
+  waSentCount: number;
   alerts: Array<{
     vendorId: string;
     tenantSlug: string | null;
