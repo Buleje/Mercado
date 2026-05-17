@@ -136,11 +136,52 @@ export const PayablesDB = {
 // ── Expenses DB ───────────────────────────────────────────────────────────────
 
 export const ExpensesDB = {
-  async getAll(tenantId: string): Promise<DbExpense[]> {
-    return (await prisma.expense.findMany({ where: { tenantId }, orderBy: { date: "desc" } })).map(mapExpense);
+  async getAll(tenantId: string, filters?: { recurring?: boolean; category?: string }): Promise<DbExpense[]> {
+    const where: Record<string, unknown> = { tenantId };
+    if (filters?.recurring !== undefined) where.recurring = filters.recurring;
+    if (filters?.category) where.category = filters.category;
+    return (await prisma.expense.findMany({ where, orderBy: { date: "desc" } })).map(mapExpense);
   },
   async getByDateRange(tenantId: string, from: Date, to: Date): Promise<DbExpense[]> {
     return (await prisma.expense.findMany({ where: { tenantId, date: { gte: from, lte: to } }, orderBy: { date: "desc" } })).map(mapExpense);
+  },
+  /**
+   * Templates de gastos recurrentes — catálogo del "Punto de Compra".
+   * Audit 2026-05-17 (feature compras): los Expense con recurring=true
+   * actúan como plantillas en el catálogo. Click → crea Expense nuevo
+   * con recurring=false (gasto real ejecutado).
+   */
+  async getRecurringTemplates(tenantId: string): Promise<DbExpense[]> {
+    return (await prisma.expense.findMany({
+      where: { tenantId, recurring: true },
+      orderBy: [{ category: "asc" }, { description: "asc" }],
+    })).map(mapExpense);
+  },
+  /**
+   * Crea un gasto a partir de un template recurring. El template queda
+   * intacto (sigue recurring=true); el nuevo gasto es no-recurring
+   * (transacción real). Permite override de amount/description/date.
+   */
+  async addFromTemplate(
+    tenantId: string,
+    templateId: string,
+    overrides?: { amount?: number; description?: string; date?: string },
+  ): Promise<DbExpense | null> {
+    const tpl = await prisma.expense.findFirst({
+      where: { id: templateId, tenantId, recurring: true },
+    });
+    if (!tpl) return null;
+    const row = await prisma.expense.create({
+      data: {
+        tenantId,
+        category: tpl.category,
+        description: overrides?.description ?? tpl.description,
+        amount: overrides?.amount ?? toNumOrZero(tpl.amount),
+        date: overrides?.date ? new Date(overrides.date) : new Date(),
+        recurring: false,
+      },
+    });
+    return mapExpense(row);
   },
   async add(tenantId: string, data: Omit<DbExpense, "id" | "createdAt">): Promise<DbExpense> {
     const row = await prisma.expense.create({ data: { category: data.category, description: data.description, amount: data.amount, date: new Date(data.date), recurring: data.recurring, tenantId } });
@@ -153,5 +194,86 @@ export const ExpensesDB = {
     const groups = await prisma.expense.groupBy({ by: ["category"], where: { tenantId }, _sum: { amount: true }, _count: true, orderBy: { _sum: { amount: "desc" } } });
     // TD-018: g._sum.amount es Decimal | null
     return groups.map(g => ({ category: g.category, total: toNumOrZero(g._sum.amount), count: g._count }));
+  },
+  /**
+   * Historial de gastos agregado de TODOS los módulos:
+   *  - Expense table (gastos manuales)
+   *  - PurchaseOrder con status "recibido" (compras a proveedores)
+   * Audit 2026-05-17 (feature compras): vista unificada por mes.
+   */
+  async getHistorialUnificado(
+    tenantId: string,
+    filters: { from?: Date; to?: Date; source?: "expense" | "purchase" | "all" },
+  ): Promise<Array<{
+    id: string;
+    source: "expense" | "purchase";
+    fecha: string;
+    category: string;
+    description: string;
+    amount: number;
+    recurring: boolean;
+    supplierName?: string;
+  }>> {
+    const source = filters.source ?? "all";
+    const dateFilter: Record<string, Date> = {};
+    if (filters.from) dateFilter.gte = filters.from;
+    if (filters.to) dateFilter.lte = filters.to;
+
+    const needExpenses = source === "all" || source === "expense";
+    const needPurchases = source === "all" || source === "purchase";
+
+    const [expenses, purchases] = await Promise.all([
+      needExpenses
+        ? prisma.expense.findMany({
+            where: {
+              tenantId,
+              recurring: false, // templates no cuentan como gastos ejecutados
+              ...(Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {}),
+            },
+            orderBy: { date: "desc" },
+          })
+        : Promise.resolve([]),
+      needPurchases
+        ? prisma.purchaseOrder.findMany({
+            where: {
+              tenantId,
+              // Audit 2026-05-17: solo OCs concretadas. Enum PurchaseStatus es
+              // (pendiente|recibido|parcial|cancelado|auto_generated). "recibido"
+              // y "parcial" cuentan como gasto real (algo de mercadería entró).
+              status: { in: ["recibido", "parcial"] },
+              ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+            },
+            select: {
+              id: true, total: true, supplierName: true, status: true,
+              notes: true, createdAt: true,
+            },
+            orderBy: { createdAt: "desc" },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const items = [
+      ...expenses.map((e) => ({
+        id: `exp-${e.id}`,
+        source: "expense" as const,
+        fecha: e.date.toISOString(),
+        category: e.category,
+        description: e.description ?? "",
+        amount: toNumOrZero(e.amount),
+        recurring: e.recurring,
+      })),
+      ...purchases.map((p) => ({
+        id: `oc-${p.id}`,
+        source: "purchase" as const,
+        fecha: p.createdAt.toISOString(),
+        category: "Compras a proveedor",
+        description: p.notes ?? `OC ${p.id.slice(-6)}`,
+        amount: toNumOrZero(p.total),
+        recurring: false,
+        supplierName: p.supplierName,
+      })),
+    ];
+
+    return items.sort((a, b) => Date.parse(b.fecha) - Date.parse(a.fecha));
   },
 };

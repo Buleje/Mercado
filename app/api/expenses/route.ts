@@ -13,10 +13,19 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const from = searchParams.get("from");
     const to = searchParams.get("to");
+    const recurring = searchParams.get("recurring");
+    const category = searchParams.get("category");
+
+    // Audit 2026-05-17 (feature compras): ?recurring=true devuelve el catálogo
+    // de gastos recurrentes que se muestran como cards en el Punto de Compra.
     if (from && to) {
       return NextResponse.json(await ExpensesDB.getByDateRange(auth.tenantId, new Date(from), new Date(to)));
     }
-    return NextResponse.json(await ExpensesDB.getAll(auth.tenantId));
+    const filters: { recurring?: boolean; category?: string } = {};
+    if (recurring === "true") filters.recurring = true;
+    else if (recurring === "false") filters.recurring = false;
+    if (category) filters.category = category;
+    return NextResponse.json(await ExpensesDB.getAll(auth.tenantId, filters));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });

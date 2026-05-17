@@ -7,6 +7,7 @@ import {
   Truck, BarChart3, PackagePlus,
   ShoppingCart, ShoppingBasket, Clock, DollarSign, Building2, AlertTriangle, CreditCard,
   CheckCircle2, Maximize2, X as XIcon, RotateCcw,
+  Receipt,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
@@ -81,6 +82,7 @@ const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { 
 const PuntoCompraView = dynamic(() => import("@/components/admin/pos/PuntoCompraView"), { loading: S });
 const SupplierComparator = dynamic(() => import("@/components/admin/SupplierComparator"), { ssr: false, loading: S });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: S });
+const HistorialGastosTab = dynamic(() => import("@/components/admin/compras/HistorialGastosTab"), { loading: S });
 
 const MODULE_ID = "compras";
 
@@ -88,6 +90,7 @@ const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '
 
 const TABS: AdminTab[] = [
   { id: "punto-compra", label: "Punto de Compra", icon: ShoppingBasket },
+  { id: "historial-gastos", label: "Historial de Gastos", icon: Receipt },
   { id: "sugerencias", label: "Sugerencias", icon: Lightbulb },
   { id: "ordenes-compra", label: "Ordenes", icon: ClipboardList },
   { id: "proveedores", label: "Proveedores", icon: Users },
@@ -619,6 +622,7 @@ export default function ComprasModule() {
         moduleId="compras"
       >
         {sub === "punto-compra" && <PuntoCompraView />}
+        {sub === "historial-gastos" && <HistorialGastosTab />}
         {sub === "sugerencias" && <SugerenciasCompraTab />}
         {sub === "ordenes-compra" && <PurchaseOrdersTab />}
         {sub === "proveedores" && <SuppliersTab />}

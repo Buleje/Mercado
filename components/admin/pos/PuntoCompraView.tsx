@@ -109,6 +109,40 @@ export default function PuntoCompraView() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy] = useState<SortBy>("stock");
   const [soloReponer, setSoloReponer] = useState(false);
+
+  // Audit 2026-05-17 (feature compras Brandon):
+  //  - showInventario: oculta los productos del inventario por defecto.
+  //    Solo se ven al habilitar "Usar artículos de mi inventario".
+  //    Persistencia localStorage para no perder preferencia.
+  //  - expenseCatalog: gastos recurrentes (Expense.recurring=true) que se
+  //    muestran como cards de "Artículos para Comprar" (alquiler, gasolina,
+  //    internet, etc.). Click → ejecuta gasto real via /from-template.
+  const [showInventario, setShowInventario] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("poc-show-inventario") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("poc-show-inventario", showInventario ? "1" : "0"); } catch { /* quota */ }
+  }, [showInventario]);
+
+  type ExpenseTemplate = {
+    id: string;
+    category: string;
+    description: string;
+    amount: number;
+    recurring: boolean;
+  };
+  const [expenseCatalog, setExpenseCatalog] = useState<ExpenseTemplate[]>([]);
+  const [expenseCatalogLoading, setExpenseCatalogLoading] = useState(true);
+  const [showNewExpense, setShowNewExpense] = useState(false);
+  const [newExpenseForm, setNewExpenseForm] = useState({
+    category: "Servicios",
+    description: "",
+    amount: "",
+  });
+  const [expenseError, setExpenseError] = useState<string | null>(null);
+  const [creatingExpense, setCreatingExpense] = useState(false);
+  const [executingTemplateId, setExecutingTemplateId] = useState<string | null>(null);
   const [showIGV, setShowIGV] = useState(false);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -250,6 +284,91 @@ export default function PuntoCompraView() {
       // Silencioso — keep cache
     }
   }, []);
+
+  // ── Fetch catálogo de gastos recurrentes (audit 2026-05-17) ───────────────────
+  const fetchExpenseCatalog = useCallback(async () => {
+    setExpenseCatalogLoading(true);
+    try {
+      const res = await fetch("/api/expenses?recurring=true");
+      if (res.ok) {
+        const data = await res.json();
+        setExpenseCatalog(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.warn("[PuntoCompraView] expense catalog fetch failed", err);
+    } finally {
+      setExpenseCatalogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchExpenseCatalog(); }, [fetchExpenseCatalog]);
+
+  // Ejecuta un gasto a partir de un template recurring
+  const executeExpenseFromTemplate = useCallback(async (template: ExpenseTemplate) => {
+    if (executingTemplateId) return;
+    setExecutingTemplateId(template.id);
+    try {
+      const { csrfHeaders } = await import("@/lib/csrf-client");
+      const res = await fetch(`/api/expenses/from-template/${template.id}`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        playDing();
+        setToastMsg(`Gasto registrado: ${template.description || template.category} · S/${template.amount.toFixed(2)}`);
+        setTimeout(() => setToastMsg(null), 3000);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setExpenseError(err.error || "Error al registrar gasto");
+        setTimeout(() => setExpenseError(null), 4000);
+      }
+    } catch (err) {
+      console.warn("[PuntoCompraView] from-template failed", err);
+      setExpenseError("Error de conexión");
+      setTimeout(() => setExpenseError(null), 4000);
+    } finally {
+      setExecutingTemplateId(null);
+    }
+  }, [executingTemplateId, playDing]);
+
+  // Crear nuevo template de gasto recurrente
+  const handleCreateExpenseTemplate = useCallback(async () => {
+    if (creatingExpense) return;
+    const amount = Number(newExpenseForm.amount);
+    if (!newExpenseForm.description.trim() || !amount || amount <= 0) {
+      setExpenseError("Completá descripción y monto válido");
+      return;
+    }
+    setCreatingExpense(true);
+    setExpenseError(null);
+    try {
+      const { csrfHeaders } = await import("@/lib/csrf-client");
+      const res = await fetch("/api/expenses", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          category: newExpenseForm.category,
+          description: newExpenseForm.description.trim(),
+          amount,
+          recurring: true, // template del catálogo
+        }),
+      });
+      if (res.ok) {
+        setShowNewExpense(false);
+        setNewExpenseForm({ category: "Servicios", description: "", amount: "" });
+        fetchExpenseCatalog();
+        playDing();
+      } else {
+        setExpenseError("No se pudo crear el gasto recurrente");
+      }
+    } catch (err) {
+      console.warn("[PuntoCompraView] create expense template failed", err);
+      setExpenseError("Error de conexión");
+    } finally {
+      setCreatingExpense(false);
+    }
+  }, [creatingExpense, newExpenseForm, fetchExpenseCatalog, playDing]);
 
   // ── Fetch suppliers (stale-while-revalidate, TTL 30min) ──────────────────────
   const fetchSuppliers = useCallback(async () => {
@@ -799,8 +918,190 @@ export default function PuntoCompraView() {
         </select>
       </div>
 
-      {/* Pills de categorías */}
-      <div
+      {/* ════════════════════════════════════════════════════════════════════
+          Audit 2026-05-17 (feature Brandon): Artículos para Comprar (gastos
+          recurrentes) + toggle "Mostrar inventario".
+          - Catálogo SIEMPRE visible: gastos recurrentes (alquiler, gasolina, etc.)
+          - Productos del inventario solo si toggle ON (default OFF)
+          ════════════════════════════════════════════════════════════════════ */}
+
+      {/* Catálogo de gastos recurrentes */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 mb-3">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div>
+            <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+              <Tag className="h-4 w-4 text-[var(--data-warning-500)]" />
+              Artículos para Comprar
+            </p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Gastos recurrentes del negocio (alquiler, servicios, transporte). Click para registrar uno.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowNewExpense(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nuevo gasto recurrente
+          </button>
+        </div>
+        {expenseCatalogLoading ? (
+          <div className="text-center py-6 text-xs text-[var(--text-tertiary)]">Cargando catálogo...</div>
+        ) : expenseCatalog.length === 0 ? (
+          <div className="text-center py-6">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Catálogo vacío</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-md mx-auto">
+              Creá gastos recurrentes (alquiler, gasolina, internet) y aparecerán acá como cards para registrar rápido.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+            {expenseCatalog.map((tpl) => {
+              const isExecuting = executingTemplateId === tpl.id;
+              return (
+                <button
+                  key={tpl.id}
+                  onClick={() => executeExpenseFromTemplate(tpl)}
+                  disabled={isExecuting}
+                  className={cn(
+                    "rounded-lg border border-[var(--rule-soft)] p-3 text-left bg-white dark:bg-[var(--color-card)] hover:shadow-[var(--shadow-sm)] hover:border-[var(--data-warning-500)] transition-all disabled:opacity-50",
+                    isExecuting && "ring-2 ring-[var(--data-warning-500)]",
+                  )}
+                >
+                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">
+                    {tpl.category}
+                  </p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)] mt-0.5 line-clamp-2 min-h-[2.5em]">
+                    {tpl.description || "(sin descripción)"}
+                  </p>
+                  <p className="text-base font-extrabold text-[var(--data-warning-500)] tabular-nums mt-1.5">
+                    S/{tpl.amount.toFixed(2)}
+                  </p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
+                    {isExecuting ? "Registrando..." : "Click para registrar"}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {expenseError && (
+          <div className="mt-3 p-2 rounded-md bg-[var(--data-error-50)] border border-[var(--data-error-500)]/40 text-xs font-semibold text-[var(--data-error-500)]">
+            {expenseError}
+          </div>
+        )}
+      </div>
+
+      {/* Modal nuevo template de gasto */}
+      {showNewExpense && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowNewExpense(false); }}
+        >
+          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl shadow-2xl p-5 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-base font-bold text-[var(--text-primary)]">Nuevo gasto recurrente</p>
+              <button onClick={() => setShowNewExpense(false)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)]">
+                <XIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)]">Categoría</label>
+                <select
+                  value={newExpenseForm.category}
+                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, category: e.target.value })}
+                  className="mt-1 w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm"
+                >
+                  <option>Alquiler</option>
+                  <option>Servicios</option>
+                  <option>Personal</option>
+                  <option>Transporte</option>
+                  <option>Limpieza</option>
+                  <option>Marketing</option>
+                  <option>Mantenimiento</option>
+                  <option>Otros</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)]">Descripción</label>
+                <input
+                  type="text"
+                  value={newExpenseForm.description}
+                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, description: e.target.value })}
+                  placeholder="Ej. Alquiler local, Recarga celular Movistar"
+                  className="mt-1 w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[var(--text-secondary)]">Monto sugerido (S/)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.10"
+                  value={newExpenseForm.amount}
+                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, amount: e.target.value })}
+                  placeholder="0.00"
+                  className="mt-1 w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm tabular-nums"
+                />
+              </div>
+              {expenseError && (
+                <p className="text-xs font-semibold text-[var(--data-error-500)]">{expenseError}</p>
+              )}
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setShowNewExpense(false)}
+                  className="flex-1 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreateExpenseTemplate}
+                  disabled={creatingExpense}
+                  className="flex-1 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50"
+                >
+                  {creatingExpense ? "Guardando..." : "Guardar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toggle "Mostrar inventario" */}
+      <div className="flex items-center justify-between mb-3 p-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)]">
+        <div>
+          <p className="text-sm font-bold text-[var(--text-primary)]">
+            Usar artículos de mi inventario
+          </p>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+            {showInventario
+              ? "Mostrando productos del inventario abajo. Apagá para enfocarte solo en gastos."
+              : "Productos del inventario ocultos. Encendé para hacer compra de reposición."}
+          </p>
+        </div>
+        <button
+          role="switch"
+          aria-checked={showInventario}
+          onClick={() => setShowInventario(!showInventario)}
+          className={cn(
+            "relative w-12 h-6 rounded-full transition-colors shrink-0",
+            showInventario ? "bg-primary" : "bg-[var(--rule-base)]",
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform",
+              showInventario ? "translate-x-6" : "translate-x-0",
+            )}
+          />
+        </button>
+      </div>
+
+      {/* Pills de categorías — solo cuando se muestra inventario */}
+      {showInventario && <div
         className="flex gap-1.5 overflow-x-auto scrollbar-none mb-3 pb-1"
         role="tablist"
         aria-label="Filtrar por categoría"
@@ -825,7 +1126,7 @@ export default function PuntoCompraView() {
             </button>
           );
         })}
-      </div>
+      </div>}
 
       {/* Input de código de barras */}
       {showScanner && (
@@ -933,7 +1234,21 @@ export default function PuntoCompraView() {
       <div className="flex flex-col lg:flex-row gap-4">
         {/* ── Columna productos ── */}
         <div className="flex-1 min-w-0">
-          {loading ? (
+          {/* Audit 2026-05-17: oculto si el toggle "Mostrar inventario" está OFF.
+              El usuario puede agregar gastos via el catálogo de arriba sin ver
+              productos de inventario que no quiera comprar. */}
+          {!showInventario ? (
+            <div className="bg-[var(--surface-sunken)] border border-dashed border-[var(--rule-base)] rounded-xl p-6 text-center">
+              <Package className="h-8 w-8 mx-auto text-[var(--text-tertiary)] mb-2" strokeWidth={1.5} />
+              <p className="text-sm font-semibold text-[var(--text-primary)]">
+                Productos de inventario ocultos
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-sm mx-auto">
+                Encendé el toggle <strong>&quot;Usar artículos de mi inventario&quot;</strong> arriba
+                para ver y agregar productos de reposición al carrito.
+              </p>
+            </div>
+          ) : loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
