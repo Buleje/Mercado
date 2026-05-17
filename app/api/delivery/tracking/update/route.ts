@@ -84,22 +84,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Almacenar coordenadas en notes como JSON (sin migración de schema)
-    let notesData: Record<string, unknown> = {};
+    // Audit 2026-05-17 03-P2-3 (TD-056): atómico read-modify-write con
+    // SELECT FOR UPDATE para evitar race entre GPS pings concurrentes.
+    // Antes: leer notes → parse → merge → write. Dos PATCH a 50ms uno del
+    // otro perdían un ping y peor: podían borrar campos como `rated:true`
+    // escritos por /api/delivery/rate en la ventana entre read y write.
+    // Ahora: la transacción lockea el row mientras hacemos parse+merge+UPDATE
+    // serial. PostgreSQL SERIALIZABLE evita el lost update.
+    const now = new Date().toISOString();
     try {
-      notesData = assignment.notes ? JSON.parse(assignment.notes) : {};
-    } catch {
-      notesData = {};
+      await prisma.$transaction(async (tx) => {
+        // Lock pessimista (FOR UPDATE) en el row del assignment durante la tx.
+        // Cualquier otro PATCH para el mismo orderId+tenant+partner espera.
+        const locked = await tx.$queryRawUnsafe<Array<{ notes: string | null }>>(
+          `SELECT notes FROM "DeliveryAssignment"
+             WHERE "orderId" = $1 AND "tenantId" = $2 AND "partnerId" = $3
+             FOR UPDATE`,
+          orderId as string,
+          tenantId,
+          partnerId,
+        );
+        if (locked.length === 0) {
+          throw new Error("ASSIGNMENT_NOT_FOUND");
+        }
+        let notesData: Record<string, unknown> = {};
+        try {
+          notesData = locked[0].notes ? JSON.parse(locked[0].notes) : {};
+        } catch {
+          notesData = {};
+        }
+        notesData.trackingLat = lat;
+        notesData.trackingLng = lng;
+        notesData.trackingUpdatedAt = now;
+        await tx.deliveryAssignment.update({
+          where: { orderId: orderId as string },
+          data: { notes: JSON.stringify(notesData) },
+        });
+      });
+    } catch (txErr) {
+      if (txErr instanceof Error && txErr.message === "ASSIGNMENT_NOT_FOUND") {
+        return NextResponse.json(
+          { error: "No hay delivery asignado para esta orden" },
+          { status: 404 },
+        );
+      }
+      throw txErr;
     }
-
-    notesData.trackingLat = lat;
-    notesData.trackingLng = lng;
-    notesData.trackingUpdatedAt = new Date().toISOString();
-
-    await prisma.deliveryAssignment.update({
-      where: { orderId: orderId as string },
-      data: { notes: JSON.stringify(notesData) },
-    });
 
     return NextResponse.json({ ok: true, lat, lng });
   } catch (err) {
