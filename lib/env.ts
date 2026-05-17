@@ -142,6 +142,16 @@ const REQUIRED: EnvSpec[] = [
 //                          deploy → tras 7+ días (max refresh) borrar PREVIOUS.
 //                          Tokens viejos siguen válidos durante el overlap.
 //
+// RENIEC + SUNAT vendor identity verification (audit 2026-05-17 TD-058):
+//   RENIEC_PROVIDER       — "mock" (default) | "apisperu" | "decolecta"
+//   SUNAT_RUC_PROVIDER    — "mock" (default) | "apisperu" | "decolecta"
+//   RENIEC_API_TOKEN      — Token del provider RENIEC (apis.net.pe o decolecta.com)
+//   SUNAT_RUC_API_TOKEN   — Token del provider SUNAT (fallback al RENIEC token si falta)
+//   En "mock" no hay hits externos — útil para dev. Para activar verificación
+//   real en prod, setear los 2 PROVIDER + 1 TOKEN (mismo token vale para
+//   ambos si usás apis.net.pe). Si el provider cae, soft-pass (no bloquea
+//   onboarding) y admin verifica manual desde el panel.
+//
 // Analytics:
 //   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4
 //

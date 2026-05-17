@@ -6,6 +6,8 @@ import { logActivity } from "@/lib/activity-logger";
 import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { verifyDni, namesMatch } from "@/lib/integrations/reniec";
+import { verifyRuc, isInvoiceable } from "@/lib/integrations/sunat-ruc";
 
 // Audit 2026-05-17 01-P1-6: validación DNI/RUC peruano.
 //   DNI: 8 dígitos (persona natural).
@@ -65,15 +67,73 @@ export async function POST(req: NextRequest) {
 
     const { ownerName, ownerPhone, ownerEmail, ownerDni, ownerRuc, storeName, description, category, zone, address: _address } = parsed.data;
 
-    // Audit 2026-05-17 01-P1-6: registrar DNI/RUC para audit trail de Ley
-    // 29733. La verificación contra RENIEC/SUNAT online es TODO; por ahora
-    // logueamos para que el superadmin pueda contrastar manualmente en el
-    // panel de aprobación. NO se persiste en Store.* todavía — vive en logs.
+    // Audit 2026-05-17 TD-058: verificación RENIEC/SUNAT online.
+    // Si RENIEC_PROVIDER/SUNAT_RUC_PROVIDER están en "mock" (default dev),
+    // verifyDni/verifyRuc retornan ok=true sin hits externos. En prod,
+    // setear el env var activa la verificación real. Si el provider cae,
+    // hacen soft-pass para no bloquear onboarding (admin verifica manual).
+    let identityVerified: "verified" | "soft-pass" | "rejected" = "soft-pass";
+    let identityNote = "";
+
+    if (ownerRuc) {
+      const rucResult = await verifyRuc(ownerRuc);
+      if (!rucResult.ok) {
+        return NextResponse.json(
+          {
+            error: "ruc_no_encontrado",
+            message: "El RUC no figura en SUNAT. Verifica el número.",
+            issues: [{ path: ["ownerRuc"], message: rucResult.reason }],
+          },
+          { status: 422 },
+        );
+      }
+      if (rucResult.source !== "mock" && !isInvoiceable(rucResult)) {
+        return NextResponse.json(
+          {
+            error: "ruc_no_apto",
+            message: `RUC en estado ${rucResult.estado ?? "?"} / condición ${rucResult.condicion ?? "?"}. Solo aceptamos ACTIVO + HABIDO.`,
+            issues: [{ path: ["ownerRuc"], message: "no_invoiceable" }],
+          },
+          { status: 422 },
+        );
+      }
+      identityVerified = rucResult.source === "mock" || rucResult.source === "cache"
+        ? "soft-pass"
+        : "verified";
+      identityNote = rucResult.razonSocial ?? "";
+    } else if (ownerDni) {
+      const dniResult = await verifyDni(ownerDni);
+      if (!dniResult.ok) {
+        return NextResponse.json(
+          {
+            error: "dni_no_encontrado",
+            message: "El DNI no figura en RENIEC. Verifica el número.",
+            issues: [{ path: ["ownerDni"], message: dniResult.reason }],
+          },
+          { status: 422 },
+        );
+      }
+      // Si tenemos fullName real, advertir si no matchea con ownerName del form
+      // (no rechazamos — un esposo registrando con DNI de la esposa es caso real).
+      if (dniResult.fullName && !namesMatch(dniResult.fullName, ownerName)) {
+        logger.warn("[marketplace/stores/apply] name mismatch vs RENIEC", {
+          ownerName: ownerName.slice(0, 30),
+          phoneSuffix: ownerPhone.slice(-4),
+        });
+      }
+      identityVerified = dniResult.source === "mock" || dniResult.source === "cache"
+        ? "soft-pass"
+        : "verified";
+      identityNote = dniResult.fullName ?? "";
+    }
+
     logger.info("[marketplace/stores/apply] vendor identity", {
       ownerName: ownerName.slice(0, 30),
       phoneSuffix: ownerPhone.slice(-4),
       identityType: ownerRuc ? "RUC" : "DNI",
       identityLast4: (ownerRuc ?? ownerDni ?? "").slice(-4),
+      identityVerified,
+      identityNote: identityNote.slice(0, 60),
       storeName: storeName.slice(0, 40),
     });
 
