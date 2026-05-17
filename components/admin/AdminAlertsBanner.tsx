@@ -111,10 +111,24 @@ export default function AdminAlertsBanner() {
       }
     };
     load();
-    const id = setInterval(load, REFRESH_MS);
+    // QW4 perf (2026-05-16): pausar polling cuando document.hidden
+    // (pestaña no visible). Banner vive en TODO /admin/* → cada sesión
+    // inactiva eran 120 req/h. Ahora 0 req/h cuando idle. Al volver
+    // visible, refetch inmediato para datos frescos.
+    let id: ReturnType<typeof setInterval> | null = setInterval(load, REFRESH_MS);
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        if (id) { clearInterval(id); id = null; }
+      } else {
+        load();
+        if (!id) id = setInterval(load, REFRESH_MS);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       cancelled = true;
-      clearInterval(id);
+      if (id) clearInterval(id);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 

@@ -45,31 +45,60 @@ export function useOrdersData(): OrdersDataState & OrdersDataActions {
 
   useEffect(() => { void load(); }, [load]);
 
-  // ── Auto-refresh: polling cada 15s + listener SSE para "new_order" ────
+  // ── Auto-refresh: SSE primario + polling como fallback ───────────────
   // Bug 2026-05-05: el admin no veía nuevos pedidos sin recargar manualmente.
-  // Ahora hay polling permanente + un listener al evento `new_order` que
-  // emite `lib/sse-emitter.ts` desde `/api/orders` POST y `/api/marketplace/orders`.
+  // QW4 perf (2026-05-16):
+  //  - Antes: polling agresivo 15s + SSE → doble notificación + tráfico ×2
+  //  - Ahora: SSE primario (push), polling fallback a 60s solo si SSE cae
+  //  - Polling se pausa cuando document.hidden → 0 req en background idle
   useEffect(() => {
-    const interval = setInterval(() => {
-      void load();
-    }, 15_000);
-
     let es: EventSource | null = null;
-    try {
-      es = new EventSource("/api/admin/sse");
-      es.addEventListener("new_order", () => {
-        void load();
-      });
-      // refresca también en cualquier evento status-change para mantener Kanban en sync
-      es.addEventListener("order_status_changed", () => {
-        void load();
-      });
-    } catch {
-      /* SSE no disponible — polling cubre el caso */
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    let sseReady = false;
+
+    function startPolling(intervalMs: number) {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(() => { void load(); }, intervalMs);
+    }
+    function stopPolling() {
+      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
     }
 
+    try {
+      es = new EventSource("/api/admin/sse");
+      es.addEventListener("open", () => {
+        sseReady = true;
+        // SSE conectado → polling fallback a 60s
+        startPolling(60_000);
+      });
+      es.addEventListener("error", () => {
+        sseReady = false;
+        // SSE cayó → polling agresivo a 15s
+        startPolling(15_000);
+      });
+      es.addEventListener("new_order", () => { void load(); });
+      es.addEventListener("order_status_changed", () => { void load(); });
+    } catch {
+      sseReady = false;
+      startPolling(15_000);
+    }
+    // Empezar con poll agresivo hasta que SSE haga "open"
+    if (!sseReady) startPolling(15_000);
+
+    // Pausar polling cuando pestaña no visible
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        void load();
+        startPolling(sseReady ? 60_000 : 15_000);
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      clearInterval(interval);
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       try { es?.close(); } catch {}
     };
   }, [load]);

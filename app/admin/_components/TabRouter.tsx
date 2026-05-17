@@ -80,13 +80,20 @@ const PlanTab        = dynamic(() => import("@/components/admin/PlanTab"),      
 // ── Prefetch map — modulos probables segun el tab activo ─────────────────────
 // Cada key es un tab activo, y el value es un array de tabs que probablemente
 // el usuario visitara despues. Se precargan tras 2 segundos de inactividad.
+// QW3 perf (2026-05-16): map ampliado para cubrir los hubs principales
+// y triplets de navegación natural (vendor → POS → inventario → compras).
 const PREFETCH_MAP: Record<string, string[]> = {
-  "vendor-dashboard": ["ventas-caja", "inventario"],
-  "ventas-caja": ["inventario", "pedidos"],
-  "inventario": ["compras", "productos"],
-  "clientes": ["fiados", "pedidos"],
-  "compras": ["inventario", "productos"],
-  "pedidos": ["ventas-caja", "clientes"],
+  "vendor-dashboard": ["ventas-caja", "inventario", "pedidos"],
+  "ventas-caja": ["inventario", "pedidos", "clientes"],
+  "inventario": ["compras", "productos", "plata"],
+  "productos": ["inventario", "promociones", "marketplace"],
+  "clientes": ["fiados", "pedidos", "ventas-caja"],
+  "compras": ["inventario", "productos", "plata"],
+  "pedidos": ["ventas-caja", "clientes", "inventario"],
+  "plata": ["ventas-caja", "compras", "fiados"],
+  "fiados": ["clientes", "plata", "ventas-caja"],
+  "marketplace": ["productos", "vendor-dashboard"],
+  "promociones": ["productos", "ventas-caja"],
 };
 
 // Map de dynamic imports para prefetch — reutiliza los mismos loaders del router
@@ -99,6 +106,9 @@ const PREFETCH_LOADERS: Record<string, () => Promise<unknown>> = {
   "clientes":         () => import("@/components/admin/unified/CRMClientesModule"),
   "fiados":           () => import("@/components/admin/FiadosModule"),
   "pedidos":          () => import("@/components/admin/OrdersTab"),
+  "plata":            () => import("@/components/admin/unified/FinanzasModule"),
+  "marketplace":      () => import("@/components/admin/unified/MarketplaceModule"),
+  "promociones":      () => import("@/components/admin/PromocionesModule"),
 };
 
 /**
