@@ -16,13 +16,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockLedgerCreate = vi.fn();
-const mockStoreFindUnique = vi.fn();
+const mockLedgerFindFirst = vi.fn();
+const mockLedgerFindMany = vi.fn();
+const mockStoreFindFirst = vi.fn();
 const mockAssignmentFindFirst = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    commissionLedger: { create: (...a: unknown[]) => mockLedgerCreate(...a) },
-    store: { findUnique: (...a: unknown[]) => mockStoreFindUnique(...a) },
+    commissionLedger: {
+      create: (...a: unknown[]) => mockLedgerCreate(...a),
+      findFirst: (...a: unknown[]) => mockLedgerFindFirst(...a),
+      findMany: (...a: unknown[]) => mockLedgerFindMany(...a),
+    },
+    store: { findFirst: (...a: unknown[]) => mockStoreFindFirst(...a) },
     deliveryAssignment: { findFirst: (...a: unknown[]) => mockAssignmentFindFirst(...a) },
   },
 }));
@@ -96,10 +102,12 @@ describe("calculateCommission — cálculo % + redondeo", () => {
   });
 });
 
-// ─── recordCommission — fallback tenantId + side effects ──────────────────────
+// ─── recordCommission — tenantId obligatorio + idempotencia ───────────────────
+// Audit 2026-05-17 P0-2/P0-3: signature contract change — tenantId obligatorio.
 
-describe("recordCommission — fallback tenantId 'main'", () => {
+describe("recordCommission — tenantId obligatorio (no fallback 'main')", () => {
   it("crea row en commissionLedger con tenantId explícito", async () => {
+    mockLedgerFindFirst.mockResolvedValue(null); // no duplicado
     mockLedgerCreate.mockResolvedValue({});
     await recordCommission({
       orderId: ORDER_ID,
@@ -122,18 +130,32 @@ describe("recordCommission — fallback tenantId 'main'", () => {
     });
   });
 
-  it("FALLBACK 'main' cuando NO se pasa tenantId (con warning log)", async () => {
-    mockLedgerCreate.mockResolvedValue({});
+  it("THROW si NO se pasa tenantId (fail-loud, no fallback silencioso)", async () => {
+    await expect(
+      recordCommission({
+        orderId: ORDER_ID,
+        type: "marketplace_fee",
+        amount: 10,
+        rate: 5,
+        tenantId: "",
+      })
+    ).rejects.toThrow(/tenantId is required/);
+  });
+
+  it("IDEMPOTENCIA: skip si ya existe (orderId, type)", async () => {
+    mockLedgerFindFirst.mockResolvedValue({ id: "existing-1", status: "pending" });
     await recordCommission({
       orderId: ORDER_ID,
       type: "marketplace_fee",
       amount: 10,
       rate: 5,
+      tenantId: TENANT,
     });
-    expect(mockLedgerCreate.mock.calls[0][0].data.tenantId).toBe("main");
+    expect(mockLedgerCreate).not.toHaveBeenCalled();
   });
 
   it("partnerId opcional: null si no se pasa", async () => {
+    mockLedgerFindFirst.mockResolvedValue(null);
     mockLedgerCreate.mockResolvedValue({});
     await recordCommission({
       orderId: ORDER_ID,
@@ -147,6 +169,7 @@ describe("recordCommission — fallback tenantId 'main'", () => {
   });
 
   it("partnerId presente: incluido en data", async () => {
+    mockLedgerFindFirst.mockResolvedValue(null);
     mockLedgerCreate.mockResolvedValue({});
     await recordCommission({
       orderId: ORDER_ID,
@@ -160,6 +183,7 @@ describe("recordCommission — fallback tenantId 'main'", () => {
   });
 
   it("storeId opcional: null si no se pasa", async () => {
+    mockLedgerFindFirst.mockResolvedValue(null);
     mockLedgerCreate.mockResolvedValue({});
     await recordCommission({
       orderId: ORDER_ID,
@@ -171,9 +195,10 @@ describe("recordCommission — fallback tenantId 'main'", () => {
     expect(mockLedgerCreate.mock.calls[0][0].data.storeId).toBeNull();
   });
 
-  it("graceful fail: log y NO throw si prisma falla (fire-and-forget compatible)", async () => {
+  it("AHORA propaga errores (no swallow) para que el caller decida si reintentar", async () => {
+    mockLedgerFindFirst.mockResolvedValue(null);
     mockLedgerCreate.mockRejectedValue(new Error("DB down"));
-    // NO throw — la función swallows errors
+    // Audit P1-2 fix: ya no swallow — el caller (fire-and-forget) envuelve si quiere.
     await expect(
       recordCommission({
         orderId: ORDER_ID,
@@ -182,10 +207,11 @@ describe("recordCommission — fallback tenantId 'main'", () => {
         rate: 5,
         tenantId: TENANT,
       })
-    ).resolves.toBeUndefined();
+    ).rejects.toThrow("DB down");
   });
 
   it("status siempre 'pending' al crear (workflow downstream marca paid/failed)", async () => {
+    mockLedgerFindFirst.mockResolvedValue(null);
     mockLedgerCreate.mockResolvedValue({});
     await recordCommission({
       orderId: ORDER_ID,
@@ -200,77 +226,84 @@ describe("recordCommission — fallback tenantId 'main'", () => {
 
 // ─── recordMarketplaceCommissions — orchestration completa ────────────────────
 
-describe("recordMarketplaceCommissions — flow completo", () => {
-  it("usa commission rate de la tienda desde DB", async () => {
-    mockStoreFindUnique.mockResolvedValue({ commission: 8 });
+describe("recordMarketplaceCommissions — flow completo (tier dinámico)", () => {
+  beforeEach(() => {
+    mockLedgerFindFirst.mockResolvedValue(null);
+    mockLedgerFindMany.mockResolvedValue([]); // sin ventas históricas → tier bronze
+  });
+
+  it("usa override rate de la tienda cuando != 5", async () => {
+    mockStoreFindFirst.mockResolvedValue({ commission: 8 });
     mockLedgerCreate.mockResolvedValue({});
     mockAssignmentFindFirst.mockResolvedValue(null);
 
-    await recordMarketplaceCommissions(ORDER_ID, 100, STORE_ID);
-    // calculateCommission(100, 8) = 8
+    await recordMarketplaceCommissions(TENANT, ORDER_ID, 100, STORE_ID);
+    // override 8% gana sobre el tier bronze default 5%
     expect(mockLedgerCreate.mock.calls[0][0].data.amount).toBe(8);
     expect(mockLedgerCreate.mock.calls[0][0].data.rate).toBe(8);
   });
 
-  it("rate fallback 5% si la tienda NO tiene commission setteada", async () => {
-    mockStoreFindUnique.mockResolvedValue({ commission: null });
+  it("tier bronze 5% cuando store sin override y sin ventas históricas", async () => {
+    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
     mockLedgerCreate.mockResolvedValue({});
 
-    await recordMarketplaceCommissions(ORDER_ID, 200, STORE_ID);
+    await recordMarketplaceCommissions(TENANT, ORDER_ID, 200, STORE_ID);
     expect(mockLedgerCreate.mock.calls[0][0].data.rate).toBe(5);
     expect(mockLedgerCreate.mock.calls[0][0].data.amount).toBe(10); // 200 * 5%
   });
 
-  it("rate fallback 5% si la tienda no existe", async () => {
-    mockStoreFindUnique.mockResolvedValue(null);
+  it("rate fallback 5% si la tienda no existe en el tenant", async () => {
+    mockStoreFindFirst.mockResolvedValue(null);
     mockLedgerCreate.mockResolvedValue({});
 
-    await recordMarketplaceCommissions(ORDER_ID, 100, STORE_ID);
+    await recordMarketplaceCommissions(TENANT, ORDER_ID, 100, STORE_ID);
     expect(mockLedgerCreate.mock.calls[0][0].data.amount).toBe(5);
   });
 
   it("solo registra 1 comisión (marketplace_fee) si no hay delivery partner", async () => {
-    mockStoreFindUnique.mockResolvedValue({ commission: 5 });
+    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
     mockLedgerCreate.mockResolvedValue({});
 
-    await recordMarketplaceCommissions(ORDER_ID, 100, STORE_ID);
+    await recordMarketplaceCommissions(TENANT, ORDER_ID, 100, STORE_ID);
     expect(mockLedgerCreate).toHaveBeenCalledTimes(1);
     expect(mockLedgerCreate.mock.calls[0][0].data.type).toBe("marketplace_fee");
   });
 
   it("registra 2 comisiones (marketplace + delivery) si hay partner con assignment", async () => {
-    mockStoreFindUnique.mockResolvedValue({ commission: 5 });
+    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
     mockLedgerCreate.mockResolvedValue({});
     mockAssignmentFindFirst.mockResolvedValue({ fee: 8 });
 
-    await recordMarketplaceCommissions(ORDER_ID, 100, STORE_ID, PARTNER_ID);
+    await recordMarketplaceCommissions(TENANT, ORDER_ID, 100, STORE_ID, PARTNER_ID);
     expect(mockLedgerCreate).toHaveBeenCalledTimes(2);
-    // 1ra: marketplace
     expect(mockLedgerCreate.mock.calls[0][0].data.type).toBe("marketplace_fee");
-    // 2da: delivery
     expect(mockLedgerCreate.mock.calls[1][0].data.type).toBe("delivery_fee");
     expect(mockLedgerCreate.mock.calls[1][0].data.partnerId).toBe(PARTNER_ID);
     expect(mockLedgerCreate.mock.calls[1][0].data.amount).toBe(8);
-    expect(mockLedgerCreate.mock.calls[1][0].data.rate).toBe(0); // fee fijo
+    expect(mockLedgerCreate.mock.calls[1][0].data.rate).toBe(0);
   });
 
   it("NO registra delivery_fee si partner existe pero assignment NO existe", async () => {
-    mockStoreFindUnique.mockResolvedValue({ commission: 5 });
+    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
     mockLedgerCreate.mockResolvedValue({});
-    mockAssignmentFindFirst.mockResolvedValue(null); // assignment missing
+    mockAssignmentFindFirst.mockResolvedValue(null);
 
-    await recordMarketplaceCommissions(ORDER_ID, 100, STORE_ID, PARTNER_ID);
+    await recordMarketplaceCommissions(TENANT, ORDER_ID, 100, STORE_ID, PARTNER_ID);
     expect(mockLedgerCreate).toHaveBeenCalledTimes(1);
-    expect(mockLedgerCreate.mock.calls[0][0].data.type).toBe("marketplace_fee");
   });
 
   it("delivery fee usa toNumOrZero para manejar Decimal de Prisma", async () => {
-    mockStoreFindUnique.mockResolvedValue({ commission: 5 });
+    mockStoreFindFirst.mockResolvedValue({ commission: 5 });
     mockLedgerCreate.mockResolvedValue({});
-    // Simula Decimal de Prisma (objeto, no number primitivo)
     mockAssignmentFindFirst.mockResolvedValue({ fee: "10.50" });
 
-    await recordMarketplaceCommissions(ORDER_ID, 100, STORE_ID, PARTNER_ID);
+    await recordMarketplaceCommissions(TENANT, ORDER_ID, 100, STORE_ID, PARTNER_ID);
     expect(mockLedgerCreate.mock.calls[1][0].data.amount).toBe(10.5);
+  });
+
+  it("THROW si tenantId vacío en recordMarketplaceCommissions", async () => {
+    await expect(
+      recordMarketplaceCommissions("", ORDER_ID, 100, STORE_ID)
+    ).rejects.toThrow(/tenantId is required/);
   });
 });

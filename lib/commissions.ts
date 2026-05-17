@@ -1,11 +1,9 @@
-import { prisma } from "@/lib/prisma";
-import { logger } from "@/lib/logger";
-import { toNumOrZero } from "@/lib/decimal-utils";
+import { CommissionsDB } from "@/lib/db/commissions.db";
 
 /**
  * Calcula la comisión de marketplace para una orden.
  * @param orderTotal - Total de la orden
- * @param storeCommissionRate - % de comisión de la tienda (default 5%)
+ * @param storeCommissionRate - % de comisión de la tienda (default 5%, formato 0-100)
  * @returns Monto de comisión redondeado a 2 decimales
  */
 export function calculateCommission(
@@ -17,7 +15,13 @@ export function calculateCommission(
 
 /**
  * Registra una comisión en el ledger.
- * Se llama automáticamente después de completar una orden de marketplace.
+ *
+ * Audit 2026-05-17 P0-2/P0-3: `tenantId` ahora es OBLIGATORIO. Antes había
+ * fallback silencioso a "main" que atribuía comisiones al tenant equivocado.
+ * Ahora throw temprano si falta — fail-loud es mejor que perder dinero.
+ *
+ * Audit 2026-05-17 P1-1: delega a CommissionsDB (regla #1 CLAUDE.md).
+ * Audit 2026-05-17 P1-3: idempotencia por (orderId, type) — ver CommissionsDB.
  */
 export async function recordCommission(params: {
   orderId: string;
@@ -26,81 +30,43 @@ export async function recordCommission(params: {
   type: "marketplace_fee" | "delivery_fee" | "platform_fee";
   amount: number;
   rate: number;
-  tenantId?: string;
+  tenantId: string;
 }): Promise<void> {
-  // P1-1 multi-tenant: commission ledger es DINERO cross-vendor; un default
-  // silente a "main" significa que la comisión queda atribuida al tenant
-  // equivocado. Fallback observable hasta que todos los callers pasen tenantId.
-  const tenantId = params.tenantId ?? "main";
   if (!params.tenantId) {
-    logger.warn("[commissions] missing tenantId — falling back to 'main'", {
-      orderId: params.orderId,
-      type: params.type,
-      amount: params.amount,
-    });
+    throw new Error("[commissions] tenantId is required (no silent fallback to 'main')");
   }
-  try {
-    await prisma.commissionLedger.create({
-      data: {
-        orderId: params.orderId,
-        storeId: params.storeId ?? null,
-        partnerId: params.partnerId ?? null,
-        type: params.type,
-        amount: params.amount,
-        rate: params.rate,
-        status: "pending",
-        tenantId,
-      },
-    });
-  } catch (err) {
-    logger.warn("Failed to record commission", { error: err, params });
-  }
+  await CommissionsDB.recordCommission(params.tenantId, {
+    orderId: params.orderId,
+    storeId: params.storeId,
+    partnerId: params.partnerId,
+    type: params.type,
+    amount: params.amount,
+    rate: params.rate,
+  });
 }
 
 /**
  * Registra comisiones automáticas para una orden de marketplace.
  * Llamar después de que la orden cambie a status "entregado".
  *
+ * Audit 2026-05-17 P0-2: `tenantId` agregado como param obligatorio.
+ *
  * Fire-and-forget recomendado: recordMarketplaceCommissions(...).catch(() => {})
  */
 export async function recordMarketplaceCommissions(
+  tenantId: string,
   orderId: string,
   orderTotal: number,
   storeId: string,
   deliveryPartnerId?: string,
 ): Promise<void> {
-  // 1. Buscar la tienda para obtener su tasa de comisión
-  const store = await prisma.store.findUnique({
-    where: { id: storeId },
-    select: { commission: true },
-  });
-  const rate = store?.commission ?? 5;
-
-  // 2. Comisión marketplace (plataforma cobra a la tienda)
-  const marketplaceFee = calculateCommission(orderTotal, rate);
-  await recordCommission({
-    orderId,
-    storeId,
-    type: "marketplace_fee",
-    amount: marketplaceFee,
-    rate,
-  });
-
-  // 3. Si hay delivery partner, registrar fee de delivery
-  if (deliveryPartnerId) {
-    const assignment = await prisma.deliveryAssignment.findFirst({
-      where: { orderId },
-      select: { fee: true },
-    });
-    if (assignment) {
-      await recordCommission({
-        orderId,
-        partnerId: deliveryPartnerId,
-        type: "delivery_fee",
-        // TD-018: fee es Decimal
-        amount: toNumOrZero(assignment.fee),
-        rate: 0, // fee fijo, no porcentaje
-      });
-    }
+  if (!tenantId) {
+    throw new Error("[commissions] tenantId is required for recordMarketplaceCommissions");
   }
+  await CommissionsDB.recordMarketplaceCommissions(tenantId, {
+    orderId,
+    orderTotal,
+    storeId,
+    deliveryPartnerId,
+  });
 }
