@@ -31,14 +31,32 @@ export interface CustomerPayload {
 
 // ── Internal crypto helpers (same pattern as lib/session.ts) ──
 
-function getCustomerSecret(): string {
+/**
+ * Audit 2026-05-17 05-P1-1: rotación multi-secret también para customer.
+ * Se firma con CURRENT, se verifica con CURRENT + PREVIOUS para zero-downtime
+ * rotation. Misma derivación "-customer" para mantener cripto-independencia
+ * entre admin y customer tokens.
+ */
+function getCustomerSecretCurrent(): string {
   const secret = process.env.AUTH_SECRET;
   if (!secret) {
     throw new Error("AUTH_SECRET required — add to .env");
   }
-  // Derive a separate secret for customer tokens so admin and customer
-  // tokens are cryptographically independent.
   return secret + "-customer";
+}
+
+function getCustomerSecretsAll(): string[] {
+  const current = getCustomerSecretCurrent();
+  const previous = process.env.AUTH_SECRET_PREVIOUS;
+  if (previous && previous !== process.env.AUTH_SECRET) {
+    return [current, previous + "-customer"];
+  }
+  return [current];
+}
+
+// Compat con call sites existentes — firma siempre usa current.
+function getCustomerSecret(): string {
+  return getCustomerSecretCurrent();
 }
 
 async function signHmac(secret: string, data: string): Promise<Uint8Array> {
@@ -54,7 +72,7 @@ async function signHmac(secret: string, data: string): Promise<Uint8Array> {
   return new Uint8Array(raw);
 }
 
-async function verifyHmac(
+async function verifyHmacWithSecret(
   secret: string,
   data: string,
   sigB64: string,
@@ -73,6 +91,22 @@ async function verifyHmac(
   } catch {
     return false;
   }
+}
+
+/**
+ * Verifica contra todos los customer secrets activos (current + previous).
+ * El primer parámetro es ignorado por compatibilidad con call sites.
+ */
+async function verifyHmac(
+  _secretIgnored: string,
+  data: string,
+  sigB64: string,
+): Promise<boolean> {
+  const secrets = getCustomerSecretsAll();
+  for (const s of secrets) {
+    if (await verifyHmacWithSecret(s, data, sigB64)) return true;
+  }
+  return false;
 }
 
 function b64Encode(str: string): string {

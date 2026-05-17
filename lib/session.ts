@@ -17,12 +17,39 @@ const REFRESH_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 /** @deprecated Use ACCESS_DURATION_MS — kept for backward compatibility */
 const _SESSION_DURATION_MS = ACCESS_DURATION_MS;
 
-function getSecret(): string {
+/**
+ * Audit 2026-05-17 05-P1-1: rotación multi-secret.
+ *
+ * Antes: getSecret() retornaba AUTH_SECRET único. Si el .env filtraba,
+ * TODOS los JWT (admin+customer+platform+pending-totp) eran falsificables
+ * indefinidamente — sin forma de invalidar sin un deploy + rotación de
+ * cookies de todos los usuarios.
+ *
+ * Ahora: getCurrentSecret() para firmar (siempre el nuevo), getAllSecrets()
+ * para verificar (current + previous). Operación de rotación:
+ *   1. Setear AUTH_SECRET_PREVIOUS = valor actual de AUTH_SECRET
+ *   2. Generar nuevo AUTH_SECRET con `openssl rand -hex 32`
+ *   3. Deploy → tokens viejos siguen válidos (verificados con PREVIOUS)
+ *      pero nuevos tokens se firman con CURRENT.
+ *   4. Tras 7+ días (max refresh window): borrar AUTH_SECRET_PREVIOUS.
+ *
+ * Recomendado: rotar trimestralmente o tras cualquier sospecha de leak.
+ */
+function getCurrentSecret(): string {
   const secret = process.env.AUTH_SECRET;
   if (!secret) {
     throw new Error("AUTH_SECRET required — add to .env");
   }
   return secret;
+}
+
+function getAllSecrets(): string[] {
+  const current = getCurrentSecret();
+  const previous = process.env.AUTH_SECRET_PREVIOUS;
+  if (previous && previous !== current) {
+    return [current, previous];
+  }
+  return [current];
 }
 
 async function signHmac(secret: string, data: string): Promise<Uint8Array> {
@@ -38,10 +65,10 @@ async function signHmac(secret: string, data: string): Promise<Uint8Array> {
   return new Uint8Array(raw);
 }
 
-async function verifyHmac(
+async function verifyHmacWithSecret(
   secret: string,
   data: string,
-  sigB64: string
+  sigB64: string,
 ): Promise<boolean> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -49,7 +76,7 @@ async function verifyHmac(
     enc.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["verify"]
+    ["verify"],
   );
   try {
     const rawSig = Uint8Array.from(atob(sigB64), (c) => c.charCodeAt(0));
@@ -57,6 +84,33 @@ async function verifyHmac(
   } catch {
     return false;
   }
+}
+
+/**
+ * Verifica una firma contra todos los secrets activos (current + previous).
+ * Permite rotación zero-downtime: tokens emitidos con el secret anterior
+ * siguen siendo válidos durante la ventana de overlap.
+ *
+ * NOTA: el primer parámetro (`secret`) se ignora en multi-secret mode;
+ * el wrapper de compatibilidad acepta cualquier valor y verifica contra
+ * el set completo. Si solo hay un secret, comportamiento idéntico al anterior.
+ */
+async function verifyHmac(
+  _secretIgnored: string,
+  data: string,
+  sigB64: string,
+): Promise<boolean> {
+  const secrets = getAllSecrets();
+  for (const s of secrets) {
+    if (await verifyHmacWithSecret(s, data, sigB64)) return true;
+  }
+  return false;
+}
+
+// Compat: getSecret() llamadas a firmar siguen funcionando porque internamente
+// devuelve el current. signHmac() siempre se llama con getCurrentSecret().
+function getSecret(): string {
+  return getCurrentSecret();
 }
 
 function b64Encode(str: string): string {

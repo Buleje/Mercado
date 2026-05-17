@@ -257,6 +257,28 @@ const TENANT_MODELS = new Set([
   "socioMembership",
   // Event sourcing
   "eventDeadLetter",
+  // ── Audit 2026-05-17 06-P1-5: cerrar gap TENANT_MODELS vs schema real ──
+  // El audit identificó que 173 modelos en schema vs ~60 declarados aquí
+  // exponía cross-tenant leak si alguien hacía prismaForTenant(t).<model>
+  // sin filtro tenantId manual. Agregamos los modelos con tenantId que
+  // se acceden directamente (NO items dependientes accedidos via parent).
+  "storeProduct",
+  "wholesaleOrderItem",
+  "pageVersion",
+  "roadmapItemStatus",
+  "deliverySOSAlert",
+  "aIMessage",
+  "pageBlock",
+  "payment",
+  "fiadoCuota",
+  "prestamoCuota",
+  "prestamoDocumento",
+  "savedLocation",
+  "marketplaceAbandonedCart",
+  "searchSuggestion",
+  "supplierPortal",
+  "mpPendingPlan",
+  "documentVersion",
 ]);
 
 /**

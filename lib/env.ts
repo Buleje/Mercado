@@ -135,6 +135,13 @@ const REQUIRED: EnvSpec[] = [
 //                             Si no se define, fallback a CRON_SECRET con WARNING en log.
 //                             Genera con: openssl rand -hex 32
 //
+// AUTH rotation (audit 2026-05-17 05-P1-1):
+//   AUTH_SECRET_PREVIOUS — secret anterior durante ventana de rotación.
+//                          getAllSecrets() verifica firmas contra current + previous.
+//                          Workflow: PREVIOUS=valor-actual → generar nuevo CURRENT →
+//                          deploy → tras 7+ días (max refresh) borrar PREVIOUS.
+//                          Tokens viejos siguen válidos durante el overlap.
+//
 // Analytics:
 //   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4
 //

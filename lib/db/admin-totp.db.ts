@@ -14,6 +14,7 @@
 
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { encryptTotpSecret, decryptTotpSecret } from "@/lib/crypto/totp-cipher";
 
 // ── Tipos de retorno ──────────────────────────────────────────────────────────
 
@@ -52,24 +53,34 @@ export const AdminTotpDB = {
       tenantId,
       username,
     );
-    return rows[0] ?? null;
+    const row = rows[0];
+    if (!row) return null;
+    // Audit 2026-05-17 05-P1-5: descifrar TOTP secret al leer.
+    // Compat: si está en texto plano (pre-cifrado), decryptTotpSecret
+    // devuelve as-is — migración lazy en próximo saveSecret.
+    if (row.totpSecret) {
+      row.totpSecret = await decryptTotpSecret(row.totpSecret);
+    }
+    return row;
   },
 
   /**
    * Guarda el secret TOTP pendiente de verificación para un AdminUser.
    * No activa 2FA (totpEnabledAt sigue null).
+   * Audit 2026-05-17 05-P1-5: cifra con AES-GCM antes de persistir.
    */
   async saveSecret(
     tenantId: string,
     username: string,
     secret: string,
   ): Promise<void> {
+    const encrypted = await encryptTotpSecret(secret);
     await prisma.$executeRawUnsafe(
       `UPDATE "AdminUser"
        SET "totpSecret" = $1, "updatedAt" = NOW()
        WHERE "tenantId" = $2
          AND username = $3`,
-      secret,
+      encrypted,
       tenantId,
       username,
     );
@@ -127,19 +138,27 @@ export const SuperadminTotpDB = {
        LIMIT 1`,
       username,
     );
-    return rows[0] ?? null;
+    const row = rows[0];
+    if (!row) return null;
+    // Audit 2026-05-17 05-P1-5: descifrar TOTP secret al leer.
+    if (row.totpSecret) {
+      row.totpSecret = await decryptTotpSecret(row.totpSecret);
+    }
+    return row;
   },
 
   /**
    * Guarda el secret TOTP pendiente de verificación para un SuperadminUser.
    * No activa 2FA todavía.
+   * Audit 2026-05-17 05-P1-5: cifra con AES-GCM antes de persistir.
    */
   async saveSecret(username: string, secret: string): Promise<void> {
+    const encrypted = await encryptTotpSecret(secret);
     await prisma.$executeRawUnsafe(
       `UPDATE "SuperadminUser"
        SET "totpSecret" = $1, "updatedAt" = NOW()
        WHERE username = $2`,
-      secret,
+      encrypted,
       username,
     );
   },
