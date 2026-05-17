@@ -18,6 +18,8 @@ interface VendorHealthSummary {
   checked: number;
   changed: number;
   errors: number;
+  /** Notifications nuevas creadas (dedup 24h) — opcional para summaries viejos */
+  notifiedCount?: number;
   alerts: Array<{
     vendorId: string;
     tenantSlug: string | null;

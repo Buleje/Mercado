@@ -29,6 +29,7 @@ import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
 import { verifyRuc, isInvoiceable, type SunatRucResult } from "@/lib/integrations/sunat-ruc";
 import { verifyDni, type ReniecResult } from "@/lib/integrations/reniec";
+import { NotificationCenterDB } from "@/lib/db/notification-center.db";
 
 /** Snapshot persistido por vendor para detectar cambios entre runs. */
 interface VendorSnapshot {
@@ -77,6 +78,7 @@ export const GET = withCronHealth(
     let checked = 0;
     let changed = 0;
     let errors = 0;
+    let notifiedCount = 0;
     const alerts: Array<{
       vendorId: string;
       tenantSlug: string | null;
@@ -126,71 +128,93 @@ export const GET = withCronHealth(
         checkedAt: new Date().toISOString(),
       };
 
+      // Helper local: pushea alert al array Y crea notification persistente
+      // en el panel del admin del tenant (idempotente — no duplica si ya
+      // existe una sin leer en las últimas 24h).
+      let notificationsCreated = 0;
+      const emitAlert = async (
+        kind: "ruc-changed" | "ruc-not-found" | "dni-not-found",
+        severity: "HIGH" | "MEDIUM",
+        title: string,
+        detail: string,
+      ) => {
+        changed++;
+        alerts.push({
+          vendorId: vendor.id,
+          tenantSlug: vendor.tenantSlug,
+          kind,
+          detail,
+        });
+        logger.warn(`[cron/vendor-identity-recheck] ${kind}`, {
+          vendorId: vendor.id,
+          tenantSlug: vendor.tenantSlug,
+          businessName: vendor.businessName,
+          rucLast4: vendor.ruc.slice(-4),
+          severity: severity.toLowerCase(),
+        });
+        if (!vendor.tenantId) return;
+        try {
+          const result = await NotificationCenterDB.createOrReuse({
+            tenantId: vendor.tenantId,
+            type: "VENDOR_IDENTITY_ALERT",
+            severity,
+            title,
+            body: detail,
+            actionUrl: "/admin/settings/business",
+            actionLabel: "Revisar identidad",
+            entityId: vendor.id,
+            dedupWindowHours: 24,
+          });
+          if (result.created) notificationsCreated++;
+        } catch (err) {
+          logger.warn("[cron/vendor-identity-recheck] notification create failed", {
+            vendorId: vendor.id,
+            tenantId: vendor.tenantId,
+            err: err instanceof Error ? err.message : String(err),
+          });
+        }
+      };
+
       // Detección de cambios vs snapshot anterior.
       if (previous) {
         if (previous.invoiceable === true && currentInvoiceable === false) {
-          changed++;
-          alerts.push({
-            vendorId: vendor.id,
-            tenantSlug: vendor.tenantSlug,
-            kind: "ruc-changed",
-            detail: `${vendor.businessName} (RUC ***${vendor.ruc.slice(-4)}) ahora ${rucResult.estado}/${rucResult.condicion}`,
-          });
-          logger.warn("[cron/vendor-identity-recheck] RUC degradado", {
-            vendorId: vendor.id,
-            tenantSlug: vendor.tenantSlug,
-            businessName: vendor.businessName,
-            rucLast4: vendor.ruc.slice(-4),
-            prevEstado: previous.rucEstado,
-            prevCondicion: previous.rucCondicion,
-            curEstado: rucResult.estado,
-            curCondicion: rucResult.condicion,
-            severity: "high",
-          });
+          await emitAlert(
+            "ruc-changed",
+            "HIGH",
+            "Tu RUC pasó a estado no apto para facturar",
+            `${vendor.businessName} (RUC ***${vendor.ruc.slice(-4)}) ahora ${rucResult.estado}/${rucResult.condicion}. Tus facturas dejarán de ser deducibles para tus clientes. Regulariza tu situación con SUNAT.`,
+          );
         }
         if (previous.contactDniOk === true && dniResult?.ok === false) {
-          changed++;
-          alerts.push({
-            vendorId: vendor.id,
-            tenantSlug: vendor.tenantSlug,
-            kind: "dni-not-found",
-            detail: `${vendor.businessName}: DNI del contacto ya no existe en RENIEC`,
-          });
-          logger.warn("[cron/vendor-identity-recheck] DNI ya no existe", {
-            vendorId: vendor.id,
-            tenantSlug: vendor.tenantSlug,
-            severity: "medium",
-          });
+          await emitAlert(
+            "dni-not-found",
+            "MEDIUM",
+            "El DNI del titular ya no figura en RENIEC",
+            `${vendor.businessName}: El DNI registrado como contacto principal ya no existe en RENIEC. Esto puede indicar fallecimiento, cambio de documento o registro incorrecto.`,
+          );
         }
       } else {
         // Primera vez que vemos al vendor — si ya viene NO HABIDO o RUC no-found, alertar.
         if (!rucResult.ok) {
-          changed++;
-          alerts.push({
-            vendorId: vendor.id,
-            tenantSlug: vendor.tenantSlug,
-            kind: "ruc-not-found",
-            detail: `${vendor.businessName} (RUC ***${vendor.ruc.slice(-4)}) no encontrado en SUNAT`,
-          });
-          logger.warn("[cron/vendor-identity-recheck] RUC no encontrado (primera consulta)", {
-            vendorId: vendor.id,
-            tenantSlug: vendor.tenantSlug,
-            severity: "high",
-          });
+          await emitAlert(
+            "ruc-not-found",
+            "HIGH",
+            "Tu RUC no figura en SUNAT",
+            `${vendor.businessName} (RUC ***${vendor.ruc.slice(-4)}) no fue encontrado en el padrón de SUNAT. Revisa el número o regulariza tu inscripción.`,
+          );
         } else if (!currentInvoiceable) {
-          changed++;
-          alerts.push({
-            vendorId: vendor.id,
-            tenantSlug: vendor.tenantSlug,
-            kind: "ruc-changed",
-            detail: `${vendor.businessName} aprobado pero RUC ${rucResult.estado}/${rucResult.condicion}`,
-          });
-          logger.warn("[cron/vendor-identity-recheck] RUC no invoiceable detectado", {
-            vendorId: vendor.id,
-            tenantSlug: vendor.tenantSlug,
-            severity: "medium",
-          });
+          await emitAlert(
+            "ruc-changed",
+            "MEDIUM",
+            "Tu RUC requiere atención",
+            `${vendor.businessName} aprobado pero el RUC está en ${rucResult.estado}/${rucResult.condicion}. No podrás emitir facturas deducibles hasta regularizar.`,
+          );
         }
+      }
+
+      // Track notificationsCreated count para reportar en summary
+      if (notificationsCreated > 0) {
+        notifiedCount += notificationsCreated;
       }
 
       cacheStore.set(snapKey, snapshot, SNAPSHOT_TTL_SEC);
@@ -201,6 +225,7 @@ export const GET = withCronHealth(
       checked,
       changed,
       errors,
+      notifiedCount,
       alertSample: alerts.slice(0, 5).map((a) => `${a.kind}:${a.tenantSlug}`),
     });
 
@@ -212,6 +237,7 @@ export const GET = withCronHealth(
       checked,
       changed,
       errors,
+      notifiedCount,
       alerts,
     };
     cacheStore.set("vendor-health:summary", summary, 25 * 60 * 60);
@@ -227,6 +253,8 @@ export interface VendorHealthSummary {
   checked: number;
   changed: number;
   errors: number;
+  /** Total de notifications NUEVAS creadas en este run (dedup idempotente) */
+  notifiedCount: number;
   alerts: Array<{
     vendorId: string;
     tenantSlug: string | null;

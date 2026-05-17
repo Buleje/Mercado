@@ -54,13 +54,20 @@ vi.mock("@/lib/integrations/reniec", () => ({
   verifyDni: mockVerifyDni,
 }));
 
-const { mockFindMany } = vi.hoisted(() => ({
+const { mockFindMany, mockNotifCreateOrReuse } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
+  mockNotifCreateOrReuse: vi.fn(async () => ({ id: "n-mock", created: true })),
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     vendorApplication: { findMany: mockFindMany },
+  },
+}));
+
+vi.mock("@/lib/db/notification-center.db", () => ({
+  NotificationCenterDB: {
+    createOrReuse: mockNotifCreateOrReuse,
   },
 }));
 
@@ -245,6 +252,120 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
     const r2 = await GET(makeReq());
     const body2 = await r2.json();
     expect(body2.alerts[0].kind).toBe("dni-not-found");
+  });
+
+  it("RUC degradado HABIDO→NO HABIDO crea notification HIGH al tenant", async () => {
+    // RUN 1: HABIDO
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "v-notif",
+        ruc: "20555555555",
+        contactDni: "55555555",
+        contactName: "X",
+        businessName: "Notify Bodega",
+        tenantId: "t-notify",
+        tenantSlug: "notify",
+      },
+    ]);
+    mockVerifyRuc.mockResolvedValueOnce({
+      ok: true,
+      source: "apisperu",
+      estado: "ACTIVO",
+      condicion: "HABIDO",
+    });
+    mockIsInvoiceable.mockReturnValueOnce(true);
+    mockVerifyDni.mockResolvedValueOnce({ ok: true, source: "apisperu" });
+    await GET(makeReq());
+    expect(mockNotifCreateOrReuse).not.toHaveBeenCalled();
+
+    // RUN 2: NO HABIDO
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "v-notif",
+        ruc: "20555555555",
+        contactDni: "55555555",
+        contactName: "X",
+        businessName: "Notify Bodega",
+        tenantId: "t-notify",
+        tenantSlug: "notify",
+      },
+    ]);
+    mockVerifyRuc.mockResolvedValueOnce({
+      ok: true,
+      source: "apisperu",
+      estado: "ACTIVO",
+      condicion: "NO HABIDO",
+    });
+    mockIsInvoiceable.mockReturnValueOnce(false);
+    mockVerifyDni.mockResolvedValueOnce({ ok: true, source: "apisperu" });
+
+    const r2 = await GET(makeReq());
+    const body2 = await r2.json();
+
+    expect(mockNotifCreateOrReuse).toHaveBeenCalledTimes(1);
+    const callArg = (
+      mockNotifCreateOrReuse.mock.calls as unknown as Array<
+        [{ tenantId: string; type: string; severity: string; entityId: string; dedupWindowHours: number }]
+      >
+    )[0]?.[0];
+    expect(callArg).toBeDefined();
+    expect(callArg.tenantId).toBe("t-notify");
+    expect(callArg.type).toBe("VENDOR_IDENTITY_ALERT");
+    expect(callArg.severity).toBe("HIGH");
+    expect(callArg.entityId).toBe("v-notif");
+    expect(callArg.dedupWindowHours).toBe(24);
+    expect(body2.notifiedCount).toBe(1);
+  });
+
+  it("notification falla → cron sigue funcionando (graceful)", async () => {
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "v-fail",
+        ruc: "20666666666",
+        contactDni: null,
+        contactName: "X",
+        businessName: "Fail Notif Bodega",
+        tenantId: "t-fail",
+        tenantSlug: "fail",
+      },
+    ]);
+    mockVerifyRuc.mockResolvedValueOnce({
+      ok: false,
+      source: "apisperu",
+      reason: "not_found",
+    });
+    mockIsInvoiceable.mockReturnValueOnce(false);
+    mockNotifCreateOrReuse.mockRejectedValueOnce(new Error("DB down"));
+
+    const res = await GET(makeReq());
+    const body = await res.json();
+    // cron retorna ok aunque la notification falle
+    expect(res.status).toBe(200);
+    expect(body.changed).toBe(1);
+    expect(body.notifiedCount).toBe(0); // no contó la fallida
+  });
+
+  it("vendor sin tenantId → no intenta crear notification", async () => {
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "v-no-tenant",
+        ruc: "20777777777",
+        contactDni: null,
+        contactName: "X",
+        businessName: "Sin Tenant",
+        tenantId: null,
+        tenantSlug: null,
+      },
+    ]);
+    mockVerifyRuc.mockResolvedValueOnce({
+      ok: false,
+      source: "apisperu",
+      reason: "not_found",
+    });
+    mockIsInvoiceable.mockReturnValueOnce(false);
+
+    await GET(makeReq());
+    expect(mockNotifCreateOrReuse).not.toHaveBeenCalled();
   });
 
   it("error en verifyRuc → contabiliza errors, no bloquea siguientes", async () => {
