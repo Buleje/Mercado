@@ -32,6 +32,16 @@ import { PLAN_ORDER, type PlanId } from "@/lib/plans";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
+// Audit 2026-05-17 04-P1-W3: redact MP payment IDs in logs.
+// Ley 29733 PE — dataId+tenantSlug correlaciona con monto y email en panel MP.
+// Mostramos solo últimos 4 chars del ID para trazabilidad sin permitir lookup
+// inverso desde logs (atacante con read-only logs no puede consultar el pago).
+function redactId(id: string): string {
+  if (!id) return "";
+  if (id.length <= 4) return "****";
+  return `***${id.slice(-4)}`;
+}
+
 export async function POST(req: NextRequest) {
   // ── Leer query params (MP soporta dos formatos) ──────────
   // En Next.js 16 Route Handlers, req.nextUrl.searchParams es la API correcta.
@@ -161,7 +171,7 @@ export async function POST(req: NextRequest) {
   const paymentMethodType = payment.payment_type_id ?? "mercadopago";
 
   logger.info("[MP Webhook] Pago recibido", {
-    dataId,
+    dataId: redactId(dataId),
     status,
     tenantSlug,
     paymentMethodType,
@@ -300,6 +310,7 @@ async function processMPPaymentApproved(opts: {
     tenantSlug,
     oldPlan: tenant.plan,
     newPlan,
+    paymentRef: redactId(dataId),
     periodEnd: periodEnd.toISOString(),
   });
 }

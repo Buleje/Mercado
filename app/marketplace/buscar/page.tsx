@@ -31,9 +31,13 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // Audit 2026-05-17 02-P1-04: antes ambos noindex. Sin query (browse mode)
+    // /marketplace/buscar es entry-point genérico que SÍ debe indexarse para
+    // capturar tráfico orgánico de "buscar productos pucallpa". Con query
+    // siguen noindex (evita indexar combinaciones infinitas).
     robots: q
-      ? { index: false, follow: true } // No indexar paginas de busqueda
-      : { index: false, follow: true },
+      ? { index: false, follow: true } // No indexar resultados específicos
+      : { index: true, follow: true }, // Sí indexar entry-point genérico
   };
 }
 

@@ -66,6 +66,23 @@ const REQUIRED: EnvSpec[] = [
     description: "Stripe Price ID para el plan Pro (price_*) — S/149.00/mes",
     productionOnly: true,
   },
+  {
+    // Audit 2026-05-17 08-P1-3: agregado tras introducir plan Business
+    // (S/349/mes) en sesión 2026-05-11. Antes no se validaba en startup,
+    // un deploy sin la var permitía checkout fallar silencioso en runtime.
+    key: "STRIPE_BUSINESS_PRICE_ID",
+    description: "Stripe Price ID para el plan Business (price_*) — S/349.00/mes",
+    productionOnly: true,
+  },
+  {
+    // Audit 2026-05-17 04-P1-W4: si WHATSAPP_APP_SECRET falta en runtime,
+    // el webhook acepta cualquier POST (sin firma válida no rechaza). Hard
+    // fail en prod fuerza configurar HMAC secret de Meta antes de exponer
+    // el endpoint público.
+    key: "WHATSAPP_APP_SECRET",
+    description: "HMAC secret de la app de Meta — valida X-Hub-Signature-256 en /api/whatsapp/webhook",
+    productionOnly: true,
+  },
   // ── Cron security ─────────────────────────────────────────────────────────
   {
     key: "CRON_SECRET",

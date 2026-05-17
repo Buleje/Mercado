@@ -227,11 +227,29 @@ export async function checkoutMultiVendor(
     const firstItem = items[0];
     const subtotal = round2(computeSubtotal(items));
 
-    // Fetch store commission rate (fallback 5 %)
+    // Audit 2026-05-17 01-P1-7: validar que la tienda esté publicada antes
+    // de aceptar el checkout. Sin esto, una tienda con isPublished:false
+    // (en draft, suspendida o pending approval) recibiría órdenes WhatsApp
+    // sin estar lista para fulfillment — pérdida de ventas y mala reputación
+    // cuando el vendor no responde. Bloqueante merge a master.
     const store = await prisma.store
-      .findUnique({ where: { id: storeId }, select: { commission: true } })
+      .findUnique({
+        where: { id: storeId },
+        select: { commission: true, isPublished: true, name: true },
+      })
       .catch(() => null);
-    const rate = store?.commission ?? 5;
+
+    if (!store || !store.isPublished) {
+      logger.warn("[multi-vendor-checkout] store not published — refusing order", {
+        storeId,
+        storeName: firstItem.storeName ?? store?.name ?? "?",
+        isPublished: store?.isPublished ?? null,
+        conversationId,
+      });
+      throw new Error(`store-not-published:${storeId}`);
+    }
+
+    const rate = store.commission ?? 5;
     const commission = round2(calculateCommission(subtotal, rate));
 
     // Build idempotency key scoped to (conversationId + storeId)

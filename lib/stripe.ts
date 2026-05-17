@@ -2,12 +2,14 @@ import Stripe from "stripe";
 import { PLANS, type PlanId } from "@/lib/plans";
 
 // ─── Client (singleton) ──────────────────────────────────
-if (!process.env.STRIPE_SECRET_KEY) {
-  // Only hard-fail at runtime when the key is actually needed
-  // (build-time imports won't crash)
-}
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_placeholder", {
+// Audit 2026-05-17 04-P1-W5: el fallback "sk_test_placeholder" hacía que
+// en prod sin la var la app booteara con cliente Stripe inválido, y las
+// llamadas explotaban con auth errors silenciosos en runtime (HTTP 401
+// from api.stripe.com escondidos en try/catch del caller). Mejor fail-fast
+// en startup: si STRIPE_SECRET_KEY falta en prod, lib/env.ts ya lanza error
+// crítico. En dev (sin var) seguimos con string vacío → Stripe lanza error
+// claro al primer call y el dev lo ve de inmediato.
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
   apiVersion: "2026-02-25.clover",
   typescript: true,
 });

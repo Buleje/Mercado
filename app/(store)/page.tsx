@@ -361,7 +361,7 @@ async function CategoriesGrid() {
         {/* ── Featured XL: Restaurantes + Supermercado ────────────────── */}
         {featured.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 mb-3 sm:mb-5">
-            {featured.map((c) => (
+            {featured.map((c, idx) => (
               <Link
                 key={c.id}
                 href={hrefForCategory(c.id)}
@@ -383,6 +383,9 @@ async function CategoriesGrid() {
                       fill
                       sizes="(min-width: 640px) 112px, 80px"
                       className="object-cover"
+                      // Audit 2026-05-17 02-P1-02: featured[0] (Restaurante) es LCP
+                      // candidate above-the-fold mobile. priority elimina ~200ms.
+                      priority={idx === 0}
                     />
                   ) : (
                     <span className="text-5xl sm:text-7xl">
@@ -492,7 +495,7 @@ async function TopStoresSection() {
           aria-label={`${stores.length} tiendas destacadas`}
           className="grid grid-cols-3 sm:grid-cols-5 gap-4 sm:gap-6"
         >
-          {stores.slice(0, 10).map((s) => (
+          {stores.slice(0, 10).map((s, idx) => (
             <li key={s.id}>
               <Link
                 href={`/marketplace/${s.slug}`}
@@ -507,6 +510,9 @@ async function TopStoresSection() {
                       fill
                       sizes="(min-width: 640px) 128px, 96px"
                       className="object-cover"
+                      // Audit 2026-05-17 02-P1-01: primeras 3 logos son LCP candidate
+                      // en mobile (above-the-fold). priority elimina ~300ms de LCP en 3G.
+                      priority={idx < 3}
                     />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-600,var(--accent))] text-white font-black text-3xl sm:text-5xl">

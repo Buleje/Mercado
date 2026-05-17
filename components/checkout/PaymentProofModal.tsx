@@ -449,6 +449,12 @@ export function PaymentProofModal({
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+              // Audit 2026-05-17 07-P1-2: capture="environment" abre cámara
+              // trasera directamente en Android/iOS. Sin esto, mobile abre
+              // file picker y el usuario navega galería — fricción alta para
+              // foto de comprobante Yape inmediata. En desktop es no-op.
+              // Cambio UX-only — no afecta totales, idempotency ni providers.
+              capture="environment"
               className="hidden"
               onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
             />

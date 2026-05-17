@@ -106,6 +106,11 @@ export async function generateMetadata({
   return {
     title: { absolute: title },
     description,
+    // Audit 2026-05-17 02-P1-06: sin canonical, Google puede indexar duplicados
+    // (preview=true vs normal, query strings). Fija URL canónica al slug puro.
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe"}/t/${slug}`,
+    },
     openGraph: {
       title,
       description,

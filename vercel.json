@@ -91,11 +91,11 @@
     },
     {
       "path": "/api/cron/superadmin-alerts",
-      "schedule": "0 8 * * *"
+      "schedule": "25 8 * * *"
     },
     {
       "path": "/api/cron/marketplace-sla-watchdog",
-      "schedule": "0 8 * * *"
+      "schedule": "20 8 * * *"
     },
     {
       "path": "/api/cron/agent-tasks",
@@ -103,7 +103,7 @@
     },
     {
       "path": "/api/cron/batch-expiry-alerts",
-      "schedule": "0 8 * * *"
+      "schedule": "5 8 * * *"
     },
     {
       "path": "/api/cron/auto-close-register",
@@ -115,7 +115,7 @@
     },
     {
       "path": "/api/cron/stock-alerts-notify",
-      "schedule": "0 8 * * *"
+      "schedule": "15 8 * * *"
     },
     {
       "path": "/api/cron/auto-reorder-check",
@@ -123,7 +123,7 @@
     },
     {
       "path": "/api/cron/expiry-discounts",
-      "schedule": "0 8 * * *"
+      "schedule": "10 8 * * *"
     },
     {
       "path": "/api/cron/auto-backup",
@@ -159,7 +159,7 @@
     },
     {
       "path": "/api/prestamos/cron/recordatorios",
-      "schedule": "0 8 * * *"
+      "schedule": "30 8 * * *"
     },
     {
       "path": "/api/cron/settle-commissions",

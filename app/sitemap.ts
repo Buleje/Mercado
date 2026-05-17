@@ -195,6 +195,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Fetch all active store products from all published stores
     const storeIds = stores.map((s) => s.id);
     if (storeIds.length > 0) {
+      // Audit 2026-05-17 02-P1-03: sin take, findMany puede retornar miles
+      // de rows en build → OOM en Vercel build container. Cap a 5000 productos
+      // priorizando los más recientes (sitemap Google acepta hasta 50k URLs,
+      // 5k es safe + cubre los más relevantes para SEO).
       const storeProducts = await prisma.storeProduct.findMany({
         where: {
           storeId: { in: storeIds },
@@ -205,6 +209,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           storeId: true,
           productId: true,
         },
+        orderBy: { id: "desc" },
+        take: 5000,
       });
 
       // Build storeId -> slug map
