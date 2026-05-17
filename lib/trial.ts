@@ -1,5 +1,5 @@
 import "server-only";
-import { prisma } from "@/lib/prisma";
+import { findTenantBillingByIdOrSlug } from "@/lib/tenant";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,15 +17,9 @@ export interface TenantAccessResult {
  * Returns `allowed: false` if the tenant is suspended or its free trial has expired.
  */
 export async function checkTenantAccess(tenantSlug: string): Promise<TenantAccessResult> {
-  const tenant = await prisma.tenant.findFirst({
-    where: { slug: tenantSlug },
-    select: {
-      active: true,
-      trialEndsAt: true,
-      plan: true,
-      stripeSubscriptionId: true,
-    },
-  });
+  // Brandon 2026-05-16 (Fase 2 perf): usa el helper memoizado con React.cache
+  // para deduplicar findTenant dentro del mismo request (antes 3× por render).
+  const tenant = await findTenantBillingByIdOrSlug(tenantSlug);
 
   if (!tenant) return { allowed: false, reason: "not_found" };
   if (!tenant.active) return { allowed: false, reason: "suspended" };

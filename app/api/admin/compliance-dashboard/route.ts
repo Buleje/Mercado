@@ -14,9 +14,14 @@
  * Permite al admin del tenant ver su postura Ley 29733 en 1 vista.
  *
  * SECURITY 2026-05-12 (Code Reviewer P0):
- * - `force-dynamic` evita cache cross-tenant
  * - Uso de `ComplianceDB.getKpis()` en vez de prisma.* directo (regla #1)
  * - Guard explícito tenantId vacío al inicio
+ *
+ * Brandon 2026-05-16: removido `export const dynamic = "force-dynamic"`
+ * porque es incompatible con `nextConfig.cacheComponents` (ADR-019,
+ * memoria feedback_no_force_dynamic_next16). El endpoint usa cookies
+ * via requireAdmin → Next infiere dynamic automáticamente, sin riesgo
+ * de cache cross-tenant.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -24,10 +29,6 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ComplianceDB } from "@/lib/db/compliance.db";
 import { logger } from "@/lib/logger";
-
-// SECURITY (Code Reviewer P0-2): force-dynamic obligatorio.
-// Sin esto, Next 16 puede cachear el response RSC entre tenants distintos.
-export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "compliance-dashboard");

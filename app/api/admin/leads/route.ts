@@ -26,7 +26,9 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { LeadsDB } from "@/lib/db/leads.db";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
+// Brandon 2026-05-16: removido `force-dynamic` (incompatible con
+// cacheComponents Next 16, ADR-019). requireAdmin lee cookies →
+// Next infiere dynamic automáticamente.
 
 const UpdateSchema = z.object({
   entityId: z.string().min(1).max(120),

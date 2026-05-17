@@ -13,8 +13,11 @@
  *
  * SECURITY:
  *  - requireAdmin (roles admin|manager)
- *  - force-dynamic (no cache cross-tenant)
  *  - rate-limit MODERATE
+ *
+ * Brandon 2026-05-16: removido `force-dynamic` (incompatible con
+ * cacheComponents Next 16, ADR-019). requireAdmin lee cookies → Next
+ * infiere dynamic automáticamente.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -22,8 +25,6 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { LeadsDB } from "@/lib/db/leads.db";
 import { logger } from "@/lib/logger";
-
-export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "leads-funnel");

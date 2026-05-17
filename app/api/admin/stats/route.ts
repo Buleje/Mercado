@@ -61,18 +61,21 @@ export async function GET(req: NextRequest) {
         },
       }),
 
-      // Products with stock at or below minimum threshold
-      prisma.product.count({
-        where: {
-          tenantId,
-          active: true,
-          stock: { not: null },
-          stockMin: { not: null },
-          // Prisma doesn't support column comparisons directly;
-          // use a raw-ish workaround by checking stock <= 0 OR use a post-filter.
-          // We'll fetch the count via a raw query instead.
-        },
-      }),
+      // Products with stock at or below minimum threshold (real low-stock).
+      // Brandon 2026-05-16: bug fix — antes el count NO comparaba stock vs
+      // stockMin (Prisma no soporta column-column comparison) y devolvía el
+      // total de productos activos con stockMin definido. El badge
+      // "inventario" siempre mostraba un número irreal. Ahora usamos raw SQL
+      // parametrizado ($1) para comparar columnas reales.
+      prisma.$queryRaw<{ count: bigint }[]>`
+        SELECT COUNT(*)::bigint AS count
+        FROM "Product"
+        WHERE "tenantId" = ${tenantId}
+          AND "active" = true
+          AND "stock" IS NOT NULL
+          AND "stockMin" IS NOT NULL
+          AND "stock" <= "stockMin"
+      `.then(rows => Number(rows[0]?.count ?? 0)).catch(() => 0),
 
       // Orders in the last 7 days
       prisma.order.count({ where: { tenantId, createdAt: { gte: startOfWeek } } }),

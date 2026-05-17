@@ -23,6 +23,33 @@ export const findTenantByIdOrSlug = cache(async (tenantId: string) => {
 });
 
 /**
+ * Variante con select restringido a campos de billing/trial — usada por
+ * helpers en hot path (requireActiveSubscription, trial gates).
+ * Memoizada por request via React.cache para deduplicar.
+ *
+ * Brandon 2026-05-16 (Fase 2 perf): consolidar 3+ findFirst con select
+ * billing repetidos en lib/trial.ts, lib/billing/require-active-subscription.ts
+ * y lib/db/tenant-billing.db.ts en un único call cacheado.
+ */
+export const findTenantBillingByIdOrSlug = cache(async (tenantId: string) => {
+  if (!tenantId) return null;
+  return prisma.tenant.findFirst({
+    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+    select: {
+      id: true,
+      slug: true,
+      active: true,
+      plan: true,
+      trialEndsAt: true,
+      stripeSubscriptionId: true,
+      stripeCurrentPeriodEnd: true,
+      mpSubscriptionId: true,
+      cancelAtPeriodEnd: true,
+    },
+  });
+});
+
+/**
  * Read the tenant slug injected by Next.js edge middleware.
  * Parses the `x-tenant-id` header set from the subdomain.
  * Must be called from a Server Component, Server Action, or Route Handler.
