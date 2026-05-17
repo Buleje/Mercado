@@ -24,12 +24,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Audit 2026-05-17 08-P2-4: path bodega-san-martin/ era obsoleto
+      # (repo reorganizado a raíz). Eliminado working-directory + corregido
+      # cache-dependency-path para que el workflow corra en producción.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: "npm"
-          cache-dependency-path: bodega-san-martin/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install pg_dump (Postgres client)
         run: |
@@ -37,15 +40,12 @@ jobs:
           sudo apt-get install -y postgresql-client
 
       - name: Install deps
-        working-directory: bodega-san-martin
         run: npm ci --prefer-offline --no-audit
 
       - name: Install @aws-sdk/client-s3
-        working-directory: bodega-san-martin
         run: npm i -D @aws-sdk/client-s3 --no-save
 
       - name: Run backup
-        working-directory: bodega-san-martin
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}

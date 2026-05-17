@@ -365,13 +365,28 @@ async function handleSubscriptionNotification(opts: {
   if (type === "subscription_preapproval") {
     preapprovalId = dataId;
   } else if (type === "subscription_authorized_payment") {
+    // Audit 2026-05-17 04-P2-W6: MERCADOPAGO_ACCESS_TOKEN fallback ""
+    // mandaba "Bearer " vacío al API → response 401 silencioso interpretable
+    // como network failure. Mejor fail-fast: si la var falta, retornar 503
+    // explícito para que MP reintente cuando esté configurada.
+    const mpToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    if (!mpToken) {
+      logger.error("[MP Webhook] MERCADOPAGO_ACCESS_TOKEN missing — cannot resolve preapprovalId", {
+        dataId: redactId(dataId),
+        type,
+      });
+      return NextResponse.json(
+        { error: "mp_token_missing", received: false },
+        { status: 503 },
+      );
+    }
     // GET /preapproval_payment/{id} para resolver el preapprovalId
     try {
       const res = await fetch(
         `https://api.mercadopago.com/preapproval_payment/${dataId}`,
         {
           headers: {
-            Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN ?? ""}`,
+            Authorization: `Bearer ${mpToken}`,
           },
         },
       );

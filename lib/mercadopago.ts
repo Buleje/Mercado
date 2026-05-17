@@ -1,4 +1,5 @@
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { PLANS, type PlanId } from "@/lib/plans";
 
 // ─── Tipos Preapproval ────────────────────────────────
@@ -182,17 +183,16 @@ export function verifyMPWebhookSignature(opts: {
   // El manifest sigue exactamente el formato documentado por MP
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
 
-  // Node ≥ 18: crypto disponible de forma nativa
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const crypto = require("crypto") as typeof import("crypto");
-  const expectedHmac = crypto
-    .createHmac("sha256", secret)
+  // Audit 2026-05-17 04-P2-W7: import estático en lugar de require().
+  // Node ≥ 18 expone crypto nativo; usar named imports es más limpio y evita
+  // el eslint-disable. Mismo comportamiento (createHmac + timingSafeEqual).
+  const expectedHmac = createHmac("sha256", secret)
     .update(manifest)
     .digest("hex");
 
   // Comparación en tiempo constante para evitar timing attacks
   try {
-    return crypto.timingSafeEqual(
+    return timingSafeEqual(
       Buffer.from(expectedHmac, "hex"),
       Buffer.from(v1, "hex"),
     );

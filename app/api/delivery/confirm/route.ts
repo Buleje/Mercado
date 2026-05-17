@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { notifyDriverInternal } from "@/lib/delivery/notify-driver";
 
 // SECURITY 2026-05-06 (audit delivery #11): cap de tamaño en photo+signature
 // para evitar inflar la DB con base64 grandes (5+MB cada uno → bloat). Cada
@@ -116,21 +117,23 @@ async function confirmHandler(
       }),
     ]);
 
-    // Fire-and-forget: notificar al cliente por WhatsApp
+    // Audit 2026-05-17 03-P2-1: SSRF mitigation — fetch HTTP a /api/delivery/notify
+    // con cookie forward es vector de leak si NEXT_PUBLIC_BASE_URL fuera
+    // manipulada en build (env-injection). Reemplazado por llamada directa
+    // a notifyDriverInternal (misma defensa que ya se aplicó en assignments).
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
     if (assignment.order.customerPhone) {
-      fetch(`${baseUrl}/api/delivery/notify`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          cookie: req.headers.get("cookie") ?? "",
-        },
-        body: JSON.stringify({
-          partnerId: assignment.partnerId,
+      notifyDriverInternal({
+        tenantId: auth.tenantId,
+        partnerId: assignment.partnerId,
+        orderId,
+        message: `Tu pedido fue entregado por ${assignment.partner.name}. Gracias por tu compra!`,
+      }).catch((err) =>
+        logger.error("[delivery/confirm] notify-driver failed", {
+          error: String(err),
           orderId,
-          message: `Tu pedido fue entregado por ${assignment.partner.name}. Gracias por tu compra!`,
         }),
-      }).catch((err) => logger.error("[delivery/confirm] notify fetch failed", { error: String(err), orderId }));
+      );
 
       // Fire-and-forget: enviar link de calificación por WhatsApp (30s delay via setTimeout no disponible en serverless, se envía inmediato en segundo mensaje)
       const ratingUrl = `${baseUrl}/marketplace/calificar-entrega?id=${updatedAssignment.id}`;
