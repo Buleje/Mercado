@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -251,6 +251,16 @@ function AdminPage() {
     return <LoadingState variant="fullscreen" message="" />;
   }
 
+  // Brandon 2026-05-16 (Fase 3 perf): estabilizar props del tabRouter con
+  // useMemo. Antes el objeto inline se recreaba en cada render de AdminPage
+  // (cualquier cambio de state) rompiendo el memo(AdminMainContent) y
+  // disparando re-render fantasma del TabRouter + módulo activo.
+  // Ahora identity-stable: solo cambia cuando alguna dep real cambia.
+  const tabRouterProps = useMemo(
+    () => ({ storeMode, onModeChange: setStoreModeState, visibleCategories, onSaveCategoryOrder: saveCategoryOrder, onboarding }),
+    [storeMode, setStoreModeState, visibleCategories, saveCategoryOrder, onboarding],
+  );
+
   return (
     <TrialExpiredGuard>
     <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-dark-fallback>
@@ -382,10 +392,7 @@ function AdminPage() {
           compactMode={compactMode}
           presentationMode={presentationMode}
           swipeHandlers={swipeHandlers}
-          tabRouter={{
-            storeMode, onModeChange: setStoreModeState, visibleCategories,
-            onSaveCategoryOrder: saveCategoryOrder, onboarding,
-          }}
+          tabRouter={tabRouterProps}
         />
 
         <AdminOverlaysLayer

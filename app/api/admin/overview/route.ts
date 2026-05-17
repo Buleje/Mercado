@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { getOrSet } from "@/lib/cache";
 
 // Brandon 2026-05-16 P1 (audit): force-dynamic obligatorio. Sin esto, Next 16
 // puede inferir el endpoint como estático en build y servir KPIs cacheados
@@ -174,9 +175,12 @@ export async function GET(req: NextRequest) {
   startOf30dAgo.setDate(startOf30dAgo.getDate() - 30);
 
   try {
-    // Brandon 2026-05-16 (audit P1 regla 1): reads migrados a OverviewDB.
-    // Si la llamada completa falla, el catch general loguea y devuelve
-    // un payload vacío seguro — el dashboard renderiza el empty state.
+    // Brandon 2026-05-16 (Fase 3 perf): cache server-side TTL 30s.
+    // Antes solo había browser cache (Cache-Control private, max-age=60).
+    // Ahora si dos tabs/pestañas piden /overview en <30s, la 2da pega cache
+    // server-side y NO ejecuta las 9 queries de OverviewDB. Cache key
+    // incluye tenantId + rango para no mezclar datos.
+    const cacheKey = `admin:overview:${tenantId}:${rangeFrom.getTime()}:${rangeTo.getTime()}`;
     const {
       rangeOrders,
       prevOrders,
@@ -187,7 +191,7 @@ export async function GET(req: NextRequest) {
       overdueCreditCount,
       topProducts,
       newCustomersInRange,
-    } = await OverviewDB.fetchOverview({
+    } = await getOrSet(cacheKey, 30, () => OverviewDB.fetchOverview({
       tenantId,
       rangeFrom,
       rangeTo,
@@ -195,7 +199,7 @@ export async function GET(req: NextRequest) {
       prevTo,
       startOf30dAgo,
       now,
-    }).catch((err): Awaited<ReturnType<typeof OverviewDB.fetchOverview>> => {
+    })).catch((err): Awaited<ReturnType<typeof OverviewDB.fetchOverview>> => {
       logger.warn("[admin/overview] fetchOverview failed", {
         tenantId,
         err: err instanceof Error ? err.message : String(err),

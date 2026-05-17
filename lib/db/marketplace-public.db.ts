@@ -13,6 +13,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
+import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 
@@ -601,10 +602,8 @@ export const MarketplacePublicDB = {
    */
   async resolveTenantIdBySlug(slugOrId: string): Promise<string | null> {
     return getOrSet(`marketplace:resolve-tenant:${slugOrId}`, 300, async () => {
-      const tenant = await prisma.tenant.findFirst({
-        where: { OR: [{ id: slugOrId }, { slug: slugOrId }] },
-        select: { id: true },
-      });
+      // Brandon 2026-05-16 (Fase 3): helper memoizado con React.cache.
+      const tenant = await findTenantByIdOrSlug(slugOrId);
       return tenant?.id ?? null;
     });
   },
