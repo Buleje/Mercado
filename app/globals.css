@@ -1077,8 +1077,12 @@ body {
   --surface-canvas: #0d1117;
   --surface-sunken: #161b22;
   --surface-raised: #1c2230;
-  --rule-base: #2e3645;
-  --rule-soft: #232a38;
+  /* Brandon 2026-05-18: subido contraste de hairlines en dark.
+     Antes #2e3645/#232a38 era casi imperceptible sobre #1c2230 (Δ luma ~7-14).
+     Ahora #3a4254/#2a3242 da Δ ~13-21 — visible sin ser estridente.
+     Separa cards del fondo y mantiene jerarquía visual. */
+  --rule-base: #3a4254;
+  --rule-soft: #2a3242;
   --text-primary: #f0f3f7;
   --text-secondary: #b8c0cc;
   --text-tertiary: #8590a3;
