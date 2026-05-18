@@ -94,6 +94,21 @@ export async function GET(
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  // PENTEST 2026-05-18 Fase 1 CRIT #3: cross-tenant leak fix.
+  // ANTES: si authTenantId era null/undefined (customer con session
+  // incompleta), el spread `...(authTenantId ? {tenantId} : {})` quitaba
+  // el filtro de tenant → query sin scope → customer leía proof de
+  // CUALQUIER tienda con el orderId correcto. Violación Ley 29733 PE.
+  // AHORA: si NO hay tenantId resolved (admin o customer), rechazar 401.
+  if (!authTenantId) {
+    logger.warn("[proof-url] sesion sin tenantId — rechazado por cross-tenant guard", {
+      orderId: id,
+      isAdmin,
+      hasCustomerId: !!authCustomerId,
+    });
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   // Leer la orden con scope de tenant. Order NO tiene relación Prisma a
   // PaymentApproval (solo FK escalar paymentApprovalId), así que consultamos
   // PaymentApproval por separado.
@@ -105,11 +120,11 @@ export async function GET(
   } | null;
 
   try {
-    // eslint-disable-next-line no-restricted-properties -- @prisma-direct ok: tenant guard explícito abajo y no hay clase DB dedicada
+    // eslint-disable-next-line no-restricted-properties -- @prisma-direct ok: tenant guard obligatorio arriba (authTenantId nunca null aquí)
     order = await prisma.order.findFirst({
       where: {
         id,
-        ...(authTenantId ? { tenantId: authTenantId } : {}),
+        tenantId: authTenantId,
         deletedAt: null,
       },
       select: {

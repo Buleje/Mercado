@@ -176,7 +176,10 @@ export const MarketplaceOrdersDB = {
           active:   true,
           OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
-        select: { id: true, discountType: true, discountValue: true, maxUses: true, usedCount: true },
+        // PENTEST 2026-05-18 Fase 1 CRIT #2: agregar minPurchase al select.
+        // Antes el campo NO se traía y NO se validaba → cliente aplicaba
+        // cupón de S/50 mínimo comprando S/1 y se aceptaba el descuento.
+        select: { id: true, discountType: true, discountValue: true, maxUses: true, usedCount: true, minPurchase: true },
       });
       if (!coupon) {
         throw new Error("Cupón inválido o expirado");
@@ -185,6 +188,13 @@ export const MarketplaceOrdersDB = {
       const maxUsesVal = coupon.maxUses ?? 0;
       if (maxUsesVal > 0 && toNumOrZero(coupon.usedCount) >= maxUsesVal) {
         throw new Error("Cupón ya alcanzó el límite de usos");
+      }
+      // CRIT #2: validar minPurchase contra subtotal (antes de descuento).
+      const minPurchase = toNumOrZero(coupon.minPurchase);
+      if (minPurchase > 0 && subtotal < minPurchase) {
+        throw new Error(
+          `Este cupón requiere una compra mínima de S/${minPurchase.toFixed(2)}. Tu carrito es de S/${subtotal.toFixed(2)}.`,
+        );
       }
       // PENTEST 2026-05-18 Sprint A #2: check movido DENTRO de la $transaction
       // (ver más abajo). El pre-check aquí era TOCTOU: 2 POST paralelos con

@@ -148,7 +148,18 @@ export async function POST(req: NextRequest) {
     // F2: Idempotency-Key — evita doble pedido + doble cupón por doble click.
     // TTL 300s (5 min): si la misma combinación key+phone llega de nuevo,
     // devolvemos el orderId cacheado en vez de crear otra orden.
-    const idemKey = req.headers.get("Idempotency-Key") ?? null;
+    //
+    // PENTEST 2026-05-18 Fase 1 CRIT #5: leer en TODOS los casings posibles.
+    // Algunos proxies/middleware normalizan a lowercase, otros a Pascal.
+    // Next.js es case-insensitive en runtime pero la lectura defensiva con
+    // fallback evita que la idempotencia muera silenciosamente si el shape
+    // del header cambia. Cliente puede enviar "x-idempotency-key" o "Idempotency-Key".
+    const idemKey =
+      req.headers.get("Idempotency-Key") ??
+      req.headers.get("idempotency-key") ??
+      req.headers.get("x-idempotency-key") ??
+      req.headers.get("X-Idempotency-Key") ??
+      null;
 
     const body = await req.json().catch(() => ({}));
     const parsed = CheckoutBodySchema.safeParse(body);
@@ -338,8 +349,19 @@ export async function POST(req: NextRequest) {
     if (paymentProof) {
       const proofCents = Math.round(paymentProof.amountPEN * 100);
       const orderCents = Math.round(order.total * 100);
-      if (Math.abs(proofCents - orderCents) > 1) {
-        logger.warn("[marketplace/orders] PENTEST-001 proof amount mismatch — cancelling order", {
+      // PENTEST-001 (ajustado Fase 1 CRIT #1 — 2026-05-18):
+      // Antes: |proofCents - orderCents| > 1 → cancelaba si NO matcheaba exacto.
+      // Problema: tier discount es server-side (cliente NO lo sabe). Cliente
+      // envía amountPEN = subtotal - cupón - loyalty (lo que conoce). Server
+      // tiene order.total = subtotal - cupón - loyalty - tier. Diferencia =
+      // tier discount (siempre ≥ 0). Toda orden con tier+cupón se cancelaba.
+      //
+      // Ahora: detecta SUB-PAGO (proofCents < orderCents - 1) que es lo único
+      // que daña a la tienda. Permite sobre-pago (cliente que sobrepaga recibe
+      // ajuste como credit cuando admin aprueba el comprobante en /admin).
+      // Tolerancia 1 centavo para floats.
+      if (proofCents < orderCents - 1) {
+        logger.warn("[marketplace/orders] PENTEST-001 sub-payment detected — cancelling order", {
           proofCents,
           orderCents,
           orderId:    order.id,
@@ -534,10 +556,32 @@ export async function POST(req: NextRequest) {
     // global porque phone es @unique cross-tenant.
     // @prisma-direct ok — customer.findFirst + updateMany scoped (phone, tenantId);
     // best-effort loyalty; migracion a CustomersDB pendiente.
+    // PENTEST 2026-05-18 Fase 1 CRIT #4: loyalty earn con guard de idempotencia.
+    // Antes: fire-and-forget sin check idempotency cache → si cliente hace retry
+    // antes de que la cache se escriba (línea 446-448), el segundo POST crea
+    // SEGUNDA orden Y suma puntos otra vez. Ahora: solo earn si la cache
+    // refleja que ESTA es la orden canónica para este idemKey (o no hay key).
+    // Doble defensa: lookup por orderId persistido para evitar doble-earn si
+    // el endpoint se llama 2× con el mismo orderId (escenario muy raro pero
+    // imposible si check existe).
     (async () => {
       try {
         if (!customerPhone) return;
         const tenantIdForLoyalty = order.sellerTenantId;
+        // CRIT #4 guard: si hay idemKey, confirmar que la cache apunta a esta
+        // orden (escrita líneas 446-447). Si NO matchea, otro POST con misma
+        // key ya ganó la idempotency — saltar para no duplicar puntos.
+        if (idemKey) {
+          const idemCacheKey = `idem:order:${customerPhone || "anon"}:${idemKey}`;
+          const cached = cacheStore.get(idemCacheKey) as { orderId?: string } | undefined;
+          if (cached?.orderId && cached.orderId !== order.id) {
+            logger.info("[marketplace/orders] loyalty earn skipped — idemKey resolved to another order", {
+              orderId: order.id,
+              cachedOrderId: cached.orderId,
+            });
+            return;
+          }
+        }
         const exists = await prisma.customer.findFirst({
           where: { phone: customerPhone, tenantId: tenantIdForLoyalty },
           select: { phone: true },

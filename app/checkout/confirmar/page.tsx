@@ -141,6 +141,19 @@ export default function CheckoutConfirmarPage() {
         const redeemForThisStore = idx === 0 ? loyalty.redeemPoints || 0 : 0;
         const storeProof = paymentProofs[g.storeSlug];
         const storeSubtotal = totalByStore[sid]?.total ?? 0;
+        // PENTEST 2026-05-18 Fase 1 CRIT #1: amountPEN debe descontar
+        // los descuentos que el cliente CONOCE (cupón + loyalty redeem) ANTES
+        // de firmar el proof token. El tier discount es server-side (calculado
+        // dentro de createFromCart) — el cliente no lo sabe, así que el server
+        // permite que amountPEN sea >= order.total (sobre-pago por tier OK).
+        // Antes: amountPEN = subtotal bruto → PENTEST-001 cancelaba TODA orden
+        // con cupón/loyalty porque order.total < subtotal.
+        const couponDiscountForStore = typeof couponEntry?.discount === "number" ? couponEntry.discount : 0;
+        const loyaltyDiscountForStore = idx === 0 ? loyaltyDiscountTotal : 0;
+        const proofAmount = Math.max(
+          0,
+          storeSubtotal - couponDiscountForStore - loyaltyDiscountForStore,
+        );
         const requestBody = {
           storeSlug: g.storeSlug,
           customerName: customer.name.trim(),
@@ -164,7 +177,9 @@ export default function CheckoutConfirmarPage() {
                   proofUrl: storeProof.proofUrl,
                   proofToken: storeProof.proofToken,
                   reference: storeProof.reference,
-                  amountPEN: storeSubtotal,
+                  // CRIT #1: subtotal - cupón - loyalty (descuentos client-side).
+                  // El server tolera tier extra via PENTEST-001 ajustado.
+                  amountPEN: proofAmount,
                 },
               }
             : {}),
