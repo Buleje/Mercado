@@ -244,28 +244,14 @@ async function DynamicHeadContent() {
   );
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // audit P0 UX #3 (Brandon 2026-05-18): leer nonce SÍNCRONO al inicio del
-  // layout para poder inyectar el theme bootstrap script INLINE en <head>
-  // (sin Suspense). Antes vivía dentro de `<Suspense><DynamicHeadContent />`
-  // que React difería — para cuando se ejecutaba, la hidratación ya había
-  // aplicado light → flash de light en cada navegación con dark activo.
-  const themeReqHeaders = await headers();
-  const themeNonce = themeReqHeaders.get("x-nonce") ?? undefined;
   return (
     <html lang="es-PE" className={`${GeistSans.variable} ${InstrumentDisplay.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head suppressHydrationWarning>
-        <script
-          nonce={themeNonce}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{window.sessionStorage.removeItem("buleje-theme-session");window.localStorage.removeItem("buleje-theme-session");var t=window.sessionStorage.getItem("buleje-theme-session-v2");if(t==="dark"){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}else{document.documentElement.classList.remove("dark");document.documentElement.style.colorScheme="light"}}catch(e){}})()`,
-          }}
-        />
         <Suspense>
           <DynamicHeadContent />
         </Suspense>
