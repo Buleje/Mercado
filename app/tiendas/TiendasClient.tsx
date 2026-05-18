@@ -727,8 +727,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   estaba hardcodeada y aparecía a usuarios deslogueados
                   o de otras ciudades (CC). Ahora sólo se muestra si el
                   cliente está logueado Y completó departamento/distrito
-                  en su perfil. Sin login → directo al buscador. */}
-              <div className="mt-3 sm:mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
+                  en su perfil. Sin login → directo al buscador.
+                  Brandon 2026-05-18: oculto en mobile — el navbar mobile
+                  ya tiene un search pill prominente arriba (con logo +
+                  placeholder + lupa), duplicarlo aquí confunde al cliente.
+                  En sm+ el hero search sigue siendo el principal porque
+                  el navbar desktop es menos prominente. */}
+              <div className="hidden sm:flex mt-3 sm:mt-5 sm:flex-row sm:items-center gap-3">
                 {hasLocation && (
                   <div className="inline-flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2.5 shrink-0 shadow-sm">
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">

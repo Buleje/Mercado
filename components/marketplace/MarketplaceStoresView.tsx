@@ -9,6 +9,7 @@ import {
   Plane,
   HardHat,
   Moon,
+  Bike,
 } from "lucide-react";
 import Image from "next/image";
 import { m } from "framer-motion";
@@ -161,11 +162,18 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
 
   const badges = (
     <>
-      {/* Rating — primero y mas prominente (decision factor #1) */}
+      {/* Rating + reseñas count — decision factor #1.
+          Brandon 2026-05-18: antes solo "4.8". Ahora "4.8 · 120" con count
+          inline (signal social que valida el rating frente a "fake-rating-de-1-review"). */}
       {store.rating > 0 && (
-        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--surface-raised)] shadow-sm border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
           <Star className="h-3 w-3 fill-current text-[var(--accent)]" aria-hidden="true" />
-          {Number(store.rating).toFixed(1)}
+          <span className="tabular-nums">{Number(store.rating).toFixed(1)}</span>
+          {store.reviewCount > 0 && (
+            <span className="text-[var(--text-tertiary)] font-semibold tabular-nums">
+              · {store.reviewCount}
+            </span>
+          )}
         </span>
       )}
       {/* Pediste hoy — historial reciente */}
@@ -191,25 +199,45 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     </>
   );
 
-  // Footer minimal — solo meta row (zona + delivery). Sin "Pedir", sin
-  // pill "Activa/Vacaciones", sin product preview. La card entera ya es
-  // un Link al storefront, no necesita CTA visible — y los estados de
-  // vacaciones/cerrada se comunican con el overlay sobre la imagen.
-  // Brandon, mayo 14 2026.
+  // Footer minimal — meta row (zona + delivery time) + trust chips
+  // (envío gratis o mín pedido). La card entera ya es un Link al
+  // storefront, no necesita CTA visible. Estados de vacaciones/cerrada
+  // se comunican con el overlay sobre la imagen.
+  //
+  // Brandon 2026-05-18: agregar señales de confianza visibles antes del
+  // tap — Envío gratis o "Mín. S/15". Antes el cliente solo veía zona
+  // + minutos, decidía a ciegas el costo total.
   const footer = (
-    <div className="flex items-center gap-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-      {store.zone && (
-        <span className="inline-flex items-center gap-1 truncate">
-          <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
-          <span className="truncate">{store.zone}</span>
+    <div className="flex flex-col gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+      <div className="flex items-center gap-2">
+        {store.zone && (
+          <span className="inline-flex items-center gap-1 truncate">
+            <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+            <span className="truncate">{store.zone}</span>
+          </span>
+        )}
+        {store.zone && <span aria-hidden className="text-[var(--rule-base)]">·</span>}
+        <span className="inline-flex items-center gap-1 font-bold text-[var(--text-secondary)] shrink-0">
+          {store.deliveryMinutes && store.deliveryMinutes > 0
+            ? `${Math.max(15, store.deliveryMinutes - 10)}–${store.deliveryMinutes + 5} min`
+            : "25–35 min"}
         </span>
+      </div>
+      {(store.freeDelivery || (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {store.freeDelivery && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] border border-[var(--accent)]/30 text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent)]">
+              <Bike className="h-2.5 w-2.5" strokeWidth={2.25} aria-hidden="true" />
+              Envío gratis
+            </span>
+          )}
+          {store.minOrderAmount != null && store.minOrderAmount > 0 && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] tabular-nums">
+              Mín. S/{store.minOrderAmount}
+            </span>
+          )}
+        </div>
       )}
-      {store.zone && <span aria-hidden className="text-[var(--rule-base)]">·</span>}
-      <span className="inline-flex items-center gap-1 font-bold text-[var(--text-secondary)] shrink-0">
-        {store.deliveryMinutes && store.deliveryMinutes > 0
-          ? `${Math.max(15, store.deliveryMinutes - 10)}–${store.deliveryMinutes + 5} min`
-          : "25–35 min"}
-      </span>
     </div>
   );
 
