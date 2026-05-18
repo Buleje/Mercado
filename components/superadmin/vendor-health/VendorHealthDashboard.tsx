@@ -20,6 +20,8 @@ import {
   ExternalLink,
   Loader2,
   Clock,
+  Calendar,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +30,18 @@ interface SummaryAlert {
   tenantSlug: string | null;
   kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
   detail: string;
+}
+
+interface SummaryGrace {
+  tenantId: string;
+  tenantSlug: string | null;
+  vendorId: string;
+  businessName: string;
+  kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
+  until: string;
+  graceDays: number;
+  reason?: string;
+  acknowledgedBy: string;
 }
 
 interface VendorHealthResponse {
@@ -48,6 +62,7 @@ interface VendorHealthResponse {
     emailSentCount?: number;
     gracedCount?: number;
     alerts: SummaryAlert[];
+    graces?: SummaryGrace[];
   } | null;
 }
 
@@ -61,6 +76,7 @@ export function VendorHealthDashboard() {
   const [data, setData] = useState<VendorHealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [clearingTenant, setClearingTenant] = useState<string | null>(null);
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -76,6 +92,30 @@ export function VendorHealthDashboard() {
       setError(err instanceof Error ? err.message : "Error de red");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearGrace = async (tenantId: string, tenantSlug: string | null) => {
+    if (!confirm(`¿Borrar grace activo de "${tenantSlug ?? tenantId}"? El próximo cron volverá a alertar a este vendor.`)) {
+      return;
+    }
+    setClearingTenant(tenantId);
+    try {
+      const res = await fetch(
+        `/api/superadmin/vendor-grace?tenantId=${encodeURIComponent(tenantId)}`,
+        { method: "DELETE", credentials: "include" },
+      );
+      if (!res.ok) {
+        const errJson = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(`Error: ${errJson.error ?? `HTTP ${res.status}`}`);
+        return;
+      }
+      // Refrescar summary
+      await fetchSummary();
+    } catch (err) {
+      alert(`Error: ${err instanceof Error ? err.message : "red"}`);
+    } finally {
+      setClearingTenant(null);
     }
   };
 
@@ -269,6 +309,82 @@ export function VendorHealthDashboard() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Vendors en gracia (self-service ack) */}
+      {(summary.graces?.length ?? 0) > 0 && (
+        <div>
+          <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">
+            Vendors en período de gracia ({summary.graces?.length})
+          </p>
+          <div className="rounded-xl border-2 border-[var(--rule-base)] divide-y divide-[var(--rule-soft)]">
+            {summary.graces?.map((g) => {
+              const untilDate = new Date(g.until);
+              const daysLeft = Math.max(
+                0,
+                Math.ceil((untilDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)),
+              );
+              return (
+                <div
+                  key={g.tenantId + g.vendorId}
+                  className="flex items-start gap-3 p-3 hover:bg-[var(--surface-sunken)] transition-colors"
+                  data-testid="grace-row"
+                >
+                  <Calendar
+                    className="h-4 w-4 shrink-0 mt-0.5 text-[var(--text-tertiary)]"
+                    aria-hidden
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                      {g.businessName}
+                    </p>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      {KIND_LABEL[g.kind]} · vence en {daysLeft}d (
+                      {untilDate.toLocaleDateString("es-PE", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                      )
+                    </p>
+                    {g.reason && (
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] italic mt-1">
+                        &ldquo;{g.reason}&rdquo;
+                      </p>
+                    )}
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
+                      Reconocido por <span className="font-bold">{g.acknowledgedBy}</span>
+                      {g.tenantSlug && (
+                        <>
+                          {" · "}
+                          <a
+                            href={`/superadmin/tenants?slug=${g.tenantSlug}`}
+                            className="font-bold text-[var(--accent)] hover:underline"
+                          >
+                            {g.tenantSlug}
+                          </a>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => clearGrace(g.tenantId, g.tenantSlug)}
+                    disabled={clearingTenant === g.tenantId}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] hover:bg-[var(--data-error-100)]/30 transition-colors disabled:opacity-50"
+                    aria-label={`Limpiar grace de ${g.businessName}`}
+                  >
+                    {clearingTenant === g.tenantId ? (
+                      <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                    ) : (
+                      <Trash2 className="h-3 w-3" aria-hidden />
+                    )}
+                    Limpiar
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

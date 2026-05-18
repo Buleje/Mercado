@@ -32,6 +32,18 @@ interface VendorHealthSummary {
     kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
     detail: string;
   }>;
+  /** Graces activos detectados — opcional para summaries previos al feature */
+  graces?: Array<{
+    tenantId: string;
+    tenantSlug: string | null;
+    vendorId: string;
+    businessName: string;
+    kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
+    until: string;
+    graceDays: number;
+    reason?: string;
+    acknowledgedBy: string;
+  }>;
 }
 
 const SUMMARY_KEY = "vendor-health:summary";

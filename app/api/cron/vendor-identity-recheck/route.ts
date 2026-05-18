@@ -92,6 +92,17 @@ export const GET = withCronHealth(
       kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
       detail: string;
     }> = [];
+    const graces: Array<{
+      tenantId: string;
+      tenantSlug: string | null;
+      vendorId: string;
+      businessName: string;
+      kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
+      until: string;
+      graceDays: number;
+      reason?: string;
+      acknowledgedBy: string;
+    }> = [];
 
     for (const vendor of vendors) {
       checked++;
@@ -172,6 +183,22 @@ export const GET = withCronHealth(
         // el grace del RUC no aplica al DNI).
         if (VendorGraceDB.shouldSkip(vendor.tenantId, vendor.id, kind)) {
           gracedCount++;
+          // Persistir info del grace activo para el dashboard
+          // (superadmin necesita ver quién está en gracia + plazo).
+          const graceRec = VendorGraceDB.get(vendor.tenantId);
+          if (graceRec) {
+            graces.push({
+              tenantId: vendor.tenantId,
+              tenantSlug: vendor.tenantSlug,
+              vendorId: vendor.id,
+              businessName: vendor.businessName,
+              kind,
+              until: graceRec.until,
+              graceDays: graceRec.graceDays,
+              ...(graceRec.reason != null && { reason: graceRec.reason }),
+              acknowledgedBy: graceRec.acknowledgedBy,
+            });
+          }
           logger.info("[cron/vendor-identity-recheck] grace active — skip alert", {
             vendorId: vendor.id,
             tenantSlug: vendor.tenantSlug,
@@ -300,6 +327,7 @@ export const GET = withCronHealth(
       emailSentCount,
       gracedCount,
       alerts,
+      graces,
     };
     cacheStore.set("vendor-health:summary", summary, 25 * 60 * 60);
 
@@ -327,5 +355,17 @@ export interface VendorHealthSummary {
     tenantSlug: string | null;
     kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
     detail: string;
+  }>;
+  /** Lista de graces activos detectados en este run (para dashboard superadmin) */
+  graces: Array<{
+    tenantId: string;
+    tenantSlug: string | null;
+    vendorId: string;
+    businessName: string;
+    kind: "ruc-changed" | "ruc-not-found" | "dni-not-found";
+    until: string;
+    graceDays: number;
+    reason?: string;
+    acknowledgedBy: string;
   }>;
 }

@@ -80,13 +80,15 @@ vi.mock("@/lib/notifications/vendor-identity-alert", () => ({
   sendVendorIdentityAlert: mockSendAlert,
 }));
 
-const { mockShouldSkip } = vi.hoisted(() => ({
+const { mockShouldSkip, mockGraceGet } = vi.hoisted(() => ({
   mockShouldSkip: vi.fn(() => false),
+  mockGraceGet: vi.fn<() => unknown>(() => null),
 }));
 
 vi.mock("@/lib/db/vendor-grace.db", () => ({
   VendorGraceDB: {
     shouldSkip: mockShouldSkip,
+    get: mockGraceGet,
   },
 }));
 
@@ -103,6 +105,7 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
     vi.clearAllMocks();
     snapshotStore.clear();
     mockShouldSkip.mockReturnValue(false);
+    mockGraceGet.mockReturnValue(null);
   });
 
   it("0 vendors → response con total=0, no alerts", async () => {
@@ -540,6 +543,15 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
     mockIsInvoiceable.mockReturnValueOnce(false);
     // Grace activo para ESE vendor+kind
     mockShouldSkip.mockReturnValueOnce(true);
+    mockGraceGet.mockReturnValueOnce({
+      vendorId: "v-graced",
+      kind: "ruc-not-found",
+      until: "2026-06-15T00:00:00Z",
+      graceDays: 7,
+      reason: "Cita SUNAT lunes",
+      acknowledgedBy: "graced-admin",
+      acknowledgedAt: "2026-05-25T00:00:00Z",
+    });
 
     const r = await GET(makeReq());
     const body = await r.json();
@@ -552,6 +564,12 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
     expect(body.waSentCount).toBe(0);
     // El alerts[] todavía se popula (visibilidad superadmin)
     expect(body.alerts).toHaveLength(1);
+    // El graces[] expone info al dashboard
+    expect(body.graces).toHaveLength(1);
+    expect(body.graces[0].businessName).toBe("Graced Vendor");
+    expect(body.graces[0].graceDays).toBe(7);
+    expect(body.graces[0].reason).toBe("Cita SUNAT lunes");
+    expect(body.graces[0].acknowledgedBy).toBe("graced-admin");
   });
 
   it("error en verifyRuc → contabiliza errors, no bloquea siguientes", async () => {
