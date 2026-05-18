@@ -20,10 +20,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useCallback } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   ArrowLeft,
   ArrowRight,
-  User,
   Phone,
   Mail,
   MapPin,
@@ -131,19 +131,22 @@ export default function CheckoutDatosPage() {
 
   return (
     <>
-      <div className="pt-6 sm:pt-8 pb-6">
+      <div className="pt-4 sm:pt-8 pb-5 sm:pb-6">
+        {/* Brandon 2026-05-18: back link sutil estilo /carrito (sin border-pill
+            pesado que competía con el CTA primario). Consistencia entre pasos. */}
         <Link
           href="/marketplace/carrito"
-          className="inline-flex items-center gap-2 h-11 sm:h-9 px-3.5 sm:px-3 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 transition-all shadow-sm mb-3"
+          className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-3"
         >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           Volver al carrito
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+        <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
           Tus datos
         </h1>
-        <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-          Confirma con qué cuenta estás comprando hoy.
+        <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
+          <span className="font-semibold text-[var(--text-primary)]">Paso 2 de 4.</span>{" "}
+          Confirma con qué cuenta comprás hoy.
         </p>
       </div>
 
@@ -155,95 +158,77 @@ export default function CheckoutDatosPage() {
             <AccountPicker returnTo="/checkout/datos" />
           )}
 
-          {/* ── Card "Hola [nombre completo]" — datos del cliente activo ── */}
-          <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-linear-to-br from-[var(--accent-soft)] via-[var(--accent-soft)]/60 to-[var(--surface-raised)] overflow-hidden shadow-sm">
-            <div className="relative p-5 sm:p-6">
+          {/* ── Card "Hola [nombre]" v2 (Brandon 2026-05-18 rediseño) ──
+                Cambios:
+                - Hero más compacto (avatar + título inline saludo).
+                - Datos en grid: cada dato como mini-pill con icono compact.
+                - "Verificado" badge inline cuando el perfil está completo.
+                - CTA primary full-width destacado + "Editar" como link sutil. */}
+          <div className="rounded-3xl border-2 border-[var(--accent)]/25 bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-canvas)] to-[var(--accent-soft)]/40 overflow-hidden shadow-sm">
+            <div className="relative p-5 sm:p-7">
               <div
                 aria-hidden
-                className="pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full bg-[var(--accent)]/[0.12] blur-3xl"
+                className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[var(--accent)]/[0.12] blur-3xl"
               />
-              <div className="relative flex items-start gap-3 sm:gap-4">
-                <span className="inline-flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shadow-[0_8px_24px_-8px_var(--accent)] text-lg sm:text-xl font-black uppercase">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -bottom-20 -left-12 h-36 w-36 rounded-full bg-[var(--accent)]/[0.08] blur-3xl"
+              />
+
+              {/* Hero: avatar + saludo + verified badge */}
+              <div className="relative flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5">
+                <span className="inline-flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white shadow-[0_8px_24px_-8px_var(--accent)] text-xl sm:text-2xl font-black uppercase ring-2 ring-white/30">
                   {initial}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1 inline-flex items-center gap-1.5">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5 inline-flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3" strokeWidth={2.5} aria-hidden />
                     Comprando como
                   </p>
-                  <p className="text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
-                    Hola,{" "}
-                    <span className="italic font-serif text-[var(--accent)] break-words">
-                      {fullName}
+                  <p className="text-xl sm:text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)] leading-tight truncate">
+                    Hola, <span className="italic font-serif text-[var(--accent)]">{fullName}</span>
+                  </p>
+                  {profileComplete && (
+                    <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-[var(--data-success-50,var(--accent-soft))] text-[var(--data-success-600,var(--accent))] text-[length:var(--ts-2xs)] font-extrabold">
+                      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500,var(--accent))]" />
+                      Perfil verificado
                     </span>
-                  </p>
-                  <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
-                    Usamos estos datos para coordinar tu entrega:
-                  </p>
+                  )}
                 </div>
               </div>
 
-              <dl className="relative mt-5 space-y-2.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4 text-[length:var(--ts-sm)]">
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={1.75} aria-hidden />
-                  <dt className="sr-only">Nombre completo</dt>
-                  <dd className="font-bold text-[var(--text-primary)] truncate flex-1">
-                    {fullName}
-                  </dd>
-                </div>
-                <div className="flex items-center gap-3 pt-2 border-t border-[var(--rule-soft)]">
-                  <Phone className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={1.75} aria-hidden />
-                  <dt className="sr-only">WhatsApp</dt>
-                  <dd className="font-bold text-[var(--text-primary)] tabular-nums">
-                    +51 {savedCustomer.phone || <span className="text-[var(--data-error-500)] font-bold">Falta WhatsApp</span>}
-                  </dd>
-                </div>
+              {/* Datos en grid 2-col mobile, 1-col en card */}
+              <div className="relative grid grid-cols-1 gap-2">
+                <DataRow icon={Phone} label="WhatsApp" value={savedCustomer.phone ? `+51 ${savedCustomer.phone}` : null} missing="Falta tu WhatsApp" />
                 {savedCustomer.email && (
-                  <div className="flex items-center gap-3 pt-2 border-t border-[var(--rule-soft)]">
-                    <Mail className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={1.75} aria-hidden />
-                    <dt className="sr-only">Email</dt>
-                    <dd className="font-medium text-[var(--text-secondary)] truncate flex-1">
-                      {savedCustomer.email}
-                    </dd>
-                  </div>
+                  <DataRow icon={Mail} label="Email" value={savedCustomer.email} />
                 )}
-                <div className="flex items-start gap-3 pt-2 border-t border-[var(--rule-soft)]">
-                  <MapPin className="h-4 w-4 mt-0.5 text-[var(--text-tertiary)] shrink-0" strokeWidth={1.75} aria-hidden />
-                  <div className="flex-1 min-w-0">
-                    <dt className="sr-only">Ubicación</dt>
-                    {ubicacionTexto ? (
-                      <dd className="font-bold text-[var(--text-primary)] truncate">
-                        {ubicacionTexto}
-                      </dd>
-                    ) : (
-                      <dd className="text-[length:var(--ts-xs)] inline-flex items-center gap-1 font-bold text-[var(--data-warn-600,#b45309)]">
-                        <AlertCircle className="h-3 w-3" strokeWidth={2.25} aria-hidden />
-                        Sin ubicación guardada — la pedimos en el siguiente paso
-                      </dd>
-                    )}
-                    {savedCustomer.addressLine && (
-                      <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] truncate">
-                        {savedCustomer.addressLine}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </dl>
+                <DataRow
+                  icon={MapPin}
+                  label="Ubicación"
+                  value={ubicacionTexto || null}
+                  missing="La pedimos en el siguiente paso"
+                  secondary={savedCustomer.addressLine ?? undefined}
+                  warningOnMissing
+                />
+              </div>
 
-              <div className="relative mt-4 flex flex-col sm:flex-row gap-2">
+              {/* CTA primary + edit link sutil */}
+              <div className="relative mt-5 space-y-2">
                 <button
                   type="button"
                   onClick={handleContinue}
-                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent-600,var(--accent))] px-5 h-12 text-[length:var(--ts-sm)] font-extrabold text-white hover:bg-[var(--accent)]/90 hover:gap-3 transition-all duration-200 shadow-[0_8px_24px_-8px_var(--accent)] flex-1"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-[var(--accent-600,var(--accent))] to-[var(--accent)] px-5 h-13 text-base font-extrabold text-white hover:gap-3 active:scale-[0.98] transition-all duration-200 shadow-[0_12px_32px_-10px_var(--accent)]"
                 >
                   {profileComplete ? "Continuar al resumen" : "Continuar a entrega"}
-                  <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                  <ArrowRight className="h-4.5 w-4.5" strokeWidth={2.75} aria-hidden />
                 </button>
                 <Link
                   href="/marketplace/mi-cuenta"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 h-12 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                  className="inline-flex w-full items-center justify-center gap-1.5 h-10 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
                 >
                   Editar mi cuenta
+                  <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
                 </Link>
               </div>
             </div>
@@ -288,5 +273,70 @@ export default function CheckoutDatosPage() {
 
       <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
     </>
+  );
+}
+
+/**
+ * Brandon 2026-05-18: row compacta para mostrar dato del cliente con ícono.
+ * Reemplaza el dl pesado anterior con un layout limpio fila por dato.
+ */
+function DataRow({
+  icon: Icon,
+  label,
+  value,
+  missing,
+  secondary,
+  warningOnMissing = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string | null;
+  missing?: string;
+  secondary?: string;
+  warningOnMissing?: boolean;
+}) {
+  const isMissing = !value;
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 py-2.5">
+      <span
+        className={cn(
+          "inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0",
+          isMissing && warningOnMissing
+            ? "bg-[var(--data-warn-50,#fef3c7)] text-[var(--data-warn-600,#b45309)]"
+            : "bg-[var(--accent-soft)] text-[var(--accent)]",
+        )}
+      >
+        <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
+          {label}
+        </p>
+        {value ? (
+          <>
+            <p className="text-[length:var(--ts-sm)] font-extrabold text-[var(--text-primary)] tabular-nums truncate leading-tight mt-0.5">
+              {value}
+            </p>
+            {secondary && (
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate leading-tight mt-0.5">
+                {secondary}
+              </p>
+            )}
+          </>
+        ) : (
+          <p
+            className={cn(
+              "inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold leading-tight mt-0.5",
+              warningOnMissing
+                ? "text-[var(--data-warn-600,#b45309)]"
+                : "text-[var(--data-error-500)]",
+            )}
+          >
+            <AlertCircle className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+            {missing ?? "Falta este dato"}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
