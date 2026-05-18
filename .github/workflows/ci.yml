@@ -37,6 +37,21 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Schema drift check (db:sanity)
+        # PENTEST 2026-05-18 Sprint D #4: prevent runtime P2021/P2022.
+        # Compara las tablas/columnas del schema.prisma con la DB real.
+        # Si una columna está en schema.prisma pero no en la DB (drift por
+        # migration sin aplicar) → falla el build. Si la DB tiene columnas
+        # que el schema no conoce, solo warn.
+        # Solo corre si DATABASE_URL está configurado (skip en forks sin secret).
+        run: |
+          if [ -n "${{ secrets.DATABASE_URL }}" ]; then
+            DATABASE_URL="${{ secrets.DATABASE_URL }}" npm run db:sanity
+          else
+            echo "Skip — DATABASE_URL no configurado en este workflow"
+          fi
+        continue-on-error: true  # bloqueante = true cuando todos los entornos tengan DATABASE_URL en CI
+
       - name: Secrets scan (gitleaks)
         uses: gitleaks/gitleaks-action@v2
         env:
