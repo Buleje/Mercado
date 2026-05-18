@@ -1,20 +1,28 @@
 "use client";
 
 /**
- * StickyCartBar — barra inferior flotante que aparece cuando hay items
- * en el carrito de marketplace. Solo mobile/tablet (lg:hidden).
+ * StickyCartBar — Cart strip estilo Rappi/Uber Eats, pegado al BottomNav.
+ *
+ * Brandon 2026-05-18 (rediseno): antes era un pill flotante a 76px del fondo
+ * con badge "3" + texto "3 items" + número (cantidad triplicada). Compitía
+ * visualmente con el BottomNav (parecían 2 chromes separados).
+ *
+ * Ahora: strip full-width 52px pegado directo al BottomNav (sin gap),
+ * mismo backdrop-blur. Sin badge — la cantidad va inline en el texto
+ * "S/45.50 · 3 productos". Sin botón X visible — se cierra con tap en
+ * "Ocultar" del panel expandido o reaparece al cambiar el subtotal.
  *
  * Comportamiento:
  *   - Hidden si items === 0
  *   - Slide-up desde bottom con framer-motion al entrar
  *   - Tap en la barra → expande panel con últimos 3 items + qty steppers
- *   - Dismiss button (X) — esconde la barra durante la sesión actual.
- *     Reaparece cuando el subtotal cambia (item agregado/removido)
+ *   - Botón "Ocultar" en panel expandido = dismiss durante la sesión
+ *     (reaparece cuando el subtotal cambia)
  *   - Aria-live polite — anuncia el subtotal cuando cambia
  *
  * Reglas:
  *   - Totales solo preview — el server recalcula en checkout (CLAUDE.md #6)
- *   - No bloquea click outside — tap "Ver carrito" o cerrar manual
+ *   - No bloquea click outside — tap "Pagar" o cerrar manual
  */
 
 import Link from "next/link";
@@ -25,14 +33,15 @@ import { m as motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart,
   ArrowRight,
-  X,
   ChevronUp,
   ChevronDown,
   Plus,
   Minus,
   Trash2,
+  EyeOff,
 } from "@buleje/design-system/icons";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
+import { cn } from "@/lib/utils";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
@@ -100,12 +109,14 @@ export default function StickyCartBar() {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ y: 80, opacity: 0 }}
+          initial={{ y: 60, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 80, opacity: 0 }}
+          exit={{ y: 60, opacity: 0 }}
           transition={{ type: "spring", stiffness: 320, damping: 28 }}
           aria-live="polite"
-          className="fixed bottom-[76px] sm:bottom-3 left-3 right-3 z-40 lg:hidden"
+          // Pegado directo encima del BottomNav (60px alto + safe-area).
+          // Desktop tablet (sm-lg): flota a 12px del fondo con border-radius.
+          className="fixed bottom-[calc(60px+env(safe-area-inset-bottom))] sm:bottom-3 left-0 right-0 sm:left-3 sm:right-3 z-30 lg:hidden"
         >
           {/* ── Panel expandido — miniaturas + qty steppers ─────────────────── */}
           <AnimatePresence>
@@ -115,18 +126,29 @@ export default function StickyCartBar() {
                 animate={{ opacity: 1, y: 0, height: "auto" }}
                 exit={{ opacity: 0, y: 12, height: 0 }}
                 transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                className="mb-2 overflow-hidden rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)]"
+                className="mb-1 sm:mb-2 overflow-hidden rounded-t-2xl sm:rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-[0_-12px_40px_-18px_rgba(0,0,0,0.55)] mx-2 sm:mx-0"
               >
                 <div className="px-3 py-3 max-h-[45vh] overflow-y-auto">
                   <div className="flex items-center justify-between mb-2.5">
                     <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--surface-canvas)]/70">
                       Últimos agregados
                     </span>
-                    {items.length > PREVIEW_COUNT && (
-                      <span className="text-[length:var(--ts-2xs)] font-medium text-[var(--surface-canvas)]/60">
-                        +{items.length - PREVIEW_COUNT} más
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {items.length > PREVIEW_COUNT && (
+                        <span className="text-[length:var(--ts-2xs)] font-medium text-[var(--surface-canvas)]/60">
+                          +{items.length - PREVIEW_COUNT} más
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleDismiss}
+                        aria-label="Ocultar barra del carrito"
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--surface-canvas)]/75 hover:text-white hover:bg-white/10 active:scale-95 transition"
+                      >
+                        <EyeOff className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                        Ocultar
+                      </button>
+                    </div>
                   </div>
                   <ul className="flex flex-col gap-2.5" role="list">
                     {recentItems.map((it) => (
@@ -194,67 +216,61 @@ export default function StickyCartBar() {
             )}
           </AnimatePresence>
 
-          {/* ── Bar principal — redisenado (Brandon, mayo 14 2026) ──────────
-               Cambios vs version anterior:
-                 - Surface accent en vez de text-primary → mas comercial.
-                 - Carrito icon dentro de circulo blanco con badge accent — mas
-                   reconocible para vecinos de Pucallpa.
-                 - CTA "Ver carrito" como pill blanco con texto accent —
-                   maximiza contraste sobre el fondo accent del bar.
-                 - Subtotal en formato grande + "items" subrayado para
-                   refuerzo de cantidad.
-                 - Glow accent debajo del bar via shadow color para que se
-                   note flotando sobre el contenido. */}
-          <div className="flex items-stretch gap-2">
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              aria-expanded={expanded}
-              aria-label={expanded ? "Cerrar resumen" : "Ver resumen del carrito"}
-              className="flex-1 flex items-center justify-between gap-3 rounded-2xl bg-linear-to-r from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white px-3.5 py-2.5 shadow-[0_18px_45px_-12px_color-mix(in_oklch,var(--accent)_45%,transparent)] active:scale-[0.99] transition-transform text-left ring-1 ring-white/15 ring-inset"
-            >
-              <span className="flex items-center gap-3 min-w-0">
-                <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[var(--accent)] shadow-md">
-                  <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                  <span className="absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-white">
-                    {totalQty > 99 ? "99+" : totalQty}
-                  </span>
+          {/* ── Strip principal — pegado al BottomNav (mobile) / pill (sm-lg)
+               Mobile: full-width, sin border-radius bottom, continuo con BottomNav.
+               Sm-Lg: pill con border-radius por compatibilidad tablet.
+               Bg: accent con backdrop-blur — misma estética que BottomNav.
+               Sin badge "3" — cantidad inline en texto "S/45.50 · 3 productos".
+               Sin botón X visible — dismiss via "Ocultar" del panel expandido. */}
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            aria-label={expanded ? "Cerrar resumen del carrito" : "Ver resumen del carrito"}
+            className={cn(
+              "w-full flex items-center justify-between gap-3 text-white text-left",
+              // Mobile: strip pegado, sin border-radius (continuo con BottomNav)
+              "px-4 py-3 border-t border-white/20",
+              // Sm-Lg: pill con border-radius
+              "sm:rounded-2xl sm:border sm:border-white/15 sm:px-3.5 sm:py-2.5",
+              // Bg: accent + blur (cohesión con BottomNav)
+              "bg-[color-mix(in_oklab,var(--accent)_92%,transparent)]",
+              "supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--accent)_82%,transparent)]",
+              "supports-[backdrop-filter]:backdrop-blur-xl",
+              "supports-[backdrop-filter]:backdrop-saturate-150",
+              // Shadow accent glow + spring
+              "shadow-[0_-8px_24px_-12px_color-mix(in_oklch,var(--accent)_55%,transparent)]",
+              "sm:shadow-[0_18px_45px_-12px_color-mix(in_oklch,var(--accent)_45%,transparent)]",
+              "active:bg-[color-mix(in_oklab,var(--accent)_95%,black)] transition-colors",
+            )}
+          >
+            <span className="flex items-center gap-3 min-w-0">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25">
+                <ShoppingCart className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden />
+              </span>
+              <span className="flex flex-col min-w-0 leading-tight">
+                <span className="text-base font-black tabular-nums">
+                  {fmt(subtotal)}
                 </span>
-                <span className="flex flex-col min-w-0 leading-tight">
-                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/85 inline-flex items-center gap-1">
-                    Tu carrito · {totalQty} {totalQty === 1 ? "item" : "items"}
-                    {expanded ? (
-                      <ChevronDown className="h-3 w-3" strokeWidth={2.25} aria-hidden />
-                    ) : (
-                      <ChevronUp className="h-3 w-3" strokeWidth={2.25} aria-hidden />
-                    )}
-                  </span>
-                  <span className="text-lg font-black tabular-nums">
-                    {fmt(subtotal)}
-                  </span>
+                <span className="text-[length:var(--ts-2xs)] font-semibold text-white/85 inline-flex items-center gap-1">
+                  {totalQty} {totalQty === 1 ? "producto" : "productos"}
+                  {expanded ? (
+                    <ChevronDown className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  ) : (
+                    <ChevronUp className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  )}
                 </span>
               </span>
-              <Link
-                href="/marketplace/carrito"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 h-10 text-sm font-extrabold text-[var(--accent)] shrink-0 active:scale-95 transition shadow-md hover:bg-white/95"
-              >
-                Ir a pagar
-                <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
-              </Link>
-            </button>
-
-            {/* Dismiss button — match del estilo nuevo, bg slightly oscuro
-                para diferenciarse del bar accent */}
-            <button
-              type="button"
-              onClick={handleDismiss}
-              aria-label="Ocultar barra del carrito"
-              className="shrink-0 inline-flex items-center justify-center w-11 rounded-2xl bg-[var(--text-primary)]/95 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] hover:bg-[var(--text-primary)] active:scale-95 transition-all"
+            </span>
+            <Link
+              href="/marketplace/carrito"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 h-9 text-sm font-extrabold text-[var(--accent)] shrink-0 active:scale-95 transition shadow-sm hover:bg-white/95"
             >
-              <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-            </button>
-          </div>
+              Pagar
+              <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
+            </Link>
+          </button>
         </motion.div>
       )}
     </AnimatePresence>
