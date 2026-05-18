@@ -11,48 +11,80 @@ import {
   Check,
   Heart,
   Timer,
+  // Audit P0 UX #2 (2026-05-18): Lucide icons reemplazan los emoji unicode
+  // del fallback — los emoji no rinden consistente en todos los browsers
+  // (vimos cajitas vacías en Chromium sin emoji-font). Los Lucide siempre
+  // renderizan como SVG.
+  Pizza,
+  Beef,
+  Beer,
+  Carrot,
+  ChefHat,
+  Cookie,
+  Croissant,
+  Drumstick,
+  Fish,
+  Milk,
+  Sandwich,
+  Apple,
+  Package,
+  type LucideIcon,
 } from "@buleje/design-system/icons";
-// MarketplaceItemPlaceholder reemplazado por ProductImageFallback (audit P12).
 
-// Audit P12: fallback amable para productos sin foto. Antes mostraba un
-// placeholder vectorial gris genérico que parecía bug; ahora muestra emoji
-// grande de la categoría + nombre del producto sobre fondo de marca + CTA
-// honesto "Sin foto · Avisanos para subirla". Convierte un negativo en
-// invitación al bodeguero a colaborar con la curaduría visual.
-const CATEGORY_EMOJI: Record<string, string> = {
-  abarrotes: "🥫",
-  bebidas: "🥤",
-  carnes: "🥩",
-  lacteos: "🥛",
-  frutas: "🍎",
-  verduras: "🥬",
-  panaderia: "🥖",
-  panadería: "🥖",
-  golosinas: "🍬",
-  limpieza: "🧴",
-  hogar: "🏠",
-  mascotas: "🐶",
-  bebes: "👶",
-  bebés: "👶",
-  farmacia: "💊",
-  ferreteria: "🔧",
-  ferretería: "🔧",
-  pollo: "🍗",
-  polleria: "🍗",
-  pollería: "🍗",
-  pescados: "🐟",
-  congelados: "🧊",
-  default: "🛒",
+// Audit P12 + P0 UX #2: fallback amable para productos sin foto. Antes
+// mostraba un placeholder vectorial gris genérico que parecía bug; ahora
+// muestra ÍCONO LUCIDE de la categoría (no emoji unicode) + nombre del
+// producto sobre fondo de marca + CTA honesto "Sin foto". Convierte un
+// negativo en invitación al bodeguero a colaborar con la curaduría visual.
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  abarrotes: Package,
+  bebidas: Beer,
+  carnes: Beef,
+  lacteos: Milk,
+  frutas: Apple,
+  verduras: Carrot,
+  panaderia: Croissant,
+  panadería: Croissant,
+  golosinas: Cookie,
+  limpieza: Package,
+  hogar: Package,
+  mascotas: Package,
+  bebes: Package,
+  bebés: Package,
+  farmacia: Package,
+  ferreteria: Package,
+  ferretería: Package,
+  pollo: Drumstick,
+  polleria: Drumstick,
+  pollería: Drumstick,
+  pescados: Fish,
+  congelados: Package,
+  pizza: Pizza,
+  pizzas: Pizza,
+  pizzeria: Pizza,
+  pizzería: Pizza,
+  sandwich: Sandwich,
+  sandwiches: Sandwich,
+  comida: ChefHat,
+  comidas: ChefHat,
+  restaurante: ChefHat,
+  restaurantes: ChefHat,
+  default: ShoppingCart,
 };
 function ProductImageFallback({ name, category }: { name?: string | null; category?: string | null }) {
   const key = (category ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  const emoji = CATEGORY_EMOJI[key] ?? CATEGORY_EMOJI.default;
+  const Icon = CATEGORY_ICON[key] ?? CATEGORY_ICON.default;
   return (
     <div
       className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]"
       aria-label="Producto sin foto"
     >
-      <span className="text-4xl mb-1.5 opacity-80" aria-hidden>{emoji}</span>
+      <span
+        className="mb-2 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]"
+        aria-hidden
+      >
+        <Icon className="h-7 w-7" strokeWidth={1.75} />
+      </span>
       {name && (
         <p className="text-xs font-semibold text-[var(--text-secondary)] leading-tight line-clamp-2 max-w-[90%]">
           {name}

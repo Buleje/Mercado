@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useSettings } from "@/contexts/settings-context";
 
@@ -87,14 +87,11 @@ export default function ThemeInjector() {
   const pathname = usePathname();
   const allowThemeOverride = isWhiteLabelStorefront(pathname);
 
-  useEffect(() => {
-    // Brandon decisión 2026-05-09 rev: modo claro forzado en toda la plataforma.
-    // Antes el admin del tenant podía marcar `darkModeDefault` y este injector
-    // agregaba `.dark` al <html>, sobrescribiendo el tema global. Ahora se ignora.
-    // Si en el futuro se quiere reactivar, descomentar la lógica original.
-    if (!storeTheme) return;
-    document.documentElement.classList.remove("dark");
-  }, [storeTheme]);
+  // audit P0 UX #3 (Brandon 2026-05-18): el effect anterior forzaba
+  // classList.remove("dark") cada vez que cargaba storeTheme, anulando
+  // el toggle de dark mode del usuario en /marketplace/[slug] y /t/[slug].
+  // Reverte a NO interferir — el ThemeProvider del root layout es la
+  // única fuente de verdad de la clase `dark` en <html>.
 
   const allCSS = useMemo(() => {
     if (!storeTheme || !allowThemeOverride) return "";
