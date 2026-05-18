@@ -85,7 +85,12 @@ function successTx() {
         findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
-      order:            { create:     vi.fn().mockResolvedValue({}) },
+      order:            {
+        create: vi.fn().mockResolvedValue({}),
+        // PENTEST Sprint A #2: nuevo check de TOCTOU usa tx.order.count
+        // adentro de la $transaction. Default 0 = primer uso del cupón.
+        count:  vi.fn().mockResolvedValue(0),
+      },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon:           {
         update:      vi.fn().mockResolvedValue({}),
@@ -129,7 +134,12 @@ describe("MarketplaceOrdersDB.createFromCart — cupones", () => {
         findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
-      order:            { create:     vi.fn().mockResolvedValue({}) },
+      order:            {
+        create: vi.fn().mockResolvedValue({}),
+        // PENTEST Sprint A #2: nuevo check de TOCTOU usa tx.order.count
+        // adentro de la $transaction. Default 0 = primer uso del cupón.
+        count:  vi.fn().mockResolvedValue(0),
+      },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon: {
         update:     vi.fn().mockResolvedValue({}),
@@ -197,7 +207,12 @@ describe("MarketplaceOrdersDB.createFromCart — cupones", () => {
           findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
           updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         },
-        order:            { create:     vi.fn().mockResolvedValue({}) },
+        order:            {
+        create: vi.fn().mockResolvedValue({}),
+        // PENTEST Sprint A #2: nuevo check de TOCTOU usa tx.order.count
+        // adentro de la $transaction. Default 0 = primer uso del cupón.
+        count:  vi.fn().mockResolvedValue(0),
+      },
         commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
         coupon: {
           update:     vi.fn().mockResolvedValue({}),
@@ -250,7 +265,12 @@ describe("MarketplaceOrdersDB.createFromCart — loyalty points", () => {
         findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
-      order:            { create:     vi.fn().mockResolvedValue({}) },
+      order:            {
+        create: vi.fn().mockResolvedValue({}),
+        // PENTEST Sprint A #2: nuevo check de TOCTOU usa tx.order.count
+        // adentro de la $transaction. Default 0 = primer uso del cupón.
+        count:  vi.fn().mockResolvedValue(0),
+      },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon:           { update: vi.fn(), findUnique: vi.fn() },
       customer:         { updateMany: vi.fn().mockResolvedValue({}) },

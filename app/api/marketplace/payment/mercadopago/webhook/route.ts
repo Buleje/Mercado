@@ -135,6 +135,50 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
         logger.warn("[MP webhook] storeSlug desconocido — no update", { traceId, storeSlug, orderId });
         return NextResponse.json({ received: true, ignored: true });
       }
+
+      // PENTEST 2026-05-18 Sprint A #1: validar monto pagado vs total de orden
+      // ANTES de mutar status. Sin este check, un atacante podía crear su propia
+      // preferencia MP de S/0.10 con `external_reference="storeSlug::orderId"` de
+      // víctima → MP envía IPN legítimo (firma OK porque usa el secret de Buleje)
+      // → orden marcada `confirmado` con monto fake. Robo directo.
+      //
+      // Solo aplica al transition `approved → confirmado` (los rechazos no roban).
+      if (orderStatus === OrderStatus.confirmado) {
+        const orderForAmountCheck = await prisma.order.findFirst({
+          where: { id: orderId, tenantId: storeForUpdate.tenantId, deletedAt: null },
+          select: { total: true, status: true },
+        });
+        if (!orderForAmountCheck) {
+          logger.warn("[MP webhook] orden no encontrada en tenant del storeSlug — posible cross-tenant attack", {
+            traceId, orderId, storeSlug, tenantId: storeForUpdate.tenantId,
+          });
+          return NextResponse.json({ received: true, ignored: true });
+        }
+        const expectedTotal = Number(orderForAmountCheck.total ?? 0);
+        const paidAmount = Number(payment.transaction_amount ?? 0);
+        // Tolerancia 0.01 para diferencias de redondeo en Decimal.
+        if (!Number.isFinite(paidAmount) || Math.abs(paidAmount - expectedTotal) > 0.01) {
+          logger.error("[MP webhook] PAYMENT AMOUNT MISMATCH — posible fraude external_reference", {
+            traceId, orderId, storeSlug,
+            tenantId: storeForUpdate.tenantId,
+            expectedTotal, paidAmount, dataId,
+            collectorId: payment.collector_id,
+          });
+          // Notificación al admin para review manual — NO confirmar.
+          createNotification({
+            tenantId: storeForUpdate.tenantId,
+            type: "marketplace_payment",
+            severity: "HIGH",
+            title: `⚠️ Pago MP con monto incorrecto — review urgente`,
+            body: `Orden ${orderId.slice(0, 8)}… esperaba S/${expectedTotal.toFixed(2)} pero MP reportó S/${paidAmount.toFixed(2)}. Posible intento de fraude. NO confirmada automáticamente.`,
+            actionUrl: `/admin?module=marketplace&tab=ordenes`,
+            actionLabel: "Revisar pedido",
+            entityId: orderId,
+          }).catch((err) => logger.error("[MP webhook] critical notify failed", { error: String(err) }));
+          return NextResponse.json({ received: true, mismatched_amount: true });
+        }
+      }
+
       const updated = await prisma.order.updateMany({
         where: { id: orderId, tenantId: storeForUpdate.tenantId },
         data: {

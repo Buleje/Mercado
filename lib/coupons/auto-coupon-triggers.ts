@@ -57,22 +57,40 @@ function expiresInDays(days: number): Date {
 }
 
 /**
- * Genera un código de cupón único para el cliente.
- * Formato: {PREFIX}-{phone normalizado}-{timestamp4}
- * Ej: BIENVENIDO-51987654321-A1B2
+ * Genera un código de cupón DETERMINISTA para el cliente.
+ * Formato: {PREFIX}-{phone normalizado}
+ * Ej: BIENVENIDO-51987654321
  *
  * SECURITY 2026-05-05 (audit promotions #3): antes usaba slice(-6) → dos
  * phones con los mismos 6 últimos dígitos (común en POS) compartían cupón.
+ *
+ * PENTEST 2026-05-18 Sprint A #4: antes el código incluía un timestamp
+ * suffix random (Date.now().toString(36).slice(-4)). En carrito multi-tienda
+ * el frontend dispara 2 POST paralelos por tenant — cada uno llama
+ * checkAndIssueCoupons. Ambos veían orderCount=1 y alreadyHasCoupon=false al
+ * mismo tiempo → ambos creaban BIENVENIDO con timestamps distintos.
+ * Resultado: 1 cliente recibe 2 cupones BIENVENIDO.
+ *
+ * Ahora el código es determinista por phone. Si 2 procesos paralelos llaman
+ * issueCoupon, el UNIQUE constraint @@unique([tenantId, code]) arbitra: el
+ * segundo recibe P2002 y se captura como "ya emitido". Costo: si queremos
+ * re-emitir un cupón al mismo cliente en otro evento, hay que cambiar el
+ * prefijo o agregar un sufijo versionado (ej: BIENVENIDO-PHONE-V2).
  */
 function buildCouponCode(prefix: string, customerPhone: string): string {
   const phoneNorm = customerPhone.replace(/\D/g, "");
-  const timeSuffix = Date.now().toString(36).slice(-4).toUpperCase();
-  return `${prefix}-${phoneNorm}-${timeSuffix}`;
+  return `${prefix}-${phoneNorm}`;
 }
 
 /**
  * Verifica si el cliente ya tiene un cupón activo con ese prefijo
  * para este tenant → idempotencia.
+ *
+ * PENTEST 2026-05-18 Sprint A #4: el startsWith ahora detecta tanto el
+ * formato legacy con suffix timestamp (BIENVENIDO-PHONE-A1B2) como el
+ * nuevo determinista (BIENVENIDO-PHONE). El startsWith con
+ * `${prefix}-${phoneNorm}` matchea ambos. Esto es el guardia de UX —
+ * el UNIQUE constraint del DB es el guard ÚLTIMO contra race conditions.
  */
 async function alreadyHasCoupon(
   prefix: string,
@@ -80,7 +98,7 @@ async function alreadyHasCoupon(
   tenantId: string
 ): Promise<boolean> {
   const phoneNorm = customerPhone.replace(/\D/g, "");
-  const partialCode = `${prefix}-${phoneNorm}-`;
+  const partialCode = `${prefix}-${phoneNorm}`;
 
   const existing = await prisma.coupon.findFirst({
     where: {
@@ -141,18 +159,36 @@ async function issueCoupon(opts: {
   const code = buildCouponCode(opts.prefix, opts.customerPhone);
   const expiresAt = expiresInDays(COUPON_VALIDITY_DAYS).toISOString();
 
-  await CouponsDB.add(
-    {
-      code,
-      description:   opts.description,
-      discountType:  "percent",
-      discountValue: opts.discountPercent,
-      maxUses:       1,
-      active:        true,
-      expiresAt,
-    },
-    opts.tenantId
-  );
+  // PENTEST 2026-05-18 Sprint A #4: capturar P2002 si 2 procesos paralelos
+  // intentan crear el mismo cupón determinista. El primero gana, el segundo
+  // recibe unique-violation y se considera "ya emitido" — sin WhatsApp duplicado
+  // ni log de éxito falso.
+  try {
+    await CouponsDB.add(
+      {
+        code,
+        description:   opts.description,
+        discountType:  "percent",
+        discountValue: opts.discountPercent,
+        maxUses:       1,
+        active:        true,
+        expiresAt,
+      },
+      opts.tenantId
+    );
+  } catch (err) {
+    const code2 = (err as { code?: string })?.code;
+    if (code2 === "P2002") {
+      logger.info("[auto-coupon] Cupón ya emitido (race detectada por UNIQUE)", {
+        trigger: opts.trigger,
+        code,
+        customerPhone: opts.customerPhone,
+        tenantId: opts.tenantId,
+      });
+      return;
+    }
+    throw err;
+  }
 
   logger.info("[auto-coupon] Cupón emitido", {
     trigger: opts.trigger,

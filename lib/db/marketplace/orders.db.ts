@@ -186,19 +186,11 @@ export const MarketplaceOrdersDB = {
       if (maxUsesVal > 0 && toNumOrZero(coupon.usedCount) >= maxUsesVal) {
         throw new Error("Cupón ya alcanzó el límite de usos");
       }
-      // PENTEST-003: límite por cliente — un cliente no puede usar el mismo
-      // cupón más de una vez aunque el cupo global aún no se agote.
-      // CouponsDB.countUsesByCustomer cuenta órdenes no canceladas de 90 días.
-      if (params.customerPhone) {
-        const prevUses = await CouponsDB.countUsesByCustomer(
-          store.tenantId,
-          params.customerPhone,
-          params.couponCode!,
-        ).catch(() => 0);
-        if (prevUses >= 1) {
-          throw new Error("Cupón ya usado por este cliente");
-        }
-      }
+      // PENTEST 2026-05-18 Sprint A #2: check movido DENTRO de la $transaction
+      // (ver más abajo). El pre-check aquí era TOCTOU: 2 POST paralelos con
+      // mismo cliente + mismo cupón ambos veían prevUses=0 y ambos creaban
+      // órdenes con descuento. Ahora el check vive dentro de la tx después de
+      // bloquear el cupón con un raw lock implícito del update increment.
       const dv = toNumOrZero(coupon.discountValue);
       if (coupon.discountType === "percent") {
         couponDiscount = parseFloat(Math.min((subtotal * dv) / 100, subtotal).toFixed(2));
@@ -309,6 +301,29 @@ export const MarketplaceOrdersDB = {
         }
       }
 
+      // PENTEST 2026-05-18 Sprint A #2: re-verificar dentro de la tx que
+      // este cliente no haya usado ya el cupón. Antes el check vivía pre-tx
+      // y dejaba ventana TOCTOU; además el create NO seteaba
+      // appliedCouponCode → countUsesByCustomer siempre retornaba 0 y la
+      // protección PENTEST-003 estaba muerta. Ahora: check + write atómicos.
+      if (resolvedCouponId && params.customerPhone && params.couponCode) {
+        const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+        // eslint-disable-next-line no-restricted-properties -- $transaction interna: count scoped a tenantId+phone+coupon.
+        const prevUses = await tx.order.count({
+          where: {
+            tenantId:          store.tenantId,
+            customerPhone:     params.customerPhone.replace(/\D/g, ""),
+            appliedCouponCode: params.couponCode,
+            status:            { notIn: ["cancelado"] },
+            createdAt:         { gte: since },
+            deletedAt:         null,
+          },
+        });
+        if (prevUses >= 1) {
+          throw new Error("Cupón ya usado por este cliente");
+        }
+      }
+
       // Crear Order
       // eslint-disable-next-line no-restricted-properties -- $transaction interna: order.create scoped a tenantId del vendedor.
       await tx.order.create({
@@ -323,6 +338,11 @@ export const MarketplaceOrdersDB = {
           discountAmount:   (tierDiscount + couponDiscount + loyaltyDiscount) > 0
             ? parseFloat((tierDiscount + couponDiscount + loyaltyDiscount).toFixed(2))
             : null,
+          // PENTEST 2026-05-18 Sprint A #2: persistir appliedCouponCode para que
+          // countUsesByCustomer (90d window) realmente funcione. Bug previo:
+          // el campo nunca se seteaba → protección PENTEST-003 inerte.
+          appliedCouponCode: params.couponCode ?? null,
+          couponDiscount:    couponDiscount > 0 ? couponDiscount : null,
           notes:            composedNotes,
           paymentMethod:    params.paymentMethod || "marketplace",
           updatedAt:        new Date(),
