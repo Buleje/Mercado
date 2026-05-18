@@ -253,7 +253,7 @@ describe("POST /api/orders — HOTFIX-001 + HOTFIX-004", () => {
   });
 
   // ── (a) HOTFIX-001 happy path ───────────────────────────────────────────
-  it("HOTFIX-001: ignores client-supplied price and uses the DB price", async () => {
+  it("HOTFIX-001 (audit P0 #1): rejects 422 when client tries to fake the total", async () => {
     // DB catalog for tenant A: product 42 is whisky at S/50.00 (cost S/30.00)
     mockProductFindMany.mockResolvedValue([
       { id: 42, price: dec(50), costPrice: dec(30) },
@@ -262,7 +262,7 @@ describe("POST /api/orders — HOTFIX-001 + HOTFIX-004", () => {
     const req = makePostReq(
       {
         customer: { name: "Malicioso", phone: "+51900000000" },
-        // Attacker tries price=0.01 — server must override with 50.
+        // Attacker tries price=0.01 — server price is 50, mismatch → reject.
         items: [{ id: 42, name: "Whisky", price: 0.01, quantity: 1 }],
         total: 0.01,
       },
@@ -270,15 +270,15 @@ describe("POST /api/orders — HOTFIX-001 + HOTFIX-004", () => {
     );
 
     const res = await POST(req, defaultCtx);
-    expect(res.status).toBe(201);
+    // audit P0 #1 (2026-05-18): antes 201 con server-side override; ahora
+    // rechazo explícito con 422 TOTAL_MISMATCH para cerrar el vector.
+    expect(res.status).toBe(422);
+    const body = await res.json();
+    expect(body.code).toBe("TOTAL_MISMATCH");
+    expect(body.serverTotal).toBe(50);
 
-    // OrdersDB.add was called with the SERVER-side total, not the client's 0.01.
-    expect(mockOrdersAdd).toHaveBeenCalledTimes(1);
-    const addCall = mockOrdersAdd.mock.calls[0];
-    const savedOrder = addCall?.[0] as Record<string, unknown>;
-    expect(savedOrder.total).toBe(50);
-    const persistedItems = savedOrder.items as Array<{ price: number }>;
-    expect(persistedItems[0]?.price).toBe(50);
+    // OrdersDB.add NO debe haber sido llamado (rechazo antes del persist).
+    expect(mockOrdersAdd).not.toHaveBeenCalled();
 
     // Verify the product fetch was scoped by tenantId (HOTFIX-001 multi-tenant guard).
     expect(mockProductFindMany).toHaveBeenCalledWith(

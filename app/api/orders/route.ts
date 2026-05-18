@@ -569,10 +569,14 @@ export const POST = withApiHandler("orders-create", async (req) => {
 
     const computedTotal = Math.max(0, itemsTotal - serverCouponDiscount - promoDiscount - engineDiscount);
 
-    // Telemetria de fraud attempts: si el cliente envia un total que no cuadra
-    // con el recomputo del servidor (> 1 centavo de diferencia), registrar warn
-    // con request_id para Sentry. NO rechazamos — HOTFIX-001 ya persiste el
-    // total del servidor. Esto solo agrega observabilidad.
+    // Anti-fraude del total. Brandon 2026-05-18 (audit P0 #1): antes solo
+    // telemetría sin acción. Ahora rechazamos cuando el delta supera 1
+    // centavo. El total persistido SIEMPRE viene del server (HOTFIX-001) —
+    // este check cierra dos vectores adicionales:
+    //  1. exporte/contabilidad/notifs que en el futuro lean body.total.
+    //  2. clientes con cart desincronizado (cambio de precio mientras
+    //     escribían el checkout) deben reintentar viendo el total real.
+    // Tolerancia: 1 centavo absorbe redondeos de floating point.
     const clientTotal = typeof body.total === "number" ? body.total : null;
     if (clientTotal !== null && Math.abs(clientTotal - computedTotal) > 0.01) {
       const fraudContext = {
@@ -582,12 +586,20 @@ export const POST = withApiHandler("orders-create", async (req) => {
         tenantId,
         requestId: req.headers.get("x-request-id") ?? undefined,
       };
-      logger.warn("[orders/create] client/server total mismatch", fraudContext);
-      Sentry.captureMessage("Fraud attempt: order total mismatch", {
+      logger.warn("[orders/create] client/server total mismatch — rejecting", fraudContext);
+      Sentry.captureMessage("Order total mismatch — rejected", {
         level: "warning",
         tags: { fraud_attempt: "true", tenant: tenantId },
         extra: fraudContext,
       });
+      return NextResponse.json(
+        {
+          error: "El total no coincide. Refrescá el carrito y volvé a intentar.",
+          code: "TOTAL_MISMATCH",
+          serverTotal: computedTotal,
+        },
+        { status: 422 },
+      );
     }
     // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

@@ -244,14 +244,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Block orders to stores in vacation mode.
-    // Audit 2026-05-17 01-P1-4: antes catch {} silencioso enmascaraba errores
-    // de DB. Slug es globally unique hoy, pero un bug futuro de registro
-    // que rompa esa invariante pasaría inadvertido. Ahora logger.warn explícito.
+    // Block orders to stores in vacation mode + verificar que la tienda
+    // está publicada (audit P0 #4, 2026-05-18). Antes findUnique({slug})
+    // permitía hitear stores no publicadas / deshabilitadas si el slug
+    // existía. Ahora exigimos isPublished:true y tenant active.
     let targetStore: { id: string; vacationMode: boolean; vacationMessage: string | null } | null = null;
     try {
-      targetStore = await prisma.store.findUnique({
-        where: { slug: storeSlug },
+      targetStore = await prisma.store.findFirst({
+        where: {
+          slug: storeSlug,
+          isPublished: true,
+          tenant: { active: true },
+        },
         select: { id: true, vacationMode: true, vacationMessage: true },
       });
     } catch (err) {
@@ -260,7 +264,13 @@ export async function POST(req: NextRequest) {
         err: err instanceof Error ? err.message : String(err),
       });
     }
-    if (targetStore?.vacationMode) {
+    if (!targetStore) {
+      return NextResponse.json(
+        { error: "Tienda no disponible." },
+        { status: 404 },
+      );
+    }
+    if (targetStore.vacationMode) {
       return NextResponse.json(
         { error: targetStore.vacationMessage || "Esta tienda está en vacaciones y no recibe pedidos en este momento." },
         { status: 422 },
@@ -416,8 +426,9 @@ export async function POST(req: NextRequest) {
     // Fire-and-forget: notify store owner via push + in-app notification
     (async () => {
       try {
+        // audit P0 #4: filtrar published + tenant active
         const store = await prisma.store.findFirst({
-          where: { slug: storeSlug },
+          where: { slug: storeSlug, isPublished: true, tenant: { active: true } },
           select: { tenantId: true, name: true },
         });
         if (!store) return;
@@ -504,8 +515,9 @@ export async function POST(req: NextRequest) {
     (async () => {
       try {
         if (!customerPhone) return;
+        // audit P0 #4: filtrar published + tenant active
         const store = await prisma.store.findFirst({
-          where: { slug: storeSlug },
+          where: { slug: storeSlug, isPublished: true, tenant: { active: true } },
           select: { id: true, tenantId: true, name: true },
         });
         if (!store) return;

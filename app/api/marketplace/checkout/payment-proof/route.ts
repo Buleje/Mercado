@@ -180,10 +180,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // audit P0 #2 (Brandon 2026-05-18): capturas Yape del cliente final
+  // contienen PII (nombre cliente, número operación, teléfono visible en
+  // muchas apps). +24 bytes random ofusca el path mientras la dirección
+  // sigue siendo bucket `media` (público). Followup: bucket privado
+  // dedicado `order-proofs` + presigned 24-48h on-demand.
   const ts = Date.now();
-  const rand = randomBytes(8).toString("hex");
+  const rand = randomBytes(24).toString("hex");
   const safeCustomerId = customerId.replace(/[^a-z0-9-]/gi, "");
-  const storagePath = `order-proofs/${parsed.data.storeSlug}/${safeCustomerId}-${ts}-${rand}.webp`;
+  // Si safeCustomerId queda demasiado corto (email atípico) usamos solo
+  // rand como discriminador. Evita colisiones path.
+  const safeId = safeCustomerId.length >= 4
+    ? safeCustomerId
+    : `cust-${randomBytes(6).toString("hex")}`;
+  const storagePath = `order-proofs/${parsed.data.storeSlug}/${safeId}-${ts}-${rand}.webp`;
 
   let publicUrl: string;
   try {
@@ -203,8 +213,21 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
-    publicUrl = supabase.storage.from(BUCKET).getPublicUrl(storagePath).data
-      .publicUrl;
+    // Signed URL 7d. Fallback graceful a getPublicUrl si la firma falla.
+    const SIGNED_TTL_SEC = 7 * 24 * 3600;
+    const signed = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(storagePath, SIGNED_TTL_SEC);
+    if (signed.data?.signedUrl) {
+      publicUrl = signed.data.signedUrl;
+    } else {
+      logger.warn("[checkout-proof] signed url failed, falling back to public", {
+        error: signed.error?.message,
+      });
+      publicUrl = supabase.storage
+        .from(BUCKET)
+        .getPublicUrl(storagePath).data.publicUrl;
+    }
   } catch (err) {
     logger.error("[checkout-proof] upload threw", { error: String(err) });
     return NextResponse.json(

@@ -112,8 +112,12 @@ export async function POST(req: NextRequest) {
   }
 
   // F5: usar crypto.randomBytes en vez de Math.random para el nombre de archivo
+  // audit P0 #2 (Brandon 2026-05-18): +16 bytes randomness extra para que el
+  // path sea infeasible de adivinar mientras el bucket sigue siendo `media`
+  // (público). Followup obligatorio: flip a bucket privado dedicado
+  // `payment-proofs` y rotar a presigned con TTL 24-48h on-demand. Ver TD-payment-proof.
   const ts = Date.now();
-  const rand = randomBytes(8).toString("hex");
+  const rand = randomBytes(24).toString("hex");
   const path = `payment-proofs/${parsed.data.tenantSlug}-${ts}-${rand}.webp`;
 
   let publicUrl: string;
@@ -126,7 +130,22 @@ export async function POST(req: NextRequest) {
       logger.error("[payment-proof] supabase upload failed", { error: upErr.message });
       return NextResponse.json({ error: "Error subiendo la imagen" }, { status: 500 });
     }
-    publicUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    // Intentamos signed URL primero (7 días — el superadmin debería revisar
+    // antes). Si el bucket aún es público o falla la firma, fallback a
+    // getPublicUrl para no romper el flujo (todavía es ofuscado por el
+    // random de 24 bytes en el path).
+    const SIGNED_TTL_SEC = 7 * 24 * 3600;
+    const signed = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(path, SIGNED_TTL_SEC);
+    if (signed.data?.signedUrl) {
+      publicUrl = signed.data.signedUrl;
+    } else {
+      logger.warn("[payment-proof] signed url failed, falling back to public", {
+        error: signed.error?.message,
+      });
+      publicUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    }
   } catch (err) {
     logger.error("[payment-proof] upload threw", { error: String(err) });
     return NextResponse.json({ error: "Error subiendo la imagen" }, { status: 500 });

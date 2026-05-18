@@ -419,14 +419,32 @@ describe("POST /api/orders", () => {
       expect(mockRequireAdmin).not.toHaveBeenCalled();
     });
 
-    it("returns 201 with correct total from items (ignoring client-provided total)", async () => {
-      // Server recomputes total = 5.5 * 2 = 11.0
+    it("returns 422 TOTAL_MISMATCH when client-provided total diverges from server total", async () => {
+      // audit P0 #1 (2026-05-18): el servidor ahora rechaza cuando el
+      // client envía un total que no cuadra con el recálculo (>1 centavo).
+      // Antes solo logueaba — ahora cierra el vector de fraude
+      // explícitamente para que el cliente refresque el carrito.
       mockOrdersAdd.mockResolvedValue({ ...SAVED_ORDER, total: 11.0 });
       const res = await POST(makePostReq({ ...VALID_BODY, total: 999 }), defaultCtx); // wrong client hint
+      expect(res.status).toBe(422);
+      const body = await res.json();
+      expect(body.code).toBe("TOTAL_MISMATCH");
+      expect(body.serverTotal).toBeCloseTo(11.0);
+      // OrdersDB.add NO debe haber sido llamado — rechazo antes del persist.
+      expect(mockOrdersAdd).not.toHaveBeenCalled();
+    });
+
+    it("returns 201 when client total matches server (within 1 cent tolerance)", async () => {
+      // El client envía el total correcto (5.5 * 2 = 11.0). El servidor
+      // recompone, encuentra que coinciden, persiste y devuelve 201.
+      mockOrdersAdd.mockResolvedValue({ ...SAVED_ORDER, total: 11.0 });
+      const res = await POST(
+        makePostReq({ ...VALID_BODY, total: 11.0 }),
+        defaultCtx,
+      );
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.total).toBe(11.0);
-      // Verify the handler passed the server-recomputed total to OrdersDB.add, not the client's 999
       const callArg = mockOrdersAdd.mock.calls[0][0]; // first arg = order object
       expect(callArg.total).toBeCloseTo(11.0);
     });

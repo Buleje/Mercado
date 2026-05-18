@@ -261,12 +261,16 @@ async function patchOrder(
     }
 
     // Check customer notification preferences for order updates.
+    // Brandon 2026-05-18 (audit P0 #3): findFirst con tenantId — antes era
+    // findUnique({where:{phone}}) global. Si TD-040 Phase 3 migra a
+    // @@unique([tenantId,phone]), el lookup global empezaría a leer las
+    // prefs del primer Customer match cross-tenant. Cerramos el vector ya.
     let custPrefs: { notifOrderUpdates: boolean | null } | null = null;
     if (statusChanged && updated.customer.phone) {
       try {
-        // eslint-disable-next-line no-restricted-properties -- pre-existing: lookup global por phone; deuda pendiente migrar a lib/db/customers.db.ts.
-        custPrefs = await prisma.customer.findUnique({
-          where: { phone: updated.customer.phone },
+        // eslint-disable-next-line no-restricted-properties -- pre-existing: deuda pendiente migrar a lib/db/customers.db.ts.
+        custPrefs = await prisma.customer.findFirst({
+          where: { phone: updated.customer.phone, tenantId: auth.tenantId },
           select: { notifOrderUpdates: true },
         });
       } catch (err) {
