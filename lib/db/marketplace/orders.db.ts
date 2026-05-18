@@ -695,12 +695,14 @@ export const MarketplaceOrdersDB = {
    * Incluye vacationMode + hoursJson para bloquear órdenes fuera de horario.
    * Reemplaza el prisma.store.findFirst directo en POST /api/marketplace/orders.
    *
-   * @param tenantId - No usado para filtrar (Store.tenantId ≠ slug caller),
-   *   pero se requiere por convención de API. La guarda real es isPublished +
-   *   tenant.active + slug — aislamiento verificado.
+   * PENTEST 2026-05-18 Sprint C #11: renombrado desde getStoreForCheckout(_tenantId, slug)
+   * que tenia un primer parametro tenantId fantasma (ignorado con underscore).
+   * Era frágil porque (a) la firma mentia sobre el contrato, (b) cualquier
+   * refactor futuro que quitara el guion bajo abria cross-tenant. Ahora el
+   * nombre refleja la realidad: lookup público de tienda publicada por slug.
+   * La guarda real es isPublished + tenant.active + slug.
    */
-  async getStoreForCheckout(
-    _tenantId: string,
+  async getPublishedStoreBySlug(
     slug: string,
   ): Promise<{
     id: string;

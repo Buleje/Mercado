@@ -105,6 +105,17 @@ async function patchHandler(
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
+  // PENTEST 2026-05-18 Sprint C #10: sanitizar cancelReason antes de inyectar
+  // en WhatsApp/Push. Antes un admin (o admin comprometido por phishing)
+  // podía meter URLs phishing en el mensaje WhatsApp legítimo que recibe el
+  // cliente. WhatsApp no renderiza HTML pero sí auto-linkifica URLs.
+  // Strip http(s)/wa.me/whatsapp/tel: links — mantiene el resto del texto.
+  if (parsed.data.cancelReason) {
+    parsed.data.cancelReason = parsed.data.cancelReason
+      .replace(/\b(?:https?:\/\/|wa\.me\/|whatsapp:\/\/|tel:)\S*/gi, "[link removido]")
+      .slice(0, 500);
+  }
+
   // Leer orden para validar la transición antes de llamar a changeStatus.
   // eslint-disable-next-line no-restricted-properties -- read-only pre-check scoped por tenantId; changeStatus hace el write atómico.
   const order = await prisma.order.findFirst({

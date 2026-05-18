@@ -247,10 +247,10 @@ export async function POST(req: NextRequest) {
 
     // Block orders to stores in vacation mode + verificar que la tienda
     // está publicada (audit P0 #4, 2026-05-18). CR-1.1: migrado a
-    // MarketplaceOrdersDB.getStoreForCheckout (incluye isPublished + tenant.active).
+    // MarketplaceOrdersDB.getPublishedStoreBySlug (incluye isPublished + tenant.active).
     let targetStore: { id: string; tenantId: string; name: string; slug: string; vacationMode: boolean; vacationMessage: string | null; hoursJson: unknown } | null = null;
     try {
-      targetStore = await MarketplaceOrdersDB.getStoreForCheckout("", storeSlug);
+      targetStore = await MarketplaceOrdersDB.getPublishedStoreBySlug(storeSlug);
     } catch (err) {
       logger.warn("[marketplace/orders] vacation-check store lookup failed", {
         storeSlug,
@@ -285,7 +285,7 @@ export async function POST(req: NextRequest) {
         );
       }
       try {
-        // CR-1.1: hoursJson ya viene en targetStore desde getStoreForCheckout —
+        // CR-1.1: hoursJson ya viene en targetStore desde getPublishedStoreBySlug —
         // elimina el $queryRaw separado que era la segunda llamada a Store.
         const hoursJson = targetStore.hoursJson ?? null;
         if (hoursJson && typeof hoursJson === "object") {
@@ -473,7 +473,7 @@ export async function POST(req: NextRequest) {
     // (store.findFirst + tenant.findUnique). ownerPhone se carga bajo demanda.
     (async () => {
       try {
-        // targetStore ya viene de MarketplaceOrdersDB.getStoreForCheckout.
+        // targetStore ya viene de MarketplaceOrdersDB.getPublishedStoreBySlug.
         if (!targetStore) return;
 
         // In-app notification for the admin panel

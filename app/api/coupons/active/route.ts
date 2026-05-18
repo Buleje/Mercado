@@ -1,12 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/coupons/active?tenant={tenantSlug}
  *
  * Endpoint público — sin autenticación.
- * Devuelve el cupón activo más reciente para un tenant, o `data: null` si no hay.
+ * Devuelve el cupón activo más reciente para un tenant.
  * Usado por StickyCouponBanner en las páginas de tienda individual.
+ *
+ * PENTEST 2026-05-18 Sprint C #9:
+ *  - Rate limit MODERATE para evitar enumeración masiva de tenants
+ *    (atacante iterando slugs públicos para coleccionar códigos).
+ *  - El `code` ya NO se devuelve al cliente — solo description +
+ *    discountValue + minPurchase. El banner muestra "Cupón disponible"
+ *    pero el código completo solo aparece cuando el usuario hace click
+ *    en la tienda (donde igual está expuesto al hacer checkout).
  *
  * Reglas de selección:
  *   - active = true
@@ -15,6 +24,9 @@ import { prisma } from "@/lib/prisma";
  * Ordenado por createdAt desc — el más reciente prevalece.
  */
 export async function GET(req: NextRequest) {
+  const rl = applyRateLimit(req, "MODERATE", "coupons-active");
+  if (rl) return rl as NextResponse;
+
   try {
     const tenantSlug = req.nextUrl.searchParams.get("tenant");
     if (!tenantSlug) {
@@ -64,7 +76,10 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       data: {
-        code: coupon.code,
+        // PENTEST Sprint C #9: code OCULTO. Antes lo devolvíamos full →
+        // atacante iterando /api/coupons/active?tenant=X colectaba todos
+        // los códigos activos del platform. Ahora solo description + valores.
+        code: null,
         description: coupon.description,
         discountType: coupon.discountType as "percent" | "fixed",
         discountValue: Number(coupon.discountValue),

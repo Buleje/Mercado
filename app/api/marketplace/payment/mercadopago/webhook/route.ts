@@ -84,11 +84,22 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
     // en stripeWebhookQueue.stripeId nos sirve también para MP marketplace.
     const idemKey = `mpmkt_${dataId}`;
     try {
+      // PENTEST 2026-05-18 Sprint C #12: redactar PII antes de persistir el
+      // payload en stripeWebhookQueue. Ley 29733 PE (minimización de datos):
+      // el body de MP IPN puede incluir customerEmail/phone/nombre. Guardamos
+      // solo metadatos no-PII (status, dataId, external_reference, type).
+      const redactedBody = {
+        type: body.type,
+        action: body.action,
+        data_id: body.data?.id ?? body.id ?? null,
+        external_reference: body.data?.external_reference ?? null,
+        live_mode: body.live_mode,
+      };
       await prisma.stripeWebhookQueue.create({
         data: {
           stripeId: idemKey,
           eventType: body.type ?? "payment",
-          payload: JSON.stringify(body).slice(0, 50_000),
+          payload: JSON.stringify(redactedBody),
           processedAt: new Date(),
         },
       });

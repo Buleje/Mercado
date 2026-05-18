@@ -2,12 +2,10 @@ import "server-only";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
-import { Prisma } from "@/lib/generated/prisma/client";
 import { logger } from "@/lib/logger";
 import type {
   Promotion as PPromotion,
   Coupon as PCoupon,
-  Prisma as PrismaTypes,
 } from "@/lib/generated/prisma/client";
 import {
   type DbPromotion,
@@ -127,24 +125,17 @@ export const CouponsDB = {
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.coupon.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapCoupon);
   },
-  // RED-007: tenant-scoped lookup. The function accepts both shapes — legacy
-  // (code) and secure (tenantId, code) — and the typed cast below exposes
-  // overloaded signatures so new callers can supply the tenantId. Always
-  // prefer the (tenantId, code) form to prevent cross-tenant coupon reuse.
-  getByCode: (async (
-    a: string,
-    b?: string,
-  ): Promise<DbCoupon | null> => {
-    const scoped = b !== undefined;
-    const code = (scoped ? (b as string) : a).toUpperCase().trim();
-    const where: PrismaTypes.CouponWhereInput = scoped
-      ? { code, tenantId: a }
-      : { code };
-    const row = await prisma.coupon.findFirst({ where });
+  // PENTEST 2026-05-18 Sprint C #8: eliminada la firma legacy (code: string)
+  // sin tenantId. Antes el overload aceptaba ambas formas — landmine para
+  // futuros callers o GPT pegando código que pudiera leer un cupón cross-tenant
+  // por accidente. Verificado por grep que todos los callers actuales pasan
+  // tenantId. tenantId-scoped lookup obligatorio.
+  async getByCode(tenantId: string, code: string): Promise<DbCoupon | null> {
+    const normalized = code.toUpperCase().trim();
+    const row = await prisma.coupon.findFirst({
+      where: { code: normalized, tenantId },
+    });
     return row ? mapCoupon(row) : null;
-  }) as {
-    (code: string): Promise<DbCoupon | null>;
-    (tenantId: string, code: string): Promise<DbCoupon | null>;
   },
   async add(c: Omit<DbCoupon, "id" | "createdAt" | "usedCount">, tenantId: string): Promise<DbCoupon> {
     const row = await prisma.coupon.create({
@@ -179,31 +170,16 @@ export const CouponsDB = {
   // RED-006 + RED-007: atomic, tenant-scoped redemption. The conditional UPDATE
   // executes server-side in PostgreSQL so two parallel callers cannot both
   // read usedCount=N and both bump to N+1 (only one wins, the other gets 0
-  // affected rows). The typed cast below exposes overloaded signatures —
-  // prefer (tenantId, code, amount).
-  redeem: (async (
-    a: string,
-    b?: string | number,
-    c?: number,
-  ): Promise<DbCoupon | null> => {
-    // Disambiguate the two call shapes:
-    //   redeem(code)                         → a=code, b=undefined
-    //   redeem(code, amount)                 → a=code, b=number
-    //   redeem(tenantId, code)               → a=tid,  b=string
-    //   redeem(tenantId, code, amount)       → a=tid,  b=string, c=number
-    let tenantId: string | null;
-    let rawCode: string;
-    let deductAmount: number | undefined;
-    if (typeof b === "string") {
-      tenantId = a;
-      rawCode = b;
-      deductAmount = c;
-    } else {
-      tenantId = null;
-      rawCode = a;
-      deductAmount = b;
-    }
-    const code = rawCode.toUpperCase().trim();
+  // affected rows).
+  //
+  // PENTEST 2026-05-18 Sprint C #8: eliminada la firma legacy (code, amount?)
+  // sin tenantId — landmine cross-tenant. tenantId obligatorio.
+  async redeem(
+    tenantId: string,
+    code: string,
+    deductAmount?: number,
+  ): Promise<DbCoupon | null> {
+    const normalized = code.toUpperCase().trim();
     const now = new Date();
 
     // ── Atomic conditional UPDATE — the core race-safety guarantee ─────────
@@ -211,25 +187,21 @@ export const CouponsDB = {
     // "maxUses") which Prisma's typed updateMany cannot express. Returns the
     // number of rows affected; 0 means the coupon is invalid, expired,
     // exhausted, inactive, or owned by a different tenant.
-    const tenantClause = tenantId
-      ? Prisma.sql`AND "tenantId" = ${tenantId}`
-      : Prisma.empty;
     const affected = await prisma.$executeRaw`
       UPDATE "Coupon"
          SET "usedCount" = "usedCount" + 1
-       WHERE "code" = ${code}
-         ${tenantClause}
+       WHERE "code" = ${normalized}
+         AND "tenantId" = ${tenantId}
          AND "active" = true
          AND ("expiresAt" IS NULL OR "expiresAt" > ${now})
          AND ("maxUses" IS NULL OR "usedCount" < "maxUses")
     `;
     if (affected === 0) return null;
 
-    // Re-fetch the (now-incremented) row, scoped by tenant if known.
-    const where: PrismaTypes.CouponWhereInput = tenantId
-      ? { code, tenantId }
-      : { code };
-    const row = await prisma.coupon.findFirst({ where });
+    // Re-fetch the (now-incremented) row, scoped by tenant.
+    const row = await prisma.coupon.findFirst({
+      where: { code: normalized, tenantId },
+    });
     if (!row) return null;
 
     // Giftcard balance adjustment is a follow-up write — not part of the
@@ -240,24 +212,20 @@ export const CouponsDB = {
       const currentBalance =
         toNumOrZero(row.balance) || toNumOrZero(row.discountValue);
       const newBalance = Math.max(0, currentBalance - deductAmount);
-      const giftWhere = tenantId
-        ? { id: row.id, tenantId }
-        : { id: row.id };
       await prisma.coupon.updateMany({
-        where: giftWhere,
+        where: { id: row.id, tenantId },
         data: {
           balance: newBalance,
           ...(newBalance <= 0 ? { active: false } : {}),
         },
       });
-      const updated = await prisma.coupon.findFirst({ where: giftWhere });
+      const updated = await prisma.coupon.findFirst({
+        where: { id: row.id, tenantId },
+      });
       return updated ? mapCoupon(updated) : null;
     }
 
     return mapCoupon(row);
-  }) as {
-    (code: string, deductAmount?: number): Promise<DbCoupon | null>;
-    (tenantId: string, code: string, deductAmount?: number): Promise<DbCoupon | null>;
   },
   async delete(tenantId: string, id: string): Promise<void> {
     await prisma.coupon.deleteMany({ where: { id, tenantId } }).catch((err) => {
