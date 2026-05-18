@@ -555,23 +555,26 @@ export default function StoreDetailClient({
                izquierda que abre el drawer mobile (StoreCategoriesSidebar).
                Antes el drawer no tenía trigger visible — código muerto. */}
           {categories.length > 0 && (
-            <div className="lg:hidden -mx-4 sm:-mx-6 flex items-stretch">
-              {/* Botón "Ver todas" sticky-izq que abre el drawer rediseñado */}
-              <button
-                type="button"
-                onClick={() => setMobileCatOpen(true)}
-                aria-label="Abrir todas las categorías"
-                className="shrink-0 inline-flex items-center gap-1.5 h-12 px-3.5 ml-2 sm:ml-4 rounded-full bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)] text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all"
-              >
-                <LayoutGrid className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                Categorías
-              </button>
+            <div className="lg:hidden -mx-4 sm:-mx-6">
               <div
                 ref={subnavScrollRef}
                 role="tablist"
                 aria-label="Filtrar por categoría"
-                className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide px-2 sm:px-4 scroll-smooth flex-1 min-w-0"
+                className="flex items-center gap-1 overflow-x-auto scrollbar-hide px-2 sm:px-4 scroll-smooth"
               >
+                {/* Brandon 2026-05-18: botón Categorías como CHIP CIRCULAR
+                    (solo icono) al inicio del scroll horizontal — antes era
+                    sticky con texto "Categorías" tapando los chips. Ahora se
+                    comporta como un filtro más, ocupa su lugar en el flujo. */}
+                <button
+                  type="button"
+                  onClick={() => setMobileCatOpen(true)}
+                  aria-label="Abrir todas las categorías"
+                  className="shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-full bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all"
+                >
+                  <LayoutGrid className="h-4.5 w-4.5" strokeWidth={2.5} aria-hidden />
+                </button>
+                <span aria-hidden className="shrink-0 h-7 w-px bg-[var(--rule-soft)] mx-1" />
                 {categories.map((cat) => {
                   const active = activeCategory === cat.name;
                   return (
@@ -885,6 +888,25 @@ function NavDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
     },
   ];
 
+  // Brandon 2026-05-18: categorías generales del marketplace (rubros).
+  // Permite saltar de la tienda actual a otras tiendas filtrando por rubro.
+  // Cada chip tiene imagen/emoji + label + tap → /tiendas?category={raw}.
+  // Las categorías reales vienen del catálogo de tiendas del marketplace.
+  const MARKETPLACE_CATEGORIES: Array<{
+    raw: string;
+    label: string;
+    emoji: string;
+  }> = [
+    { raw: "bodega",       label: "Bodega",       emoji: "🥫" },
+    { raw: "polleria",     label: "Pollería",     emoji: "🍗" },
+    { raw: "restaurante",  label: "Restaurante",  emoji: "🍽️" },
+    { raw: "panaderia",    label: "Panadería",    emoji: "🥐" },
+    { raw: "farmacia",     label: "Farmacia",     emoji: "💊" },
+    { raw: "licoreria",    label: "Licorería",    emoji: "🍷" },
+    { raw: "carniceria",   label: "Carnicería",   emoji: "🥩" },
+    { raw: "ferreteria",   label: "Ferretería",   emoji: "🔧" },
+  ];
+
   return (
     <div
       role="dialog"
@@ -1017,6 +1039,36 @@ function NavDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
               </div>
             </div>
           ))}
+
+          {/* Brandon 2026-05-18: sección "Categorías" del marketplace.
+              Permite saltar de la tienda actual a otras tiendas filtrando
+              por rubro. Grid 4-col compacto con emoji + label.
+              Cada tap → /tiendas?category={raw}. */}
+          <div>
+            <p className="px-2 mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Explorar por rubro
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {MARKETPLACE_CATEGORIES.map((cat) => (
+                <Link
+                  key={cat.raw}
+                  href={`/tiendas?category=${cat.raw}`}
+                  onClick={onClose}
+                  className="group flex flex-col items-center gap-1.5 rounded-2xl p-2.5 bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 active:scale-95 transition-all"
+                >
+                  <span
+                    aria-hidden
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-2xl group-hover:scale-110 transition-transform shrink-0"
+                  >
+                    {cat.emoji}
+                  </span>
+                  <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)] leading-tight text-center truncate w-full">
+                    {cat.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
 
           {/* Sección Ayuda — separada y con accent distinto */}
           <div>
