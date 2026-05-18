@@ -15,7 +15,7 @@
 import { useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, LayoutGrid, List, ShoppingCart, Check } from "@buleje/design-system/icons";
+import { Search, LayoutGrid, List, ShoppingCart, Check, Flame } from "@buleje/design-system/icons";
 import { CanastaVacia } from "@/components/ui-system/illustrations";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
@@ -388,7 +388,14 @@ export default function StoreCatalog({
                       id={`cat-h-${cat}`}
                       className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight tracking-tight"
                     >
-                      {isFirstCategory ? "🔥 Los más pedidos" : humanizeCategory(cat)}
+                      {isFirstCategory ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Flame className="h-5 w-5 text-orange-500" strokeWidth={2.5} aria-hidden />
+                          Los más pedidos
+                        </span>
+                      ) : (
+                        humanizeCategory(cat)
+                      )}
                     </h3>
                     <p className="text-sm font-medium text-[var(--text-tertiary)] mt-0.5">
                       {subtitleByPosition}

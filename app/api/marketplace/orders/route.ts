@@ -333,38 +333,91 @@ export async function POST(req: NextRequest) {
         }),
     );
 
+    // ── PENTEST-001: validar que el monto del comprobante coincide con ──
+    // el total real server-side. El token HMAC solo certifica que el
+    // cliente firmó "subí captura por X soles" — no que X == totalReal.
+    // Sin esta guarda, un cliente paga S/2, sube captura S/2 (token válido),
+    // y envía items por S/200 — el admin ve "orden sin mismatch" y aprueba.
+    //
+    // Verificación post-createFromCart: el total ya incluye todos los
+    // descuentos server-side (tier + cupón + loyalty). Tolerancia 1 centavo
+    // para evitar falsos positivos por redondeo flotante (mismo patrón que
+    // app/api/orders/route.ts:581-595).
+    if (paymentProof) {
+      const proofCents = Math.round(paymentProof.amountPEN * 100);
+      const orderCents = Math.round(order.total * 100);
+      if (Math.abs(proofCents - orderCents) > 1) {
+        logger.warn("[marketplace/orders] PENTEST-001 proof amount mismatch — cancelling order", {
+          proofCents,
+          orderCents,
+          orderId:    order.id,
+          customerId: proofCustomerId,
+          storeSlug,
+        });
+        // Revertir la orden + restaurar stock de forma atómica.
+        // cancelOrderRestoreStock: idempotente (si ya cancelada, no-op),
+        // envuelve order.update + product stock restore en una $transaction,
+        // y captura con Sentry + [STOCK_DRIFT_RISK] si la compensating falla.
+        // fire-and-forget — el método ya hace logger.error + Sentry internamente
+        // si la compensating tx falla. Capturamos acá solo para evitar
+        // unhandled promise rejection en el route handler.
+        MarketplaceOrdersDB.cancelOrderRestoreStock(
+          order.sellerTenantId,
+          order.id,
+          "PROOF_AMOUNT_MISMATCH",
+        ).catch((err) =>
+          logger.warn("[marketplace/orders] cancelOrderRestoreStock outer reject", {
+            error: String(err),
+            orderId: order.id,
+          }),
+        );
+        return NextResponse.json(
+          {
+            error:    "El monto del comprobante no coincide con el total del pedido. Sube la captura por el monto exacto.",
+            code:     "PROOF_AMOUNT_MISMATCH",
+            expected: order.total,
+            got:      paymentProof.amountPEN,
+          },
+          { status: 422 },
+        );
+      }
+    }
+
     // ── Persistir PaymentApproval con la captura del comprobante ─────
     // Yape/Plin/Transfer pagos manuales: el cliente subió la foto antes
     // de confirmar. Acá la asociamos a la Order recién creada. El admin
     // la revisa en /admin?tab=pedidos / /admin?tab=marketplace / superadmin.
+    //
+    // CR-2.2 fix: antes eran 2 prisma calls separadas (paymentApproval.create
+    // + order.update). Si la segunda fallaba, la aprobación quedaba huérfana
+    // sin paymentApprovalId en la Order. Ahora usamos
+    // MarketplaceOrdersDB.attachPaymentApproval que envuelve ambas en una
+    // sola $transaction — o ambas persisten o ninguna.
     if (paymentProof) {
       try {
         const method = (paymentMethod ?? "").toLowerCase();
         const approvalId = `pa_${Date.now()}_${randomBytes(6).toString("hex")}`;
-        await prisma.paymentApproval.create({
-          data: {
-            id: approvalId,
-            tenantId: order.sellerTenantId,
+        await MarketplaceOrdersDB.attachPaymentApproval(
+          order.sellerTenantId,
+          order.id,
+          {
+            approvalId,
             customerPhone: order.customerPhone ?? customerPhone,
             expectedAmount: order.total,
-            imageUrl: paymentProof.proofUrl,
+            imageUrl:       paymentProof.proofUrl,
             yapeOpCode:
               method === "yape" || method === "plin"
                 ? (paymentProof.reference ?? null)
                 : null,
-            status: "pending",
           },
-        });
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { paymentApprovalId: approvalId },
-        });
+        );
       } catch (err) {
-        // No bloqueamos la orden — el pago manual igual quedó como
-        // "pendiente" y el admin puede verlo en el detalle. Logueamos
-        // duro para que el equipo Buleje lo cierre manualmente.
-        logger.error("[marketplace/orders] paymentApproval persist failed", {
-          error: String(err),
+        // Si la tx atómica falla, logueamos con suficiente contexto para
+        // que el equipo Buleje reconcilie manualmente. No bloqueamos la
+        // respuesta — la orden ya existe como "pendiente" y el admin puede
+        // solicitarle al cliente que reenvíe el comprobante.
+        logger.error("[marketplace/orders] paymentApproval attach failed", {
+          error:   String(err),
           orderId: order.id,
         });
       }

@@ -384,6 +384,128 @@ export const MarketplaceOrdersDB = {
   },
 
   /**
+   * Cancels an order and atomically restores the stock of every item.
+   * Prevents stock drift when an order is voided before fulfillment
+   * (e.g. PROOF_AMOUNT_MISMATCH detected post-createFromCart).
+   *
+   * Idempotent: if the order is already "cancelado", returns early without
+   * touching stock — safe to call multiple times (retry storms, double-clicks).
+   *
+   * @param tenantId - Tenant that owns the order (aislamiento multi-tenant).
+   * @param orderId  - ID of the order to cancel (must belong to tenantId).
+   * @param reason   - Short tag injected into order notes for audit trail.
+   */
+  async cancelOrderRestoreStock(
+    tenantId: string,
+    orderId: string,
+    reason: string,
+  ): Promise<void> {
+    // Load order + items scoped to tenantId — cross-tenant guard.
+    // eslint-disable-next-line no-restricted-properties -- aggregate: findUnique scoped a tenantId+id antes de la tx.
+    const order = await prisma.order.findUnique({
+      where:  { id: orderId, tenantId },
+      select: {
+        status: true,
+        items:  { select: { productId: true, quantity: true, name: true } },
+      },
+    });
+
+    // Idempotency guard: ya cancelado → nada que hacer.
+    if (!order || order.status === "cancelado") return;
+
+    try {
+      // eslint-disable-next-line no-restricted-properties -- $transaction legítima: atomicidad order.update + stock restore para cerrar PENTEST-001 stock drift.
+      await prisma.$transaction(async (tx) => {
+        // 1. Marcar orden cancelada con audit tag en notes.
+        // eslint-disable-next-line no-restricted-properties -- $transaction interna: order.update scoped a id+tenantId.
+        await tx.order.update({
+          where: { id: orderId, tenantId },
+          data: {
+            status:      "cancelado",
+            cancelledAt: new Date(),
+            notes:       `[${reason}: stock revertido automáticamente]`,
+          },
+        });
+
+        // 2. Restaurar stock de cada item — solo productos que controlan
+        // stock (productId != null). Productos sin productId (nombre libre
+        // sin FK) no tienen fila en Product → skip.
+        for (const item of order.items) {
+          if (!item.productId) continue;
+          // eslint-disable-next-line no-restricted-properties -- $transaction interna: product.updateMany scoped a id+tenantId para restore atomico.
+          await tx.product.updateMany({
+            where: { id: item.productId, tenantId, deletedAt: null },
+            data:  { stock: { increment: item.quantity } },
+          });
+        }
+      });
+    } catch (err) {
+      // Si la compensating falla, la orden queda pendiente pero el stock
+      // ya fue decrementado — marcar [STOCK_DRIFT_RISK] para reconciliación.
+      logger.error("[MarketplaceOrdersDB] cancelOrderRestoreStock failed — STOCK_DRIFT_RISK", {
+        orderId,
+        tenantId,
+        reason,
+        err: err instanceof Error ? err.message : String(err),
+      });
+      // Lazy-load Sentry (patrón del proyecto — no importar en top-level para
+      // mantener el módulo usable en runtimes sin @sentry/nextjs configurado).
+      import("@sentry/nextjs")
+        .then((Sentry) => {
+          Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
+            extra: { orderId, tenantId, reason, marker: "STOCK_DRIFT_RISK" },
+          });
+        })
+        .catch(() => { /* Sentry no disponible — logger.error ya capturó */ });
+    }
+  },
+
+  /**
+   * Atomically creates a PaymentApproval and links it to the Order in a single
+   * transaction. Prevents the orphan-approval race condition (CR-2.2) where
+   * paymentApproval.create succeeds but order.update fails, leaving the proof
+   * unlinked and requiring manual intervention.
+   *
+   * @param tenantId  - Tenant that owns the order (aislamiento multi-tenant).
+   * @param orderId   - ID of the order to link (must belong to tenantId).
+   * @param approval  - PaymentApproval fields to persist.
+   * @returns { approvalId } - ID of the created PaymentApproval.
+   */
+  async attachPaymentApproval(
+    tenantId: string,
+    orderId: string,
+    approval: {
+      approvalId: string;
+      customerPhone: string;
+      expectedAmount: number;
+      imageUrl: string;
+      yapeOpCode: string | null;
+    },
+  ): Promise<{ approvalId: string }> {
+    // eslint-disable-next-line no-restricted-properties -- $transaction legítima: atomicidad paymentApproval.create + order.update para cerrar CR-2.2.
+    await prisma.$transaction([
+      prisma.paymentApproval.create({
+        data: {
+          id:             approval.approvalId,
+          tenantId,
+          customerPhone:  approval.customerPhone,
+          expectedAmount: approval.expectedAmount,
+          imageUrl:       approval.imageUrl,
+          yapeOpCode:     approval.yapeOpCode,
+          status:         "pending",
+        },
+      }),
+      prisma.order.update({
+        // where clause incluye tenantId para garantizar que el orderId
+        // pertenece a este tenant — previene cross-tenant update.
+        where: { id: orderId, tenantId },
+        data:  { paymentApprovalId: approval.approvalId },
+      }),
+    ]);
+    return { approvalId: approval.approvalId };
+  },
+
+  /**
    * FIX 2026-05-08 (audit Round 4): query de reconciliación para pedidos
    * donde falló la query de tier discount. Busca el tag TIER_DISCOUNT_FAILED
    * en notes — inyectado por createFromCart cuando prisma.order.count falla.

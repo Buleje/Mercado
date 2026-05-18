@@ -204,7 +204,7 @@ export default function StoreDetailClient({
   }, [activeCategory]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-[var(--surface-canvas)]">
       {/* ── MOBILE: Top FIJO nav v5 (Brandon mayo 14 v5) ─────────────
            Patrón Rappi PE: hamburguesa + input search con logo de la
            tienda dentro + icono cuenta + carrito compacto sin precio.

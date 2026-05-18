@@ -257,6 +257,5 @@ export async function POST(req: NextRequest) {
     ok: true,
     proofUrl: publicUrl,
     proofToken,
-    storagePath,
   });
 }

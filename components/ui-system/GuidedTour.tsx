@@ -66,13 +66,17 @@ export default function GuidedTour({ tourId, steps, forceShow = false, onFinish 
     }
   }, [tourId, forceShow]);
 
-  // Lock body scroll
+  // audit P0 UX #2 (2026-05-18): QUITADO scroll lock — el tour era bloqueante
+  // porque overflow:hidden impedía interactuar con el catálogo. El overlay SVG
+  // ya tiene pointer-events:none, así que el usuario puede agregar al carrito
+  // mientras lee el tour. El scroll lock original era un anti-pattern UX.
+  // scrollLockRef se conserva para no romper la ref; simplemente no se usa.
   useEffect(() => {
     if (!active) return;
     scrollLockRef.current = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // No locking — tour no bloqueante
     return () => {
-      document.body.style.overflow = scrollLockRef.current;
+      // Noop: no hubo lock que revertir
     };
   }, [active]);
 
@@ -212,11 +216,11 @@ export default function GuidedTour({ tourId, steps, forceShow = false, onFinish 
   return (
     <div
       role="dialog"
-      aria-modal="true"
+      aria-modal="false"
       aria-labelledby="tour-title"
-      className="fixed inset-0 z-[100] motion-safe:animate-[fadeIn_0.2s] motion-reduce:animate-none"
+      className="fixed inset-0 z-[100] motion-safe:animate-[fadeIn_0.2s] motion-reduce:animate-none pointer-events-none"
     >
-      {/* SVG mask with cutout */}
+      {/* SVG mask with cutout — pointer-events:none para no bloquear el catálogo */}
       <svg
         aria-hidden
         className="absolute inset-0 w-full h-full"
@@ -260,9 +264,9 @@ export default function GuidedTour({ tourId, steps, forceShow = false, onFinish 
         }}
       />
 
-      {/* Tooltip */}
+      {/* Tooltip — pointer-events:auto para que sus botones sean clickeables */}
       <div
-        className="absolute w-[min(calc(100vw-2rem),22rem)] rounded-2xl bg-[var(--surface-raised)] shadow-2xl p-5 space-y-3"
+        className="absolute w-[min(calc(100vw-2rem),22rem)] rounded-2xl bg-[var(--surface-raised)] shadow-2xl p-5 space-y-3 pointer-events-auto"
         style={tooltipStyle}
       >
         <div className="flex items-start justify-between gap-3">
