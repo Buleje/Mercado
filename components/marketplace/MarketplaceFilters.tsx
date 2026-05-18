@@ -52,6 +52,26 @@ export interface MarketplaceFiltersProps {
   zone?: string;
   /** Setter de zona. */
   onZoneChange?: (zone: string) => void;
+  /**
+   * Brandon 2026-05-18: sort externo (StoresSortKey) que se renderiza dentro
+   * del drawer mobile reemplazando el select interno de filters.sortBy.
+   * Cuando se provee, el toolbar de /tiendas NO renderea su propio
+   * StoresSortSelector — todo el control de orden vive dentro del modal.
+   */
+  extraSort?: {
+    value: string;
+    onChange: (v: string) => void;
+    options: ReadonlyArray<{ id: string; label: string }>;
+  };
+  /**
+   * Brandon 2026-05-18: handler global "Limpiar todo" que limpia search,
+   * category, chips, sort, todo. Si se provee, el botón "Limpiar" del action
+   * bar sticky usa este en lugar del onReset interno (que solo limpia los
+   * filters del state interno).
+   */
+  onClearAll?: () => void;
+  /** Total de filtros activos (incluye los del caller — chips, search, etc.). */
+  globalActiveCount?: number;
 }
 
 /* ── Constantes ─────────────────────────────────────────────────────────────── */
@@ -210,6 +230,8 @@ function FiltersDrawer({
   zones,
   zone,
   onZoneChange,
+  extraSort,
+  onClearAll,
 }: {
   open: boolean;
   onClose: () => void;
@@ -223,6 +245,12 @@ function FiltersDrawer({
   zones?: ZoneOption[];
   zone?: string;
   onZoneChange?: (zone: string) => void;
+  extraSort?: {
+    value: string;
+    onChange: (v: string) => void;
+    options: ReadonlyArray<{ id: string; label: string }>;
+  };
+  onClearAll?: () => void;
 }) {
   useEffect(() => {
     if (open) {
@@ -261,21 +289,35 @@ function FiltersDrawer({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          {/* Sort */}
+          {/* Sort — usa extraSort cuando el caller lo provee (caso /tiendas con
+              StoresSortKey). Si no, el sort interno de MarketplaceFiltersState. */}
           <div>
-            <label htmlFor="mobile-sort" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">
+            <label htmlFor="mobile-sort" className="mb-1.5 block text-xs font-extrabold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">
               Ordenar por
             </label>
-            <select
-              id="mobile-sort"
-              value={filters.sortBy}
-              onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}
-              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-3 pr-9 text-sm font-semibold text-[var(--text-primary)] dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            {extraSort ? (
+              <select
+                id="mobile-sort"
+                value={extraSort.value}
+                onChange={(e) => extraSort.onChange(e.target.value)}
+                className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] py-3 pl-4 pr-9 text-base font-bold text-[var(--text-primary)]"
+              >
+                {extraSort.options.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}</option>
+                ))}
+              </select>
+            ) : (
+              <select
+                id="mobile-sort"
+                value={filters.sortBy}
+                onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}
+                className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] py-3 pl-4 pr-9 text-base font-bold text-[var(--text-primary)]"
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Zona */}
@@ -392,24 +434,24 @@ function FiltersDrawer({
           </button>
         </div>
 
-        {/* Sticky action bar */}
-        <div className="shrink-0 border-t border-gray-100 dark:border-gray-800 px-5 py-4 flex gap-3">
-          {activeCount > 0 ? (
-            <button
-              type="button"
-              onClick={onReset}
-              aria-label="Limpiar todos los filtros"
-              className="min-h-12 flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-bold text-[var(--text-secondary)] dark:text-gray-300 hover:border-red-300 hover:text-[var(--data-error-500)] transition-colors"
-            >
-              Limpiar
-            </button>
-          ) : (
-            <div className="flex-1" aria-hidden="true" />
-          )}
+        {/* Sticky action bar — onClearAll cuando el caller pasa el reset
+            global (limpia search, chips, sort, etc.). Si no, onReset interno. */}
+        <div className="shrink-0 border-t border-[var(--rule-soft)] dark:border-gray-800 px-5 py-4 flex gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (onClearAll) onClearAll();
+              else onReset();
+            }}
+            aria-label="Limpiar todos los filtros"
+            className="min-h-12 flex-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-extrabold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
+          >
+            Limpiar todo
+          </button>
           <button
             type="button"
             onClick={onClose}
-            className="min-h-12 flex-[2] rounded-2xl bg-primary text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-colors"
+            className="min-h-12 flex-[2] rounded-2xl bg-[var(--accent)] text-sm font-extrabold text-white shadow-md hover:bg-[var(--accent)]/90 transition-colors"
           >
             Aplicar
           </button>
@@ -431,6 +473,9 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
     zones,
     zone,
     onZoneChange,
+    extraSort,
+    onClearAll,
+    globalActiveCount,
   } = props;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -438,7 +483,9 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
 
   const baseActiveCount = countActiveFilters(filters);
   const zoneActive = !!zone;
-  const activeCount = baseActiveCount + (zoneActive ? 1 : 0);
+  // Si el caller pasa globalActiveCount, lo usamos (cuenta search + chips +
+  // sort externo). Si no, calculamos del estado interno.
+  const activeCount = globalActiveCount ?? (baseActiveCount + (zoneActive ? 1 : 0));
   const priceActive = filters.minPrice > 0 || filters.maxPrice < MAX_PRICE_LIMIT;
   const currentSort = SORT_OPTIONS.find((o) => o.value === filters.sortBy) ?? SORT_OPTIONS[0];
 
@@ -498,6 +545,8 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
         zones={zones}
         zone={zone}
         onZoneChange={onZoneChange}
+        extraSort={extraSort}
+        onClearAll={onClearAll}
       />
 
       {/* ── Desktop: barra horizontal compacta ── */}

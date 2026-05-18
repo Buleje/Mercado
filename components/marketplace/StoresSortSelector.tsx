@@ -17,13 +17,17 @@ export type StoresSortKey = "relevance" | "delivery" | "rating" | "distance" | "
 
 const STORAGE_KEY = "tiendas-sort:v1";
 
-const OPTIONS: Array<{ id: StoresSortKey; label: string }> = [
+// PENTEST 2026-05-18 Sprint D follow-up: exportar para que MarketplaceFilters
+// drawer mobile pueda mostrar el sort dentro del modal (Brandon pidió fusionar
+// "Filtros" y "Ordenar" en un solo modal mobile).
+export const STORES_SORT_OPTIONS: Array<{ id: StoresSortKey; label: string }> = [
   { id: "relevance", label: "Relevancia" },
   { id: "delivery",  label: "Delivery + rápido" },
   { id: "rating",    label: "Mejor rating" },
   { id: "distance",  label: "Más cerca" },
   { id: "newest",    label: "Nuevas" },
 ];
+const OPTIONS = STORES_SORT_OPTIONS;
 
 interface Props {
   value: StoresSortKey;

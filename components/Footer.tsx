@@ -27,6 +27,7 @@ import { useSettings } from "@/contexts/settings-context";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 
 
 // ── Columna 1: Marketplace ──────────────────────────────────────────────
@@ -257,6 +258,12 @@ export default function Footer() {
   // compacto sin links del ecosistema marketplace. Cuando vuelva al modo
   // "Marketplace completo" se renderea el mega-footer normalmente.
   const navMode = useMarketplaceNavMode();
+  // Brandon 2026-05-18: pad-bottom dinámico cuando hay items en carrito.
+  // El StickyCartBar (52px pegado al BottomNav) tapa el copyright en
+  // /marketplace/[slug] al hacer scroll abajo. Detectamos items > 0 y
+  // sumamos su altura al padding inferior solo en mobile.
+  const { itemCount } = useMarketplaceCart();
+  const hasCart = itemCount > 0;
   const isTiendasOnlyMode =
     pathname.startsWith("/tiendas") && navMode === "tiendas-only";
   // Marca de la plataforma (gestionada en /superadmin/marca).
@@ -548,9 +555,11 @@ export default function Footer() {
 
       {/* Bottom band — trust/payment compact + copyright. 2 líneas en mobile, 1 en desktop.
           pb-mobile evita que la BottomNav fija (72px + safe-area iOS) tape el
-          copyright al hacer scroll hasta el final de la página. Solo aplica en
-          mobile (sm:hidden del BottomNav, sm:pb-0 cancela el extra padding). */}
-      <div className="border-t border-emerald-400/15 bg-black/50 backdrop-blur-sm pb-[calc(72px+env(safe-area-inset-bottom))] sm:pb-0">
+          copyright al hacer scroll hasta el final de la página.
+          Brandon 2026-05-18: cuando hay items en carrito, el StickyCartBar
+          (~52px pegado encima del BottomNav) también tapa contenido — sumamos
+          su altura solo en ese caso. Sin cart: 72px. Con cart: 130px. */}
+      <div className={`border-t border-emerald-400/15 bg-black/50 backdrop-blur-sm ${hasCart ? "pb-[calc(130px+env(safe-area-inset-bottom))]" : "pb-[calc(72px+env(safe-area-inset-bottom))]"} sm:pb-0`}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
             {/* Trust + payment chips — todos en 1 línea */}

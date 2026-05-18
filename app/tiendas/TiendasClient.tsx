@@ -44,6 +44,7 @@ import QuickFilterChips, {
 } from "@/components/marketplace/QuickFilterChips";
 import StoresSortSelector, {
   loadStoredSort,
+  STORES_SORT_OPTIONS,
   type StoresSortKey,
 } from "@/components/marketplace/StoresSortSelector";
 import TusTiendasStrip from "@/components/marketplace/TusTiendasStrip";
@@ -645,48 +646,66 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
             backgroundSize: "24px 24px",
           }}
         />
-        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-6 sm:pt-14 sm:pb-14">
+        <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-5 sm:pt-14 sm:pb-14">
           <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 items-end">
             {/* Headline + ubicación + buscador.
                  Brandon mayo 15 v3: eyebrow "Directorio · X" removido —
-                 saturaba la jerarquía visual. El título habla por sí solo. */}
+                 saturaba la jerarquía visual. El título habla por sí solo.
+                 Brandon 2026-05-18: rediseño mobile — eyebrow location +
+                 título tighter + chips full-width 3-col grid (no wrap). */}
             <div className="min-w-0">
-              <h1 className="text-[clamp(1.75rem,7vw,3.75rem)] font-extrabold leading-[1.02] sm:leading-[0.98] tracking-[-0.025em] sm:tracking-[-0.035em] text-[var(--text-primary)]">
+              {/* Eyebrow mobile — location + nº de tiendas activas. Aporta
+                  contexto local sin saturar y reemplaza la descripción larga
+                  de desktop. */}
+              <div className="sm:hidden flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                  <MapPin className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  {customerCity ?? customerRegion ?? "Pucallpa"}
+                </span>
+                {stores.length > 0 && (
+                  <>
+                    <span aria-hidden className="text-[var(--text-tertiary)]">·</span>
+                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] tabular-nums">
+                      {stores.length} tiendas activas
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <h1 className="text-[clamp(1.625rem,7vw,3.75rem)] font-extrabold leading-[1.02] sm:leading-[0.98] tracking-[-0.03em] sm:tracking-[-0.035em] text-[var(--text-primary)]">
                 Las mejores tiendas
                 {" "}
                 <span className="italic font-serif text-[var(--accent)]">de tu barrio.</span>
               </h1>
               {/* Brandon, mayo 14 2026: descripción "Bodegas, restaurantes…"
-                  oculta en mobile — Brandon quiere solo título + buscador.
+                  oculta en mobile — el eyebrow + título ya comunican.
                   En sm+ sigue visible. */}
               <p className="hidden sm:block mt-2 sm:mt-4 max-w-xl text-sm sm:text-lg text-[var(--text-secondary)] leading-[1.4] sm:leading-[1.45]">
                 Bodegas, restaurantes, farmacias y más — todo de tus vecinos,
                 con delivery rápido.
               </p>
 
-              {/* Brandon 2026-05-18: chips de beneficios visibles mobile-first.
-                  El hero antes solo decía "Las mejores tiendas" sin información
-                  práctica. Estos 3 chips comunican trust signals al primer
-                  scroll: tiempo de entrega, métodos de pago, sin mínimo de
-                  pedido. Patrón Rappi/PedidosYa para conversión inmediata. */}
-              <div className="mt-3 sm:mt-4 flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2.5 sm:px-3 h-8 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
-                  <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
-                    <Truck className="h-3 w-3" strokeWidth={2.5} />
+              {/* Brandon 2026-05-18: chips de beneficios trust signals.
+                  Mobile: grid 3-col (cabe siempre, sin wrap raro).
+                  Desktop: wrap natural con más spacing. */}
+              <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:gap-2 sm:flex-wrap">
+                <span className="inline-flex flex-col sm:flex-row items-center sm:gap-1.5 gap-1 justify-center rounded-2xl sm:rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2 sm:px-3 py-2 sm:py-0 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
+                  <span aria-hidden className="inline-flex h-6 w-6 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)] shrink-0">
+                    <Truck className="h-3.5 w-3.5 sm:h-3 sm:w-3" strokeWidth={2.5} />
                   </span>
-                  Entrega 25 min
+                  <span className="text-center leading-tight">Entrega <span className="tabular-nums">25</span> min</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2.5 sm:px-3 h-8 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
-                  <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
-                    <Wallet className="h-3 w-3" strokeWidth={2.5} />
+                <span className="inline-flex flex-col sm:flex-row items-center sm:gap-1.5 gap-1 justify-center rounded-2xl sm:rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2 sm:px-3 py-2 sm:py-0 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
+                  <span aria-hidden className="inline-flex h-6 w-6 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)] shrink-0">
+                    <Wallet className="h-3.5 w-3.5 sm:h-3 sm:w-3" strokeWidth={2.5} />
                   </span>
-                  Yape · Efectivo
+                  <span className="text-center leading-tight">Yape · Efectivo</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2.5 sm:px-3 h-8 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
-                  <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
-                    <Gift className="h-3 w-3" strokeWidth={2.5} />
+                <span className="inline-flex flex-col sm:flex-row items-center sm:gap-1.5 gap-1 justify-center rounded-2xl sm:rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2 sm:px-3 py-2 sm:py-0 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
+                  <span aria-hidden className="inline-flex h-6 w-6 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)] shrink-0">
+                    <Gift className="h-3.5 w-3.5 sm:h-3 sm:w-3" strokeWidth={2.5} />
                   </span>
-                  Sin mínimo
+                  <span className="text-center leading-tight">Sin mínimo</span>
                 </span>
               </div>
 
@@ -1351,8 +1370,12 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
 
               <span aria-hidden className="h-7 w-px bg-[var(--rule-soft)] shrink-0" />
 
-              {/* Filtros (mobile): primero → más visible. Ahora también
-                   contiene la sección Zona dentro del drawer. */}
+              {/* Brandon 2026-05-18: el StoresSortSelector y el botón Limpiar
+                   vivían aparte en el toolbar y rompían la jerarquía visual
+                   (3 botones compitiendo). Ahora todo el control vive dentro
+                   del drawer del MarketplaceFilters — pasamos extraSort
+                   (StoresSortKey) y onClearAll para que el modal sea el
+                   único punto de control. */}
               <div className="flex items-center gap-2 shrink-0">
                 <MarketplaceFilters
                   filters={productFilters}
@@ -1364,16 +1387,12 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   zones={zonesForFilter}
                   zone={zone}
                   onZoneChange={setZone}
-                />
-              </div>
-
-              <div className="shrink-0">
-                <StoresSortSelector value={sortKey} onChange={setSortKey} />
-              </div>
-
-              {hasFilters && (
-                <button
-                  onClick={() => {
+                  extraSort={{
+                    value: sortKey,
+                    onChange: (v) => setSortKey(v as StoresSortKey),
+                    options: STORES_SORT_OPTIONS,
+                  }}
+                  onClearAll={() => {
                     setSearch("");
                     setCategory("todos");
                     setZone("");
@@ -1384,12 +1403,18 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     setActiveChips(new Set());
                     setSortKey("relevance");
                   }}
-                  aria-label="Limpiar todos los filtros activos"
-                  className="inline-flex items-center gap-1 rounded-full border-2 border-[var(--data-error-500,#ef4444)]/30 bg-[var(--data-error-50,#fef2f2)] dark:bg-[var(--data-error-950,#450a0a)]/30 px-3 h-9 text-sm font-extrabold text-[var(--data-error-600,#dc2626)] shrink-0"
-                >
-                  Limpiar
-                </button>
-              )}
+                  globalActiveCount={
+                    (search.trim() ? 1 : 0) +
+                    (category !== "todos" ? 1 : 0) +
+                    (zone ? 1 : 0) +
+                    (subCategoryId ? 1 : 0) +
+                    (geoActive ? 1 : 0) +
+                    activeChips.size +
+                    (sortKey !== "relevance" ? 1 : 0) +
+                    (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0)
+                  }
+                />
+              </div>
             </div>
 
             {/* ── Desktop (sm+): layout antiguo con filtros izquierda + vista derecha ── */}
