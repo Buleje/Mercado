@@ -446,6 +446,55 @@ export default function UnifiedProductCard({
             </span>
           </div>
         )}
+
+        {/* Brandon 2026-05-18: CTA "agregar al carrito" reubicado como overlay
+            de la imagen en MOBILE (estilo Rappi/Glovo). Antes vivía dentro del
+            footer del card compitiendo con el precio — en cards angostas el
+            botón circular comía espacio del precio y el badge "qty" se
+            superponía. Ahora flota sobre la imagen sin afectar la zona del
+            precio. En sm+ se mantiene el layout inline original (más espacio). */}
+        <div className="sm:hidden absolute bottom-2 right-2 z-10">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={isOutOfStock}
+              aria-label={
+                isOutOfStock
+                  ? `${product.name} — agotado`
+                  : inCartQty > 0
+                    ? `Agregar otro ${product.name} (${inCartQty} en carrito)`
+                    : `Agregar ${product.name} al carrito`
+              }
+              className={cn(
+                "inline-flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200 shadow-lg ring-2 ring-white/95 dark:ring-[var(--surface-raised)]/95",
+                isOutOfStock
+                  ? "bg-[var(--surface-sunken)] text-gray-400 cursor-not-allowed"
+                  : justAdded
+                    ? "bg-[var(--data-success-500)] text-white scale-90"
+                    : "bg-[var(--accent-600,var(--accent))] text-white active:scale-90",
+              )}
+            >
+              {justAdded ? (
+                <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+              ) : (
+                <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+              )}
+            </button>
+            {inCartQty > 0 && !justAdded && (
+              <motion.span
+                key={inCartQty}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                aria-hidden
+                className="absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)] px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--surface-canvas)] shadow-md ring-2 ring-white dark:ring-[var(--surface-raised)]"
+              >
+                {inCartQty > 99 ? "99+" : inCartQty}
+              </motion.span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ── Contenido ──────────────────────────────────────────────────────────
@@ -533,11 +582,11 @@ export default function UnifiedProductCard({
             )}
           </div>
 
-          {/* CTA circular AGRANDADO h-12 w-12 + icono h-5 w-5 — resalta la accion.
-              Cuando el producto ya está en el carrito, mostramos un badge
-              superpuesto con la cantidad — el usuario sabe al instante qué
-              ya agregó sin abrir el drawer. */}
-          <div className="relative shrink-0">
+          {/* Brandon 2026-05-18: CTA inline OCULTO en mobile (sm:hidden inverso
+              → hidden sm:flex). El botón vive ahora como overlay sobre la
+              imagen en mobile (ver bloque "Brandon 2026-05-18: CTA reubicado"
+              arriba). En desktop sm+ mantenemos el inline porque hay espacio. */}
+          <div className="relative shrink-0 hidden sm:flex">
             <button
               type="button"
               onClick={handleAdd}
@@ -550,10 +599,7 @@ export default function UnifiedProductCard({
                     : `Agregar ${product.name} al carrito`
               }
               className={cn(
-                // Round 28 P0 (Mobile): h-10 w-10 = 40px viola WCAG 2.5.5 (44 mín).
-                // Es el botón con mayor frecuencia de tap del marketplace —
-                // máximo impacto en conversión mobile.
-                "inline-flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full transition-all duration-200 ring-1 shrink-0",
+                "inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 ring-1 shrink-0",
                 isOutOfStock
                   ? "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed ring-gray-200 dark:ring-gray-700"
                   : justAdded
@@ -569,7 +615,6 @@ export default function UnifiedProductCard({
                 <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
               )}
             </button>
-            {/* Badge cantidad en carrito */}
             {inCartQty > 0 && !justAdded && (
               <motion.span
                 key={inCartQty}

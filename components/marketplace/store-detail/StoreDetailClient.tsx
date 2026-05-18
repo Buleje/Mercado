@@ -547,14 +547,27 @@ export default function StoreDetailClient({
                si querés ver todo, cerrá el filtro). Pills rediseñadas
                como tabs sin border: solo texto + contador. Franja inferior
                accent que se anima al pill activo via CSS transition.
-               El click hace scroll smooth al sentinel #cat-{name} si existe. */}
+               El click hace scroll smooth al sentinel #cat-{name} si existe.
+               Brandon 2026-05-18: agregado botón "Ver todas" sticky a la
+               izquierda que abre el drawer mobile (StoreCategoriesSidebar).
+               Antes el drawer no tenía trigger visible — código muerto. */}
           {categories.length > 0 && (
-            <div className="lg:hidden -mx-4 sm:-mx-6">
+            <div className="lg:hidden -mx-4 sm:-mx-6 flex items-stretch">
+              {/* Botón "Ver todas" sticky-izq que abre el drawer rediseñado */}
+              <button
+                type="button"
+                onClick={() => setMobileCatOpen(true)}
+                aria-label="Abrir todas las categorías"
+                className="shrink-0 inline-flex items-center gap-1.5 h-12 px-3.5 ml-2 sm:ml-4 rounded-full bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)] text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all"
+              >
+                <LayoutGrid className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                Categorías
+              </button>
               <div
                 ref={subnavScrollRef}
                 role="tablist"
                 aria-label="Filtrar por categoría"
-                className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide px-2 sm:px-4 scroll-smooth"
+                className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide px-2 sm:px-4 scroll-smooth flex-1 min-w-0"
               >
                 {categories.map((cat) => {
                   const active = activeCategory === cat.name;
@@ -665,7 +678,11 @@ export default function StoreDetailClient({
         </div>
       </div>
 
-      {/* ── Drawer mobile — overlay con lista de categorías ────────────── */}
+      {/* ── Drawer mobile — overlay con lista de categorías (v2 Brandon 2026-05-18)
+           Rediseño mobile: backdrop con blur más fuerte, sheet desde la derecha
+           con border-radius en la izquierda (siente más como sheet, menos
+           como pared). Header con título grande + counter de categorías
+           activas + close button h-11. Animation slide-in-from-right. */}
       {mobileCatOpen && (
         <div
           className="lg:hidden fixed inset-0 z-50 flex"
@@ -674,22 +691,36 @@ export default function StoreDetailClient({
           aria-label="Categorías"
         >
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/65 backdrop-blur-md animate-in fade-in-0 duration-200"
             onClick={() => setMobileCatOpen(false)}
           />
-          <div className="relative ml-auto h-full w-[85vw] max-w-sm bg-[var(--surface-canvas)] shadow-2xl flex flex-col">
-            <div className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] flex items-center justify-between">
-              <p className="text-base font-black text-[var(--text-primary)]">Categorías</p>
-              <button
-                type="button"
-                onClick={() => setMobileCatOpen(false)}
-                aria-label="Cerrar categorías"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--surface-sunken)]"
-              >
-                <X className="h-4 w-4" />
-              </button>
+          <div className="relative ml-auto h-full w-[88vw] max-w-sm bg-[var(--surface-canvas)] shadow-2xl flex flex-col rounded-l-3xl overflow-hidden animate-in slide-in-from-right-4 duration-300">
+            {/* Header rediseñado: drag handle visual + título + count + close */}
+            <div className="shrink-0 px-5 pt-4 pb-3 border-b-2 border-[var(--rule-base)] bg-linear-to-b from-[var(--accent-soft)]/40 to-transparent">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+                    Explorar
+                  </p>
+                  <h2 className="text-xl font-black text-[var(--text-primary)] leading-tight tracking-tight">
+                    Categorías
+                  </h2>
+                  <p className="mt-0.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] tabular-nums">
+                    {categories.length} {categories.length === 1 ? "categoría" : "categorías"}
+                    {filterCategory && " · 1 filtrada"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileCatOpen(false)}
+                  aria-label="Cerrar categorías"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] active:scale-95 transition-all shrink-0"
+                >
+                  <X className="h-5 w-5" strokeWidth={2.25} />
+                </button>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-2">
+            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1.5">
               <StoreCategoriesSidebar
                 categories={categories}
                 activeCategory={filterCategory}
@@ -698,6 +729,21 @@ export default function StoreDetailClient({
                 hideHeader
               />
             </div>
+            {/* Sticky footer con CTA "Limpiar filtro" si hay categoría activa */}
+            {filterCategory && (
+              <div className="shrink-0 border-t border-[var(--rule-soft)] px-4 py-3 bg-[var(--surface-canvas)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleCategorySelect(null);
+                    setMobileCatOpen(false);
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-95 transition-all"
+                >
+                  Ver todos los productos
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

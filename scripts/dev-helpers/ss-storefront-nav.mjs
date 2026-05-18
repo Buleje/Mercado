@@ -34,7 +34,7 @@ await page.addInitScript(() => {
   } catch {}
 });
 
-await page.goto(`http://localhost:3000/marketplace/buleje?_t=${Date.now()}`, {
+await page.goto(`http://localhost:3000/marketplace/pizza-pucallpa?_t=${Date.now()}`, {
   waitUntil: "domcontentloaded",
   timeout: 30000,
 });
