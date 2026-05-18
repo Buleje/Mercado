@@ -8,7 +8,28 @@
     "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/marketplace-categories/1778678703546-hambuergueza.webp",
     "active": true,
     "linkedStoreSlugs": [],
-    "subcategories": []
+    "subcategories": [
+      {
+        "id": "restaurante-sub-1779113445101",
+        "label": "Pollos",
+        "description": "",
+        "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/marketplace-categories/1779113603726-polleria.webp",
+        "active": true,
+        "linkedStoreSlugs": [
+          "mi-pollo"
+        ]
+      },
+      {
+        "id": "restaurante-sub-1779113639670",
+        "label": "Pizzas",
+        "description": "",
+        "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/marketplace-categories/1779113781665-Pizzeria.webp",
+        "active": true,
+        "linkedStoreSlugs": [
+          "pizza-pucallpa"
+        ]
+      }
+    ]
   },
   "bodega": {
     "label": "Bodegas",

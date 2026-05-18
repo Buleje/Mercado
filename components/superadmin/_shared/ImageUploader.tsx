@@ -13,7 +13,8 @@
  */
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Upload, RefreshCw, Trash2, AlertTriangle } from "@buleje/design-system/icons";
+import { Upload, RefreshCw, Trash2, AlertTriangle, Crop } from "@buleje/design-system/icons";
+import ImageCropEditor from "./ImageCropEditor";
 
 interface ImageUploaderProps {
   value: string | null;
@@ -28,6 +29,8 @@ interface ImageUploaderProps {
   className?: string;
   /** Si true, escucha Ctrl+V global mientras el componente tiene foco */
   enablePaste?: boolean;
+  /** Si true (default), abre editor de crop/zoom antes de subir */
+  enableCrop?: boolean;
   alt?: string;
 }
 
@@ -39,6 +42,7 @@ export default function ImageUploader({
   aspectClass,
   className,
   enablePaste = true,
+  enableCrop = true,
   alt = "Imagen",
 }: ImageUploaderProps) {
   const reactId = useId();
@@ -48,7 +52,35 @@ export default function ImageUploader({
   const [savedPct, setSavedPct] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [pendingName, setPendingName] = useState<string>("image");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Aspect ratio numérico para el cropper (deduce de aspectClass o mode)
+  const cropAspect = (() => {
+    if (aspectClass) {
+      const m = aspectClass.match(/aspect-\[(\d+)\/(\d+)\]/);
+      if (m) return Number(m[1]) / Number(m[2]);
+      if (aspectClass.includes("aspect-square")) return 1;
+      if (aspectClass.includes("aspect-video")) return 16 / 9;
+    }
+    return mode === "wide" ? 16 / 7 : 1;
+  })();
+
+  function handleFileSelected(file: File) {
+    if (!enableCrop) {
+      void uploadFile(file);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropSrc(typeof reader.result === "string" ? reader.result : null);
+      setPendingName(file.name);
+      setCropOpen(true);
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function uploadFile(file: File) {
     setStatus("uploading");
@@ -88,7 +120,7 @@ export default function ImageUploader({
           const file = it.getAsFile();
           if (file) {
             e.preventDefault();
-            void uploadFile(file);
+            handleFileSelected(file);
             return;
           }
         }
@@ -126,7 +158,7 @@ export default function ImageUploader({
           e.preventDefault();
           setIsDragging(false);
           const file = e.dataTransfer.files?.[0];
-          if (file) void uploadFile(file);
+          if (file) handleFileSelected(file);
         }}
         aria-label={value ? "Cambiar imagen" : "Subir imagen"}
         className={`relative block w-full ${aspect} rounded-lg overflow-hidden border-2 transition-all group ${
@@ -196,7 +228,7 @@ export default function ImageUploader({
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) void uploadFile(file);
+          if (file) handleFileSelected(file);
           e.target.value = "";
         }}
       />
@@ -209,14 +241,45 @@ export default function ImageUploader({
       )}
 
       {value && status === "idle" && (
-        <button
-          type="button"
-          onClick={() => onChange(null)}
-          className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] hover:underline"
-        >
-          <Trash2 className="h-3 w-3" />
-          Quitar
-        </button>
+        <div className="mt-1.5 flex items-center gap-3">
+          {enableCrop && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:underline"
+              title="Subir nueva imagen con ajuste"
+            >
+              <Crop className="h-3 w-3" strokeWidth={2.25} />
+              Reemplazar y ajustar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] hover:underline"
+          >
+            <Trash2 className="h-3 w-3" />
+            Quitar
+          </button>
+        </div>
+      )}
+
+      {enableCrop && (
+        <ImageCropEditor
+          open={cropOpen}
+          srcDataUrl={cropSrc}
+          aspect={cropAspect}
+          fileName={pendingName}
+          onCancel={() => {
+            setCropOpen(false);
+            setCropSrc(null);
+          }}
+          onApply={(file) => {
+            setCropOpen(false);
+            setCropSrc(null);
+            void uploadFile(file);
+          }}
+        />
       )}
     </div>
   );

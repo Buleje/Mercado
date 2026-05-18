@@ -124,6 +124,7 @@
     "prisma": "^7.4.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-easy-crop": "^5.5.7",
     "react-window": "^1.8.10",
     "recharts": "^3.8.0",
     "resend": "^6.10.0",

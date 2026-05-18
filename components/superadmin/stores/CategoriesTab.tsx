@@ -14,7 +14,7 @@
  * Storage: PageHero+JSON via /api/superadmin/marketplace/categories.
  */
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   RefreshCw,
@@ -32,10 +32,13 @@ import {
   ChevronRight,
   Search,
   Folder,
-  Layers,
   Tag,
+  Link as LinkIcon,
+  ArrowUp,
+  ArrowDown,
 } from "@buleje/design-system/icons";
 import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
+import StoreLinkerModal from "@/components/superadmin/stores/StoreLinkerModal";
 
 interface SubCategory {
   id: string;
@@ -88,6 +91,7 @@ export function CategoriesTab() {
   const [statusByCat, setStatusByCat] = useState<Record<string, { status: SaveStatus; msg?: string }>>({});
   const [search, setSearch] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [recentlyAddedSubId, setRecentlyAddedSubId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -217,19 +221,39 @@ export function CategoriesTab() {
     (catId: string) => {
       const cur = getCurrent(catId);
       if (!cur) return;
-      const baseId = `${catId}-sub-${cur.subcategories.length + 1}`;
+      const tempId = `${catId}-sub-${Date.now()}`;
       const newSub: SubCategory = {
-        id: baseId,
-        label: "Nueva subcategoría",
+        id: tempId,
+        label: "",
         description: "",
         imageUrl: null,
         active: true,
         linkedStoreSlugs: [],
       };
       patchDraft(catId, { subcategories: [...cur.subcategories, newSub] });
+      setRecentlyAddedSubId(tempId);
     },
     [getCurrent, patchDraft],
   );
+
+  const moveSub = useCallback(
+    (catId: string, subId: string, direction: "up" | "down") => {
+      const cur = getCurrent(catId);
+      if (!cur) return;
+      const idx = cur.subcategories.findIndex((s) => s.id === subId);
+      if (idx < 0) return;
+      const target = direction === "up" ? idx - 1 : idx + 1;
+      if (target < 0 || target >= cur.subcategories.length) return;
+      const next = [...cur.subcategories];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      patchDraft(catId, { subcategories: next });
+    },
+    [getCurrent, patchDraft],
+  );
+
+  const consumeRecentlyAdded = useCallback((subId: string) => {
+    setRecentlyAddedSubId((prev) => (prev === subId ? null : prev));
+  }, []);
 
   const saveCategory = useCallback(
     async (catId: string) => {
@@ -582,11 +606,14 @@ export function CategoriesTab() {
               status={status}
               errorMsg={errMsg}
               expanded={expanded}
+              recentlyAddedSubId={recentlyAddedSubId}
               onToggleExpand={() => toggleExpand(rawCat.id)}
               onPatch={(patch) => patchDraft(rawCat.id, patch)}
               onUpdateSub={(subId, patch) => updateSub(rawCat.id, subId, patch)}
               onRemoveSub={(subId) => removeSub(rawCat.id, subId)}
+              onMoveSub={(subId, dir) => moveSub(rawCat.id, subId, dir)}
               onAddSub={() => addSub(rawCat.id)}
+              onConsumeRecentlyAdded={consumeRecentlyAdded}
               onZoneDraftChange={(slug, value) =>
                 setZoneDrafts((prev) => ({ ...prev, [slug]: value }))
               }
@@ -651,11 +678,14 @@ function CategoryRow({
   status,
   errorMsg,
   expanded,
+  recentlyAddedSubId,
   onToggleExpand,
   onPatch,
   onUpdateSub,
   onRemoveSub,
+  onMoveSub,
   onAddSub,
+  onConsumeRecentlyAdded,
   onZoneDraftChange,
   onSave,
 }: {
@@ -667,11 +697,14 @@ function CategoryRow({
   status: SaveStatus;
   errorMsg?: string;
   expanded: boolean;
+  recentlyAddedSubId: string | null;
   onToggleExpand: () => void;
   onPatch: (patch: Partial<CategoryConfig>) => void;
   onUpdateSub: (subId: string, patch: Partial<SubCategory>) => void;
   onRemoveSub: (subId: string) => void;
+  onMoveSub: (subId: string, direction: "up" | "down") => void;
   onAddSub: () => void;
+  onConsumeRecentlyAdded: (subId: string) => void;
   onZoneDraftChange: (slug: string, value: string) => void;
   onSave: () => void;
 }) {
@@ -775,7 +808,7 @@ function CategoryRow({
               title="Identidad"
               subtitle="Imagen, nombre y descripción que aparecen en /tiendas"
             />
-            <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-4 mt-3">
+            <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4 mt-3">
               <div>
                 <ImageUploader
                   value={cat.imageUrl ?? null}
@@ -785,37 +818,52 @@ function CategoryRow({
                   aspectClass="aspect-square"
                   alt={cat.label}
                 />
+                <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">
+                  Recomendado: 800×800px, foto del rubro.
+                </p>
               </div>
-              <div className="space-y-2">
-                <label className="block">
-                  <span className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
-                    Nombre
-                  </span>
+              <div className="space-y-3">
+                <FieldLabel text="Nombre visible" required>
                   <input
                     type="text"
                     value={cat.label}
                     onChange={(e) => onPatch({ label: e.target.value })}
                     placeholder={cat.defaultLabel}
-                    className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                    className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] h-12 px-3.5 text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
                   />
-                </label>
-                <label className="block">
-                  <span className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
-                    Descripción
-                  </span>
+                </FieldLabel>
+                <FieldLabel
+                  text="Descripción"
+                  hint={`${(cat.description ?? "").length}/120`}
+                >
                   <textarea
                     value={cat.description}
-                    onChange={(e) => onPatch({ description: e.target.value })}
+                    onChange={(e) =>
+                      onPatch({ description: e.target.value.slice(0, 120) })
+                    }
                     placeholder={cat.defaultDescription}
                     rows={2}
-                    className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none"
+                    maxLength={120}
+                    className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none"
                   />
-                </label>
+                </FieldLabel>
+                <FieldLabel
+                  text="URL (slug)"
+                  hint="No editable — se conserva al renombrar"
+                >
+                  <div className="inline-flex items-center w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 h-11 px-3.5 text-sm font-mono text-[var(--text-tertiary)]">
+                    <LinkIcon className="h-3.5 w-3.5 mr-2 shrink-0" strokeWidth={2.25} />
+                    /tiendas?categoria=
+                    <span className="text-[var(--text-primary)] font-bold ml-0.5">
+                      {cat.id}
+                    </span>
+                  </div>
+                </FieldLabel>
                 <div className="flex items-center justify-between gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => onPatch({ active: !cat.active })}
-                    className={`inline-flex h-9 items-center gap-1.5 rounded-xl border px-3.5 text-xs font-bold transition ${
+                    className={`inline-flex h-11 items-center gap-1.5 rounded-xl border-2 px-4 text-sm font-bold transition ${
                       isHidden
                         ? "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
                         : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]/40"
@@ -823,12 +871,12 @@ function CategoryRow({
                   >
                     {isHidden ? (
                       <>
-                        <EyeOff className="h-3.5 w-3.5" strokeWidth={2.25} />
+                        <EyeOff className="h-4 w-4" strokeWidth={2.25} />
                         Mostrar en /tiendas
                       </>
                     ) : (
                       <>
-                        <Eye className="h-3.5 w-3.5" strokeWidth={2.25} />
+                        <Eye className="h-4 w-4" strokeWidth={2.25} />
                         Ocultar de /tiendas
                       </>
                     )}
@@ -855,6 +903,7 @@ function CategoryRow({
             />
             <div className="mt-3">
               <PrimaryStoreLinker
+                categoryLabel={cat.label}
                 stores={stores}
                 linkedSlugs={cat.linkedStoreSlugs ?? []}
                 storeZones={storeZones}
@@ -867,56 +916,63 @@ function CategoryRow({
 
           {/* Step 3 — Subcategorías */}
           <section>
-            <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <SectionHeading
                 step="3"
                 icon={Tag}
                 title="Subcategorías"
-                subtitle="Filtros del paso 2 (más específicos)"
+                subtitle="Filtros del paso 2 — más específicos dentro de la categoría"
+                count={cat.subcategories.length}
                 inline
               />
-              <button
-                type="button"
-                onClick={onAddSub}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-dashed border-[var(--accent)]/50 bg-[var(--accent)]/5 px-3.5 text-xs font-extrabold uppercase tracking-wider text-[var(--accent)] transition hover:bg-[var(--accent)]/10"
-              >
-                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-                Agregar
-              </button>
+              {cat.subcategories.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onAddSub}
+                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110"
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2.5} />
+                  Agregar subcategoría
+                </button>
+              )}
             </div>
 
             {cat.subcategories.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-5 py-8 text-center">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-sunken)] mb-2">
-                  <Tag
-                    className="h-4 w-4 text-[var(--text-tertiary)]"
-                    strokeWidth={1.75}
-                    aria-hidden
-                  />
-                </div>
-                <p className="text-sm font-bold text-[var(--text-primary)]">
-                  Sin subcategorías
-                </p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1 max-w-sm mx-auto">
-                  Las subcategorías refinan el filtro. Ej: dentro de Restaurantes →
-                  Pizzería, Pollería, Sushi.
-                </p>
-              </div>
+              <EmptySubcategories
+                categoryLabel={cat.label}
+                onAdd={onAddSub}
+              />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {cat.subcategories.map((sub) => (
-                  <SubCategoryCard
-                    key={sub.id}
-                    sub={sub}
-                    stores={stores}
-                    storeZones={storeZones}
-                    zoneDrafts={zoneDrafts}
-                    onZoneDraftChange={onZoneDraftChange}
-                    onPatch={(patch) => onUpdateSub(sub.id, patch)}
-                    onRemove={() => onRemoveSub(sub.id)}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {cat.subcategories.map((sub, idx) => (
+                    <SubCategoryCard
+                      key={sub.id}
+                      sub={sub}
+                      index={idx}
+                      total={cat.subcategories.length}
+                      isRecentlyAdded={recentlyAddedSubId === sub.id}
+                      stores={stores}
+                      storeZones={storeZones}
+                      zoneDrafts={zoneDrafts}
+                      onZoneDraftChange={onZoneDraftChange}
+                      onPatch={(patch) => onUpdateSub(sub.id, patch)}
+                      onRemove={() => onRemoveSub(sub.id)}
+                      onMoveUp={() => onMoveSub(sub.id, "up")}
+                      onMoveDown={() => onMoveSub(sub.id, "down")}
+                      onConsumeRecent={() => onConsumeRecentlyAdded(sub.id)}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={onAddSub}
+                  className="mt-4 w-full inline-flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--accent)]/50 bg-[var(--accent)]/5 text-sm font-extrabold uppercase tracking-wider text-[var(--accent)] transition hover:border-[var(--accent)] hover:bg-[var(--accent)]/10"
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2.5} />
+                  Agregar otra subcategoría
+                </button>
+              </>
             )}
           </section>
         </div>
@@ -932,28 +988,119 @@ function SectionHeading({
   icon: Icon,
   title,
   subtitle,
+  count,
   inline,
 }: {
   step: string;
   icon: typeof Sparkles;
   title: string;
   subtitle: string;
+  count?: number;
   inline?: boolean;
 }) {
   return (
     <div className={`flex items-center gap-3 ${inline ? "" : ""}`}>
-      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
-        <span className="font-display text-xs font-extrabold">{step}</span>
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+        <span className="font-display text-sm font-extrabold">{step}</span>
       </span>
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <Icon className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={1.75} aria-hidden />
-          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+          <Icon className="h-4 w-4 text-[var(--accent)]" strokeWidth={1.75} aria-hidden />
+          <p className="text-sm font-extrabold uppercase tracking-wider text-[var(--accent)]">
             {title}
           </p>
+          {typeof count === "number" && (
+            <span className="inline-flex min-w-[22px] items-center justify-center rounded-full bg-[var(--accent)]/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-[var(--accent)]">
+              {count}
+            </span>
+          )}
         </div>
-        <p className="text-xs text-[var(--text-tertiary)]">{subtitle}</p>
+        <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{subtitle}</p>
       </div>
+    </div>
+  );
+}
+
+function FieldLabel({
+  text,
+  hint,
+  required,
+  children,
+}: {
+  text: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+          {text}
+          {required && <span className="text-[var(--accent)] ml-0.5">*</span>}
+        </span>
+        {hint && (
+          <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)]">
+            {hint}
+          </span>
+        )}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function EmptySubcategories({
+  categoryLabel,
+  onAdd,
+}: {
+  categoryLabel: string;
+  onAdd: () => void;
+}) {
+  const examples =
+    /restaurant|comid/i.test(categoryLabel)
+      ? ["Pizzería", "Pollería", "Sushi", "Hamburguesas"]
+      : /bodega|mercado|abarrot/i.test(categoryLabel)
+        ? ["Frutas", "Lácteos", "Bebidas", "Snacks"]
+        : /ferret/i.test(categoryLabel)
+          ? ["Pintura", "Cerrajería", "Plomería", "Eléctrico"]
+          : ["Subcategoría 1", "Subcategoría 2", "Subcategoría 3"];
+  return (
+    <div className="rounded-2xl border-2 border-dashed border-[var(--accent)]/30 bg-[var(--accent)]/5 px-6 py-8 text-center">
+      <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)]/10 mb-3">
+        <Tag
+          className="h-6 w-6 text-[var(--accent)]"
+          strokeWidth={1.75}
+          aria-hidden
+        />
+      </div>
+      <p className="font-display text-base font-extrabold text-[var(--text-primary)]">
+        Sin subcategorías todavía
+      </p>
+      <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-md mx-auto">
+        Las subcategorías refinan el filtro dentro de{" "}
+        <strong className="text-[var(--text-primary)]">{categoryLabel}</strong>. Te
+        ayudan a guiar al cliente al producto exacto.
+      </p>
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {examples.map((ex) => (
+          <span
+            key={ex}
+            className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]"
+          >
+            <Tag className="h-3 w-3 text-[var(--text-tertiary)]" strokeWidth={2.25} />
+            {ex}
+          </span>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="mt-5 inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110"
+      >
+        <Plus className="h-4 w-4" strokeWidth={2.5} />
+        Crear primera subcategoría
+      </button>
     </div>
   );
 }
@@ -1005,45 +1152,68 @@ function SaveButton({
 
 function SubCategoryCard({
   sub,
+  index,
+  total,
+  isRecentlyAdded,
   stores,
   storeZones,
   zoneDrafts,
   onZoneDraftChange,
   onPatch,
   onRemove,
+  onMoveUp,
+  onMoveDown,
+  onConsumeRecent,
 }: {
   sub: SubCategory;
+  index: number;
+  total: number;
+  isRecentlyAdded: boolean;
   stores: StoreOption[];
   storeZones: Record<string, string>;
   zoneDrafts: Record<string, string>;
   onZoneDraftChange: (slug: string, value: string) => void;
   onPatch: (patch: Partial<SubCategory>) => void;
   onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onConsumeRecent: () => void;
 }) {
-  const [showStores, setShowStores] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const linkedSet = useMemo(() => new Set(sub.linkedStoreSlugs ?? []), [sub.linkedStoreSlugs]);
   const linkedStores = useMemo(
     () => stores.filter((s) => linkedSet.has(s.slug)),
     [stores, linkedSet],
   );
 
-  const toggleStore = (slug: string) => {
-    const next = new Set(linkedSet);
-    if (next.has(slug)) next.delete(slug);
-    else next.add(slug);
-    onPatch({ linkedStoreSlugs: Array.from(next) });
-  };
+  useEffect(() => {
+    if (isRecentlyAdded && titleRef.current && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      titleRef.current.focus();
+      onConsumeRecent();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const derivedSlug = sub.id?.trim() || slugify(sub.label) || `sub-${index + 1}`;
+  const descCount = (sub.description ?? "").length;
 
   return (
     <div
-      className={`rounded-2xl border bg-[var(--surface-raised)] overflow-hidden transition ${
-        sub.active
-          ? "border-[var(--rule-soft)] hover:border-[var(--accent)]/30"
-          : "border-dashed border-[var(--rule-base)] opacity-70"
+      ref={cardRef}
+      className={`rounded-2xl border-2 bg-[var(--surface-raised)] overflow-hidden transition ${
+        isRecentlyAdded
+          ? "border-[var(--accent)] shadow-lg shadow-[var(--accent)]/15 ring-4 ring-[var(--accent)]/10"
+          : sub.active
+            ? "border-[var(--rule-soft)] hover:border-[var(--accent)]/40"
+            : "border-dashed border-[var(--rule-base)] opacity-70"
       }`}
     >
       {/* Image header */}
-      <div className="relative h-28 bg-[var(--surface-sunken)]">
+      <div className="relative aspect-[16/7] bg-[var(--surface-sunken)]">
         <ImageUploader
           value={sub.imageUrl ?? null}
           onChange={(url) => onPatch({ imageUrl: url })}
@@ -1052,14 +1222,40 @@ function SubCategoryCard({
           aspectClass="aspect-[16/7]"
           alt={sub.label}
         />
+        {/* Order badge */}
+        <div className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-black/55 backdrop-blur px-2 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white">
+          #{index + 1}
+        </div>
+        {/* Reorder + actions */}
         <div className="absolute top-2 right-2 flex gap-1">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={index === 0}
+            title="Mover arriba"
+            aria-label="Mover arriba"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/55 text-white backdrop-blur transition hover:bg-black/75 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ArrowUp className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={index === total - 1}
+            title="Mover abajo"
+            aria-label="Mover abajo"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/55 text-white backdrop-blur transition hover:bg-black/75 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ArrowDown className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </button>
           <button
             type="button"
             onClick={() => onPatch({ active: !sub.active })}
             title={sub.active ? "Ocultar" : "Activar"}
-            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg backdrop-blur transition ${
+            aria-label={sub.active ? "Ocultar" : "Activar"}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg backdrop-blur transition ${
               sub.active
-                ? "bg-black/40 text-white hover:bg-black/60"
+                ? "bg-black/55 text-white hover:bg-black/75"
                 : "bg-amber-500/90 text-white hover:bg-amber-600"
             }`}
           >
@@ -1067,94 +1263,90 @@ function SubCategoryCard({
           </button>
           <button
             type="button"
-            onClick={onRemove}
-            title="Eliminar subcategoría"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-black/40 text-white backdrop-blur transition hover:bg-rose-600"
+            onClick={() => {
+              if (confirmRemove) onRemove();
+              else {
+                setConfirmRemove(true);
+                setTimeout(() => setConfirmRemove(false), 2500);
+              }
+            }}
+            title={confirmRemove ? "Confirmar eliminación" : "Eliminar subcategoría"}
+            aria-label="Eliminar subcategoría"
+            className={`inline-flex h-8 items-center gap-1 rounded-lg backdrop-blur px-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider transition ${
+              confirmRemove
+                ? "bg-rose-600 text-white hover:bg-rose-700"
+                : "bg-black/55 text-white hover:bg-rose-600"
+            }`}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={2.25} />
+            {confirmRemove && <span>Confirmar</span>}
           </button>
         </div>
       </div>
 
-      <div className="p-3 space-y-2">
-        <input
-          type="text"
-          value={sub.label}
-          onChange={(e) => onPatch({ label: e.target.value })}
-          placeholder="Nombre de la subcategoría"
-          className="w-full rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
-        />
-        <input
-          type="text"
-          value={sub.description}
-          onChange={(e) => onPatch({ description: e.target.value })}
-          placeholder="Descripción corta (opcional)"
-          className="w-full rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
-        />
+      <div className="p-4 space-y-3">
+        <FieldLabel text="Título" required>
+          <input
+            ref={titleRef}
+            type="text"
+            value={sub.label}
+            onChange={(e) => onPatch({ label: e.target.value })}
+            placeholder="Ej: Pizzería, Frutas, Pintura…"
+            className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] h-12 px-3.5 text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+          />
+        </FieldLabel>
 
-        {/* Linker collapsible */}
+        <FieldLabel text="Descripción" hint={`${descCount}/80`}>
+          <textarea
+            value={sub.description}
+            onChange={(e) => onPatch({ description: e.target.value.slice(0, 80) })}
+            placeholder="Frase corta que verá el cliente…"
+            rows={2}
+            maxLength={80}
+            className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none"
+          />
+        </FieldLabel>
+
+        <FieldLabel text="URL (slug)" hint="Se genera del título">
+          <div className="inline-flex items-center w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 h-10 px-3 text-xs font-mono">
+            <LinkIcon
+              className="h-3 w-3 mr-1.5 shrink-0 text-[var(--text-tertiary)]"
+              strokeWidth={2.25}
+            />
+            <span className="text-[var(--text-tertiary)]">?sub=</span>
+            <span className="text-[var(--text-primary)] font-bold truncate">
+              {derivedSlug}
+            </span>
+          </div>
+        </FieldLabel>
+
+        {/* Trigger modal */}
         <button
           type="button"
-          onClick={() => setShowStores((v) => !v)}
-          className="w-full inline-flex items-center justify-between gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40"
+          onClick={() => setModalOpen(true)}
+          className="w-full inline-flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent)]/5 h-11 px-3.5 text-sm font-extrabold uppercase tracking-wider text-[var(--accent)] transition hover:border-[var(--accent)] hover:bg-[var(--accent)]/10"
         >
           <span className="inline-flex items-center gap-1.5">
-            <StoreIcon className="h-3 w-3" strokeWidth={2.25} />
-            Tiendas
+            <StoreIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
+            Tiendas vinculadas
           </span>
-          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
-            <span
-              className={
-                linkedSet.size > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
-              }
-            >
-              {linkedSet.size}
-            </span>
-            <span className="text-[var(--text-tertiary)]">/ {stores.length}</span>
-            <ChevronDown
-              className={`h-3 w-3 text-[var(--text-tertiary)] transition-transform ${showStores ? "rotate-180" : ""}`}
-            />
+          <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent)]/15 px-2 py-0.5 text-xs font-extrabold tabular-nums">
+            {linkedSet.size}/{stores.length}
           </span>
         </button>
 
-        {showStores && (
-          <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-1.5 space-y-0.5">
-            {stores.length === 0 ? (
-              <p className="text-xs text-[var(--text-tertiary)] px-2 py-1.5">
-                Sin tiendas creadas.
-              </p>
-            ) : (
-              stores.map((s) => {
-                const checked = linkedSet.has(s.slug);
-                const ownZone = (s.ownZone ?? "").trim();
-                return (
-                  <label
-                    key={s.slug}
-                    className={`flex items-center gap-2 rounded px-1.5 py-1 cursor-pointer text-xs transition ${
-                      checked
-                        ? "bg-[var(--accent)]/10 text-[var(--accent)] font-bold"
-                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleStore(s.slug)}
-                      className="h-3 w-3 accent-[var(--accent)]"
-                    />
-                    <span className="truncate flex-1">{s.name}</span>
-                    {ownZone && (
-                      <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] text-[var(--data-success-500)]">
-                        <MapPin className="h-2.5 w-2.5" />
-                        {ownZone}
-                      </span>
-                    )}
-                  </label>
-                );
-              })
-            )}
-          </div>
-        )}
+        <StoreLinkerModal
+          open={modalOpen}
+          title={`Tiendas en "${sub.label || "subcategoría"}"`}
+          subtitle="Ver artículos y elegir qué tiendas vincular"
+          stores={stores}
+          linkedSlugs={sub.linkedStoreSlugs ?? []}
+          storeZones={storeZones}
+          zoneDrafts={zoneDrafts}
+          onChange={(next) => onPatch({ linkedStoreSlugs: next })}
+          onZoneDraftChange={onZoneDraftChange}
+          onClose={() => setModalOpen(false)}
+        />
 
         {linkedStores.length > 0 && (
           <div className="rounded-lg border border-dashed border-[var(--accent)]/30 bg-[var(--accent)]/5 p-2 space-y-1">
@@ -1203,6 +1395,7 @@ function SubCategoryCard({
 /* ─────────────────── PrimaryStoreLinker ─────────────────── */
 
 function PrimaryStoreLinker({
+  categoryLabel,
   stores,
   linkedSlugs,
   storeZones,
@@ -1210,6 +1403,7 @@ function PrimaryStoreLinker({
   onChange,
   onZoneDraftChange,
 }: {
+  categoryLabel: string;
   stores: StoreOption[];
   linkedSlugs: string[];
   storeZones: Record<string, string>;
@@ -1218,7 +1412,7 @@ function PrimaryStoreLinker({
   onZoneDraftChange: (slug: string, value: string) => void;
 }) {
   const linkedSet = useMemo(() => new Set(linkedSlugs), [linkedSlugs]);
-  const [showPicker, setShowPicker] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const toggle = (slug: string) => {
     const next = new Set(linkedSet);
@@ -1228,7 +1422,6 @@ function PrimaryStoreLinker({
   };
 
   const linkedStores = stores.filter((s) => linkedSet.has(s.slug));
-  const remainingStores = stores.filter((s) => !linkedSet.has(s.slug));
 
   return (
     <div className="space-y-3">
@@ -1309,64 +1502,35 @@ function PrimaryStoreLinker({
         </div>
       )}
 
-      {/* Picker */}
+      {/* Trigger modal */}
       <button
         type="button"
-        onClick={() => setShowPicker((v) => !v)}
-        className="w-full inline-flex items-center justify-between gap-2 rounded-xl border border-dashed border-[var(--accent)]/40 bg-[var(--accent)]/5 px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-[var(--accent)] transition hover:bg-[var(--accent)]/10"
+        onClick={() => setModalOpen(true)}
+        className="w-full inline-flex items-center justify-between gap-2 rounded-xl border-2 border-dashed border-[var(--accent)]/50 bg-[var(--accent)]/5 h-12 px-4 text-sm font-extrabold uppercase tracking-wider text-[var(--accent)] transition hover:border-[var(--accent)] hover:bg-[var(--accent)]/10"
       >
-        <span className="inline-flex items-center gap-1.5">
-          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+        <span className="inline-flex items-center gap-2">
+          <StoreIcon className="h-4 w-4" strokeWidth={2.5} />
           {linkedStores.length === 0
-            ? "Vincular tiendas"
-            : `Vincular ${remainingStores.length} tienda${remainingStores.length === 1 ? "" : "s"} más`}
+            ? "Elegir tiendas y ver productos"
+            : `Gestionar ${linkedStores.length} de ${stores.length} tiendas`}
         </span>
-        <ChevronDown
-          className={`h-4 w-4 transition-transform ${showPicker ? "rotate-180" : ""}`}
-        />
+        <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent)]/15 px-2 py-0.5 text-xs font-extrabold tabular-nums">
+          {linkedStores.length}/{stores.length}
+        </span>
       </button>
-      {showPicker && (
-        <div className="max-h-56 overflow-y-auto rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2 space-y-0.5">
-          {stores.length === 0 ? (
-            <p className="text-xs text-[var(--text-tertiary)] px-2 py-2">
-              Sin tiendas creadas. Crealas en{" "}
-              <strong className="text-[var(--text-primary)]">/superadmin/tenants</strong>.
-            </p>
-          ) : (
-            stores.map((s) => {
-              const checked = linkedSet.has(s.slug);
-              const ownZone = (s.ownZone ?? "").trim();
-              return (
-                <label
-                  key={s.slug}
-                  className={`flex items-center gap-2.5 rounded-lg px-2 py-2 cursor-pointer text-sm transition ${
-                    checked
-                      ? "bg-[var(--accent)]/10 text-[var(--accent)] font-bold"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggle(s.slug)}
-                    className="h-3.5 w-3.5 accent-[var(--accent)]"
-                  />
-                  <span className="truncate flex-1">{s.name}</span>
-                  {ownZone && (
-                    <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">
-                      <MapPin className="h-2.5 w-2.5" />
-                      {ownZone}
-                    </span>
-                  )}
-                  <span className="text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate max-w-[100px]">
-                    /{s.slug}
-                  </span>
-                </label>
-              );
-            })
-          )}
-        </div>
-      )}
+
+      <StoreLinkerModal
+        open={modalOpen}
+        title={`Tiendas en "${categoryLabel}"`}
+        subtitle="Hacé click en una tienda para ver sus artículos"
+        stores={stores}
+        linkedSlugs={linkedSlugs}
+        storeZones={storeZones}
+        zoneDrafts={zoneDrafts}
+        onChange={onChange}
+        onZoneDraftChange={onZoneDraftChange}
+        onClose={() => setModalOpen(false)}
+      />
     </div>
   );
 }
