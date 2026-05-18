@@ -19,8 +19,9 @@
  * UX: backdrop blur-md + slide-in-from-left-4 + rounded-r-3xl + max-w-340.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   X,
   Heart,
@@ -36,6 +37,31 @@ import {
 import { useCustomer } from "@/contexts/customer-context";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 
+interface MarketplaceCategory {
+  id: string;
+  label: string;
+  imageUrl: string | null;
+}
+
+/**
+ * Brandon 2026-05-18: emoji fallback cuando una categoría todavía no tiene
+ * imagen subida desde superadmin. Mejor que mostrar inicial sobre fondo
+ * placeholder — la categoría se identifica al instante.
+ */
+const CATEGORY_EMOJI_FALLBACK: Record<string, string> = {
+  restaurante: "🍽️",
+  bodega:      "🥫",
+  fruteria:    "🍎",
+  farmacia:    "💊",
+  ferreteria:  "🔧",
+  polleria:    "🍗",
+  panaderia:   "🥐",
+  licoreria:   "🍷",
+  carniceria:  "🥩",
+  minimarket:  "🏪",
+  tecnologia:  "📱",
+};
+
 export interface SharedMobileNavDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -44,6 +70,12 @@ export interface SharedMobileNavDrawerProps {
 export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNavDrawerProps) {
   const { customer } = useCustomer();
   const { itemCount } = useMarketplaceCart();
+
+  // Brandon 2026-05-18: rubros del marketplace SE FETCHEAN del backend
+  // (las mismas que Brandon configura en /superadmin/marketplace > Categorías)
+  // y se FILTRAN contra las tiendas reales — solo mostramos rubros que
+  // tengan al menos 1 tienda asociada. Evita rubros muertos en el drawer.
+  const [availableCategories, setAvailableCategories] = useState<MarketplaceCategory[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -57,6 +89,33 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
       document.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);
+
+  // Fetch rubros + stores en paralelo, filtra solo los que tienen tiendas.
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    Promise.all([
+      fetch("/api/marketplace/categories", { signal: controller.signal })
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .catch(() => ({ categories: [] as MarketplaceCategory[] })),
+      fetch("/api/marketplace/stores?limit=200", { signal: controller.signal })
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .catch(() => ({ stores: [] as Array<{ category?: string }> })),
+    ])
+      .then(([catRes, storeRes]) => {
+        const baseList = (catRes?.categories ?? []) as MarketplaceCategory[];
+        const storeList = (storeRes?.stores ?? storeRes?.data ?? []) as Array<{ category?: string | null }>;
+        const storeCategoryIds = new Set(
+          storeList.map((s) => s.category).filter((c): c is string => typeof c === "string"),
+        );
+        const filtered = baseList.filter((c) => storeCategoryIds.has(c.id));
+        setAvailableCategories(filtered);
+      })
+      .catch(() => {
+        // Silent fail — la sección simplemente no aparece
+      });
+    return () => controller.abort();
+  }, [open]);
 
   if (!open) return null;
 
@@ -89,21 +148,6 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
         { href: "/marketplace/ofertas", label: "Ofertas del día", Icon: Tag },
       ],
     },
-  ];
-
-  const MARKETPLACE_CATEGORIES: Array<{
-    raw: string;
-    label: string;
-    emoji: string;
-  }> = [
-    { raw: "bodega",      label: "Bodega",      emoji: "🥫" },
-    { raw: "polleria",    label: "Pollería",    emoji: "🍗" },
-    { raw: "restaurante", label: "Restaurante", emoji: "🍽️" },
-    { raw: "panaderia",   label: "Panadería",   emoji: "🥐" },
-    { raw: "farmacia",    label: "Farmacia",    emoji: "💊" },
-    { raw: "licoreria",   label: "Licorería",   emoji: "🍷" },
-    { raw: "carniceria",  label: "Carnicería",  emoji: "🥩" },
-    { raw: "ferreteria",  label: "Ferretería",  emoji: "🔧" },
   ];
 
   return (
@@ -237,32 +281,52 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
             </div>
           ))}
 
-          {/* Categorías del marketplace */}
-          <div>
-            <p className="px-2 mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Explorar por rubro
-            </p>
-            <div className="grid grid-cols-4 gap-2">
-              {MARKETPLACE_CATEGORIES.map((cat) => (
-                <Link
-                  key={cat.raw}
-                  href={`/tiendas?category=${cat.raw}`}
-                  onClick={onClose}
-                  className="group flex flex-col items-center gap-1.5 rounded-2xl p-2.5 bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 active:scale-95 transition-all"
-                >
-                  <span
-                    aria-hidden
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-2xl group-hover:scale-110 transition-transform shrink-0"
-                  >
-                    {cat.emoji}
-                  </span>
-                  <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)] leading-tight text-center truncate w-full">
-                    {cat.label}
-                  </span>
-                </Link>
-              ))}
+          {/* Brandon 2026-05-18: Categorías base del marketplace
+              (gestionadas desde superadmin/marketplace > Categorías).
+              Solo muestran las que tienen ≥1 tienda real asociada — evita
+              rubros muertos. La imagen viene del superadmin; si todavía no
+              tiene foto subida, usa emoji fallback para identificación visual. */}
+          {availableCategories.length > 0 && (
+            <div>
+              <p className="px-2 mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Explorar por rubro
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {availableCategories.map((cat) => {
+                  const emoji = CATEGORY_EMOJI_FALLBACK[cat.id] ?? "🏪";
+                  return (
+                    <Link
+                      key={cat.id}
+                      href={`/tiendas?category=${cat.id}`}
+                      onClick={onClose}
+                      className="group flex flex-col items-center gap-1.5 rounded-2xl p-2.5 bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 active:scale-95 transition-all"
+                    >
+                      <span
+                        aria-hidden
+                        className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] overflow-hidden group-hover:scale-110 transition-transform shrink-0"
+                      >
+                        {cat.imageUrl ? (
+                          <Image
+                            src={cat.imageUrl}
+                            alt=""
+                            width={48}
+                            height={48}
+                            className="h-full w-full object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <span className="text-2xl">{emoji}</span>
+                        )}
+                      </span>
+                      <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-primary)] leading-tight text-center truncate w-full">
+                        {cat.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Ayuda */}
           <div>
