@@ -12,7 +12,13 @@
  * Audit ref: TD-058 capa 8 — self-service para reducir noise.
  */
 import { useState, useCallback } from "react";
-import { ShieldCheck, Loader2, Calendar, Check, X } from "lucide-react";
+import {
+  ShieldCheck,
+  Loader2,
+  Calendar,
+  Check,
+  X,
+} from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 
