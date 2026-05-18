@@ -25,6 +25,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Eye,
+  Pencil,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
@@ -619,58 +620,62 @@ export default function CheckoutConfirmarPage() {
 
   return (
     <>
-      <div className="pt-6 sm:pt-8 pb-6">
+      {/* Brandon 2026-05-18: header consistente con /carrito y /datos.
+          Back link sutil, h1 grande, paso del flow visible para reducir
+          ansiedad ("¿cuánto falta?"). */}
+      <div className="pt-4 sm:pt-8 pb-5 sm:pb-6">
         <Link
           href="/checkout/entrega"
-          className="inline-flex items-center gap-2 h-11 sm:h-9 px-3.5 sm:px-3 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 transition-all shadow-sm mb-3"
+          className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-3"
         >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
+          <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           Volver a entrega
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-          Revisa tu pedido
+        <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
+          Revisá tu pedido
         </h1>
-        <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
+        <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
+          <span className="font-semibold text-[var(--text-primary)]">Último paso.</span>{" "}
           Verificá que todo esté bien antes de confirmar.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
         <div className="space-y-5">
-          {/* Auth gate editorial */}
+          {/* Auth gate v2 — Brandon 2026-05-18: compactado.
+              Antes: aside con padding p-5/p-6 + iframe italic font-serif
+              + descripción larga + 2 botones — competía con el CTA primario
+              "Confirmar pedido" del summary. Ocupaba ~180px de altura.
+              Ahora: row horizontal h-auto compacta con icono + texto corto
+              + chip "Iniciar sesión" + "Invitado" como text link sutil. */}
           {showAuthBanner && (
             <aside
               aria-label="Iniciar sesión para rastrear pedidos"
-              className="relative overflow-hidden rounded-2xl border-2 border-[var(--accent)]/30 bg-linear-to-br from-[var(--accent-soft)] via-[var(--accent-soft)] to-[var(--surface-raised)] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+              className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent-soft)]/40 p-3.5 sm:p-4 flex items-center gap-3"
             >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[var(--accent)]/[0.12] blur-2xl"
-              />
-              <span className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-600,var(--accent))] text-white shrink-0">
-                <UserCircle className="h-5 w-5" strokeWidth={2} aria-hidden />
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white shrink-0">
+                <UserCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               </span>
-              <div className="relative flex-1 min-w-0">
-                <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-                  Inicia sesión para{" "}
-                  <span className="italic font-serif text-[var(--accent)]">trackearlo.</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[length:var(--ts-sm)] font-extrabold text-[var(--text-primary)] leading-tight">
+                  ¿Tracking + puntos por este pedido?
                 </p>
-                <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
-                  Recibe updates por WhatsApp, acumulá puntos Buleje y compra más rápido la próxima.
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] leading-tight mt-0.5">
+                  Iniciá sesión o continuá como invitado.
                 </p>
               </div>
-              <div className="relative flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={openAuthModal}
-                  className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-5 h-10 text-[length:var(--ts-xs)] font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
+                  className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-3.5 h-9 text-[length:var(--ts-xs)] font-extrabold text-white hover:bg-[var(--accent)]/90 active:scale-95 transition-all shadow-sm"
                 >
                   Iniciar sesión
                 </button>
                 <button
                   type="button"
                   onClick={() => setGuestMode(true)}
-                  className="inline-flex items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 h-10 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors px-1.5"
                 >
                   Invitado
                 </button>
@@ -980,29 +985,36 @@ function ReviewCard({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6 transition-colors hover:border-[var(--accent)]/40",
+        // Brandon 2026-05-18: card más fina. Antes p-5/p-6 + eyebrow con
+        // pseudo-line accent + kicker uppercase. Ahora layout más limpio:
+        // icono cuadrado accent + título inline. Edit con ícono lápiz sutil.
+        "group rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5 transition-all hover:border-[var(--accent)]/40 hover:shadow-sm",
         wide && "sm:col-span-2",
       )}
     >
       <div className="flex items-start justify-between mb-3 gap-3">
-        <div>
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-            <span
-              aria-hidden
-              className="inline-flex h-[3px] w-5 rounded-full bg-[var(--accent)]"
-            />
-            <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />
-            {kicker}
-          </p>
-          <h3 className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            {title}
-          </h3>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span
+            aria-hidden
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0"
+          >
+            <Icon className="h-4 w-4" strokeWidth={2.25} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
+              {kicker}
+            </p>
+            <h3 className="text-[length:var(--ts-sm)] sm:text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5 truncate">
+              {title}
+            </h3>
+          </div>
         </div>
         <Link
           href={editHref}
-          className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-3 h-7 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors shrink-0"
+          aria-label={`Editar ${title}`}
+          className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] active:scale-95 transition-all shrink-0"
         >
-          Editar
+          <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
         </Link>
       </div>
       {children}
