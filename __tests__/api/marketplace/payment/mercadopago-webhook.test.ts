@@ -60,6 +60,16 @@ vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppQueued: (...args: unknown[]) => mockSendWhatsApp(...args),
 }));
 
+// PENTEST 2026-05-18 Sprint B: rate limit agregado al webhook MP marketplace.
+// El tests del modulo bombardean el endpoint > 10 veces dentro de la misma
+// ventana 15min → topan el STRICT limit. Mockeamos applyRateLimit a null
+// (permite pasar) y getClientIp constante para que la lógica testeada sea
+// la del handler, no la del rate limiter.
+vi.mock("@/lib/rate-limit", () => ({
+  applyRateLimit: () => null,
+  getClientIp: () => "127.0.0.1",
+}));
+
 vi.mock("@/lib/push-sender", () => ({
   sendPushToPhone: (...args: unknown[]) => mockSendPush(...args),
 }));

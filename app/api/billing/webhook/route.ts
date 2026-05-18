@@ -41,9 +41,17 @@ export async function POST(req: NextRequest) {
   // Round 28 Sprint 1 (Quick Win 1.9): freshness check (paridad MP webhook).
   // Stripe.constructEvent ya valida ts del Stripe-Signature (tolerance 5min),
   // pero el dashboard permite re-enviar events hasta 30 días. Si el event.created
-  // tiene más de 1 hora, asumimos replay desde dashboard/leak y rechazamos.
-  // Esto bloquea replay attacks con firma válida pero events viejos.
-  const MAX_EVENT_AGE_SEC = 60 * 60; // 1h
+  // tiene más de N segundos, asumimos replay desde dashboard/leak y rechazamos.
+  //
+  // PENTEST 2026-05-18 Sprint B #6: bajado de 1h a 5min para paridad con
+  // MP webhook y SUNAT. La ventana de 1h era 12× más permisiva que los
+  // otros webhooks — un atacante que capture raw body + signature válido
+  // (log leak, breach breve de Sentry breadcrumbs) tenía 60min para replay.
+  // La idempotencia por event.id ya lo mitiga (UNIQUE constraint), pero
+  // un evento aún no procesado seguía siendo aplicable. 5min cierra eso.
+  // Si Stripe dashboard re-send es un caso real, agregar opt-out por
+  // header interno firmado por Vercel.
+  const MAX_EVENT_AGE_SEC = 5 * 60; // 5min (paridad MP/SUNAT)
   const eventAgeSec = Math.floor(Date.now() / 1000) - event.created;
   if (eventAgeSec > MAX_EVENT_AGE_SEC) {
     logger.warn("[Stripe Webhook] Event demasiado viejo — posible replay", {

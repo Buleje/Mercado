@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { MarketplaceOrdersDB } from "@/lib/db/marketplace.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 
@@ -27,6 +28,12 @@ const BulkSchema = z.object({
 export async function POST(req: NextRequest) {
   const traceId = newTraceId();
   try {
+    // PENTEST 2026-05-18 Sprint B: rate limit STRICT (10 req/15min por IP).
+    // Bulk acepta hasta 200 IDs por request → muy potente. Sin limit, atacante
+    // con sesión admin puede mutar miles de órdenes en segundos + spam WhatsApp.
+    const rl = applyRateLimit(req, "STRICT", "marketplace-orders-bulk");
+    if (rl) return rl as NextResponse;
+
     const auth = await requireAdmin(req, ["admin", "manager"]);
     if (auth instanceof NextResponse) return auth;
 

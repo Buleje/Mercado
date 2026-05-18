@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // SECURITY: NO fallback hardcodeado. Si la env var falta, el endpoint
 // rechaza cualquier verificación — un fallback predecible permite a un
@@ -23,6 +24,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // PENTEST 2026-05-18 Sprint B: rate limit STRICT. Defensa DoS.
+  const rl = applyRateLimit(req, "STRICT", "whatsapp-webhook-legacy");
+  if (rl) return rl as NextResponse;
+
   // SECURITY 2026-05-05 (audit webhooks #6): firma X-Hub-Signature-256.
   // Antes este endpoint legacy aceptaba cualquier POST JSON respondiendo
   // con datos del catálogo y links internos — vector de exfiltración +

@@ -6,6 +6,7 @@ import {
   verifyMPWebhookSignature,
 } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { PLAN_ORDER, type PlanId } from "@/lib/plans";
 
@@ -43,6 +44,13 @@ function redactId(id: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // PENTEST 2026-05-18 Sprint B: rate limit STRICT (10 req/15min). Sin esto
+  // un atacante puede flood el endpoint con firmas inválidas y agotar CPU
+  // (cada request hace verifyMPWebhookSignature HMAC + insert idempotency
+  // lock antes de fallar). MP nunca envía más de 1 IPN por segundo, OK.
+  const rl = applyRateLimit(req, "STRICT", "billing-mp-webhook");
+  if (rl) return rl as NextResponse;
+
   // ── Leer query params (MP soporta dos formatos) ──────────
   // En Next.js 16 Route Handlers, req.nextUrl.searchParams es la API correcta.
   const searchParams = req.nextUrl.searchParams;

@@ -9,7 +9,7 @@ import { logger } from "@/lib/logger";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { OrderStatus } from "@/lib/generated/prisma/client";
 import { withAuditContext } from "@/lib/audit/audit-context";
-import { getClientIp } from "@/lib/rate-limit";
+import { applyRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * @prisma-direct excepción documentada — el `prisma.order.updateMany` y el
@@ -23,6 +23,11 @@ import { getClientIp } from "@/lib/rate-limit";
 // POST /api/marketplace/payment/mercadopago/webhook
 // Handles MercadoPago IPN notifications for marketplace orders
 export async function POST(req: NextRequest) {
+  // PENTEST 2026-05-18 Sprint B: rate limit STRICT (10 req/15min). Defensa
+  // contra DoS via firmas inválidas (HMAC compute + DB insert antes de fallar).
+  const rl = applyRateLimit(req, "STRICT", "mp-marketplace-webhook");
+  if (rl) return rl as NextResponse;
+
   // Round 15 M004: webhook externo MercadoPago. userId="mp:webhook" para
   // distinguir transiciones de Order originadas por IPN de las de admin.
   return withAuditContext(
@@ -94,9 +99,19 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
         logger.info("MP webhook: duplicate event ignored", { traceId, dataId });
         return NextResponse.json({ received: true, duplicate: true });
       }
-      // Si la tabla no existe (schema drift) seguimos sin lock — degradación
-      // graceful en dev. En prod la tabla existe.
-      logger.warn("MP webhook: idempotency lock failed (continuando)", { traceId, err: String(err) });
+      // PENTEST 2026-05-18 Sprint B #7: fail-closed en producción. Si la
+      // tabla no existe o la DB está caída brevemente (pgBouncer pool
+      // exhaustion, ~5s), antes seguíamos sin lock → 2 webhooks idénticos
+      // disparaban 2 notificaciones WhatsApp + push al vendor. Ahora en
+      // prod devolvemos 503 para que MP reintente. En dev mantenemos
+      // graceful degrade (tabla puede no existir tras db:reset).
+      logger.warn("MP webhook: idempotency lock failed", { traceId, err: String(err) });
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { error: "idempotency_lock_failed", retry: true },
+          { status: 503 },
+        );
+      }
     }
 
     // Fetch payment details from MP

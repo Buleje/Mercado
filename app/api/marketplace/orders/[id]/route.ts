@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { sendPushToPhone } from "@/lib/push-sender";
@@ -44,6 +45,12 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // PENTEST 2026-05-18 Sprint B: rate limit MODERATE (20 req/5min por IP).
+  // Sin esto un admin comprometido o un atacante con sesión válida puede
+  // enumerar IDs de pedidos del tenant (intra-tenant info disclosure).
+  const rl = applyRateLimit(req, "MODERATE", "marketplace-order-read");
+  if (rl) return rl as NextResponse;
+
   // SECURITY 2026-05-07 (B5): GET sin allowedRoles permitía que cualquier rol
   // admin (ej. almacenero, repartidor) leyera PII de pedidos marketplace.
   // Igualado a los roles del PATCH: solo admin y manager.
@@ -66,6 +73,13 @@ export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
 ) {
+  // PENTEST 2026-05-18 Sprint B: rate limit MODERATE. PATCH dispara
+  // notifications WhatsApp + push por cada hit — sin rate limit, atacante
+  // con sesión admin puede saturar Twilio (costo $$$) brute-forcing
+  // transiciones sobre todos los pedidos del tenant.
+  const rl = applyRateLimit(req, "MODERATE", "marketplace-order-mutate");
+  if (rl) return rl as NextResponse;
+
   const auth = await requireAdmin(req, ["admin", "manager"]);
   if (auth instanceof NextResponse) return auth;
   // Round 10 M004: audit log de status transitions con admin actor + IP.
