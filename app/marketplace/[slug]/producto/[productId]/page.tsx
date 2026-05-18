@@ -95,8 +95,13 @@ async function fetchRelated(
   if (!category) return [];
   const base = process.env.NEXT_PUBLIC_BASE_URL || "https://buleje.pe";
   try {
+    // PENTEST 2026-05-18 Fase 3 P1 #35: pedir más productos y filtrar por
+    // categoría en memoria. Antes: limit=5 sin filtro → "Pepsi" mostraba
+    // "Pollo a la Brasa" como relacionado. Ahora: pedimos 30 y filtramos
+    // por la misma categoría del producto actual (case-insensitive).
+    // Si la API soporta query param `category` en el futuro, agregarlo aquí.
     const res = await fetch(
-      `${base}/api/marketplace/catalog?store=${storeSlug}&limit=5`
+      `${base}/api/marketplace/catalog?store=${storeSlug}&limit=30`
     );
     if (!res.ok) return [];
     const json = await res.json();
@@ -105,8 +110,20 @@ async function fetchRelated(
       : Array.isArray(json.data)
       ? json.data
       : [];
-    return products
-      .filter((p) => p.productId !== excludeId)
+    const categoryNorm = category.toLowerCase().trim();
+    const sameCategory = products.filter(
+      (p) =>
+        p.productId !== excludeId &&
+        (p.category ?? "").toLowerCase().trim() === categoryNorm,
+    );
+    // Si no hay suficientes de la misma categoría, completamos con cualquiera
+    // del store para no dejar la sección vacía (UX > pureza).
+    const fallback = products.filter(
+      (p) =>
+        p.productId !== excludeId &&
+        !sameCategory.some((s) => s.productId === p.productId),
+    );
+    return [...sameCategory, ...fallback]
       .slice(0, 4)
       .map((p) => ({
         id: p.productId,

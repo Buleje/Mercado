@@ -272,18 +272,22 @@ export const MarketplaceStoresDB = {
   /**
    * Obtener tienda por slug (pública).
    */
-  async getBySlug(slug: string): Promise<DbStore | null> {
+  async getBySlug(slug: string): Promise<(DbStore & { vacationMode: boolean; vacationMessage: string | null }) | null> {
     const cacheKey = `marketplace:stores:slug:${slug}`;
 
     return getOrSet(cacheKey, 300, async () => {
-      // select explícito: evita columnas del schema que la DB aún no tiene
-      // (lat, lng, vacationMode, vacationMessage — migration 20260411 pending).
+      // PENTEST 2026-05-18 Fase 3 P1 #34: incluir vacationMode + vacationMessage.
+      // ANTES: select los excluía con comentario "migration pending", pero la
+      // migration YA está aplicada (ver findByPossibleIds que sí los usa).
+      // Resultado: cliente agregaba al cart sin saber que tienda en vacaciones.
+      // AHORA: incluidos en select + return shape.
       const s = await prisma.store.findUnique({
         where: { slug },
         select: {
           id: true, tenantId: true, slug: true, name: true, description: true,
           logo: true, banner: true, category: true, zone: true, rating: true,
           reviewCount: true, isPublished: true, commission: true, createdAt: true,
+          vacationMode: true, vacationMessage: true,
           tenant: {
             select: {
               active: true,
@@ -317,6 +321,8 @@ export const MarketplaceStoresDB = {
         isPublished: s.isPublished,
         commission:  s.commission,
         createdAt:   s.createdAt.toISOString(),
+        vacationMode:    s.vacationMode ?? false,
+        vacationMessage: s.vacationMessage ?? null,
       };
     });
   },

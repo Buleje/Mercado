@@ -32,7 +32,7 @@ import StoreHero from "./StoreHero";
 import StorePromoBannersStrip from "./StorePromoBannersStrip";
 import { type StoreCategoryChip } from "./StoreCategories";
 import StoreCategoriesSidebar from "./StoreCategoriesSidebar";
-import StoreCatalog from "./StoreCatalog";
+import StoreCatalog, { slugifyCat } from "./StoreCatalog";
 import StoreReviews from "./StoreReviews";
 import StorePoliciesBlock from "./StorePoliciesBlock";
 import ClosedNowBanner from "./ClosedNowBanner";
@@ -160,8 +160,13 @@ export default function StoreDetailClient({
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
         if (visible) {
-          const id = visible.target.id;
-          const catName = id.replace(/^cat-/, "");
+          // PENTEST 2026-05-18 Fase 3 P1 #33: lee el nombre real desde
+          // data-cat-name. Antes parseaba id quitando el prefijo "cat-",
+          // pero el id ahora es un slug (cat-pollo-a-la-brasa) — el slug
+          // NO matchea el nombre original ("Pollo a la Brasa") en el state.
+          const catName =
+            (visible.target as HTMLElement).getAttribute("data-cat-name") ??
+            visible.target.id.replace(/^cat-/, "");
           if (catName) setActiveCategory(catName);
         }
       },
@@ -571,7 +576,10 @@ export default function StoreDetailClient({
                         // secciones intermedias.
                         scrollSpyEnabledRef.current = false;
                         setActiveCategory(cat.name);
-                        const el = document.getElementById(`cat-${cat.name}`);
+                        // PENTEST 2026-05-18 Fase 3 P1 #33: slug el id antes
+                        // de buscar — antes "cat-Pollo a la Brasa" no matcheaba
+                        // el HTML id real "cat-pollo-a-la-brasa".
+                        const el = document.getElementById(`cat-${slugifyCat(cat.name)}`);
                         if (el) {
                           // 64 top nav + 56 slim + 56 subnav + 8 margen
                           const offset = 184;

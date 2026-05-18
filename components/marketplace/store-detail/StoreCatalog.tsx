@@ -22,6 +22,23 @@ import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import type { DbStoreProduct } from "@/lib/db/marketplace.db";
 
+/**
+ * PENTEST 2026-05-18 Fase 3 P1 #33: slugifyCat para IDs HTML válidos.
+ * Antes: `id={`cat-${cat}`}` con cat="Pollo a la Brasa" generaba `cat-Pollo a la Brasa`
+ * — espacios NO son válidos en HTML id. getElementById("cat-Pollo a la Brasa") = null.
+ * El scrollspy y el click handler fallaban silenciosamente para cualquier categoría
+ * de 2+ palabras ("Pollo a la Brasa", "Jugos Naturales", "Pizza Familiar", etc.).
+ * AHORA: slug determinista alfanumérico + guiones. Reverse-lookup via data attribute.
+ */
+export function slugifyCat(cat: string): string {
+  return cat
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // strip diacríticos (á → a)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 interface StoreCatalogProps {
   storeSlug: string;
   storeName: string;
@@ -373,9 +390,10 @@ export default function StoreCatalog({
             return (
             <section
               key={cat}
-              id={`cat-${cat}`}
+              id={`cat-${slugifyCat(cat)}`}
+              data-cat-name={cat}
               className="scroll-mt-28"
-              aria-labelledby={`cat-h-${cat}`}
+              aria-labelledby={`cat-h-${slugifyCat(cat)}`}
             >
               <div className="flex items-end justify-between gap-3 mb-5">
                 <div className="flex items-center gap-3 min-w-0">
@@ -385,7 +403,7 @@ export default function StoreCatalog({
                   />
                   <div className="min-w-0">
                     <h3
-                      id={`cat-h-${cat}`}
+                      id={`cat-h-${slugifyCat(cat)}`}
                       className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight tracking-tight"
                     >
                       {isFirstCategory ? (
