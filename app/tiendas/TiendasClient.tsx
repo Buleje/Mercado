@@ -19,6 +19,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Store, MapPin, ArrowUpRight, List, Map as MapIcon, Bike,
   Search as SearchIcon, ShoppingBag, Truck, ChevronRight,
+  Wallet, Gift,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
@@ -487,13 +488,29 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   }, [filteredStores, sortKey]);
 
   // Filtrado por subcategoría (cuando tiene tiendas vinculadas)
-  const finalStores = useMemo(() => {
+  const subcategoryFiltered = useMemo(() => {
     if (!subCategoryId || !linkedStoreSlugsForSub || linkedStoreSlugsForSub.length === 0) {
       return sortedStores;
     }
     const slugSet = new Set(linkedStoreSlugsForSub);
     return sortedStores.filter((s) => slugSet.has(s.slug));
   }, [sortedStores, subCategoryId, linkedStoreSlugsForSub]);
+
+  // Brandon 2026-05-18: cerradas al final del grid. Las tiendas con
+  // `isOpenNow === false` se mezclaban con las abiertas y frustraba al
+  // cliente que veía "CERRADA AHORA" justo en la primera fila. Ahora se
+  // priorizan las abiertas (sortBy aplicado) y las cerradas van al fondo.
+  const finalStores = useMemo(() => {
+    const opened: typeof subcategoryFiltered = [];
+    const closed: typeof subcategoryFiltered = [];
+    for (const s of subcategoryFiltered) {
+      const isClosed = (s as { isOpenNow?: boolean }).isOpenNow === false;
+      const onVacation = (s as { vacationMode?: boolean }).vacationMode === true;
+      if (isClosed || onVacation) closed.push(s);
+      else opened.push(s);
+    }
+    return [...opened, ...closed];
+  }, [subcategoryFiltered]);
 
   const hasFilters =
     category !== "todos" ||
@@ -646,6 +663,32 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                 Bodegas, restaurantes, farmacias y más — todo de tus vecinos,
                 con delivery rápido.
               </p>
+
+              {/* Brandon 2026-05-18: chips de beneficios visibles mobile-first.
+                  El hero antes solo decía "Las mejores tiendas" sin información
+                  práctica. Estos 3 chips comunican trust signals al primer
+                  scroll: tiempo de entrega, métodos de pago, sin mínimo de
+                  pedido. Patrón Rappi/PedidosYa para conversión inmediata. */}
+              <div className="mt-3 sm:mt-4 flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2.5 sm:px-3 h-8 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
+                  <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
+                    <Truck className="h-3 w-3" strokeWidth={2.5} />
+                  </span>
+                  Entrega 25 min
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2.5 sm:px-3 h-8 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
+                  <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
+                    <Wallet className="h-3 w-3" strokeWidth={2.5} />
+                  </span>
+                  Yape · Efectivo
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)]/95 border border-[var(--accent)]/25 px-2.5 sm:px-3 h-8 sm:h-9 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)] shadow-sm backdrop-blur-sm">
+                  <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
+                    <Gift className="h-3 w-3" strokeWidth={2.5} />
+                  </span>
+                  Sin mínimo
+                </span>
+              </div>
 
               {/* Stats chip inline — antes mobile-only, ahora también oculto en
                   mobile (Brandon mayo 14: en cel solo título + buscador).
