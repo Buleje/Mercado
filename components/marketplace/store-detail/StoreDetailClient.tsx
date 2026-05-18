@@ -167,10 +167,10 @@ export default function StoreDetailClient({
       },
       {
         // rootMargin negativo top = ignora lo que está debajo de la zona
-        // sticky (64 nav + 56 slim + 56 subnav = ~180px). Negativo bottom
+        // sticky (56 nav v6 + 56 slim + 56 subnav = ~170px). Negativo bottom
         // = ignora lo de muy abajo. Trigger cuando la sección cruza la
         // zona hot del viewport.
-        rootMargin: "-180px 0px -55% 0px",
+        rootMargin: "-170px 0px -55% 0px",
         threshold: 0,
       },
     );
@@ -205,63 +205,61 @@ export default function StoreDetailClient({
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
-      {/* ── MOBILE: Top FIJO nav v5 (Brandon mayo 14 v5) ─────────────
-           Patrón Rappi PE: hamburguesa + input search con logo de la
-           tienda dentro + icono cuenta + carrito compacto sin precio.
-           Es `fixed` (no `sticky`) — siempre visible aunque se scrollee
-           toda la página. El catalog padding-top compensa el alto. */}
-      <div className="lg:hidden fixed inset-x-0 top-0 z-50 bg-[var(--surface-canvas)] border-b border-[var(--rule-base)]">
-        <div className="flex items-center gap-2 px-3 py-2.5">
+      {/* ── MOBILE: Top FIJO nav v6 (Brandon 2026-05-18 — rediseño) ─────
+           Cambios vs v5:
+           - bg + backdrop-blur para cohesion con BottomNav (color-mix tokens)
+           - Hamburger + search compact (sin logo dentro: duplica con slim bar) +
+             icono cuenta + cart badge.
+           - Search se reduce: solo icono + texto sutil "Buscar productos".
+             El logo + nombre de la tienda viven en el slim bar de abajo,
+             evitando redundancia que saturaba la barra.
+           - Iconos h-10 (antes h-11) para tighter look premium. */}
+      <div
+        className={cn(
+          "lg:hidden fixed inset-x-0 top-0 z-50",
+          "border-b border-[var(--rule-base)]",
+          "bg-[color-mix(in_oklab,var(--surface-canvas)_88%,transparent)]",
+          "supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--surface-canvas)_70%,transparent)]",
+          "supports-[backdrop-filter]:backdrop-blur-xl",
+          "supports-[backdrop-filter]:backdrop-saturate-150",
+        )}
+      >
+        <div className="flex items-center gap-2 px-3 py-2">
           {/* Hamburguesa de navegación → drawer global (Inicio, Tiendas, etc) */}
           <button
             type="button"
             onClick={() => setNavDrawerOpen(true)}
             aria-label="Menú de navegación"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
           >
-            <Menu className="h-6 w-6" strokeWidth={2.25} />
+            <Menu className="h-5 w-5" strokeWidth={2.25} />
           </button>
 
-          {/* Input buscar con logo de tienda + texto. Tap → overlay full-screen */}
+          {/* Buscar — sin logo dentro (duplicado con slim bar abajo).
+              Compact: icono + texto sutil, tap abre overlay full-screen. */}
           <button
             type="button"
             onClick={() => setMobileSearchOpen(true)}
-            aria-label="Buscar"
-            className="flex-1 inline-flex items-center gap-2 h-11 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-[var(--surface-raised)] transition-colors min-w-0 text-left pl-1 pr-3 shadow-sm"
+            aria-label={`Buscar en ${store.name}`}
+            className="flex-1 inline-flex items-center gap-2 h-10 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)]/80 hover:border-[var(--accent)] hover:bg-[var(--surface-raised)] transition-colors min-w-0 text-left px-3.5"
           >
-            {/* Logo de la tienda — circular, dentro del input a la izq */}
-            <span className="h-9 w-9 shrink-0 rounded-full overflow-hidden bg-[var(--accent-soft)] border border-[var(--rule-soft)] flex items-center justify-center">
-              {store.logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={store.logo}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <span className="text-sm font-black text-[var(--accent)]">
-                  {store.name.trim().charAt(0).toUpperCase()}
-                </span>
-              )}
-            </span>
-            <span className="flex-1 min-w-0 text-sm font-semibold text-[var(--text-tertiary)] truncate">
-              Buscar en {store.name}
-            </span>
             <Search
               className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]"
               strokeWidth={2.25}
               aria-hidden
             />
+            <span className="flex-1 min-w-0 text-sm font-semibold text-[var(--text-tertiary)] truncate">
+              Buscar productos
+            </span>
           </button>
 
           {/* Icono cuenta usuario */}
           <Link
             href="/marketplace/mi-cuenta"
             aria-label="Mi cuenta"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] transition-colors shrink-0"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] transition-colors shrink-0"
           >
-            <UserCircle className="h-6 w-6" strokeWidth={1.75} />
+            <UserCircle className="h-5 w-5" strokeWidth={1.75} />
           </Link>
 
           {/* Carrito compacto — solo cantidad (sin precio) */}
@@ -274,8 +272,8 @@ export default function StoreDetailClient({
         </div>
       </div>
 
-      {/* Spacer para compensar el fixed top nav (h-[64px] aprox) */}
-      <div className="lg:hidden h-[64px]" aria-hidden />
+      {/* Spacer para compensar el fixed top nav (h-[56px] post-rediseño) */}
+      <div className="lg:hidden h-[56px]" aria-hidden />
 
       {/* ── Banner cerrado (justo después del spacer — sin gap antes del
            banner image. Brandon mayo 15: antes estaba arriba del nav fijo
@@ -301,30 +299,83 @@ export default function StoreDetailClient({
         zone={store.zone}
       />
 
-      {/* ── MOBILE: barra slim STICKY entre top nav y subnav ─────────────
-           Sticky `top-[64px]` con backdrop-blur — siempre visible cuando
-           el banner image sale del viewport (patrón Rappi). Imagen del
-           banner como bg oscurecido + [← back] + nombre + [ℹ info]. */}
+      {/* ── MOBILE: barra slim STICKY v6 (Brandon 2026-05-18 — rediseño) ──
+           Cambios vs v5:
+           - Top ajustado a [56px] (nuevo alto del top nav).
+           - Banner background con mejor overlay (gradient + blur).
+           - Jerarquía mejorada: logo circular + name + dot status "Abierto/Cerrado"
+             en lugar de solo nombre centrado. Más informativo en 1 tap-zone.
+           - Info button mantiene su lugar a la derecha. */}
       <div
-        className="lg:hidden sticky top-[64px] z-30 h-14 overflow-hidden border-b border-black/10 shadow-sm"
+        className="lg:hidden sticky top-[56px] z-30 h-14 overflow-hidden border-b border-black/10 shadow-sm"
         style={{
           background: store.banner
-            ? `linear-gradient(rgba(0,0,0,0.62), rgba(0,0,0,0.62)), url(${store.banner}) center/cover`
+            ? `linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.55)), url(${store.banner}) center/cover`
             : "linear-gradient(135deg, var(--accent-600,var(--accent)), var(--accent))",
         }}
       >
-        <div className="relative h-full flex items-center justify-between gap-3 px-3 backdrop-blur-sm">
+        <div className="relative h-full flex items-center gap-2.5 px-3 backdrop-blur-sm">
           <BackButton storeSlug={store.slug} />
-          <p className="flex-1 min-w-0 text-center text-base font-extrabold tracking-tight text-white truncate drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)] px-1">
-            {store.name}
-          </p>
+
+          {/* Identidad de la tienda — logo + name + status. La parte central
+              tap-able para abrir el modal de info (mejor área que solo el icono). */}
+          <button
+            type="button"
+            onClick={() => setInfoModalOpen(true)}
+            aria-label={`Ver información de ${store.name}`}
+            className="flex-1 min-w-0 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform"
+          >
+            <span className="h-9 w-9 shrink-0 rounded-full overflow-hidden bg-white/15 border border-white/25 backdrop-blur-md flex items-center justify-center ring-2 ring-white/10">
+              {store.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={store.logo}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <span className="text-sm font-black text-white">
+                  {store.name.trim().charAt(0).toUpperCase()}
+                </span>
+              )}
+            </span>
+            <span className="flex flex-col min-w-0 leading-tight">
+              <span className="text-sm font-extrabold text-white truncate drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">
+                {store.name}
+              </span>
+              <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-white/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+                <span
+                  aria-hidden
+                  className={cn(
+                    "relative inline-flex h-1.5 w-1.5 shrink-0",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "absolute inline-flex h-full w-full rounded-full opacity-70",
+                      isOpen ? "bg-[#34d399] animate-ping" : "bg-[#f87171]",
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "relative inline-flex h-1.5 w-1.5 rounded-full",
+                      isOpen ? "bg-[#34d399]" : "bg-[#f87171]",
+                    )}
+                  />
+                </span>
+                {isOpen ? "Abierto ahora" : "Cerrado"}
+              </span>
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={() => setInfoModalOpen(true)}
             aria-label="Información de la tienda"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white hover:bg-black/55 active:scale-95 transition-all shrink-0 shadow-lg"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white hover:bg-white/25 active:scale-95 transition-all shrink-0 shadow-lg"
           >
-            <Info className="h-5 w-5" strokeWidth={2.25} />
+            <Info className="h-4.5 w-4.5" strokeWidth={2.25} />
           </button>
         </div>
       </div>
@@ -367,8 +418,8 @@ export default function StoreDetailClient({
       <div
         className={cn(
           "sticky z-20 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-base)] transition-shadow duration-150",
-          // top-[120px] = 64 nav + 56 barra slim. En desktop top-0.
-          "top-[120px] lg:top-0",
+          // top-[112px] = 56 nav (v6) + 56 barra slim. En desktop top-0.
+          "top-[112px] lg:top-0",
           isStuck ? "shadow-[0_4px_16px_-6px_rgba(0,0,0,0.12)]" : "shadow-none",
         )}
         style={{ contain: "layout paint" }}
