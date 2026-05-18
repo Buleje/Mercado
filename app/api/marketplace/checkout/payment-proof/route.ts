@@ -26,6 +26,7 @@ import { requireCustomer } from "@/lib/auth/require-customer";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import * as Sentry from "@sentry/nextjs";
 
 const FieldsSchema = z.object({
   storeSlug: z.string().regex(/^[a-z0-9-]{2,64}$/),
@@ -42,7 +43,11 @@ const ALLOWED_TYPES = [
   "image/heic",
   "image/heif",
 ];
-const BUCKET = "media";
+// PENTEST-002 (2026-05-18): capturas Yape contienen PII — mover a bucket
+// privado `order-proofs`. Se configura vía SUPABASE_PROOF_BUCKET para poder
+// apuntar al bucket correcto sin redeploy. El bucket debe existir en Supabase
+// con public=false. Ver commit message para instrucciones manuales de Brandon.
+const BUCKET = process.env.SUPABASE_PROOF_BUCKET ?? "order-proofs";
 
 function validateMagicBytes(buf: Buffer): boolean {
   if (buf.length < 4) return false;
@@ -180,22 +185,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // audit P0 #2 (Brandon 2026-05-18): capturas Yape del cliente final
-  // contienen PII (nombre cliente, número operación, teléfono visible en
-  // muchas apps). +24 bytes random ofusca el path mientras la dirección
-  // sigue siendo bucket `media` (público). Followup: bucket privado
-  // dedicado `order-proofs` + presigned 24-48h on-demand.
+  // PENTEST-002 cerrado: bucket privado + sin fallback público.
+  // Path en bucket privado: no es accesible desde URL pública.
   const ts = Date.now();
   const rand = randomBytes(24).toString("hex");
   const safeCustomerId = customerId.replace(/[^a-z0-9-]/gi, "");
-  // Si safeCustomerId queda demasiado corto (email atípico) usamos solo
-  // rand como discriminador. Evita colisiones path.
   const safeId = safeCustomerId.length >= 4
     ? safeCustomerId
     : `cust-${randomBytes(6).toString("hex")}`;
   const storagePath = `order-proofs/${parsed.data.storeSlug}/${safeId}-${ts}-${rand}.webp`;
 
-  let publicUrl: string;
+  // PENTEST-002: signed URL corta (7d) para que el cliente pueda ver su
+  // captura en el flujo de confirmación. La re-firma on-demand la hace
+  // GET /api/marketplace/orders/[id]/proof-url (TTL 30 min, para admins).
+  // NO hay fallback a getPublicUrl: si la firma falla, devolvemos 500.
+  const INITIAL_SIGNED_TTL_SEC = 7 * 24 * 3600; // 7 días — flujo de confirmación
+  let initialSignedUrl: string;
   try {
     const supabase = getSupabaseAdmin();
     const { error: upErr } = await supabase.storage
@@ -207,27 +212,33 @@ export async function POST(req: NextRequest) {
     if (upErr) {
       logger.error("[checkout-proof] supabase upload failed", {
         error: upErr.message,
+        bucket: BUCKET,
       });
       return NextResponse.json(
         { error: "Error subiendo la imagen" },
         { status: 500 },
       );
     }
-    // Signed URL 7d. Fallback graceful a getPublicUrl si la firma falla.
-    const SIGNED_TTL_SEC = 7 * 24 * 3600;
     const signed = await supabase.storage
       .from(BUCKET)
-      .createSignedUrl(storagePath, SIGNED_TTL_SEC);
-    if (signed.data?.signedUrl) {
-      publicUrl = signed.data.signedUrl;
-    } else {
-      logger.warn("[checkout-proof] signed url failed, falling back to public", {
+      .createSignedUrl(storagePath, INITIAL_SIGNED_TTL_SEC);
+    if (!signed.data?.signedUrl) {
+      // Sin fallback público — el bucket es privado y la PII no debe exponerse.
+      Sentry.captureException(
+        new Error(`[checkout-proof] createSignedUrl failed: ${signed.error?.message ?? "unknown"}`),
+        { extra: { storagePath, bucket: BUCKET } },
+      );
+      logger.error("[checkout-proof] createSignedUrl failed — PENTEST-002 no-fallback", {
         error: signed.error?.message,
+        storagePath,
+        bucket: BUCKET,
       });
-      publicUrl = supabase.storage
-        .from(BUCKET)
-        .getPublicUrl(storagePath).data.publicUrl;
+      return NextResponse.json(
+        { error: "Error generando URL segura para la imagen" },
+        { status: 500 },
+      );
     }
+    initialSignedUrl = signed.data.signedUrl;
   } catch (err) {
     logger.error("[checkout-proof] upload threw", { error: String(err) });
     return NextResponse.json(
@@ -245,17 +256,18 @@ export async function POST(req: NextRequest) {
     storagePath,
   });
 
-  logger.info("[checkout-proof] uploaded", {
+  logger.info("[checkout-proof] uploaded — bucket privado", {
     customerId,
     storeSlug: parsed.data.storeSlug,
     method: parsed.data.method,
     amountCents,
     path: storagePath,
+    bucket: BUCKET,
   });
 
   return NextResponse.json({
     ok: true,
-    proofUrl: publicUrl,
+    proofUrl: initialSignedUrl,
     proofToken,
   });
 }

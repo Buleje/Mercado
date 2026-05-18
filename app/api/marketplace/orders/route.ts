@@ -139,7 +139,8 @@ const CheckoutBodySchema = z.object({
 
 export async function POST(req: NextRequest) {
   // Rate limit: prevent order spam (10 per 15 min per IP)
-  const rateLimitResponse = applyRateLimit(req, "STRICT", "marketplace-orders");
+  // CR-1.2: await consistente con el resto del codebase (era sync, ahora explícito).
+  const rateLimitResponse = await applyRateLimit(req, "STRICT", "marketplace-orders");
   if (rateLimitResponse) return rateLimitResponse;
 
   const traceId = newTraceId();
@@ -245,19 +246,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Block orders to stores in vacation mode + verificar que la tienda
-    // está publicada (audit P0 #4, 2026-05-18). Antes findUnique({slug})
-    // permitía hitear stores no publicadas / deshabilitadas si el slug
-    // existía. Ahora exigimos isPublished:true y tenant active.
-    let targetStore: { id: string; vacationMode: boolean; vacationMessage: string | null } | null = null;
+    // está publicada (audit P0 #4, 2026-05-18). CR-1.1: migrado a
+    // MarketplaceOrdersDB.getStoreForCheckout (incluye isPublished + tenant.active).
+    let targetStore: { id: string; tenantId: string; name: string; slug: string; vacationMode: boolean; vacationMessage: string | null; hoursJson: unknown } | null = null;
     try {
-      targetStore = await prisma.store.findFirst({
-        where: {
-          slug: storeSlug,
-          isPublished: true,
-          tenant: { active: true },
-        },
-        select: { id: true, vacationMode: true, vacationMessage: true },
-      });
+      targetStore = await MarketplaceOrdersDB.getStoreForCheckout("", storeSlug);
     } catch (err) {
       logger.warn("[marketplace/orders] vacation-check store lookup failed", {
         storeSlug,
@@ -292,10 +285,9 @@ export async function POST(req: NextRequest) {
         );
       }
       try {
-        const rows = await prisma.$queryRaw<Array<{ hoursJson: unknown }>>`
-          SELECT "hoursJson" FROM "Store" WHERE id = ${targetStore.id} LIMIT 1
-        `;
-        const hoursJson = rows[0]?.hoursJson ?? null;
+        // CR-1.1: hoursJson ya viene en targetStore desde getStoreForCheckout —
+        // elimina el $queryRaw separado que era la segunda llamada a Store.
+        const hoursJson = targetStore.hoursJson ?? null;
         if (hoursJson && typeof hoursJson === "object") {
           const { isValidReservationSlot } = await import("@/lib/marketplace-store-hours");
           const check = isValidReservationSlot(hoursJson as never, when, new Date(), 7);
@@ -307,7 +299,7 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch (err) {
-        logger.warn("[marketplace/orders] hoursJson lookup failed for reservation", {
+        logger.warn("[marketplace/orders] hoursJson validation failed for reservation", {
           error: String(err),
         });
       }
@@ -477,18 +469,16 @@ export async function POST(req: NextRequest) {
     }).catch((err) => logger.error("[marketplace/orders] operation failed", { error: String(err) }));
 
     // Fire-and-forget: notify store owner via push + in-app notification
+    // CR-1.1: reutiliza targetStore ya cargado — elimina 2 prisma.* directos
+    // (store.findFirst + tenant.findUnique). ownerPhone se carga bajo demanda.
     (async () => {
       try {
-        // audit P0 #4: filtrar published + tenant active
-        const store = await prisma.store.findFirst({
-          where: { slug: storeSlug, isPublished: true, tenant: { active: true } },
-          select: { tenantId: true, name: true },
-        });
-        if (!store) return;
+        // targetStore ya viene de MarketplaceOrdersDB.getStoreForCheckout.
+        if (!targetStore) return;
 
         // In-app notification for the admin panel
         createNotification({
-          tenantId: store.tenantId,
+          tenantId: targetStore.tenantId,
           type: "marketplace_order",
           severity: "HIGH",
           title: `Nuevo pedido marketplace — S/${order.total.toFixed(2)}`,
@@ -496,41 +486,39 @@ export async function POST(req: NextRequest) {
           actionUrl: `/admin?module=marketplace&tab=ordenes`,
           actionLabel: "Ver pedido",
           entityId: order.id,
-        }).catch((err) => logger.error("[marketplace/orders] create notification failed", { error: String(err), tenantId: store.tenantId }));
+        }).catch((err) => logger.error("[marketplace/orders] create notification failed", { error: String(err), tenantId: targetStore!.tenantId }));
 
-        // Push notification to store owner's phone
-        // ownerPhone pertenece al modelo Tenant, no a Settings
+        // ownerPhone pertenece al modelo Tenant, no a Settings.
+        // @prisma-direct ok — lookup puntual dentro de side-effect fire-and-forget;
+        // tenantId scoped; pendiente migración a TenantsDB cuando exista.
         const tenant = await prisma.tenant.findUnique({
-          where: { slug: store.tenantId },
+          where: { slug: targetStore.tenantId },
           select: { ownerPhone: true },
         });
         const ownerPhone = tenant?.ownerPhone ?? null;
         if (ownerPhone) {
           sendPushToPhone(ownerPhone, {
-            title: `Nuevo pedido — ${store.name}`,
+            title: `Nuevo pedido — ${targetStore.name}`,
             body: `${customerName} pidió ${items.length} producto(s) por S/${order.total.toFixed(2)}`,
             url: `/admin?module=marketplace&tab=ordenes`,
-          }).catch((err) => logger.error("[marketplace/orders] push notification failed", { error: String(err), tenantId: store.tenantId }));
+          }).catch((err) => logger.error("[marketplace/orders] push notification failed", { error: String(err), tenantId: targetStore!.tenantId }));
 
           // WhatsApp notification to vendor (with retries)
           const itemList = items.slice(0, 5).map((i: { name: string; quantity: number }) => `  • ${i.quantity}x ${i.name}`).join("\n");
           const moreItems = items.length > 5 ? `\n  + ${items.length - 5} más...` : "";
           sendWhatsAppQueued(
             ownerPhone,
-            `*Nuevo pedido en ${store.name}*\n\n` +
+            `*Nuevo pedido en ${targetStore.name}*\n\n` +
             `Cliente: ${customerName}\n` +
             `Tel: ${customerPhone}\n` +
             `Direccion: ${customerAddress || "No especificada"}\n\n` +
             `Productos:\n${itemList}${moreItems}\n\n` +
             `Total: S/ ${order.total.toFixed(2)}\n\n` +
             `Entra a tu panel para confirmar el pedido`,
-            { tenantId: store.tenantId, context: "marketplace-order-vendor-notify" },
-          ).catch((err) => logger.error("[marketplace/orders] vendor whatsapp failed", { error: String(err), tenantId: store.tenantId }));
+            { tenantId: targetStore!.tenantId, context: "marketplace-order-vendor-notify" },
+          ).catch((err) => logger.error("[marketplace/orders] vendor whatsapp failed", { error: String(err), tenantId: targetStore!.tenantId }));
         }
       } catch (err) {
-        // Audit 2026-05-17 01-P0-3: antes silent — si el lookup del store falla
-        // o la notif al vendor revienta, el vendor NO se entera del pedido y
-        // queda pendiente sin acción. logger.warn para Sentry visibility.
         logger.warn("[marketplace/orders] vendor notification block failed", {
           orderId: order?.id,
           err: err instanceof Error ? err.message : String(err),
@@ -544,6 +532,8 @@ export async function POST(req: NextRequest) {
     // que el primer customer con ese phone NO gane los puntos del orden de
     // OTRO tenant. Antes update where:{phone} ganaba el primer match
     // global porque phone es @unique cross-tenant.
+    // @prisma-direct ok — customer.findFirst + updateMany scoped (phone, tenantId);
+    // best-effort loyalty; migracion a CustomersDB pendiente.
     (async () => {
       try {
         if (!customerPhone) return;
@@ -565,20 +555,19 @@ export async function POST(req: NextRequest) {
     })();
 
     // Fire-and-forget: create welcome coupon for first-time buyer on this store
+    // CR-1.1: reutiliza targetStore — elimina store.findFirst duplicado.
+    // order.count + coupon.findFirst/create: @prisma-direct ok — side-effect
+    // best-effort scoped por tenantId; migracion a CouponsDB pendiente.
     (async () => {
       try {
         if (!customerPhone) return;
-        // audit P0 #4: filtrar published + tenant active
-        const store = await prisma.store.findFirst({
-          where: { slug: storeSlug, isPublished: true, tenant: { active: true } },
-          select: { id: true, tenantId: true, name: true },
-        });
-        if (!store) return;
+        if (!targetStore) return;
         // Check if this is the first order from this phone on this store
+        // @prisma-direct ok — count scoped por tenantId+phone; best-effort.
         const prevOrders = await prisma.order.count({
           where: {
             customerPhone,
-            tenantId: store.tenantId,
+            tenantId: targetStore.tenantId,
             source: "marketplace",
             deletedAt: null,
           },
@@ -586,18 +575,19 @@ export async function POST(req: NextRequest) {
         // If this is their first order (count=1 means just the one we created)
         if (prevOrders <= 1) {
           const welcomeCode = `BIENVENIDO${customerPhone.slice(-4)}`;
-          // Don't create if already exists
           // Coupon no tiene campo storeId — se discrimina por tenantId + code
           // TODO Sprint C Wave 4: agregar storeId a Coupon si se necesita por-tienda
+          // @prisma-direct ok — findFirst scoped por tenantId+code; best-effort.
           const exists = await prisma.coupon.findFirst({
-            where: { tenantId: store.tenantId, code: welcomeCode },
+            where: { tenantId: targetStore.tenantId, code: welcomeCode },
           });
           if (!exists) {
+            // @prisma-direct ok — coupon.create best-effort scoped por tenantId.
             await prisma.coupon.create({
               data: {
                 code: welcomeCode,
-                tenantId: store.tenantId,
-                description: `Bienvenido a ${store.name}! 10% de descuento en tu proxima compra`,
+                tenantId: targetStore.tenantId,
+                description: `Bienvenido a ${targetStore.name}! 10% de descuento en tu proxima compra`,
                 discountType: "percent",
                 discountValue: 10,
                 maxUses: 1,
@@ -608,20 +598,16 @@ export async function POST(req: NextRequest) {
             // Send welcome coupon via WhatsApp (with retries)
             sendWhatsAppQueued(
               customerPhone,
-              `🎉 ¡Gracias por tu primera compra en *${store.name}*!\n\n` +
-              `Te regalamos un cupón de *10% de descuento* para tu próxima compra:\n\n` +
-              `🏷️ Código: *${welcomeCode}*\n` +
-              `📅 Válido por 30 días\n\n` +
-              `¡Úsalo en tu próximo pedido! 🛒`,
-              { tenantId: store.tenantId, context: "marketplace-welcome-coupon" },
-            ).catch((err) => logger.error("[marketplace/orders] welcome coupon whatsapp failed", { error: String(err), tenantId: store.tenantId }));
+              `Gracias por tu primera compra en *${targetStore.name}*!\n\n` +
+              `Te regalamos un cupon de *10% de descuento* para tu proxima compra:\n\n` +
+              `Codigo: *${welcomeCode}*\n` +
+              `Valido por 30 dias\n\n` +
+              `Usalo en tu proximo pedido!`,
+              { tenantId: targetStore.tenantId, context: "marketplace-welcome-coupon" },
+            ).catch((err) => logger.error("[marketplace/orders] welcome coupon whatsapp failed", { error: String(err), tenantId: targetStore!.tenantId }));
           }
         }
       } catch (err) {
-        // Audit 2026-05-17 01-P0-3: antes silent — si coupon.create falla
-        // (P2002 unique violation, DB down, etc.) el error queda oculto y
-        // el comprador NO recibe su cupón de bienvenida. logger.warn permite
-        // diagnóstico via Sentry.
         logger.warn("[marketplace/orders] welcome coupon block failed", {
           orderId: order?.id,
           customerPhone,

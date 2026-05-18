@@ -1,9 +1,12 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { getOrSet } from "@/lib/cache";
+import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { CouponsDB } from "@/lib/db/coupons.db";
+import { PTS_PER_SOL } from "@/lib/loyalty-constants";
 import { type DbMarketplaceOrder, type DbVendorDashboard } from "./types";
+import type { OrderStatus } from "@/lib/generated/prisma/client";
 
 // ─── MarketplaceOrdersDB ──────────────────────────────────────────────────────
 
@@ -159,8 +162,7 @@ export const MarketplaceOrdersDB = {
     }
 
     // 3. Resolver cupón y loyalty server-side (F1)
-    // Constante: 100 puntos = S/1
-    const LOYALTY_POINTS_PER_SOL = 100;
+    // PTS_PER_SOL importado de lib/loyalty-constants — fuente única de verdad (CR-2.3).
 
     // Pre-validar cupón FUERA de la tx para tener el objeto disponible
     let couponDiscount = 0;
@@ -184,6 +186,19 @@ export const MarketplaceOrdersDB = {
       if (maxUsesVal > 0 && toNumOrZero(coupon.usedCount) >= maxUsesVal) {
         throw new Error("Cupón ya alcanzó el límite de usos");
       }
+      // PENTEST-003: límite por cliente — un cliente no puede usar el mismo
+      // cupón más de una vez aunque el cupo global aún no se agote.
+      // CouponsDB.countUsesByCustomer cuenta órdenes no canceladas de 90 días.
+      if (params.customerPhone) {
+        const prevUses = await CouponsDB.countUsesByCustomer(
+          store.tenantId,
+          params.customerPhone,
+          params.couponCode!,
+        ).catch(() => 0);
+        if (prevUses >= 1) {
+          throw new Error("Cupón ya usado por este cliente");
+        }
+      }
       const dv = toNumOrZero(coupon.discountValue);
       if (coupon.discountType === "percent") {
         couponDiscount = parseFloat(Math.min((subtotal * dv) / 100, subtotal).toFixed(2));
@@ -205,7 +220,7 @@ export const MarketplaceOrdersDB = {
       if (!cust || toNumOrZero(cust.loyaltyPoints) < redeemPoints) {
         throw new Error("Puntos de fidelidad insuficientes");
       }
-      loyaltyDiscount = parseFloat((redeemPoints / LOYALTY_POINTS_PER_SOL).toFixed(2));
+      loyaltyDiscount = parseFloat((redeemPoints / PTS_PER_SOL).toFixed(2));
     }
 
     // Total final con todos los descuentos (no puede ser negativo)
@@ -649,5 +664,277 @@ export const MarketplaceOrdersDB = {
       },
       orderBy: { createdAt: "desc" },
     });
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // CR-1.1: métodos nuevos — migración de prisma.* directos en route handlers
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Busca una tienda publicada por slug para el flujo de checkout.
+   * Incluye vacationMode + hoursJson para bloquear órdenes fuera de horario.
+   * Reemplaza el prisma.store.findFirst directo en POST /api/marketplace/orders.
+   *
+   * @param tenantId - No usado para filtrar (Store.tenantId ≠ slug caller),
+   *   pero se requiere por convención de API. La guarda real es isPublished +
+   *   tenant.active + slug — aislamiento verificado.
+   */
+  async getStoreForCheckout(
+    _tenantId: string,
+    slug: string,
+  ): Promise<{
+    id: string;
+    tenantId: string;
+    name: string;
+    slug: string;
+    vacationMode: boolean;
+    vacationMessage: string | null;
+    hoursJson: unknown;
+  } | null> {
+    const store = await prisma.store.findFirst({
+      where: {
+        slug,
+        isPublished: true,
+        tenant: { active: true },
+      },
+      select: {
+        id: true,
+        tenantId: true,
+        name: true,
+        slug: true,
+        vacationMode: true,
+        vacationMessage: true,
+      },
+    });
+    if (!store) return null;
+
+    // hoursJson vive en la DB pero NO en el schema Prisma (expand-migrate-contract
+    // en curso, ver app/api/marketplace/stores/route.ts:89). Leer aparte con raw.
+    let hoursJson: unknown = null;
+    try {
+      const rows = await prisma.$queryRaw<Array<{ hoursJson: unknown }>>`
+        SELECT "hoursJson" FROM "Store" WHERE id = ${store.id} LIMIT 1
+      `;
+      hoursJson = rows[0]?.hoursJson ?? null;
+    } catch {
+      hoursJson = null;
+    }
+
+    return { ...store, hoursJson };
+  },
+
+  /**
+   * Cambia el estado de una orden del marketplace con validación de transición,
+   * historial de estado y reversión de comisiones si aplica.
+   *
+   * Reemplaza los prisma.order.findFirst / updateMany / findFirst + historial
+   * directos en PATCH /api/marketplace/orders/[id].
+   *
+   * La validación de transición válida (VALID_TRANSITIONS) queda en el route
+   * handler — este método es el ejecutor atómico.
+   *
+   * @param tenantId  - Tenant propietario de la orden (aislamiento multi-tenant).
+   * @param orderId   - ID de la orden a modificar.
+   * @param newStatus - Estado destino ya validado por el caller.
+   * @param by        - Username del admin que ejecuta el cambio (audit trail).
+   * @param cancelReason - Motivo de cancelación (solo cuando newStatus === "cancelado").
+   */
+  async changeStatus(
+    tenantId: string,
+    orderId: string,
+    newStatus: string,
+    by: string,
+    cancelReason?: string,
+  ): Promise<{ id: string; status: string; updatedAt: Date } | null> {
+    // 1. Leer orden scoped por tenantId — guarda cross-tenant.
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, source: "marketplace", tenantId, deletedAt: null },
+      select: { id: true, status: true, customerPhone: true, total: true },
+    });
+    if (!order) return null;
+
+    // 2. Update atómico scoped por tenantId — cierra TOCTOU window.
+    const updateResult = await prisma.order.updateMany({
+      where: { id: orderId, tenantId, deletedAt: null },
+      data: {
+        status: newStatus as OrderStatus,
+        ...(newStatus === "cancelado" && {
+          cancelReason: cancelReason ?? null,
+          cancelledAt: new Date(),
+        }),
+      },
+    });
+    if (updateResult.count === 0) return null;
+
+    // 3. Historial (fire-and-forget).
+    prisma.orderStatusHistory.create({
+      data: {
+        id: crypto.randomUUID(),
+        orderId,
+        fromStatus: order.status,
+        toStatus: newStatus as OrderStatus,
+        changedBy: by,
+        note: cancelReason ?? null,
+        tenantId,
+      },
+    }).catch((err) =>
+      logger.warn("[MarketplaceOrdersDB.changeStatus] history insert failed", {
+        error: String(err), orderId, tenantId,
+      }),
+    );
+
+    // 4. Comisiones (fire-and-forget).
+    if (newStatus === "entregado") {
+      prisma.commissionLedger
+        .updateMany({
+          where: { orderId, tenantId, status: "pending" },
+          data: { status: "cleared", settledAt: new Date() },
+        })
+        .catch((err) =>
+          logger.warn("[MarketplaceOrdersDB.changeStatus] commission clear failed", {
+            error: String(err), orderId,
+          }),
+        );
+    } else if (newStatus === "cancelado") {
+      prisma.commissionLedger
+        .updateMany({
+          where: { orderId, tenantId, status: "pending" },
+          data: { status: "reversed" },
+        })
+        .catch((err) =>
+          logger.warn("[MarketplaceOrdersDB.changeStatus] commission reverse failed", {
+            error: String(err), orderId,
+          }),
+        );
+    }
+
+    // 5. Invalidar cache del tenant.
+    invalidateByPrefix(`marketplace:orders:${tenantId}`);
+
+    const updated = await prisma.order.findFirst({
+      where: { id: orderId, tenantId },
+      select: { id: true, status: true, updatedAt: true },
+    });
+    return updated ?? null;
+  },
+
+  /**
+   * Cambia el estado de N órdenes del marketplace en lote, validando
+   * transiciones individualmente y registrando historial por orden.
+   *
+   * Reemplaza los prisma.order.findMany / updateMany + historial directos
+   * en POST /api/marketplace/orders/bulk.
+   *
+   * @param tenantId    - Tenant propietario de las órdenes.
+   * @param orderIds    - IDs a procesar (max 200 por llamada).
+   * @param newStatus   - Estado destino ya validado por el caller.
+   * @param by          - Username del admin.
+   * @param cancelReason - Motivo de cancelación (opcional).
+   * @returns { updatedCount, skipped }
+   */
+  async bulkChangeStatus(
+    tenantId: string,
+    orderIds: string[],
+    newStatus: string,
+    by: string,
+    cancelReason?: string,
+  ): Promise<{ updatedCount: number; skipped: Array<{ id: string; reason: string }> }> {
+    const VALID_TRANSITIONS: Record<string, string[]> = {
+      pendiente:  ["confirmado", "cancelado"],
+      confirmado: ["preparando", "en_camino", "cancelado"],
+      preparando: ["en_camino", "cancelado"],
+      en_camino:  ["entregado", "cancelado"],
+      entregado:  [],
+      cancelado:  [],
+    };
+
+    const existing = await prisma.order.findMany({
+      where: {
+        id: { in: orderIds },
+        tenantId,
+        source: "marketplace",
+        deletedAt: null,
+      },
+      select: { id: true, status: true },
+    });
+    const existingById = new Map(existing.map((o) => [o.id, o]));
+
+    const updatable: string[] = [];
+    const skipped: Array<{ id: string; reason: string }> = [];
+    for (const id of orderIds) {
+      const o = existingById.get(id);
+      if (!o) { skipped.push({ id, reason: "no encontrado" }); continue; }
+      const allowed = VALID_TRANSITIONS[o.status] ?? [];
+      if (!allowed.includes(newStatus)) {
+        skipped.push({ id, reason: `no se puede pasar de "${o.status}" a "${newStatus}"` });
+        continue;
+      }
+      updatable.push(id);
+    }
+
+    if (updatable.length === 0) return { updatedCount: 0, skipped };
+
+    const result = await prisma.order.updateMany({
+      where: { id: { in: updatable }, tenantId, deletedAt: null },
+      data: {
+        status: newStatus as OrderStatus,
+        ...(newStatus === "cancelado" && {
+          cancelReason: cancelReason ?? null,
+          cancelledAt: new Date(),
+        }),
+      },
+    });
+
+    // Historial por orden (fire-and-forget).
+    for (const id of updatable) {
+      const prev = existingById.get(id);
+      if (!prev) continue;
+      prisma.orderStatusHistory
+        .create({
+          data: {
+            id: crypto.randomUUID(),
+            orderId: id,
+            fromStatus: prev.status,
+            toStatus: newStatus as OrderStatus,
+            changedBy: by,
+            note: cancelReason ?? "bulk",
+            tenantId,
+          },
+        })
+        .catch((err) =>
+          logger.warn("[MarketplaceOrdersDB.bulkChangeStatus] history insert failed", {
+            error: String(err), id,
+          }),
+        );
+    }
+
+    // Comisiones bulk (fire-and-forget).
+    if (newStatus === "entregado") {
+      prisma.commissionLedger
+        .updateMany({
+          where: { orderId: { in: updatable }, tenantId, status: "pending" },
+          data: { status: "cleared", settledAt: new Date() },
+        })
+        .catch((err) =>
+          logger.warn("[MarketplaceOrdersDB.bulkChangeStatus] commission clear failed", {
+            error: String(err),
+          }),
+        );
+    } else if (newStatus === "cancelado") {
+      prisma.commissionLedger
+        .updateMany({
+          where: { orderId: { in: updatable }, tenantId, status: "pending" },
+          data: { status: "reversed" },
+        })
+        .catch((err) =>
+          logger.warn("[MarketplaceOrdersDB.bulkChangeStatus] commission reverse failed", {
+            error: String(err),
+          }),
+        );
+    }
+
+    invalidateByPrefix("marketplace:orders");
+
+    return { updatedCount: result.count, skipped };
   },
 };

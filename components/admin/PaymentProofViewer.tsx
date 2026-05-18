@@ -113,6 +113,9 @@ function fmtDate(iso: string | null): string {
 
 export function PaymentProofViewer({ orderId, isCash, className }: Props) {
   const [proof, setProof] = useState<PaymentProof | null>(null);
+  // PENTEST-002: URL re-firmada on-demand desde el bucket privado (TTL 30 min).
+  // Se carga en paralelo con los metadatos del comprobante.
+  const [signedImageUrl, setSignedImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState(false);
@@ -122,10 +125,22 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/payment-proof`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((data: { proof: PaymentProof | null }) => {
-        if (!cancelled) setProof(data.proof);
+
+    // Fetch metadatos del comprobante + URL re-firmada en paralelo
+    Promise.all([
+      fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/payment-proof`)
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((data: { proof: PaymentProof | null }) => data.proof),
+      fetch(`/api/marketplace/orders/${encodeURIComponent(orderId)}/proof-url`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: { url: string; expiresAt: string } | null) => data?.url ?? null)
+        .catch(() => null), // fallback silencioso: si falla, usa imageUrl del proof
+    ])
+      .then(([proofData, freshUrl]) => {
+        if (!cancelled) {
+          setProof(proofData);
+          setSignedImageUrl(freshUrl);
+        }
       })
       .catch(() => {
         if (!cancelled) setError("No pudimos cargar el comprobante");
@@ -133,6 +148,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
@@ -212,7 +228,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={proof.imageUrl}
+              src={signedImageUrl ?? proof.imageUrl}
               alt="Comprobante de pago"
               className="w-full h-full object-cover"
               loading="lazy"
@@ -284,7 +300,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
               </div>
             )}
             <a
-              href={proof.imageUrl}
+              href={signedImageUrl ?? proof.imageUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] hover:underline"

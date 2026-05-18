@@ -14,6 +14,7 @@ import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { PrismaOrderRepository } from "@/lib/db/adapters/prisma-order-repository";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { MarketplaceOrdersDB } from "@/lib/db/marketplace.db";
 
 const orderRepo = new PrismaOrderRepository();
 
@@ -90,7 +91,8 @@ async function patchHandler(
     return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
-  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing read scoped por tenantId; refactor a OrdersDB pendiente.
+  // Leer orden para validar la transición antes de llamar a changeStatus.
+  // eslint-disable-next-line no-restricted-properties -- read-only pre-check scoped por tenantId; changeStatus hace el write atómico.
   const order = await prisma.order.findFirst({
     where: { id, source: "marketplace", tenantId: auth.tenantId, deletedAt: null },
   });
@@ -108,53 +110,19 @@ async function patchHandler(
     );
   }
 
-  // Atomic update SCOPED a tenantId — cierra TOCTOU window entre el findFirst
-  // anterior y este update. Sin tenantId aquí, un atacante con dos órdenes
-  // (una propia + una target) podría explotar la ventana entre check y write.
-  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing atomic update scoped por tenantId; refactor a OrdersDB pendiente.
-  const updateResult = await prisma.order.updateMany({
-    where: { id, tenantId: auth.tenantId, deletedAt: null },
-    data: {
-      status: parsed.data.status,
-      ...(parsed.data.status === "cancelado" && {
-        cancelReason: parsed.data.cancelReason ?? null,
-        cancelledAt: new Date(),
-      }),
-    },
-  });
-  if (updateResult.count === 0) {
+  // CR-1.1: write atómico + historial + comisiones vía MarketplaceOrdersDB.changeStatus.
+  // Reemplaza 7 prisma.* directos (findFirst, updateMany, findFirst, historial.create,
+  // 2× commissionLedger.updateMany). El método es idempotente y scoped por tenantId.
+  const updated = await MarketplaceOrdersDB.changeStatus(
+    auth.tenantId,
+    id,
+    parsed.data.status,
+    auth.username,
+    parsed.data.cancelReason,
+  );
+  if (!updated) {
     return NextResponse.json({ error: "Pedido no encontrado o ya modificado" }, { status: 404 });
   }
-  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing read post-update scoped por tenantId.
-  const updated = await prisma.order.findFirst({
-    where: { id, tenantId: auth.tenantId },
-  });
-  if (!updated) {
-    return NextResponse.json({ error: "Error inesperado al leer pedido actualizado" }, { status: 500 });
-  }
-
-  // F3: revertir comisiones pendientes al cancelar (fire-and-forget)
-  if (parsed.data.status === "cancelado") {
-    // eslint-disable-next-line no-restricted-properties -- legacy: updateMany scoped a orderId+tenantId+status para revertir comisiones; refactor a CommissionsDB pendiente.
-    prisma.commissionLedger.updateMany({
-      where:  { orderId: id, tenantId: auth.tenantId, status: "pending" },
-      data:   { status: "reversed" },
-    }).catch((err) => logger.warn("[marketplace/orders/[id]] commission reverse failed", { err: String(err), orderId: id, tenantId: auth.tenantId }));
-  }
-
-  // Log status change history (fire-and-forget)
-  // eslint-disable-next-line no-restricted-properties -- legacy: pre-existing audit insert con tenantId en payload; refactor pendiente.
-  prisma.orderStatusHistory.create({
-    data: {
-      id: crypto.randomUUID(),
-      orderId: id,
-      fromStatus: order.status,
-      toStatus: parsed.data.status,
-      changedBy: auth.username,
-      note: parsed.data.cancelReason ?? null,
-      tenantId: auth.tenantId,
-    },
-  }).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err), tenantId: auth.tenantId }));
 
   // ── Push notification to customer ──────────────────────────────────────
 
@@ -215,25 +183,11 @@ async function patchHandler(
     auth.username,
   ).catch((err) => logger.error("[marketplace/orders/[id]] operation failed", { error: String(err) }));
 
-  // SECURITY 2026-05-07 (audit M2): liquidar commissionLedger de pending → cleared
-  // al entregar. Antes las comisiones quedaban eternamente pending y la conciliación
-  // contable nunca cuadraba (vendors no recibían payout).
-  if (parsed.data.status === "entregado") {
-    // eslint-disable-next-line no-restricted-properties -- updateMany scoped por tenantId+orderId+status. CommissionLedger no tiene DB class wrapper aun (TODO: lib/db/commissions.db.ts).
-    prisma.commissionLedger
-      .updateMany({
-        where: { orderId: id, tenantId: auth.tenantId, status: "pending" },
-        data: { status: "cleared", settledAt: new Date() },
-      })
-      .catch((err) =>
-        logger.warn("[marketplace/orders/[id]] commission clear failed (best-effort)", {
-          error: String(err),
-          orderId: id,
-        }),
-      );
-  }
+  // Comisiones: ya manejadas dentro de MarketplaceOrdersDB.changeStatus (CR-1.1).
 
   // Auto-coupon "Vuelve pronto" 5% on delivery (fire-and-forget)
+  // @prisma-direct ok — coupon.create best-effort scoped por tenantId;
+  // migracion a CouponsDB pendiente.
   if (parsed.data.status === "entregado" && phone) {
     const suffix = id.slice(-5).toUpperCase();
     const couponCode = `VUELVE${suffix}`;
