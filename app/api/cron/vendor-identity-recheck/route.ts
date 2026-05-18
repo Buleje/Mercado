@@ -31,6 +31,7 @@ import { verifyRuc, isInvoiceable, type SunatRucResult } from "@/lib/integration
 import { verifyDni, type ReniecResult } from "@/lib/integrations/reniec";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
 import { sendVendorIdentityAlert } from "@/lib/notifications/vendor-identity-alert";
+import { VendorGraceDB } from "@/lib/db/vendor-grace.db";
 
 /** Snapshot persistido por vendor para detectar cambios entre runs. */
 interface VendorSnapshot {
@@ -84,6 +85,7 @@ export const GET = withCronHealth(
     let notifiedCount = 0;
     let waSentCount = 0;
     let emailSentCount = 0;
+    let gracedCount = 0;
     const alerts: Array<{
       vendorId: string;
       tenantSlug: string | null;
@@ -161,6 +163,22 @@ export const GET = withCronHealth(
           severity: severity.toLowerCase(),
         });
         if (!vendor.tenantId) return;
+
+        // Audit 2026-05-17 TD-058 capa 8: self-service grace.
+        // Si el admin del tenant reconoció esta alerta y eligió un plazo de
+        // gracia, NO crear notification ni enviar WA/email. El log de Sentry
+        // sí queda (superadmin necesita visibilidad). El cron sigue corriendo
+        // para detectar otros tipos de problemas (si RUC cambió Y DNI también,
+        // el grace del RUC no aplica al DNI).
+        if (VendorGraceDB.shouldSkip(vendor.tenantId, vendor.id, kind)) {
+          gracedCount++;
+          logger.info("[cron/vendor-identity-recheck] grace active — skip alert", {
+            vendorId: vendor.id,
+            tenantSlug: vendor.tenantSlug,
+            kind,
+          });
+          return;
+        }
         try {
           const result = await NotificationCenterDB.createOrReuse({
             tenantId: vendor.tenantId,
@@ -265,6 +283,7 @@ export const GET = withCronHealth(
       notifiedCount,
       waSentCount,
       emailSentCount,
+      gracedCount,
       alertSample: alerts.slice(0, 5).map((a) => `${a.kind}:${a.tenantSlug}`),
     });
 
@@ -279,6 +298,7 @@ export const GET = withCronHealth(
       notifiedCount,
       waSentCount,
       emailSentCount,
+      gracedCount,
       alerts,
     };
     cacheStore.set("vendor-health:summary", summary, 25 * 60 * 60);
@@ -300,6 +320,8 @@ export interface VendorHealthSummary {
   waSentCount: number;
   /** Total de emails enviados al vendor — solo cuando WA falló o no había phone */
   emailSentCount: number;
+  /** Vendors skippeados por estar en grace period (admin reconoció + plazo) */
+  gracedCount: number;
   alerts: Array<{
     vendorId: string;
     tenantSlug: string | null;

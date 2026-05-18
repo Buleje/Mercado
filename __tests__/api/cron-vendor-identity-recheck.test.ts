@@ -80,6 +80,16 @@ vi.mock("@/lib/notifications/vendor-identity-alert", () => ({
   sendVendorIdentityAlert: mockSendAlert,
 }));
 
+const { mockShouldSkip } = vi.hoisted(() => ({
+  mockShouldSkip: vi.fn(() => false),
+}));
+
+vi.mock("@/lib/db/vendor-grace.db", () => ({
+  VendorGraceDB: {
+    shouldSkip: mockShouldSkip,
+  },
+}));
+
 import { GET } from "@/app/api/cron/vendor-identity-recheck/route";
 
 function makeReq(): NextRequest {
@@ -92,6 +102,7 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     snapshotStore.clear();
+    mockShouldSkip.mockReturnValue(false);
   });
 
   it("0 vendors → response con total=0, no alerts", async () => {
@@ -505,6 +516,42 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
     expect(mockSendAlert).toHaveBeenCalledTimes(1);
     expect(body.waSentCount).toBe(0);
     expect(body.emailSentCount).toBe(1);
+  });
+
+  it("grace activo → skip alerta + cuenta en gracedCount", async () => {
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "v-grace",
+        ruc: "20888000111",
+        contactDni: null,
+        contactName: "X",
+        contactPhone: "51987111111",
+        contactEmail: "x@y.com",
+        businessName: "Graced Vendor",
+        tenantId: "t-graced",
+        tenantSlug: "graced",
+      },
+    ]);
+    mockVerifyRuc.mockResolvedValueOnce({
+      ok: false,
+      source: "apisperu",
+      reason: "not_found",
+    });
+    mockIsInvoiceable.mockReturnValueOnce(false);
+    // Grace activo para ESE vendor+kind
+    mockShouldSkip.mockReturnValueOnce(true);
+
+    const r = await GET(makeReq());
+    const body = await r.json();
+
+    // Notification + alerta NO se crean
+    expect(mockNotifCreateOrReuse).not.toHaveBeenCalled();
+    expect(mockSendAlert).not.toHaveBeenCalled();
+    expect(body.gracedCount).toBe(1);
+    expect(body.notifiedCount).toBe(0);
+    expect(body.waSentCount).toBe(0);
+    // El alerts[] todavía se popula (visibilidad superadmin)
+    expect(body.alerts).toHaveLength(1);
   });
 
   it("error en verifyRuc → contabiliza errors, no bloquea siguientes", async () => {

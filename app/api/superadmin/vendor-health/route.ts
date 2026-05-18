@@ -24,6 +24,8 @@ interface VendorHealthSummary {
   waSentCount?: number;
   /** Emails enviados al vendor — solo cuando WA falló o no había phone */
   emailSentCount?: number;
+  /** Vendors skippeados por grace period (self-service ack) */
+  gracedCount?: number;
   alerts: Array<{
     vendorId: string;
     tenantSlug: string | null;

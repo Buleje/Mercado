@@ -46,6 +46,7 @@ interface VendorHealthResponse {
     notifiedCount?: number;
     waSentCount?: number;
     emailSentCount?: number;
+    gracedCount?: number;
     alerts: SummaryAlert[];
   } | null;
 }
@@ -172,7 +173,7 @@ export function VendorHealthDashboard() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <Kpi label="Total" value={summary.total} />
         <Kpi label="Verificados" value={summary.checked} color="success" />
         <Kpi label="Con cambios" value={summary.changed} color={summary.changed > 0 ? "warning" : "neutral"} />
@@ -190,6 +191,11 @@ export function VendorHealthDashboard() {
           label="Email"
           value={summary.emailSentCount ?? 0}
           color={(summary.emailSentCount ?? 0) > 0 ? "warning" : "neutral"}
+        />
+        <Kpi
+          label="En gracia"
+          value={summary.gracedCount ?? 0}
+          color={(summary.gracedCount ?? 0) > 0 ? "neutral" : "neutral"}
         />
         <Kpi label="Errores" value={summary.errors} color={summary.errors > 0 ? "error" : "neutral"} />
       </div>
