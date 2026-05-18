@@ -546,8 +546,11 @@ export default function Footer() {
       </>
       )}
 
-      {/* Bottom band — trust/payment compact + copyright. 2 líneas en mobile, 1 en desktop. */}
-      <div className="border-t border-emerald-400/15 bg-black/50 backdrop-blur-sm">
+      {/* Bottom band — trust/payment compact + copyright. 2 líneas en mobile, 1 en desktop.
+          pb-mobile evita que la BottomNav fija (72px + safe-area iOS) tape el
+          copyright al hacer scroll hasta el final de la página. Solo aplica en
+          mobile (sm:hidden del BottomNav, sm:pb-0 cancela el extra padding). */}
+      <div className="border-t border-emerald-400/15 bg-black/50 backdrop-blur-sm pb-[calc(72px+env(safe-area-inset-bottom))] sm:pb-0">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
             {/* Trust + payment chips — todos en 1 línea */}
