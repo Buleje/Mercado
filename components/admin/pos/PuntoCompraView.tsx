@@ -26,6 +26,7 @@ import {
   Plus,
   X as XIcon,
   Check as CheckIcon,
+  Trash2,
 } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,12 @@ const PuntoCompraFrequentItems = dynamic(() => import("./PuntoCompraFrequentItem
 const PuntoCompraBundles = dynamic(() => import("./PuntoCompraBundles"), { ssr: false });
 const PuntoCompraOrderCreator = dynamic(() => import("./PuntoCompraOrderCreator"), { ssr: false });
 const PuntoCompraLotSelector = dynamic(() => import("./PuntoCompraLotSelector"), { ssr: false });
+const RecurringExpenseModal = dynamic(() => import("./RecurringExpenseModal"), { ssr: false });
+
+// Helpers para parsear metadata extra de gastos recurrentes (encoded en `description`).
+import { decodeExpenseDescription, summarizeMeta } from "@/lib/expense-meta";
+import { findCategory, CATEGORY_COLOR_CLASSES } from "@/lib/expense-categories";
+import { getCategoryIcon } from "@/lib/expense-icons";
 
 const DRAFT_KEY = "poc-draft";
 
@@ -135,13 +142,7 @@ export default function PuntoCompraView() {
   const [expenseCatalog, setExpenseCatalog] = useState<ExpenseTemplate[]>([]);
   const [expenseCatalogLoading, setExpenseCatalogLoading] = useState(true);
   const [showNewExpense, setShowNewExpense] = useState(false);
-  const [newExpenseForm, setNewExpenseForm] = useState({
-    category: "Servicios",
-    description: "",
-    amount: "",
-  });
   const [expenseError, setExpenseError] = useState<string | null>(null);
-  const [creatingExpense, setCreatingExpense] = useState(false);
   const [executingTemplateId, setExecutingTemplateId] = useState<string | null>(null);
   const [showIGV, setShowIGV] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -332,43 +333,39 @@ export default function PuntoCompraView() {
     }
   }, [executingTemplateId, playDing]);
 
-  // Crear nuevo template de gasto recurrente
-  const handleCreateExpenseTemplate = useCallback(async () => {
-    if (creatingExpense) return;
-    const amount = Number(newExpenseForm.amount);
-    if (!newExpenseForm.description.trim() || !amount || amount <= 0) {
-      setExpenseError("Completá descripción y monto válido");
-      return;
-    }
-    setCreatingExpense(true);
-    setExpenseError(null);
+  // Eliminar template recurrente del catálogo. Pide confirmación con prompt nativo
+  // para evitar borrados accidentales. Se invalida cache local + refetch.
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
+  const handleDeleteTemplate = useCallback(async (tpl: ExpenseTemplate, humanDesc: string) => {
+    if (deletingTemplateId) return;
+    if (!window.confirm(`¿Eliminar "${humanDesc || tpl.category}" del catálogo?\n\nNo se borran los gastos ya pagados, sólo la plantilla.`)) return;
+    setDeletingTemplateId(tpl.id);
     try {
       const { csrfHeaders } = await import("@/lib/csrf-client");
-      const res = await fetch("/api/expenses", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          category: newExpenseForm.category,
-          description: newExpenseForm.description.trim(),
-          amount,
-          recurring: true, // template del catálogo
-        }),
+      const res = await fetch(`/api/expenses/${tpl.id}`, {
+        method: "DELETE",
+        headers: csrfHeaders({}),
       });
       if (res.ok) {
-        setShowNewExpense(false);
-        setNewExpenseForm({ category: "Servicios", description: "", amount: "" });
-        fetchExpenseCatalog();
+        setExpenseCatalog((prev) => prev.filter((e) => e.id !== tpl.id));
         playDing();
+        setToastMsg(`Eliminado: ${humanDesc || tpl.category}`);
+        setTimeout(() => setToastMsg(null), 2500);
       } else {
-        setExpenseError("No se pudo crear el gasto recurrente");
+        const err = await res.json().catch(() => ({}));
+        setExpenseError(err.error || "Error al eliminar");
+        setTimeout(() => setExpenseError(null), 4000);
       }
     } catch (err) {
-      console.warn("[PuntoCompraView] create expense template failed", err);
+      console.warn("[PuntoCompraView] delete template failed", err);
       setExpenseError("Error de conexión");
+      setTimeout(() => setExpenseError(null), 4000);
     } finally {
-      setCreatingExpense(false);
+      setDeletingTemplateId(null);
     }
-  }, [creatingExpense, newExpenseForm, fetchExpenseCatalog, playDing]);
+  }, [deletingTemplateId, playDing]);
+
+  // (creación de gastos recurrentes ahora vive en RecurringExpenseModal — onCreated dispara fetchExpenseCatalog)
 
   // ── Fetch suppliers (stale-while-revalidate, TTL 30min) ──────────────────────
   const fetchSuppliers = useCallback(async () => {
@@ -925,150 +922,174 @@ export default function PuntoCompraView() {
           - Productos del inventario solo si toggle ON (default OFF)
           ════════════════════════════════════════════════════════════════════ */}
 
-      {/* Catálogo de gastos recurrentes */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 mb-3">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <div>
-            <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-              <Tag className="h-4 w-4 text-[var(--data-warning-500)]" />
+      {/* ════════════════════════════════════════════════════════════════════
+          Catálogo de gastos recurrentes — rediseñado 2026-05-17
+          - Cards con ícono + color por categoría
+          - Badge de frecuencia + método de pago (de metadata embebida)
+          - Empty state con CTA gigante
+          - Toolbar header con sticky info
+          ════════════════════════════════════════════════════════════════════ */}
+      <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden mb-4">
+        {/* Header del módulo */}
+        <header className="px-5 py-4 border-b-2 border-[var(--rule-base)] bg-linear-to-r from-[var(--accent-soft)]/30 to-transparent dark:from-[var(--accent-muted)]/20 flex items-center gap-3 flex-wrap">
+          <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 border border-[var(--data-warning-500)]/30 shrink-0">
+            <Tag className="h-5 w-5 text-[var(--data-warning-500)]" strokeWidth={2.2} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-extrabold text-[var(--text-primary)] truncate">
               Artículos para Comprar
-            </p>
-            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Gastos recurrentes del negocio (alquiler, servicios, transporte). Click para registrar uno.
+            </h2>
+            <p className="text-sm text-[var(--text-secondary)]">
+              Gastos fijos del negocio. Click en una card para registrar el gasto del mes.
             </p>
           </div>
           <button
+            type="button"
             onClick={() => setShowNewExpense(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
             Nuevo gasto recurrente
           </button>
-        </div>
-        {expenseCatalogLoading ? (
-          <div className="text-center py-6 text-xs text-[var(--text-tertiary)]">Cargando catálogo...</div>
-        ) : expenseCatalog.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Catálogo vacío</p>
-            <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-md mx-auto">
-              Creá gastos recurrentes (alquiler, gasolina, internet) y aparecerán acá como cards para registrar rápido.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-            {expenseCatalog.map((tpl) => {
-              const isExecuting = executingTemplateId === tpl.id;
-              return (
-                <button
-                  key={tpl.id}
-                  onClick={() => executeExpenseFromTemplate(tpl)}
-                  disabled={isExecuting}
-                  className={cn(
-                    "rounded-lg border border-[var(--rule-soft)] p-3 text-left bg-white dark:bg-[var(--color-card)] hover:shadow-[var(--shadow-sm)] hover:border-[var(--data-warning-500)] transition-all disabled:opacity-50",
-                    isExecuting && "ring-2 ring-[var(--data-warning-500)]",
-                  )}
-                >
-                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">
-                    {tpl.category}
-                  </p>
-                  <p className="text-sm font-semibold text-[var(--text-primary)] mt-0.5 line-clamp-2 min-h-[2.5em]">
-                    {tpl.description || "(sin descripción)"}
-                  </p>
-                  <p className="text-base font-extrabold text-[var(--data-warning-500)] tabular-nums mt-1.5">
-                    S/{tpl.amount.toFixed(2)}
-                  </p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">
-                    {isExecuting ? "Registrando..." : "Click para registrar"}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {expenseError && (
-          <div className="mt-3 p-2 rounded-md bg-[var(--data-error-50)] border border-[var(--data-error-500)]/40 text-xs font-semibold text-[var(--data-error-500)]">
-            {expenseError}
-          </div>
-        )}
-      </div>
+        </header>
 
-      {/* Modal nuevo template de gasto */}
-      {showNewExpense && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowNewExpense(false); }}
-        >
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl shadow-2xl p-5 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-base font-bold text-[var(--text-primary)]">Nuevo gasto recurrente</p>
-              <button onClick={() => setShowNewExpense(false)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)]">
-                <XIcon className="h-4 w-4" />
+        {/* Body del catálogo */}
+        <div className="p-4 sm:p-5">
+          {expenseCatalogLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-32 rounded-2xl bg-gray-100 dark:bg-white/5 animate-pulse" />
+              ))}
+            </div>
+          ) : expenseCatalog.length === 0 ? (
+            <div className="text-center py-10 px-4 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
+              <span className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/20 mb-3">
+                <Tag className="h-7 w-7 text-[var(--data-warning-500)]" />
+              </span>
+              <p className="text-base font-bold text-[var(--text-primary)]">Aún no tenés gastos fijos cargados</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-md mx-auto">
+                Cargá una vez tus pagos recurrentes (alquiler, internet, gasolina) y después solo hacés <strong>click</strong> en la card cuando toca pagar.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowNewExpense(true)}
+                className="mt-4 inline-flex items-center gap-2 h-12 px-5 rounded-2xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors shadow"
+              >
+                <Plus className="h-5 w-5" />
+                Crear mi primer gasto recurrente
               </button>
             </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Categoría</label>
-                <select
-                  value={newExpenseForm.category}
-                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, category: e.target.value })}
-                  className="mt-1 w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm"
-                >
-                  <option>Alquiler</option>
-                  <option>Servicios</option>
-                  <option>Personal</option>
-                  <option>Transporte</option>
-                  <option>Limpieza</option>
-                  <option>Marketing</option>
-                  <option>Mantenimiento</option>
-                  <option>Otros</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Descripción</label>
-                <input
-                  type="text"
-                  value={newExpenseForm.description}
-                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, description: e.target.value })}
-                  placeholder="Ej. Alquiler local, Recarga celular Movistar"
-                  className="mt-1 w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Monto sugerido (S/)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.10"
-                  value={newExpenseForm.amount}
-                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, amount: e.target.value })}
-                  placeholder="0.00"
-                  className="mt-1 w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm tabular-nums"
-                />
-              </div>
-              {expenseError && (
-                <p className="text-xs font-semibold text-[var(--data-error-500)]">{expenseError}</p>
-              )}
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => setShowNewExpense(false)}
-                  className="flex-1 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleCreateExpenseTemplate}
-                  disabled={creatingExpense}
-                  className="flex-1 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50"
-                >
-                  {creatingExpense ? "Guardando..." : "Guardar"}
-                </button>
-              </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {expenseCatalog.map((tpl) => {
+                const { description: humanDesc, meta } = decodeExpenseDescription(tpl.description || "");
+                const catDef = findCategory(tpl.category, "global");
+                const colorKey = meta.colorKey ?? catDef.color;
+                const iconKey = meta.iconKey ?? catDef.iconKey;
+                const cls = CATEGORY_COLOR_CLASSES[colorKey] ?? CATEGORY_COLOR_CLASSES.gray;
+                const Icon = getCategoryIcon(iconKey);
+                const isExecuting = executingTemplateId === tpl.id;
+                const metaSummary = summarizeMeta(meta);
+                const isDeleting = deletingTemplateId === tpl.id;
+                return (
+                  <div
+                    key={tpl.id}
+                    className={cn(
+                      "group relative rounded-2xl border-2 bg-white dark:bg-[var(--color-card)] hover:-translate-y-0.5 hover:shadow-lg transition-all",
+                      cls.border,
+                      (isExecuting || isDeleting) && cn("ring-2", cls.ring),
+                      isDeleting && "opacity-60",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => executeExpenseFromTemplate(tpl)}
+                      disabled={isExecuting || isDeleting}
+                      aria-label={`Registrar gasto ${humanDesc || tpl.category} por S/${tpl.amount.toFixed(2)}`}
+                      className="w-full text-left p-4 rounded-2xl disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className={cn("inline-flex items-center justify-center h-10 w-10 rounded-xl shrink-0", cls.iconBg)}>
+                          <Icon className={cn("h-5 w-5", cls.text)} strokeWidth={2} />
+                        </span>
+                        <div className="flex-1 min-w-0 pr-7">
+                          <p className={cn("text-xs font-bold uppercase tracking-wider", cls.text)}>
+                            {tpl.category}
+                          </p>
+                          <p className="text-sm font-bold text-[var(--text-primary)] line-clamp-2 leading-tight mt-0.5">
+                            {humanDesc || "Sin descripción"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-end justify-between gap-2">
+                        <div>
+                          <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
+                            S/{tpl.amount.toFixed(2)}
+                          </p>
+                          {metaSummary && (
+                            <p className="text-xs text-[var(--text-secondary)] mt-1 font-medium">
+                              {metaSummary}
+                            </p>
+                          )}
+                          {meta.supplierName && (
+                            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate max-w-[16ch]">
+                              {meta.supplierName}
+                            </p>
+                          )}
+                        </div>
+                        <span className={cn(
+                          "inline-flex items-center gap-1 h-8 px-3 rounded-xl text-xs font-bold border-2 transition-all",
+                          cls.iconBg, cls.text, cls.border,
+                          "group-hover:scale-105"
+                        )}>
+                          {isExecuting ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Pagando
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+                              Pagar
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </button>
+                    {/* Botón eliminar — top-right, oculto hasta hover/focus */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(tpl, humanDesc); }}
+                      disabled={isExecuting || isDeleting}
+                      aria-label={`Eliminar ${humanDesc || tpl.category} del catálogo`}
+                      className="absolute top-2 right-2 h-8 w-8 inline-flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--data-error-500)]"
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
+          {expenseError && (
+            <div className="mt-4 p-3 rounded-2xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 border-2 border-[var(--data-error-500)]/40 text-sm font-semibold text-[var(--data-error-500)]">
+              {expenseError}
+            </div>
+          )}
         </div>
-      )}
+      </section>
+
+      {/* Modal nuevo template de gasto (componente completo) */}
+      <RecurringExpenseModal
+        open={showNewExpense}
+        onClose={() => setShowNewExpense(false)}
+        onCreated={() => { fetchExpenseCatalog(); playDing(); }}
+        tenantSlug={typeof window !== "undefined" ? (window.location.pathname.split("/")[2] || "main") : "main"}
+      />
 
       {/* Toggle "Mostrar inventario" */}
       <div className="flex items-center justify-between mb-3 p-3 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)]">
