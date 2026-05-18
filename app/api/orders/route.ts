@@ -776,7 +776,30 @@ export const POST = withApiHandler("orders-create", async (req) => {
               `;
             }
           });
-        } catch { /* swallow — log path is best-effort */ }
+        } catch (compErr) {
+          // audit P0 Cal #4 (Brandon 2026-05-18): antes catch silencioso
+          // dejaba INVENTORY DRIFT invisible — el stock quedaba decrementado
+          // y el coupon agotado sin orden persistida, sin observabilidad
+          // para reconciliación manual. Ahora log + Sentry capturan el
+          // event con tenantId y contexto del item para auditoría.
+          const errMsg = compErr instanceof Error ? compErr.message : String(compErr);
+          logger.error("[orders] compensating tx failed — INVENTORY DRIFT possible", {
+            error: errMsg,
+            tenantId,
+            itemCount: body.items.length,
+            verifiedCouponCode: verifiedCouponCode ?? null,
+            originalErr: addErr instanceof Error ? addErr.message : String(addErr),
+          });
+          Sentry.captureException(compErr, {
+            level: "error",
+            tags: { area: "orders", phase: "compensating-tx", tenant: tenantId },
+            extra: {
+              originalErr: addErr instanceof Error ? addErr.message : String(addErr),
+              itemCount: body.items.length,
+              hadCoupon: !!verifiedCouponCode,
+            },
+          });
+        }
       })().catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       throw addErr;
     }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { OrdersDB, NotificationLogsDB } from "@/lib/jsondb";
+import { CouponsDB } from "@/lib/db/coupons.db";
 import type { DbOrder } from "@/lib/jsondb";
 import { getWhatsAppLink, sendWhatsAppNotification } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-logger";
@@ -130,21 +131,19 @@ async function patchOrder(
     const statusChanged = parsed.data.status != null && parsed.data.status !== existing.status;
 
     // Log status change to history (fire-and-forget)
+    // audit P0 Cal #3 (2026-05-18): migrado a OrdersDB.addStatusHistory
+    // (antes prisma.orderStatusHistory.create directo violaba Regla 1).
     if (statusChanged) {
       // FIX 2026-05-07: persistir deliveryReason en el history note para
       // entrega manual. Si no, fallback a cancelReason (cancelaciones).
       const historyNote =
         parsed.data.deliveryReason ?? parsed.data.cancelReason ?? null;
-      // eslint-disable-next-line no-restricted-properties -- pre-existing: orderStatusHistory still has direct access; deuda técnica scheduled for migration to lib/db/orders.db.ts. tenantId guard in payload.
-      prisma.orderStatusHistory.create({
-        data: {
-          orderId: id,
-          fromStatus: existing.status as never,
-          toStatus: parsed.data.status as never,
-          changedBy: "admin",
-          note: historyNote,
-          tenantId: auth.tenantId,
-        },
+      OrdersDB.addStatusHistory(auth.tenantId, {
+        orderId: id,
+        fromStatus: existing.status,
+        toStatus: parsed.data.status!,
+        changedBy: "admin",
+        note: historyNote,
       }).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));
 
       // BUG-01 fix (Bug Hunter Report 2026-04-30):
@@ -198,18 +197,12 @@ async function patchOrder(
     // anti-duplicación por orderId, niveles Bronce/Plata/Oro/Diamante y audit trail.
     if (statusChanged && parsed.data.status === "entregado" && updated.customer.phone) {
       // Fetch order items with product categories for multiplier calculation.
-      // eslint-disable-next-line no-restricted-properties -- pre-existing: orderItem read scoped por orderId; migracion a lib/db/orders.db.ts pendiente.
-      prisma.orderItem.findMany({
-        where: { orderId: id },
-        select: {
-          price: true,
-          quantity: true,
-          product: { select: { category: true } },
-        },
-      }).then((orderItems) => {
+      // audit P0 Cal #3 (2026-05-18): migrado a OrdersDB.getItemsForLoyalty
+      // — antes prisma.orderItem.findMany directo violaba Regla 1.
+      OrdersDB.getItemsForLoyalty(auth.tenantId, id).then((orderItems) => {
         const categoryItems = orderItems.map((oi) => ({
-          categorySlug: oi.product?.category ?? null,
-          lineTotal: Number(oi.price) * oi.quantity,
+          categorySlug: oi.category,
+          lineTotal: oi.price * oi.quantity,
         }));
         return autoEarnLoyaltyPoints(
           auth.tenantId,
@@ -222,22 +215,18 @@ async function patchOrder(
     }
 
     // Auto-coupon "Vuelve pronto" 5% on delivery (fire-and-forget)
+    // audit P0 Cal #3 (2026-05-18): migrado a CouponsDB.create — antes
+    // prisma.coupon.create directo violaba Regla 1.
     if (statusChanged && parsed.data.status === "entregado") {
       const suffix = id.slice(-5).toUpperCase();
       const couponCode = `VUELVE${suffix}`;
-      // eslint-disable-next-line no-restricted-properties -- pre-existing: coupon side-effect; tenantId in payload. Migration to lib/db/coupons.db.ts pendiente.
-      prisma.coupon.create({
-        data: {
-          code: couponCode,
-          tenantId: auth.tenantId,
-          description: "¡Vuelve pronto! 5% de descuento en tu próxima compra",
-          discountType: "percent",
-          discountValue: 5,
-          maxUses: 1,
-          usedCount: 0,
-          active: true,
-          expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 días
-        },
+      CouponsDB.create(auth.tenantId, {
+        code: couponCode,
+        description: "¡Vuelve pronto! 5% de descuento en tu próxima compra",
+        discountType: "percent",
+        discountValue: 5,
+        maxUses: 1,
+        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 días
       }).then(() => {
         // Notify customer about coupon via push + WhatsApp
         if (updated.customer.phone) {
