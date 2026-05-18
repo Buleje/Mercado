@@ -22,20 +22,9 @@ const getReviewsByStoreId = cache((tenantId: string, storeId: string) =>
   StoreReviewsDB.listByStoreId(tenantId, storeId),
 );
 
-// Hours JSON lookup deduplicado + paralelizable. Antes vivía inline dentro
-// del render — al ser awaiteado seriamente, bloqueaba el flujo después de
-// categoryImages. Ahora corre en Promise.all con reviews y categoryImages.
-const getHoursJson = cache(async (storeId: string): Promise<unknown> => {
-  try {
-    const { prisma: prismaClient } = await import("@/lib/prisma");
-    const rows = await prismaClient.$queryRaw<Array<{ hoursJson: unknown }>>`
-      SELECT "hoursJson" FROM "Store" WHERE id = ${storeId} LIMIT 1
-    `;
-    return rows[0]?.hoursJson ?? null;
-  } catch {
-    return null;
-  }
-});
+// Hours JSON lookup — movido a lib/db/marketplace/stores.db.ts en Fase 2
+// del audit profundo (2026-05-18 P0 #29). Importamos el helper memoizado.
+import { getStoreHoursJson } from "@/lib/db/marketplace/stores.db";
 
 // Designer audit: el title antes mostraba la categoría raw "polleria" sin
 // tilde. Map mínimo a labels visibles correctos en español.
@@ -285,7 +274,7 @@ async function StoreDetailContent({ slug }: { slug: string }) {
   const [categoryImages, reviewsAndSummary, hoursJson, storeHoursLib] = await Promise.all([
     resolveCategoryImages(ownImages),
     getReviewsByStoreId(store.tenantId, store.id),
-    getHoursJson(store.id),
+    getStoreHoursJson(store.id),
     import("@/lib/marketplace-store-hours"),
   ]);
   const { reviews, summary: reviewSummary } = reviewsAndSummary;
@@ -304,7 +293,17 @@ async function StoreDetailContent({ slug }: { slug: string }) {
         });
       })();
 
-  const NOW = new Date();
+  // PENTEST 2026-05-18 Fase 2 P0 #31: timezone fix.
+  // ANTES: `new Date()` en Vercel devuelve UTC. computeIsOpenNow comparaba
+  // horas UTC contra horario local Peru. A las 23:30 UTC = 18:30 Lima,
+  // pero el sistema marcaba "cerrado" si la tienda cierra a 18:00.
+  // AHORA: construir un Date ajustado a America/Lima usando toLocaleString.
+  // El truco: `new Date(now.toLocaleString("en-US", {timeZone}))` crea un
+  // Date donde getHours() y getMinutes() reflejan la hora local de Lima.
+  const NOW_RAW = new Date();
+  const NOW = new Date(
+    NOW_RAW.toLocaleString("en-US", { timeZone: "America/Lima" }),
+  );
   const isOpenReal = hoursJson
     ? storeIsOpenNow(hoursJson as never, NOW)
     : computeIsOpenNow();

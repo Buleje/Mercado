@@ -360,15 +360,26 @@ function passesChips(
   for (const chip of chips) {
     switch (chip) {
       case "open_now": {
-        // Only filter if the store carries openHours data
+        // Only filter if the store carries openHours data.
+        // PENTEST 2026-05-18 Fase 2 P0 #28: openHours puede venir como
+        // Array<DayHours> O como Record<string, unknown> (JSONB del backend
+        // se deserializa como objeto en algunos paths). Si es Object con keys
+        // string, store.openHours[dayIndex] retorna undefined → return false
+        // silenciaba tiendas que SÍ están abiertas. Fix: validar Array.isArray
+        // antes de indexar. Si NO es array, skipear el filtro (mejor mostrar
+        // la tienda y dejar que el usuario decida que filtrarla por error).
         if (!("openHours" in store) || store.openHours == null) break;
+        if (!Array.isArray(store.openHours)) {
+          // Schema desconocido — saltar el filtro en lugar de silenciar la tienda
+          break;
+        }
         const now = new Date();
         const dayIndex = now.getDay(); // 0=Sun … 6=Sat
         const minutesNow = now.getHours() * 60 + now.getMinutes();
         const todayHours = store.openHours[dayIndex];
-        if (!todayHours) return false;
-        const open = todayHours.open * 60 + todayHours.openMin;
-        const close = todayHours.close * 60 + todayHours.closeMin;
+        if (!todayHours || typeof todayHours.open !== "number") break;
+        const open = todayHours.open * 60 + (todayHours.openMin ?? 0);
+        const close = todayHours.close * 60 + (todayHours.closeMin ?? 0);
         if (minutesNow < open || minutesNow >= close) return false;
         break;
       }

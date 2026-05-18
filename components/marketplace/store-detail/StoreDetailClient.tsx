@@ -306,11 +306,18 @@ export default function StoreDetailClient({
            - Jerarquía mejorada: logo circular + name + dot status "Abierto/Cerrado"
              en lugar de solo nombre centrado. Más informativo en 1 tap-zone.
            - Info button mantiene su lugar a la derecha. */}
+      {/* PENTEST 2026-05-18 Fase 2 P0 #32: sanitizar URL del banner.
+          ANTES: `url(${store.banner})` con URL no escapada. Admin malicioso
+          podía configurar banner con `;background: red;` o cerrar la
+          comilla simple e inyectar CSS adicional.
+          AHORA: encodeURI escapa caracteres peligrosos (paréntesis,
+          comillas) sin tocar los normales de URL. CSS interpreta solo la
+          URL correcta. */}
       <div
         className="lg:hidden sticky top-[56px] z-30 h-14 overflow-hidden border-b border-black/10 shadow-sm"
         style={{
           background: store.banner
-            ? `linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.55)), url(${store.banner}) center/cover`
+            ? `linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.55)), url("${encodeURI(store.banner).replace(/"/g, "%22")}") center/cover`
             : "linear-gradient(135deg, var(--accent-600,var(--accent)), var(--accent))",
         }}
       >

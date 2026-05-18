@@ -1,7 +1,30 @@
 import "server-only";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { type DbStore, slugify, normalizePhone } from "./types";
+
+/**
+ * Lookup deduplicado del hoursJson de una tienda por id.
+ * PENTEST 2026-05-18 Fase 2 P0 #29: extraído de app/marketplace/[slug]/page.tsx
+ * que tenía un getHoursJson cached con `prisma.$queryRaw` directo en RSC.
+ * Violaba CLAUDE.md regla #1 (toda query DB debe vivir en lib/db/*.db.ts).
+ *
+ * `react.cache` deduplica dentro de la misma request — múltiples componentes
+ * que pidan el hoursJson de la misma tienda solo disparan 1 query.
+ *
+ * hoursJson vive en la DB pero NO en el schema Prisma (expand-migrate-contract).
+ */
+export const getStoreHoursJson = cache(async (storeId: string): Promise<unknown> => {
+  try {
+    const rows = await prisma.$queryRaw<Array<{ hoursJson: unknown }>>`
+      SELECT "hoursJson" FROM "Store" WHERE id = ${storeId} LIMIT 1
+    `;
+    return rows[0]?.hoursJson ?? null;
+  } catch {
+    return null;
+  }
+});
 
 // ─── MarketplaceStoresDB ──────────────────────────────────────────────────────
 

@@ -425,16 +425,21 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Safety net (Visual QA P0-4 fix 2026-04-30): antes 1.2s era demasiado
-  // agresivo — en conexiones 3G de Pucallpa el vecino veía la página recargar
-  // mientras todavía cargaba. Aumentado a 8s + solo si NO hay loading state
-  // visible. La condición original (stores.length===0 && !error && !loading)
-  // se mantiene para casos reales de RSC cache stuck.
+  // Safety net (Visual QA P0-4 fix 2026-04-30, re-fix Fase 2 audit profundo
+  // 2026-05-18 P0 #26): antes hacía `window.location.reload()` a los 8s.
+  // En 3G de Pucallpa con carga lenta, el reload reiniciaba el timer y
+  // entraba en BUCLE INFINITO de reload — el cliente NUNCA veía las
+  // tiendas. Ahora: retry vía setRetryKey UNA SOLA VEZ (refetch sin reload
+  // de página) y solo si el state realmente está stuck. No reinicia el
+  // timer porque el useEffect tiene [] dep array (solo se monta 1×).
   useEffect(() => {
     if (typeof window === "undefined") return;
     const safety = setTimeout(() => {
       if (stores.length === 0 && !error && !loading) {
-        window.location.reload();
+        // setRetryKey reintenta el fetch sin recargar la página completa.
+        // Si tras esto sigue vacío, asumimos que no hay tiendas (estado
+        // legítimo) y NO insistimos — evita loop.
+        setRetryKey((k) => k + 1);
       }
     }, 8000);
     return () => clearTimeout(safety);
@@ -849,7 +854,13 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                     </ul>
                   );
                 })()}
-                {/* Mini ticker actividad reciente — solo si hay stores */}
+                {/* PENTEST 2026-05-18 Fase 2 P0 #27: stat "X pedidos en las
+                    últimas 2 horas" ELIMINADO. Antes calculaba
+                    `Math.floor(stores.length * 0.6)` — dato FALSO hardcodeado.
+                    Si un inversor o cliente descubría que era ficticio,
+                    destruía la credibilidad de toda la plataforma. Re-agregar
+                    cuando exista el endpoint /api/marketplace/stats con
+                    métricas reales del backend. */}
                 {stores.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-[var(--rule-soft)]">
                     <div className="flex items-center gap-2">
@@ -859,9 +870,9 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                       </span>
                       <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
                         <strong className="font-extrabold text-[var(--text-primary)]">
-                          {Math.max(1, Math.floor(stores.length * 0.6))} pedidos
+                          Comunidad activa
                         </strong>{" "}
-                        en las últimas 2 horas
+                        en Pucallpa
                       </p>
                     </div>
                   </div>
