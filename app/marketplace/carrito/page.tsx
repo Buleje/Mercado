@@ -74,8 +74,13 @@ function ItemRow({
             className="object-cover transition-transform group-hover/img:scale-105"
           />
         ) : (
-          <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)] bg-linear-to-br from-[var(--surface-sunken)] to-[var(--accent-soft)]/40">
-            <ShoppingCart className="h-7 w-7" strokeWidth={1.5} />
+          // Brandon 2026-05-18: fallback con INICIAL del producto + gradient accent.
+          // Antes mostraba un carrito gris vacío que se veía pobre cuando ningún
+          // item tenía foto. La inicial identifica el producto visualmente.
+          <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-sunken)] to-[var(--accent-soft)]/60">
+            <span className="text-2xl sm:text-3xl font-black text-[var(--accent)] uppercase">
+              {item.name.trim().charAt(0)}
+            </span>
           </div>
         )}
         {item.quantity > 1 && (
@@ -225,13 +230,19 @@ export default function CarritoPage() {
   );
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-5 sm:py-10 pb-32 lg:pb-10">
-      {/* ── Hero header (rediseñado Brandon mayo 15 v4) ──
-           - Link "Seguir comprando" más sutil
-           - Título XL con conteo embebido
-           - Trust pills strip: entrega rápida + pago seguro + pago al recibir + multi-tienda
-           - Acciones: Compartir + Vaciar (cuando hay items) */}
-      <div className="mb-6 sm:mb-8">
+    <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-4 sm:py-10 pb-32 lg:pb-10">
+      {/* ── Hero header v3 (Brandon 2026-05-18 rediseño) ──
+           Cambios vs v4:
+           - "Compartir lista WhatsApp" full-width verde ELIMINADO del hero
+             (competía con el CTA primario). Ahora vive como ícono entre
+             las acciones secundarias del header.
+           - Trust pills ELIMINADOS — redundantes con el summary final
+             y agregan ruido visual mobile.
+           - Stepper en mobile ahora compacto + integrado al header
+             (antes ocupaba toda una fila).
+           - Header más limpio: título + count + 3 íconos action (compartir,
+             vaciar). Foco en los productos, no en chrome. */}
+      <div className="mb-5 sm:mb-7">
         <Link
           href={seguirComprandoHref}
           className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-3"
@@ -240,7 +251,7 @@ export default function CarritoPage() {
           Seguir comprando
         </Link>
 
-        <div className="flex items-end justify-between gap-4 flex-wrap">
+        <div className="flex items-end justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
               Tu carrito
@@ -252,8 +263,6 @@ export default function CarritoPage() {
                 <span className="mx-1.5 text-[var(--text-tertiary)]">·</span>
                 <span className="font-extrabold text-[var(--text-primary)] tabular-nums">{storeIds.length}</span>
                 {" "}{storeIds.length === 1 ? "tienda" : "tiendas"}
-                <span className="mx-1.5 text-[var(--text-tertiary)]">·</span>
-                <span className="font-semibold text-[var(--accent)]">listo en minutos</span>
               </p>
             ) : (
               <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
@@ -262,7 +271,8 @@ export default function CarritoPage() {
             )}
           </div>
           {!isEmpty && (
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Compartir — ahora ícono sutil, no botón full-width verde */}
               <CompartirListaWhatsApp
                 items={Object.values(byStore).flatMap((s) =>
                   s.items.map((it) => ({
@@ -273,6 +283,7 @@ export default function CarritoPage() {
                   })),
                 )}
                 heading="Mi carrito Buleje"
+                compact
               />
               <button
                 type="button"
@@ -287,29 +298,19 @@ export default function CarritoPage() {
                   if (ok) clearAll();
                 }}
                 aria-label="Vaciar carrito"
-                className="inline-flex items-center gap-1.5 h-10 px-3 rounded-full border border-[var(--data-error-500)]/20 bg-[var(--data-error-50,#fef2f2)]/50 text-[length:var(--ts-xs)] font-bold text-[var(--data-error-600,#dc2626)] hover:bg-[var(--data-error-50,#fef2f2)] hover:border-[var(--data-error-500)]/40 transition-colors"
+                className="inline-flex items-center justify-center h-10 w-10 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)]/50 active:scale-95 transition-all"
               >
-                <Trash2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                <span className="hidden sm:inline">Vaciar</span>
+                <Trash2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
               </button>
             </div>
           )}
         </div>
-
-        {/* Trust strip — chips con scroll horizontal en mobile */}
-        {!isEmpty && (
-          <div className="mt-4 flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 pb-1">
-            <TrustPill icon={Truck} label="Entrega rápida" />
-            <TrustPill icon={ShieldCheck} label="Pago seguro" />
-            <TrustPill icon={Wallet} label="Pago al recibir" />
-            <TrustPill icon={Clock} label="Sin compromiso" />
-          </div>
-        )}
       </div>
 
-      {/* ── Stepper solo con items ────────────────────────────────── */}
+      {/* ── Stepper compacto (desktop muestra, mobile oculto — el sticky bottom
+           bar comunica el flow) ─────────────────────────────────────── */}
       {!isEmpty && (
-        <div className="mb-6 sm:mb-8 overflow-x-auto">
+        <div className="hidden sm:block mb-6 sm:mb-8 overflow-x-auto">
           <CheckoutStepper current="carrito" />
         </div>
       )}
@@ -426,12 +427,42 @@ export default function CarritoPage() {
               );
             })}
 
-            <div className="flex items-start gap-2.5 rounded-2xl border border-[var(--accent)]/20 bg-[var(--accent-soft)]/40 px-4 py-3">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-white shrink-0 mt-0.5">
-                <Truck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-              </span>
-              <p className="text-[length:var(--ts-xs)] sm:text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-relaxed">
-                Se crea un pedido por cada tienda. Cada una te contacta por WhatsApp con el detalle y el tiempo estimado de entrega.
+            {/* Brandon 2026-05-18: timeline visual del flujo post-checkout.
+                Antes era un banner plano de texto. Ahora 3 pasos con íconos
+                muestran qué pasa después del checkout: tienda confirma →
+                WhatsApp con detalle → delivery. Reduce ansiedad de compra. */}
+            <div className="rounded-2xl border border-[var(--accent)]/20 bg-[var(--accent-soft)]/40 p-4 sm:p-5">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
+                ¿Qué pasa después?
+              </p>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="flex flex-col items-center text-center gap-1.5">
+                  <span aria-hidden className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-sm">
+                    <Store className="h-4 w-4" strokeWidth={2.5} />
+                  </span>
+                  <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight">
+                    1. La tienda<br />confirma
+                  </p>
+                </div>
+                <div className="flex flex-col items-center text-center gap-1.5">
+                  <span aria-hidden className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white shadow-sm">
+                    <ShieldCheck className="h-4 w-4" strokeWidth={2.5} />
+                  </span>
+                  <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight">
+                    2. WhatsApp<br />con detalle
+                  </p>
+                </div>
+                <div className="flex flex-col items-center text-center gap-1.5">
+                  <span aria-hidden className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm">
+                    <Truck className="h-4 w-4" strokeWidth={2.5} />
+                  </span>
+                  <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight">
+                    3. Delivery<br />a tu casa
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] text-[var(--text-secondary)] text-center leading-snug">
+                Un pedido por tienda. Cada una con su propio ETA.
               </p>
             </div>
           </section>

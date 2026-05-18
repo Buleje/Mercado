@@ -26,6 +26,12 @@ interface CompartirListaWhatsAppProps {
   /** Texto del botón */
   label?: string;
   className?: string;
+  /**
+   * Brandon 2026-05-18: variante icon-only (40px circular) para mostrar
+   * en headers donde el botón verde full-width compete con CTAs primarios.
+   * Mantiene a11y via aria-label.
+   */
+  compact?: boolean;
 }
 
 function fmtCurrency(n: number) {
@@ -66,6 +72,7 @@ export default function CompartirListaWhatsApp({
   heading,
   label = "Compartir lista por WhatsApp",
   className,
+  compact = false,
 }: CompartirListaWhatsAppProps) {
   const [opening, setOpening] = useState(false);
 
@@ -79,6 +86,23 @@ export default function CompartirListaWhatsApp({
   }, [items, heading]);
 
   if (items.length === 0) return null;
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={handleShare}
+        disabled={opening}
+        aria-label={label}
+        className={
+          className ??
+          "inline-flex items-center justify-center h-10 w-10 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[#25D366] hover:border-[#25D366] hover:bg-[#25D366]/10 active:scale-95 disabled:opacity-60 transition-all"
+        }
+      >
+        <Share2 className="h-4 w-4" strokeWidth={2.25} />
+      </button>
+    );
+  }
 
   return (
     <button
