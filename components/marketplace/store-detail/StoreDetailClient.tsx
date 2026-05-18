@@ -24,9 +24,12 @@ import {
   ArrowLeft, Search, X, Menu, LayoutGrid, List, Heart, Info,
   MapPin, Clock, Wallet, Phone, UserCircle,
   Home as HomeIcon, Store as StoreIcon, Package, Tag, ArrowRight,
+  ShoppingCart, MessageCircle,
 } from "@buleje/design-system/icons";
 import { CartBadge } from "@/components/marketplace/MarketplaceCart";
 import { cn } from "@/lib/utils";
+import { useCustomer } from "@/contexts/customer-context";
+import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import StoreBannerArea from "./StoreBannerArea";
 import StoreHero from "./StoreHero";
 import StorePromoBannersStrip from "./StorePromoBannersStrip";
@@ -826,12 +829,15 @@ export default function StoreDetailClient({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NavDrawer — menú de navegación general (hamburguesa).
-// Brandon mayo 14 v6: el hamburguesa abre ESTE drawer (no el de categorías).
-// Links principales del marketplace: Inicio, Tiendas, Negocios, Mi cuenta,
-// Mis pedidos, Favoritos.
+// NavDrawer v2 — menú de navegación general (hamburguesa).
+// Brandon 2026-05-18 rediseño: hero con identidad de usuario (logueado/no),
+// quick chips (carrito + estado), 3 secciones organizadas (Mi cuenta /
+// Buleje / Ayuda), footer con CTA Abrir tienda.
 // ─────────────────────────────────────────────────────────────────────────────
 function NavDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { customer } = useCustomer();
+  const { itemCount } = useMarketplaceCart();
+
   useEffect(() => {
     if (!open) return;
     document.body.style.overflow = "hidden";
@@ -847,18 +853,36 @@ function NavDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   if (!open) return null;
 
-  const NAV_LINKS: Array<{
-    href: string;
-    label: string;
-    desc: string;
-    Icon: typeof HomeIcon;
+  const isLoggedIn = !!customer?.email;
+  const greetingName = customer?.name?.split(" ")[0] ?? customer?.email?.split("@")[0] ?? "";
+
+  // Secciones organizadas — escaneable y jerárquica
+  const SECTIONS: Array<{
+    title: string;
+    links: Array<{
+      href: string;
+      label: string;
+      desc?: string;
+      Icon: typeof HomeIcon;
+      badge?: number | string;
+    }>;
   }> = [
-    { href: "/", label: "Inicio", desc: "Volver al home Buleje", Icon: HomeIcon },
-    { href: "/tiendas", label: "Tiendas", desc: "Directorio completo", Icon: StoreIcon },
-    { href: "/marketplace/ofertas", label: "Ofertas", desc: "Promos del día", Icon: Tag },
-    { href: "/marketplace/mi-cuenta/pedidos", label: "Mis pedidos", desc: "Historial y tracking", Icon: Package },
-    { href: "/marketplace/mi-cuenta/favoritos", label: "Favoritos", desc: "Tiendas y productos guardados", Icon: Heart },
-    { href: "/marketplace/mi-cuenta", label: "Mi cuenta", desc: "Perfil, direcciones, cupones", Icon: UserCircle },
+    {
+      title: "Mi cuenta",
+      links: [
+        { href: "/marketplace/mi-cuenta/pedidos", label: "Mis pedidos", desc: "Historial y tracking", Icon: Package },
+        { href: "/marketplace/mi-cuenta/favoritos", label: "Favoritos", desc: "Tiendas y productos guardados", Icon: Heart },
+        { href: "/marketplace/mi-cuenta", label: "Perfil", desc: "Datos, direcciones, cupones", Icon: UserCircle },
+      ],
+    },
+    {
+      title: "Explorar Buleje",
+      links: [
+        { href: "/", label: "Inicio", Icon: HomeIcon },
+        { href: "/tiendas", label: "Todas las tiendas", Icon: StoreIcon },
+        { href: "/marketplace/ofertas", label: "Ofertas del día", Icon: Tag },
+      ],
+    },
   ];
 
   return (
@@ -872,72 +896,168 @@ function NavDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
         type="button"
         onClick={onClose}
         aria-label="Cerrar menú"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+        className="absolute inset-0 bg-black/65 backdrop-blur-md animate-in fade-in-0 duration-200"
       />
-      <aside className="relative flex flex-col w-full max-w-[320px] h-full bg-[var(--surface-canvas)] shadow-2xl animate-in slide-in-from-left duration-200">
-        {/* Header con accent */}
+      <aside className="relative flex flex-col w-full max-w-[340px] h-full bg-[var(--surface-canvas)] shadow-2xl rounded-r-3xl overflow-hidden animate-in slide-in-from-left-4 duration-300">
+        {/* Hero con identidad de usuario */}
         <div className="relative overflow-hidden bg-linear-to-br from-[var(--accent-600,var(--accent))] to-[var(--accent)] text-white px-5 pt-6 pb-5">
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-white/10 blur-2xl"
+            className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-white/12 blur-2xl"
           />
-          <div className="relative flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/80 leading-tight">
-                Buleje
-              </p>
-              <p className="text-xl font-extrabold tracking-tight leading-tight">
-                Menú
-              </p>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-20 -left-12 h-32 w-32 rounded-full bg-white/8 blur-2xl"
+          />
+          <div className="relative">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="min-w-0">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/80 leading-tight mb-1">
+                  Buleje
+                </p>
+                {isLoggedIn ? (
+                  <>
+                    <p className="text-xl font-black tracking-tight leading-tight truncate">
+                      Hola, {greetingName} 👋
+                    </p>
+                    <p className="text-[length:var(--ts-xs)] font-bold text-white/85 leading-tight mt-1 truncate">
+                      {customer?.email}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xl font-black tracking-tight leading-tight">
+                      ¡Bienvenido!
+                    </p>
+                    <p className="text-[length:var(--ts-xs)] font-bold text-white/85 leading-tight mt-1">
+                      Iniciá sesión para ver tus pedidos
+                    </p>
+                  </>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Cerrar menú"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 active:scale-95 transition-all shrink-0 ring-1 ring-white/15"
+              >
+                <X className="h-5 w-5" strokeWidth={2.5} />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar menú"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors shrink-0"
-            >
-              <X className="h-5 w-5" strokeWidth={2.5} />
-            </button>
+
+            {/* Quick chips: carrito + estado sesión */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {itemCount > 0 && (
+                <Link
+                  href="/marketplace/carrito"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-white text-[var(--accent)] text-[length:var(--ts-xs)] font-black tabular-nums active:scale-95 transition-transform shadow-md"
+                >
+                  <ShoppingCart className="h-3.5 w-3.5" strokeWidth={2.75} />
+                  {itemCount} en carrito
+                  <ArrowRight className="h-3 w-3" strokeWidth={2.75} />
+                </Link>
+              )}
+              {!isLoggedIn && (
+                <Link
+                  href="/marketplace/mi-cuenta"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-white text-[var(--accent)] text-[length:var(--ts-xs)] font-black active:scale-95 transition-transform shadow-md"
+                >
+                  Iniciar sesión
+                  <ArrowRight className="h-3 w-3" strokeWidth={2.75} />
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Links */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1.5" aria-label="Navegación principal">
-          {NAV_LINKS.map(({ href, label, desc, Icon }) => (
-            <Link
-              key={href}
-              href={href}
+        {/* Secciones de links */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5" aria-label="Navegación principal">
+          {SECTIONS.map((section) => (
+            <div key={section.title}>
+              <p className="px-2 mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                {section.title}
+              </p>
+              <div className="space-y-1">
+                {section.links.map(({ href, label, desc, Icon, badge }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={onClose}
+                    className="group flex items-center gap-3 rounded-2xl p-2.5 hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all"
+                  >
+                    <span
+                      aria-hidden
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white transition-colors shrink-0"
+                    >
+                      <Icon className="h-4.5 w-4.5" strokeWidth={2.25} />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">
+                        {label}
+                      </p>
+                      {desc && (
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-tight mt-0.5 font-medium">
+                          {desc}
+                        </p>
+                      )}
+                    </div>
+                    {badge !== undefined && (
+                      <span className="shrink-0 inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-[var(--accent)] px-2 text-[length:var(--ts-2xs)] font-black text-white tabular-nums">
+                        {badge}
+                      </span>
+                    )}
+                    <ArrowRight
+                      className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0"
+                      strokeWidth={2.25}
+                    />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Sección Ayuda — separada y con accent distinto */}
+          <div>
+            <p className="px-2 mb-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Ayuda
+            </p>
+            <a
+              href="https://wa.me/51999999999?text=Hola%2C%20necesito%20ayuda%20con%20Buleje"
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={onClose}
-              className="group flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 p-3.5 transition-all"
+              className="group flex items-center gap-3 rounded-2xl p-2.5 hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all"
             >
               <span
                 aria-hidden
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white transition-colors shrink-0"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#25D366]/15 text-[#25D366] group-hover:bg-[#25D366] group-hover:text-white transition-colors shrink-0"
               >
-                <Icon className="h-5 w-5" strokeWidth={2} />
+                <MessageCircle className="h-4.5 w-4.5" strokeWidth={2.25} />
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">
-                  {label}
+                  WhatsApp soporte
                 </p>
-                <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-tight mt-0.5">
-                  {desc}
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-tight mt-0.5 font-medium">
+                  Te respondemos en menos de 10 min
                 </p>
               </div>
               <ArrowRight
-                className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0"
+                className="h-4 w-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] shrink-0"
                 strokeWidth={2.25}
               />
-            </Link>
-          ))}
+            </a>
+          </div>
         </nav>
 
-        {/* Footer — CTA "abrir tu tienda" */}
+        {/* Footer CTA */}
         <div className="border-t border-[var(--rule-base)] p-4">
           <Link
             href="/negocios"
             onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full h-12 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-extrabold hover:bg-[var(--text-primary)]/90 transition-colors"
+            className="flex items-center justify-center gap-2 w-full h-12 rounded-2xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-extrabold hover:bg-[var(--text-primary)]/90 active:scale-95 transition-all shadow-lg"
           >
             ¿Tenés una tienda? Abrila acá
             <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
