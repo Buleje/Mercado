@@ -54,10 +54,14 @@ vi.mock("@/lib/integrations/reniec", () => ({
   verifyDni: mockVerifyDni,
 }));
 
-const { mockFindMany, mockNotifCreateOrReuse, mockSendVendorWa } = vi.hoisted(() => ({
+const { mockFindMany, mockNotifCreateOrReuse, mockSendAlert } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
   mockNotifCreateOrReuse: vi.fn(async () => ({ id: "n-mock", created: true })),
-  mockSendVendorWa: vi.fn(async () => ({ sent: true, queued: true })),
+  mockSendAlert: vi.fn(async () => ({
+    waSent: true,
+    emailSent: false,
+    anyChannelOk: true,
+  })),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -73,7 +77,7 @@ vi.mock("@/lib/db/notification-center.db", () => ({
 }));
 
 vi.mock("@/lib/notifications/vendor-identity-alert", () => ({
-  sendVendorIdentityWhatsApp: mockSendVendorWa,
+  sendVendorIdentityAlert: mockSendAlert,
 }));
 
 import { GET } from "@/app/api/cron/vendor-identity-recheck/route";
@@ -397,9 +401,9 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
     const r = await GET(makeReq());
     const body = await r.json();
 
-    expect(mockSendVendorWa).toHaveBeenCalledTimes(1);
+    expect(mockSendAlert).toHaveBeenCalledTimes(1);
     const waCall = (
-      mockSendVendorWa.mock.calls as unknown as Array<
+      mockSendAlert.mock.calls as unknown as Array<
         [{ tenantId: string; vendorId: string; kind: string; contactPhone: string; rucLast4: string }]
       >
     )[0]?.[0];
@@ -412,7 +416,7 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
     expect(body.waSentCount).toBe(1);
   });
 
-  it("WA NO enviado cuando notification se reusa (created=false)", async () => {
+  it("alerta NO enviada cuando notification se reusa (created=false)", async () => {
     mockFindMany.mockResolvedValueOnce([
       {
         id: "v-reuse",
@@ -437,12 +441,13 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
     const r = await GET(makeReq());
     const body = await r.json();
 
-    expect(mockSendVendorWa).not.toHaveBeenCalled();
+    expect(mockSendAlert).not.toHaveBeenCalled();
     expect(body.notifiedCount).toBe(0);
     expect(body.waSentCount).toBe(0);
+    expect(body.emailSentCount).toBe(0);
   });
 
-  it("vendor sin contactPhone → no intenta enviar WA aunque notification se cree", async () => {
+  it("vendor sin phone ni email → no intenta enviar alerta", async () => {
     mockFindMany.mockResolvedValueOnce([
       {
         id: "v-no-phone",
@@ -450,7 +455,8 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
         contactDni: null,
         contactName: "X",
         contactPhone: null,
-        businessName: "Sin Phone",
+        contactEmail: null,
+        businessName: "Sin Phone Ni Email",
         tenantId: "t-no-phone",
         tenantSlug: "no-phone",
       },
@@ -464,7 +470,41 @@ describe("GET /api/cron/vendor-identity-recheck", () => {
     mockNotifCreateOrReuse.mockResolvedValueOnce({ id: "n", created: true });
 
     await GET(makeReq());
-    expect(mockSendVendorWa).not.toHaveBeenCalled();
+    expect(mockSendAlert).not.toHaveBeenCalled();
+  });
+
+  it("vendor sin phone pero con email → cron envía solo email", async () => {
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "v-email-only",
+        ruc: "20999999000",
+        contactDni: null,
+        contactName: "X",
+        contactPhone: null,
+        contactEmail: "owner@bodega.pe",
+        businessName: "Email Only",
+        tenantId: "t-email",
+        tenantSlug: "email",
+      },
+    ]);
+    mockVerifyRuc.mockResolvedValueOnce({
+      ok: false,
+      source: "apisperu",
+      reason: "not_found",
+    });
+    mockIsInvoiceable.mockReturnValueOnce(false);
+    mockNotifCreateOrReuse.mockResolvedValueOnce({ id: "n-em", created: true });
+    mockSendAlert.mockResolvedValueOnce({
+      waSent: false,
+      emailSent: true,
+      anyChannelOk: true,
+    });
+
+    const r = await GET(makeReq());
+    const body = await r.json();
+    expect(mockSendAlert).toHaveBeenCalledTimes(1);
+    expect(body.waSentCount).toBe(0);
+    expect(body.emailSentCount).toBe(1);
   });
 
   it("error en verifyRuc → contabiliza errors, no bloquea siguientes", async () => {

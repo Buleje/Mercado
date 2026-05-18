@@ -19,6 +19,9 @@ import DeliveryUpdateEmail, {
 import WeeklyReportEmail, {
   type WeeklyReportProps,
 } from "./templates/weekly-report";
+import VendorIdentityAlertEmail, {
+  type VendorIdentityAlertProps,
+} from "./templates/vendor-identity-alert";
 
 // ──────────────────────────────────────────────
 //  Cliente Resend — singleton por módulo
@@ -215,6 +218,34 @@ export async function sendWeeklyReportEmail(
 }
 
 // ──────────────────────────────────────────────
+//  7. Vendor identity alert (RENIEC/SUNAT degradación)
+// ──────────────────────────────────────────────
+
+const ALERT_SUBJECT: Record<VendorIdentityAlertProps["kind"], string> = {
+  "ruc-changed": "Tu RUC pasó a estado no apto para facturar",
+  "ruc-not-found": "Tu RUC no figura en SUNAT",
+  "dni-not-found": "El DNI registrado ya no existe en RENIEC",
+};
+
+export async function sendVendorIdentityAlertEmail(
+  to: string,
+  props: VendorIdentityAlertProps,
+): Promise<SendResult> {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM,
+      to,
+      subject: `🛡️ ${ALERT_SUBJECT[props.kind]} — Buleje`,
+      html: renderHtml(VendorIdentityAlertEmail, props),
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true, id: data?.id };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+// ──────────────────────────────────────────────
 //  Re-exportar tipos para uso externo
 // ──────────────────────────────────────────────
 
@@ -225,4 +256,5 @@ export type {
   FiadoReminderProps,
   DeliveryUpdateProps,
   WeeklyReportProps,
+  VendorIdentityAlertProps,
 };

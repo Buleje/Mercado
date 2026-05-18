@@ -22,6 +22,8 @@ interface VendorHealthSummary {
   notifiedCount?: number;
   /** Mensajes WhatsApp enviados al vendor — solo cuando notification.created=true */
   waSentCount?: number;
+  /** Emails enviados al vendor — solo cuando WA falló o no había phone */
+  emailSentCount?: number;
   alerts: Array<{
     vendorId: string;
     tenantSlug: string | null;

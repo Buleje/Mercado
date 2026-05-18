@@ -12,20 +12,29 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-const { mockSendWaQueued } = vi.hoisted(() => ({
+const { mockSendWaQueued, mockSendEmail } = vi.hoisted(() => ({
   mockSendWaQueued: vi.fn(),
+  mockSendEmail: vi.fn(),
 }));
 
 vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppQueued: mockSendWaQueued,
 }));
 
-import { sendVendorIdentityWhatsApp } from "@/lib/notifications/vendor-identity-alert";
+vi.mock("@/lib/email/send", () => ({
+  sendVendorIdentityAlertEmail: mockSendEmail,
+}));
 
-describe("sendVendorIdentityWhatsApp", () => {
+import {
+  sendVendorIdentityWhatsApp,
+  sendVendorIdentityAlert,
+} from "@/lib/notifications/vendor-identity-alert";
+
+describe("sendVendorIdentityWhatsApp (legacy)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSendWaQueued.mockResolvedValue({ queued: true, jobId: "j1" });
+    mockSendEmail.mockResolvedValue({ success: true, id: "e1" });
   });
 
   it("dispatch WA con titular y CTA del kind ruc-changed", async () => {
@@ -127,5 +136,121 @@ describe("sendVendorIdentityWhatsApp", () => {
     });
     expect(res.sent).toBe(false);
     expect(res.queued).toBe(false);
+  });
+});
+
+describe("sendVendorIdentityAlert (multi-canal con fallback email)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSendWaQueued.mockResolvedValue({ queued: true, jobId: "j1" });
+    mockSendEmail.mockResolvedValue({ success: true, id: "e1" });
+  });
+
+  it("WA ok → no envía email", async () => {
+    const res = await sendVendorIdentityAlert({
+      tenantId: "t-1",
+      vendorId: "v-1",
+      businessName: "Bodega",
+      contactPhone: "51987654321",
+      contactEmail: "x@y.com",
+      kind: "ruc-changed",
+    });
+    expect(res.waSent).toBe(true);
+    expect(res.emailSent).toBe(false);
+    expect(res.anyChannelOk).toBe(true);
+    expect(mockSendWaQueued).toHaveBeenCalled();
+    expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+
+  it("WA falla → fallback email", async () => {
+    mockSendWaQueued.mockRejectedValueOnce(new Error("twilio down"));
+    const res = await sendVendorIdentityAlert({
+      tenantId: "t-1",
+      vendorId: "v-2",
+      businessName: "Bodega",
+      contactPhone: "51987654321",
+      contactEmail: "x@y.com",
+      kind: "ruc-changed",
+    });
+    expect(res.waSent).toBe(false);
+    expect(res.emailSent).toBe(true);
+    expect(res.anyChannelOk).toBe(true);
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("sin phone, con email → solo email", async () => {
+    const res = await sendVendorIdentityAlert({
+      tenantId: "t-1",
+      vendorId: "v-3",
+      businessName: "Bodega",
+      contactPhone: null,
+      contactEmail: "owner@bodega.pe",
+      kind: "ruc-not-found",
+    });
+    expect(mockSendWaQueued).not.toHaveBeenCalled();
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(res.waSent).toBe(false);
+    expect(res.emailSent).toBe(true);
+  });
+
+  it("con phone, sin email → solo WA", async () => {
+    const res = await sendVendorIdentityAlert({
+      tenantId: "t-1",
+      vendorId: "v-4",
+      businessName: "Bodega",
+      contactPhone: "51987654321",
+      contactEmail: null,
+      kind: "ruc-changed",
+    });
+    expect(mockSendWaQueued).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail).not.toHaveBeenCalled();
+    expect(res.waSent).toBe(true);
+    expect(res.emailSent).toBe(false);
+  });
+
+  it("sin phone ni email → no envía nada, anyChannelOk=false", async () => {
+    const res = await sendVendorIdentityAlert({
+      tenantId: "t-1",
+      vendorId: "v-5",
+      businessName: "Bodega",
+      contactPhone: null,
+      contactEmail: null,
+      kind: "ruc-changed",
+    });
+    expect(res.waSent).toBe(false);
+    expect(res.emailSent).toBe(false);
+    expect(res.anyChannelOk).toBe(false);
+    expect(mockSendWaQueued).not.toHaveBeenCalled();
+    expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+
+  it("WA falla + email falla → anyChannelOk=false", async () => {
+    mockSendWaQueued.mockRejectedValueOnce(new Error("twilio down"));
+    mockSendEmail.mockResolvedValueOnce({ success: false, error: "resend down" });
+    const res = await sendVendorIdentityAlert({
+      tenantId: "t-1",
+      vendorId: "v-6",
+      businessName: "Bodega",
+      contactPhone: "51987654321",
+      contactEmail: "x@y.com",
+      kind: "ruc-changed",
+    });
+    expect(res.waSent).toBe(false);
+    expect(res.emailSent).toBe(false);
+    expect(res.anyChannelOk).toBe(false);
+  });
+
+  it("email inválido (sin @) → no intenta enviar email", async () => {
+    mockSendWaQueued.mockRejectedValueOnce(new Error("down"));
+    const res = await sendVendorIdentityAlert({
+      tenantId: "t-1",
+      vendorId: "v-7",
+      businessName: "Bodega",
+      contactPhone: "51987654321",
+      contactEmail: "not-an-email",
+      kind: "ruc-changed",
+    });
+    expect(mockSendEmail).not.toHaveBeenCalled();
+    expect(res.emailSent).toBe(false);
   });
 });
