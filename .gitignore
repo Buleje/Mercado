@@ -73,6 +73,9 @@ SESSION_HANDOFF*.md
 /.claude/cache/
 /.claude/settings.local.json
 /.claude/scheduled_tasks.lock
+/.claude/.watchdog.log
+/.claude/.watchdog.pid
+/.claude/.mem-guard.log
 
 # Phase 3 runtime artifacts (never commit)
 /backups/db/*.sql

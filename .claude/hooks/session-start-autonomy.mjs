@@ -189,6 +189,31 @@ async function main() {
 
   log(`Chromium: ${chromiumStatus()}`);
 
+  // Watchdog: mata Chromiums/tsc huerfanos cada 60s. Previene bloqueo total de WSL.
+  try {
+    const watchdogPath = `${projectRoot}/.claude/hooks/bsm-watchdog.sh`;
+    const pidFile = `${projectRoot}/.claude/.watchdog.pid`;
+    let alreadyRunning = false;
+    try {
+      const existingPid = parseInt(spawnSync("cat", [pidFile]).stdout?.toString().trim() || "0", 10);
+      if (existingPid && spawnSync("kill", ["-0", String(existingPid)]).status === 0) alreadyRunning = true;
+    } catch {}
+    if (!alreadyRunning) {
+      const wd = spawn("bash", [watchdogPath], {
+        cwd: projectRoot,
+        detached: true,
+        stdio: ["ignore", "ignore", "ignore"],
+        env: { ...process.env, CLAUDE_PROJECT_DIR: projectRoot },
+      });
+      wd.unref();
+      log(`Watchdog: 🛡️ arrancado pid=${wd.pid} (mata chromium/tsc huerfanos cada 60s)`);
+    } else {
+      log(`Watchdog: 🛡️ ya corriendo`);
+    }
+  } catch (err) {
+    log(`Watchdog: ⚠️ no pude arrancar: ${err.message?.slice(0, 60)}`);
+  }
+
   // Alerta sobre stashes sospechosos (post-incidente 2026-05-12)
   const susStashes = checkSuspiciousStashes();
   if (susStashes && susStashes.length > 0) {
