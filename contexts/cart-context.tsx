@@ -6,6 +6,7 @@ import {
   useReducer,
   useEffect,
   useCallback,
+  useMemo,
   useRef,
   type ReactNode,
 } from "react";
@@ -593,10 +594,66 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   const openCheckout = useCallback(() => dispatch({ type: "OPEN_CHECKOUT" }), []);
   const closeCheckout = useCallback(() => dispatch({ type: "CLOSE_CHECKOUT" }), []);
 
+  // audit P0 #6 (Brandon 2026-05-18): memoizar value para evitar
+  // re-render en cadena de TODA app con cart. Antes value={{...}} creaba
+  // referencia nueva cada render del provider (causado por dispatch,
+  // audio, sync BroadcastChannel) → todos los consumers re-renderizaban.
+  // Deps: state granular + callbacks (callbacks ya son estables por useCallback).
+  const value = useMemo(
+    () => ({
+      items: state.items,
+      isOpen: state.isOpen,
+      count,
+      total,
+      hasPendingOrder: state.hasPendingOrder,
+      confirmModalOpen: state.confirmModalOpen,
+      confirmFromCheckout: state.confirmFromCheckout,
+      checkoutOpen: state.checkoutOpen,
+      markOrderPending,
+      clearPendingOrder,
+      openConfirmModal,
+      closeConfirmModal,
+      openCheckout,
+      closeCheckout,
+      addItem,
+      addMultiple,
+      removeItem,
+      updateQty,
+      setItemNote,
+      clear,
+      toggle,
+      open: openCart,
+      close,
+    }),
+    [
+      state.items,
+      state.isOpen,
+      state.hasPendingOrder,
+      state.confirmModalOpen,
+      state.confirmFromCheckout,
+      state.checkoutOpen,
+      count,
+      total,
+      markOrderPending,
+      clearPendingOrder,
+      openConfirmModal,
+      closeConfirmModal,
+      openCheckout,
+      closeCheckout,
+      addItem,
+      addMultiple,
+      removeItem,
+      updateQty,
+      setItemNote,
+      clear,
+      toggle,
+      openCart,
+      close,
+    ],
+  );
+
   return (
-    <CartContext.Provider
-      value={{ items: state.items, isOpen: state.isOpen, count, total, hasPendingOrder: state.hasPendingOrder, confirmModalOpen: state.confirmModalOpen, confirmFromCheckout: state.confirmFromCheckout, checkoutOpen: state.checkoutOpen, markOrderPending, clearPendingOrder, openConfirmModal, closeConfirmModal, openCheckout, closeCheckout, addItem, addMultiple, removeItem, updateQty, setItemNote, clear, toggle, open: openCart, close }}
-    >
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );

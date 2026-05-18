@@ -13,7 +13,7 @@
  *   - Integrar mapa Leaflet para zona visual
  */
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
@@ -54,6 +54,7 @@ import TiendasSectionHeader from "@/components/marketplace/TiendasSectionHeader"
 import MisPedidosFavoritosStrip from "@/components/marketplace/MisPedidosFavoritosStrip";
 import RepetirUltimoPedido from "@/components/marketplace/RepetirUltimoPedido";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
+import { useNavScrollHide } from "@/hooks/use-nav-scroll-hide";
 import dynamic from "next/dynamic";
 
 const TiendasMap = dynamic(() => import("@/components/marketplace/TiendasMap"), {
@@ -148,6 +149,15 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   const [zone, setZone] = useState(
     () => initialZone ?? searchParams.get("zona") ?? "",
   );
+  // Sticky bar de subcategorías mobile — visible cuando la sección original
+  // sale del viewport por scroll. Brandon mayo 18 2026.
+  // mayo 18 v2: sincronizada con la dirección de scroll (hide-down/show-up)
+  // como el nav principal, vía useNavScrollHide.
+  const subcategorySectionRef = useRef<HTMLDivElement | null>(null);
+  const [scrolledPastSubcategories, setScrolledPastSubcategories] = useState(false);
+  const navVisible = useNavScrollHide(80);
+  const showStickySubcategoryBar = scrolledPastSubcategories && navVisible;
+
   // Modal de zonas — Brandon mayo 14 2026: antes mostrábamos las zonas como
   // cajitas inline (10+ items horizontales que saturaban la UI). Ahora se
   // abre un modal lateral con la lista — un solo botón "Filtrar por zona".
@@ -204,6 +214,28 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
     ? subcategories.find((s) => s.id === subCategoryId) ?? null
     : null;
   const linkedStoreSlugsForSub = activeSubcategory?.linkedStoreSlugs ?? null;
+
+  // Observer para detectar cuando la sección original sale del viewport.
+  // El estado final de visibilidad de la sticky bar se combina con la
+  // dirección de scroll en `showStickySubcategoryBar` (arriba).
+  useEffect(() => {
+    const el = subcategorySectionRef.current;
+    if (!el || subcategories.length === 0) {
+      setScrolledPastSubcategories(false);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        const past =
+          !entry.isIntersecting && entry.boundingClientRect.top < 0;
+        setScrolledPastSubcategories(past);
+      },
+      { rootMargin: "-72px 0px 0px 0px", threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [subcategories.length]);
 
   // ── Quick-filter chips ──
   const [activeChips, setActiveChips] = useState<Set<QuickChipId>>(() => {
@@ -419,7 +451,10 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   );
 
   // ── TS-22 sort: deriva la lista ordenada de filteredStores ──
-  const sortedStores = (() => {
+  // audit P0 #7 (Brandon 2026-05-18): IIFEs ejecutaban en cada render
+  // (scroll, hover, cambio de filtros menores). Con useMemo solo se
+  // recalcula cuando filteredStores/sortKey/subcategoría cambian.
+  const sortedStores = useMemo(() => {
     if (sortKey === "relevance") return filteredStores;
     const arr = [...filteredStores];
     switch (sortKey) {
@@ -449,16 +484,16 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         break;
     }
     return arr;
-  })();
+  }, [filteredStores, sortKey]);
 
   // Filtrado por subcategoría (cuando tiene tiendas vinculadas)
-  const finalStores = (() => {
+  const finalStores = useMemo(() => {
     if (!subCategoryId || !linkedStoreSlugsForSub || linkedStoreSlugsForSub.length === 0) {
       return sortedStores;
     }
     const slugSet = new Set(linkedStoreSlugsForSub);
     return sortedStores.filter((s) => slugSet.has(s.slug));
-  })();
+  }, [sortedStores, subCategoryId, linkedStoreSlugsForSub]);
 
   const hasFilters =
     category !== "todos" ||
@@ -480,6 +515,85 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="tiendas_directorio" />
+
+      {/* ── Sticky subcategory bar (mobile only) ──
+           Aparece debajo del nav cuando el usuario hace scroll past
+           la sección original. Sigue la misma lógica de visibilidad
+           que el nav (hide-down / show-up) + clase
+           `nav-smooth-transition` para timing/easing idéntico. */}
+      {subcategories.length > 0 && (
+        <div
+          aria-hidden={!showStickySubcategoryBar}
+          style={{
+            transform: showStickySubcategoryBar
+              ? "translateY(0)"
+              : "translateY(-110%)",
+            opacity: showStickySubcategoryBar ? 1 : 0,
+            visibility: showStickySubcategoryBar ? "visible" : "hidden",
+            transitionProperty: "transform, opacity, visibility",
+            transitionDuration: "550ms",
+            transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+            transitionDelay: showStickySubcategoryBar ? "0ms" : "0ms, 0ms, 550ms",
+          }}
+          className={cn(
+            "sm:hidden fixed left-0 right-0 top-16 z-40 will-change-transform",
+            showStickySubcategoryBar
+              ? "pointer-events-auto"
+              : "pointer-events-none",
+          )}
+        >
+          <div className="border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur-md shadow-[0_4px_16px_-8px_rgba(0,0,0,0.15)]">
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide px-3 py-2.5">
+              <button
+                onClick={() => setSubCategoryId(null)}
+                aria-pressed={subCategoryId === null}
+                className={cn(
+                  "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-extrabold transition-colors whitespace-nowrap",
+                  subCategoryId === null
+                    ? "bg-[var(--accent)] text-white shadow-sm"
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <Boxes className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                Todas
+              </button>
+              {subcategories.map((s) => {
+                const active = subCategoryId === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setSubCategoryId(active ? null : s.id)}
+                    aria-pressed={active}
+                    title={s.description || s.label}
+                    className={cn(
+                      "shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-extrabold transition-colors whitespace-nowrap",
+                      active
+                        ? "bg-[var(--accent)] text-white shadow-sm"
+                        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                    )}
+                  >
+                    {s.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={s.imageUrl}
+                        alt=""
+                        className="h-5 w-5 rounded-md object-cover shrink-0"
+                      />
+                    ) : (
+                      <Boxes
+                        className="h-3.5 w-3.5"
+                        strokeWidth={2.25}
+                        aria-hidden
+                      />
+                    )}
+                    <span className="max-w-[120px] truncate">{s.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── TS-47 breadcrumb visible + JSON-LD ──────────────────────────────
            Oculto en modo `tiendas-only` — el link "Inicio" llevaría
@@ -852,8 +966,8 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
            y título "Filtrá y elegí" — el texto comercial persuasivo
            ("Recomendadas para vos") aparece después del toolbar, justo
            encima del listado, para mejor jerarquía. */}
-      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12">
-        <div className="mb-3">
+      <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-8 pb-12">
+        <div className="mb-2 sm:mb-3">
           {!isTiendasOnly && (
             <div className="mt-1">
               <QuickFilterChips
@@ -880,7 +994,7 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         <div className="space-y-3 mb-4">
           {/* Subcategoría = cajitas grandes con imagen (gestionadas desde superadmin) */}
           {subcategories.length > 0 && (
-            <div>
+            <div ref={subcategorySectionRef}>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
                 Subcategoría
               </p>
@@ -977,9 +1091,12 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
               Brandon mayo 14 2026: las cajitas inline de zonas saturaban
               la UI cuando había muchas zonas. Ahora un solo botón con la
               zona activa visible (o "Todas las zonas") + modal con la
-              lista completa al tap. */}
+              lista completa al tap.
+              Brandon mayo 18 2026: en mobile, la zona vive dentro del modal
+              de filtros (chips junto a categoría/precio) — escondemos este
+              botón inline. En desktop sigue visible. */}
           {zonesForFilter.length > 1 && (
-          <div>
+          <div className="hidden sm:block">
             {/* Label "Filtrar por zona" removido (Brandon mayo 15 v3):
                 el botón ya muestra el mismo texto — era duplicación. */}
             <button
@@ -1186,10 +1303,8 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
 
               <span aria-hidden className="h-7 w-px bg-[var(--rule-soft)] shrink-0" />
 
-              <div className="shrink-0">
-                <StoresSortSelector value={sortKey} onChange={setSortKey} />
-              </div>
-
+              {/* Filtros (mobile): primero → más visible. Ahora también
+                   contiene la sección Zona dentro del drawer. */}
               <div className="flex items-center gap-2 shrink-0">
                 <MarketplaceFilters
                   filters={productFilters}
@@ -1198,7 +1313,14 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
                   onChange={handleFiltersChange}
                   onRequestGeo={handleGeoSort}
                   hideProductCategory
+                  zones={zonesForFilter}
+                  zone={zone}
+                  onZoneChange={setZone}
                 />
+              </div>
+
+              <div className="shrink-0">
+                <StoresSortSelector value={sortKey} onChange={setSortKey} />
               </div>
 
               {hasFilters && (
@@ -1300,14 +1422,16 @@ export default function TiendasClient({ initialZone, initialStores = [] }: Tiend
         {/* ── Bloque comercial (Brandon mayo 15 v3) ──
              Persuasivo, no técnico. Aparece entre el toolbar y el listado
              para guiar al usuario y bajar la ansiedad de elección.
-             Conteo dinámico = social proof barato pero efectivo. */}
-        <div className="mt-5 mb-4 flex items-end justify-between gap-3 flex-wrap">
+             Conteo dinámico = social proof barato pero efectivo.
+             Brandon mayo 18 v2: titulos mas compactos en mobile para
+             priorizar las cards sobre el header. */}
+        <div className="mt-4 sm:mt-5 mb-3 sm:mb-4 flex items-end justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
               <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
               recomendaciones
             </p>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
+            <h2 className="text-xl sm:text-3xl font-extrabold tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
               Recomendadas para vos
             </h2>
             <p className="mt-1 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">

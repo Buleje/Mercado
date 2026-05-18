@@ -932,6 +932,12 @@ export const MarketplacePublicDB = {
   /**
    * Catálogo unificado paginado con cursor.
    * @cross-tenant intentional (ADR-082) — agrega storeProducts de todos los stores publicados.
+   *
+   * audit P0 #5 (Brandon 2026-05-18): cache `getOrSet` con TTL 60s.
+   * Antes cada hit golpeaba la DB. Hot-path del marketplace. Key se
+   * deriva de opts (sin user-data) — seguro para cross-tenant porque
+   * el query ya filtra publicado/activo. Coincide con `Cache-Control`
+   * del route (`max-age=60`).
    */
   async getCatalogPage(opts: {
     q?: string;
@@ -944,58 +950,75 @@ export const MarketplacePublicDB = {
     cursor?: string;
     limit: number;
   }) {
-    const orderBy =
-      opts.sort === "price_desc"
-        ? { retailPrice: "desc" as const }
-        : opts.sort === "price_asc"
-          ? { retailPrice: "asc" as const }
-          : opts.sort === "newest"
-            ? { id: "desc" as const }
-            : { store: { rating: "desc" as const } };
+    // Cache key estable y compacta: solo campos que afectan la query.
+    const cacheKey =
+      "marketplace:catalog:" +
+      [
+        opts.q ?? "",
+        opts.category ?? "",
+        opts.storeSlug ?? "",
+        opts.zone ?? "",
+        opts.minPrice ?? "",
+        opts.maxPrice ?? "",
+        opts.sort,
+        opts.cursor ?? "",
+        opts.limit,
+      ].join("|");
 
-    const where = {
-      isActive: true,
-      store: {
-        isPublished: true,
-        vacationMode: { not: true },
-        tenant: { active: true },
-        ...(opts.zone && { zone: opts.zone }),
-        ...(opts.storeSlug && { slug: opts.storeSlug }),
-      },
-      ...(opts.q && {
-        product: { name: { contains: opts.q, mode: "insensitive" as const } },
-      }),
-      ...(opts.category &&
-        opts.category !== "todos" && {
-          product: {
-            ...((opts.q && { name: { contains: opts.q, mode: "insensitive" as const } }) || {}),
-            category: opts.category,
+    return getOrSet(cacheKey, 60, async () => {
+      const orderBy =
+        opts.sort === "price_desc"
+          ? { retailPrice: "desc" as const }
+          : opts.sort === "price_asc"
+            ? { retailPrice: "asc" as const }
+            : opts.sort === "newest"
+              ? { id: "desc" as const }
+              : { store: { rating: "desc" as const } };
+
+      const where = {
+        isActive: true,
+        store: {
+          isPublished: true,
+          vacationMode: { not: true },
+          tenant: { active: true },
+          ...(opts.zone && { zone: opts.zone }),
+          ...(opts.storeSlug && { slug: opts.storeSlug }),
+        },
+        ...(opts.q && {
+          product: { name: { contains: opts.q, mode: "insensitive" as const } },
+        }),
+        ...(opts.category &&
+          opts.category !== "todos" && {
+            product: {
+              ...((opts.q && { name: { contains: opts.q, mode: "insensitive" as const } }) || {}),
+              category: opts.category,
+            },
+          }),
+        ...((opts.minPrice !== undefined || opts.maxPrice !== undefined) && {
+          retailPrice: {
+            ...(opts.minPrice !== undefined && { gte: opts.minPrice }),
+            ...(opts.maxPrice !== undefined && { lte: opts.maxPrice }),
           },
         }),
-      ...((opts.minPrice !== undefined || opts.maxPrice !== undefined) && {
-        retailPrice: {
-          ...(opts.minPrice !== undefined && { gte: opts.minPrice }),
-          ...(opts.maxPrice !== undefined && { lte: opts.maxPrice }),
-        },
-      }),
-    };
+      };
 
-    return prisma.storeProduct.findMany({
-      where,
-      select: {
-        id: true,
-        retailPrice: true,
-        minOrderQty: true,
-        product: {
-          select: { id: true, name: true, image: true, category: true, unit: true, stock: true },
+      return prisma.storeProduct.findMany({
+        where,
+        select: {
+          id: true,
+          retailPrice: true,
+          minOrderQty: true,
+          product: {
+            select: { id: true, name: true, image: true, category: true, unit: true, stock: true },
+          },
+          store: {
+            select: { id: true, name: true, slug: true, logo: true, zone: true, rating: true, category: true },
+          },
         },
-        store: {
-          select: { id: true, name: true, slug: true, logo: true, zone: true, rating: true, category: true },
-        },
-      },
-      orderBy,
-      take: opts.limit + 1,
-      ...(opts.cursor && { cursor: { id: opts.cursor }, skip: 1 }),
+        orderBy,
+        take: opts.limit + 1,
+        ...(opts.cursor && { cursor: { id: opts.cursor }, skip: 1 }),
+      });
     });
   },
 };

@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Check,
   DollarSign,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
@@ -30,6 +31,12 @@ export interface MarketplaceFiltersState {
   nearbyEnabled: boolean;
 }
 
+export interface ZoneOption {
+  id: string;
+  label: string;
+  count?: number;
+}
+
 export interface MarketplaceFiltersProps {
   filters: MarketplaceFiltersState;
   userCoords: { lat: number; lng: number } | null;
@@ -39,6 +46,12 @@ export interface MarketplaceFiltersProps {
   /** Si true, no renderiza el row horizontal de PRODUCT_CATEGORIES
       (porque el caller lo está renderizando arriba en formato propio). */
   hideProductCategory?: boolean;
+  /** Zonas disponibles. Si se provee, se muestra sección "Zona" en el drawer mobile. */
+  zones?: ZoneOption[];
+  /** Id de zona seleccionada ("" = todas). */
+  zone?: string;
+  /** Setter de zona. */
+  onZoneChange?: (zone: string) => void;
 }
 
 /* ── Constantes ─────────────────────────────────────────────────────────────── */
@@ -194,6 +207,9 @@ function FiltersDrawer({
   onRequestGeo,
   onReset,
   activeCount,
+  zones,
+  zone,
+  onZoneChange,
 }: {
   open: boolean;
   onClose: () => void;
@@ -204,6 +220,9 @@ function FiltersDrawer({
   onRequestGeo: () => void;
   onReset: () => void;
   activeCount: number;
+  zones?: ZoneOption[];
+  zone?: string;
+  onZoneChange?: (zone: string) => void;
 }) {
   useEffect(() => {
     if (open) {
@@ -258,6 +277,61 @@ function FiltersDrawer({
               ))}
             </select>
           </div>
+
+          {/* Zona */}
+          {zones && zones.length > 1 && onZoneChange && (
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wide text-[var(--text-secondary)] dark:text-gray-400">
+                <MapPin className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                Zona
+              </p>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por zona">
+                <button
+                  type="button"
+                  onClick={() => onZoneChange("")}
+                  aria-pressed={!zone}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold transition-colors",
+                    !zone
+                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      : "border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50",
+                  )}
+                >
+                  Todas las zonas
+                </button>
+                {zones.filter((z) => z.id !== "").map((z) => {
+                  const active = zone === z.id;
+                  return (
+                    <button
+                      key={z.id}
+                      type="button"
+                      onClick={() => onZoneChange(active ? "" : z.id)}
+                      aria-pressed={active}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold transition-colors",
+                        active
+                          ? "bg-[var(--accent)] text-white shadow-sm"
+                          : "border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50",
+                      )}
+                    >
+                      <MapPin className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                      {z.label}
+                      {typeof z.count === "number" && z.count > 0 && (
+                        <span
+                          className={cn(
+                            "inline-flex min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-extrabold tabular-nums",
+                            active ? "bg-white/20 text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                          )}
+                        >
+                          {z.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Categories */}
           <div>
@@ -348,12 +422,23 @@ function FiltersDrawer({
 /* ── Componente principal: barra horizontal compacta ────────────────────────── */
 
 export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
-  const { filters, onChange, onRequestGeo, geoLoading, hideProductCategory } = props;
+  const {
+    filters,
+    onChange,
+    onRequestGeo,
+    geoLoading,
+    hideProductCategory,
+    zones,
+    zone,
+    onZoneChange,
+  } = props;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
 
-  const activeCount = countActiveFilters(filters);
+  const baseActiveCount = countActiveFilters(filters);
+  const zoneActive = !!zone;
+  const activeCount = baseActiveCount + (zoneActive ? 1 : 0);
   const priceActive = filters.minPrice > 0 || filters.maxPrice < MAX_PRICE_LIMIT;
   const currentSort = SORT_OPTIONS.find((o) => o.value === filters.sortBy) ?? SORT_OPTIONS[0];
 
@@ -405,8 +490,14 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
         geoLoading={geoLoading}
         onChange={onChange}
         onRequestGeo={onRequestGeo}
-        onReset={handleReset}
+        onReset={() => {
+          handleReset();
+          onZoneChange?.("");
+        }}
         activeCount={activeCount}
+        zones={zones}
+        zone={zone}
+        onZoneChange={onZoneChange}
       />
 
       {/* ── Desktop: barra horizontal compacta ── */}
