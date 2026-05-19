@@ -276,8 +276,72 @@ export default function UnifiedProductCard({
       }
     }
     if (hasModifiers) {
-      // Abre selector — el cliente debe elegir antes de agregar al carrito.
-      setModifierModalOpen(true);
+      // Brandon 2026-05-18 v5: QUICK-ADD con defaults. Antes el card SIEMPRE
+      // abría el modal cuando había modifiers — friccionaba al cliente. Ahora
+      // probamos primero a satisfacer required + minSelect con las opciones
+      // isDefault=true. Si todas las restricciones se cumplen, agregamos
+      // directo sin abrir modal. Solo abrimos el modal si hay un grupo
+      // required cuyas defaults no satisfacen minSelect (caso real donde
+      // el cliente DEBE elegir).
+      const groups = product.modifierGroups ?? [];
+      const selectedByGroup: Array<{
+        group: DbStoreProductModifierGroup;
+        selectedIds: string[];
+      }> = groups.map((g) => ({
+        group: g,
+        selectedIds: g.options
+          .filter((o) => o.isDefault)
+          .map((o) => o.id)
+          .slice(0, g.maxSelect),
+      }));
+      const needsManualChoice = selectedByGroup.some(({ group, selectedIds }) => {
+        // Required + sin defaults → cliente debe elegir
+        if (group.required && selectedIds.length === 0) return true;
+        // minSelect mayor a defaults disponibles → cliente debe elegir
+        if (group.minSelect > 0 && selectedIds.length < group.minSelect) return true;
+        return false;
+      });
+      if (needsManualChoice) {
+        // Abre selector — el cliente debe elegir antes de agregar.
+        setModifierModalOpen(true);
+        return;
+      }
+      // Quick-add con defaults: construimos los modifiers seleccionados +
+      // hash + breakdown precio (igual que el modal al confirmar).
+      const flatModifiers = selectedByGroup.flatMap(({ group, selectedIds }) =>
+        selectedIds
+          .map((id) => {
+            const opt = group.options.find((o) => o.id === id);
+            if (!opt) return null;
+            return {
+              groupId: group.id,
+              groupName: group.name,
+              optionId: opt.id,
+              optionName: opt.name,
+              priceDelta: opt.priceDelta,
+            };
+          })
+          .filter((m): m is NonNullable<typeof m> => m !== null),
+      );
+      const priceDelta = flatModifiers.reduce((sum, m) => sum + m.priceDelta, 0);
+      addItemWithUndo({
+        storeId: product.storeId ?? "",
+        storeName: product.storeName ?? "",
+        storeSlug: product.storeSlug ?? "",
+        storeProductId: product.storeProductId ?? String(product.id),
+        productId: product.id,
+        name: product.name,
+        price: product.price + priceDelta,
+        basePrice: product.price,
+        image: product.image ?? null,
+        unit: product.unit ?? null,
+        description: product.description ?? null,
+        stock: product.stock ?? null,
+        modifiers: flatModifiers,
+        modifierHash: modifierHashOf(flatModifiers),
+      });
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 1200);
       return;
     }
     addItemWithUndo({
