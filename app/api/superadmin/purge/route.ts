@@ -3,11 +3,33 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { invalidateAll } from "@/lib/cache";
+import { invalidateAll, cacheStore } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { SuperadminTotpDB } from "@/lib/db/admin-totp.db";
 import { verifyTotpCode } from "@/lib/auth/totp";
 import { z } from "zod";
+
+/**
+ * Audit P2 #4 (2026-05-19): cooldown 60s entre purge attempts.
+ * Sin esto, un superadmin comprometido (incluso con TOTP) puede ejecutar
+ * purge instantáneamente sin tiempo de reaccionar. El cooldown obliga a
+ * un mínimo de 60s entre intentos — suficiente para que el dueño vea el
+ * primer alert de "purge attempted" en WhatsApp y revoke sesión.
+ */
+const PURGE_COOLDOWN_KEY = "superadmin:purge:cooldown";
+const PURGE_COOLDOWN_SECONDS = 60;
+
+function checkPurgeCooldown(): { ok: boolean; remainingSeconds: number } {
+  const lastAttempt = cacheStore.get<number>(PURGE_COOLDOWN_KEY);
+  if (!lastAttempt) return { ok: true, remainingSeconds: 0 };
+  const elapsed = Math.floor((Date.now() - lastAttempt) / 1000);
+  if (elapsed >= PURGE_COOLDOWN_SECONDS) return { ok: true, remainingSeconds: 0 };
+  return { ok: false, remainingSeconds: PURGE_COOLDOWN_SECONDS - elapsed };
+}
+
+function recordPurgeAttempt(): void {
+  cacheStore.set(PURGE_COOLDOWN_KEY, Date.now(), PURGE_COOLDOWN_SECONDS);
+}
 
 // SECURITY 2026-05-12 (audit pentest N4): purga total requiere TOTP obligatorio.
 // Antes bastaba password (cookie de sesión) + confirm string trivialmente
@@ -125,11 +147,33 @@ export async function DELETE(req: NextRequest) {
       username: session.username,
       ip: req.headers.get("x-forwarded-for") ?? null,
     });
+    // Audit P2 #4: registrar intento incluso si falla TOTP — el cooldown se
+    // dispara igualmente para que un atacante no pueda hacer brute-force.
+    recordPurgeAttempt();
     return NextResponse.json(
       { error: "totp_invalid", message: "Codigo TOTP invalido o expirado." },
       { status: 401 },
     );
   }
+
+  // Audit P2 #4: cooldown 60s entre purges. Da tiempo al dueño de reaccionar
+  // ante un alert de WhatsApp si la cookie fue comprometida.
+  const cooldown = checkPurgeCooldown();
+  if (!cooldown.ok) {
+    logger.warn("[SuperAdmin] purge cooldown activo", {
+      username: session.username,
+      remainingSeconds: cooldown.remainingSeconds,
+    });
+    return NextResponse.json(
+      {
+        error: "cooldown_active",
+        message: `Esperá ${cooldown.remainingSeconds}s antes de reintentar. Si no fuiste vos, revocá tu sesión ahora desde otro dispositivo.`,
+        remainingSeconds: cooldown.remainingSeconds,
+      },
+      { status: 429 },
+    );
+  }
+  recordPurgeAttempt();
 
   const purgeReason = parsed.data.reason;
 

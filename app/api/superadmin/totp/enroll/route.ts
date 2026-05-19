@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { applyRateLimit, createRateLimiter } from "@/lib/rate-limit";
 import { SuperadminTotpDB } from "@/lib/db/admin-totp.db";
-import { generateTotpSecret, buildOtpauthUri } from "@/lib/auth/totp";
+import { generateTotpSecret, buildOtpauthUri, verifyTotpCode } from "@/lib/auth/totp";
 import { logger } from "@/lib/logger";
 
 /**
@@ -14,10 +14,17 @@ import { logger } from "@/lib/logger";
  *
  * Auth: getPlatformSession (cookie PLATFORM_SESSION, no requireAdmin)
  * Rate limit: 5 req / 15 min — protección contra enumeración
- * Body: ninguno requerido
+ *
+ * Audit P2 #3 (2026-05-19): si el usuario YA tiene TOTP activo (totpEnabledAt
+ * no es null), requerimos código TOTP actual en el body antes de aceptar
+ * re-enrollment. Sin esto, un atacante con cookie de sesión vigente puede
+ * rotar el secret silenciosamente y bloquear al dueño legítimo.
+ *
+ * Body (cuando hay TOTP activo): { code: "123456" }
+ * Body (primera vez): ninguno
  *
  * Respuesta 200: { secret: string, otpauthUrl: string }
- * Respuesta 400: { error: "user_not_found" } — si el SuperadminUser no existe en DB
+ * Respuesta 400: { error: "user_not_found" | "totp_required" | "totp_invalid" }
  */
 
 const enrollLimiter = createRateLimiter({ maxRequests: 5, windowMs: 15 * 60 * 1000 });
@@ -49,15 +56,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "user_not_found" }, { status: 400 });
     }
 
-    // 4. Generar secret y URI
+    // 4. Audit P2 #3 — si ya hay TOTP activo, exigir código actual antes de
+    //    aceptar re-enrollment. Protege contra account takeover si la cookie
+    //    de sesión se compromete.
+    if (row.totpEnabledAt && row.totpSecret) {
+      let body: { code?: unknown } = {};
+      try {
+        body = await req.json();
+      } catch {
+        // body vacío — caerá en el branch de "code_required"
+      }
+      const code = typeof body.code === "string" ? body.code.trim() : "";
+      if (!code) {
+        return NextResponse.json(
+          { error: "totp_required", message: "Ya tenés TOTP activo. Ingresá el código actual para rotarlo." },
+          { status: 400 },
+        );
+      }
+      const valid = verifyTotpCode(row.totpSecret, code, 1);
+      if (!valid) {
+        logger.warn("[superadmin/totp/enroll] Re-enrollment rechazado: TOTP actual inválido", {
+          username: session.username,
+        });
+        return NextResponse.json(
+          { error: "totp_invalid", message: "Código TOTP incorrecto." },
+          { status: 400 },
+        );
+      }
+    }
+
+    // 5. Generar secret y URI
     const secret = generateTotpSecret();
     const otpauthUrl = buildOtpauthUri(secret, session.username, "Buleje Platform");
 
-    // 5. Guardar secret pendiente (totpEnabledAt queda null hasta verify)
+    // 6. Guardar secret pendiente (totpEnabledAt queda null hasta verify)
     await SuperadminTotpDB.saveSecret(session.username, secret);
 
     logger.info("[superadmin/totp/enroll] Secret generado", {
       username: session.username,
+      isReEnroll: Boolean(row.totpEnabledAt),
     });
 
     return NextResponse.json({ secret, otpauthUrl });

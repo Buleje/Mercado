@@ -83,11 +83,38 @@ function clearFailedAttempts(ip: string): void {
 }
 
 // ── WhatsApp login alert (fire-and-forget) ──────────────────────────────────
+/**
+ * Audit P2 #2 (2026-05-19): sanitizar IP antes de inyectarla en el mensaje WA.
+ * Sin esto, un atacante con cabecera `x-forwarded-for: <emoji+link>` podría
+ * hacer log-poisoning sobre el WhatsApp del dueño (mensaje con emojis
+ * arbitrarios o caracteres de control). Lockout ya truncaba a 45 chars en
+ * el rate-limit pero `notify` no lo hacía.
+ *
+ * Sanitización: solo IPv4/IPv6 válidos. Si la entrada no matchea, devolvemos
+ * "(sin IP)" — el alert sigue siendo útil sin la IP exacta.
+ */
+function sanitizeIp(ip: string | null | undefined): string {
+  if (!ip) return "(sin IP)";
+  const trimmed = ip.trim();
+  // IPv4 estricto: 4 grupos de 0-3 dígitos
+  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(trimmed)) {
+    const parts = trimmed.split(".").map(Number);
+    if (parts.every((n) => n >= 0 && n <= 255)) return trimmed;
+  }
+  // IPv6 (incluye ::, ::1, ::ffff:127.0.0.1, etc.) — solo hex + ":" + "."
+  if (/^[0-9a-fA-F:.]{2,45}$/.test(trimmed)) return trimmed;
+  return "(IP inválida)";
+}
+
 function notifyLoginWhatsApp(user: string, ip: string): void {
   const phone = process.env.SUPERADMIN_PHONE;
   if (!phone) return;
+  const safeIp = sanitizeIp(ip);
+  // Sanitiza también el username (debería estar limpio por la validación de
+  // login pero defense-in-depth) — solo alfanuméricos y guiones, max 32 chars.
+  const safeUser = user.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 32) || "(?)";
   const now = new Date().toLocaleString("es-PE", { timeZone: "America/Lima" });
-  const msg = `🔐 *Alerta de seguridad — Buleje*\n\nSe inició sesión como SuperAdmin.\n👤 Usuario: ${user}\n🌐 IP: ${ip}\n🕐 Fecha: ${now}\n\nSi no fuiste tú, cambia tu contraseña de inmediato.`;
+  const msg = `🔐 *Alerta de seguridad — Buleje*\n\nSe inició sesión como SuperAdmin.\n👤 Usuario: ${safeUser}\n🌐 IP: ${safeIp}\n🕐 Fecha: ${now}\n\nSi no fuiste tú, cambia tu contraseña de inmediato.`;
   sendWhatsAppQueued(phone, msg, { tenantId: "__platform__", context: "superadmin-login-alert" }).catch((err) => logger.error("[superadmin/auth] login alert failed", { error: String(err) }));
 }
 

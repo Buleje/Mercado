@@ -27,10 +27,24 @@ export interface PlatformSession {
   iat?: number;
 }
 
+/**
+ * Audit P2 #1 (2026-05-19): preferimos `PLATFORM_AUTH_SECRET` distinto del
+ * `AUTH_SECRET` que usan sesiones de tenant admin. Si una se compromete, la
+ * otra debería quedar intacta.
+ *
+ * Estrategia de rollout sin romper sesiones existentes:
+ *   1. Si `PLATFORM_AUTH_SECRET` está definida → usarla
+ *   2. Si NO → fallback a `AUTH_SECRET` (comportamiento legacy)
+ *   3. Cuando Brandon configure `PLATFORM_AUTH_SECRET` en prod, las sesiones
+ *      previas se invalidan automáticamente (HMAC con secret distinto)
+ *
+ * Para activar la separación: agregar `PLATFORM_AUTH_SECRET=<random-32-bytes>`
+ * en .env de Vercel (sugerido: `openssl rand -base64 32`).
+ */
 function getSecret(): string {
-  const secret = process.env.AUTH_SECRET;
+  const secret = process.env.PLATFORM_AUTH_SECRET ?? process.env.AUTH_SECRET;
   if (!secret) {
-    throw new Error("AUTH_SECRET required — add to .env");
+    throw new Error("PLATFORM_AUTH_SECRET (or fallback AUTH_SECRET) required — add to .env");
   }
   return secret;
 }

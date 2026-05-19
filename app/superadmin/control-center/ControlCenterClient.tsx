@@ -352,9 +352,10 @@ interface CredentialDef {
 
 const CREDENTIALS: readonly CredentialDef[] = [
   // Autenticación
-  { envKey: "AUTH_SECRET",         label: "AUTH_SECRET",         scope: "JWT signing",         rotatedLabel: "hace 45d", actionKind: "rotate",   actionLabel: "Rotar",          pendingAdr: "rotación manual — ADR pendiente", group: "Autenticación" },
-  { envKey: "CRON_SECRET",         label: "CRON_SECRET",         scope: "Cron jobs",           rotatedLabel: "hace 30d", actionKind: "rotate",   actionLabel: "Rotar",          pendingAdr: "rotación manual — ADR pendiente", group: "Autenticación" },
-  { envKey: "SUPERADMIN_PASSWORD", label: "SUPERADMIN_PASSWORD", scope: "Platform login",      rotatedLabel: "hace 12d", actionKind: "change",   actionLabel: "Cambiar",        pendingAdr: "reset via UI — ADR pendiente",    group: "Autenticación" },
+  { envKey: "AUTH_SECRET",          label: "AUTH_SECRET",          scope: "JWT signing tenants admin",   rotatedLabel: "hace 45d", actionKind: "rotate",   actionLabel: "Rotar",   pendingAdr: "rotación manual — ADR pendiente", group: "Autenticación" },
+  { envKey: "PLATFORM_AUTH_SECRET", label: "PLATFORM_AUTH_SECRET", scope: "JWT signing superadmin (P2)", rotatedLabel: "activo",   actionKind: "rotate",   actionLabel: "Rotar",   pendingAdr: "openssl rand -base64 32 → set en Vercel", group: "Autenticación" },
+  { envKey: "CRON_SECRET",          label: "CRON_SECRET",          scope: "Cron jobs",                   rotatedLabel: "hace 30d", actionKind: "rotate",   actionLabel: "Rotar",   pendingAdr: "rotación manual — ADR pendiente", group: "Autenticación" },
+  { envKey: "SUPERADMIN_PASSWORD",  label: "SUPERADMIN_PASSWORD",  scope: "Platform login",              rotatedLabel: "hace 12d", actionKind: "change",   actionLabel: "Cambiar", pendingAdr: "reset via UI — ADR pendiente",    group: "Autenticación" },
   // Base de datos
   { envKey: "DATABASE_URL",        label: "DATABASE_URL",        scope: "Supabase pgBouncer",  rotatedLabel: "activo",   actionKind: "external", actionLabel: "Ver en Vercel",  actionHref: "https://vercel.com/dashboard",     group: "Base de datos" },
   { envKey: "DIRECT_URL",          label: "DIRECT_URL",          scope: "Supabase direct (migrate)", rotatedLabel: "activo", actionKind: "external", actionLabel: "Ver en Vercel", actionHref: "https://vercel.com/dashboard", group: "Base de datos" },

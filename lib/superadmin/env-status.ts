@@ -20,6 +20,7 @@ import "server-only";
 export interface EnvStatus {
   // Auth
   AUTH_SECRET: boolean;
+  PLATFORM_AUTH_SECRET: boolean;
   CRON_SECRET: boolean;
   SUPERADMIN_PASSWORD: boolean;
   // Database
@@ -49,6 +50,7 @@ export function getEnvStatus(): EnvStatus {
   return {
     // Auth
     AUTH_SECRET: !!process.env.AUTH_SECRET,
+    PLATFORM_AUTH_SECRET: !!process.env.PLATFORM_AUTH_SECRET,
     CRON_SECRET: !!process.env.CRON_SECRET,
     SUPERADMIN_PASSWORD: !!process.env.SUPERADMIN_PASSWORD,
     // Database
