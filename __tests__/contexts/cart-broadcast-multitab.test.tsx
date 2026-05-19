@@ -154,9 +154,11 @@ afterEach(() => {
 
 // ── Wrapper helpers ───────────────────────────────────────────────────────────
 function makeWrapper(slug = "tienda-test") {
-  return ({ children }: { children: ReactNode }) => (
+  const Wrapper = ({ children }: { children: ReactNode }) => (
     <CartProvider tenantSlug={slug}>{children}</CartProvider>
   );
+  Wrapper.displayName = `CartWrapper(${slug})`;
+  return Wrapper;
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

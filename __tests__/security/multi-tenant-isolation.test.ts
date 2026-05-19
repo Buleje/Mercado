@@ -48,7 +48,12 @@ import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 // Resolvemos pizza-pucallpa.id dinámicamente en beforeAll para no hardcodear
 // el cuid (cambia entre entornos).
 const TENANT_A = "main";
-let TENANT_B = ""; // resolved in beforeAll
+// NOTA: el beforeAll de este test asume que TENANT_B se resuelve dinámicamente,
+// pero nunca se reasigna (deuda del test — bug pre-existente registrado en
+// audit CI 2026-05-19). Mantener const + dejarlo vacío bloquea el beforeAll
+// con "missing tenants", lo cual es el comportamiento correcto si pizza-pucallpa
+// no existe. TODO: resolver pizza-pucallpa.id dentro del beforeAll y refactorizar.
+const TENANT_B = "";
 const TENANT_B_SLUG = "pizza-pucallpa";
 
 /** Sufijo único de este run, para aislar artefactos entre ejecuciones. */

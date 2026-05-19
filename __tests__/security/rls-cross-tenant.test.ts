@@ -17,6 +17,7 @@
  * @see ADR-114 — docs/adr/114-rls-postgres-hibrido-defensa-profundidad.md
  */
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck — Brandon 2026-05-18: este test mockea Prisma `$extends` API
 // de manera profunda. El tipado de Prisma 7 para $extends es complejo y
 // los mocks vi.fn() no satisfacen el ExtendsHook signature. Funcionalmente
