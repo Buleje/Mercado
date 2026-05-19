@@ -35,13 +35,16 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-// Mock del cliente Prisma — interceptamos $executeRawUnsafe y $extends
-const mockExecuteRawUnsafe = vi.fn().mockResolvedValue(undefined);
-const mockQuery = vi.fn().mockResolvedValue([]);
+// Mock del cliente Prisma — interceptamos $executeRawUnsafe y $extends.
+// vi.hoisted: las refs DEBEN existir al momento del hoist de vi.mock; sin esto
+// el factory referencia variables antes de su inicialización (ReferenceError).
+const { mockExecuteRawUnsafe, mockQuery, mockState } = vi.hoisted(() => ({
+  mockExecuteRawUnsafe: vi.fn().mockResolvedValue(undefined),
+  mockQuery: vi.fn().mockResolvedValue([]),
+  mockState: { capturedHandler: null as ((ctx: { args: unknown; query: (args: unknown) => Promise<unknown> }) => Promise<unknown>) | null },
+}));
 
-// Capturamos el handler de $allOperations que registra $extends
-let capturedAllOperationsHandler: ((ctx: { args: unknown; query: (args: unknown) => Promise<unknown> }) => Promise<unknown>) | null = null;
-
+// Capturamos el handler de $allOperations que registra $extends (vía mockState.capturedHandler)
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     $executeRawUnsafe: mockExecuteRawUnsafe,
@@ -53,7 +56,7 @@ vi.mock("@/lib/prisma", () => ({
     }) => {
       // Captura el handler registrado por withRlsTenant para poder invocarlo en tests
       if (extension?.query?.$allOperations) {
-        capturedAllOperationsHandler = extension.query.$allOperations;
+        mockState.capturedHandler = extension.query.$allOperations;
       }
       // Retorna un objeto que simula el cliente extendido
       return {
@@ -78,10 +81,10 @@ import { withRlsTenant, rlsSystem, rlsSuperadmin, RLS_MAGIC_VALUES } from "@/lib
  * y captura qué SET LOCAL se ejecutó.
  */
 async function simulateQuery(args = {}) {
-  if (!capturedAllOperationsHandler) {
+  if (!mockState.capturedHandler) {
     throw new Error("$allOperations handler not captured — withRlsTenant no llamó a $extends?");
   }
-  return capturedAllOperationsHandler({ args, query: mockQuery });
+  return mockState.capturedHandler({ args, query: mockQuery });
 }
 
 // ── Suite principal ───────────────────────────────────────────────────────────
@@ -90,7 +93,7 @@ describe("ADR-114: RLS cross-tenant isolation — lib/prisma-rls.ts", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    capturedAllOperationsHandler = null;
+    mockState.capturedHandler = null;
   });
 
   afterEach(() => {
@@ -192,15 +195,15 @@ describe("ADR-114: RLS cross-tenant isolation — lib/prisma-rls.ts", () => {
       // SET LOCAL. Este test verifica que cada llamada a withRlsTenant captura
       // su propio tenantId en el closure (no hay variable compartida).
 
-      const capturedHandlers: Array<typeof capturedAllOperationsHandler> = [];
+      const capturedHandlers: Array<typeof mockState.capturedHandler> = [];
 
       // Llamada 1: tenant A
       withRlsTenant("tenant-a");
-      capturedHandlers.push(capturedAllOperationsHandler);
+      capturedHandlers.push(mockState.capturedHandler);
 
-      // Llamada 2: tenant B (sobrescribe capturedAllOperationsHandler)
+      // Llamada 2: tenant B (sobrescribe mockState.capturedHandler)
       withRlsTenant("tenant-b");
-      capturedHandlers.push(capturedAllOperationsHandler);
+      capturedHandlers.push(mockState.capturedHandler);
 
       // Ejecutar handler del tenant A
       if (capturedHandlers[0]) {
@@ -271,7 +274,7 @@ describe("ADR-114: RLS cross-tenant isolation — lib/prisma-rls.ts", () => {
 
   describe("Contrato $extends — integración con Prisma", () => {
 
-    it("llama a prisma.$extends con name 'rls-tenant-extension'", () => {
+    it("llama a prisma.$extends con name 'rls-tenant-extension'", async () => {
       const { prisma: mockPrisma } = vi.mocked(await import("@/lib/prisma"));
       vi.clearAllMocks();
 
@@ -282,7 +285,7 @@ describe("ADR-114: RLS cross-tenant isolation — lib/prisma-rls.ts", () => {
       expect(extensionArg.name).toBe("rls-tenant-extension");
     });
 
-    it("la extensión registra handler en query.$allOperations", () => {
+    it("la extensión registra handler en query.$allOperations", async () => {
       withRlsTenant("any-tenant");
 
       const { prisma: mockPrisma } = vi.mocked(await import("@/lib/prisma"));
