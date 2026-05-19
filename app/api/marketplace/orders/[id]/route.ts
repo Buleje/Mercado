@@ -117,10 +117,8 @@ async function patchHandler(
   }
 
   // Leer orden para validar la transición antes de llamar a changeStatus.
-  // eslint-disable-next-line no-restricted-properties -- read-only pre-check scoped por tenantId; changeStatus hace el write atómico.
-  const order = await prisma.order.findFirst({
-    where: { id, source: "marketplace", tenantId: auth.tenantId, deletedAt: null },
-  });
+  // Audit project-wide 2026-05-19: migrado a MarketplaceOrdersDB.getMarketplaceById.
+  const order = await MarketplaceOrdersDB.getMarketplaceById(auth.tenantId, id);
 
   if (!order) {
     return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });

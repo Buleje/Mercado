@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceProductsDB } from "@/lib/db/marketplace-products.db";
 import { invalidateByPrefix } from "@/lib/cache";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
@@ -30,25 +30,15 @@ export async function POST(req: NextRequest) {
   }
 
   const { updates } = parsed.data;
-  const failed: Array<{ id: number; error: string }> = [];
-  let updatedCount = 0;
 
-  await prisma.$transaction(async (tx) => {
-    for (const item of updates) {
-      const { id, ...data } = item;
-      try {
-        await tx.product.update({
-          where: { id, tenantId: auth.tenantId, deletedAt: null },
-          data,
-        });
-        updatedCount++;
-      } catch (err) {
-        failed.push({ id, error: err instanceof Error ? err.message : "Error desconocido" });
-      }
-    }
-  });
+  // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.bulkEdit
+  // (encapsula la $transaction + per-row error tolerance).
+  const { updated, failed } = await MarketplaceProductsDB.bulkEdit(
+    auth.tenantId,
+    updates,
+  );
 
-  // Invalidar cache después del commit
+  // Invalidar cache despues del commit
   invalidateByPrefix("marketplace:catalog");
   for (const item of updates) {
     if (!failed.find((f) => f.id === item.id)) {
@@ -56,5 +46,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ updated: updatedCount, failed });
+  return NextResponse.json({ updated, failed });
 }

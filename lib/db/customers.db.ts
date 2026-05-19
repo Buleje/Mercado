@@ -173,6 +173,41 @@ export const CustomersDB = {
     });
     return row ? mapCustomer(row) : null;
   },
+
+  /**
+   * existsInTenant: solo verifica si el customer (por phone normalizado)
+   * pertenece al tenant. Usado para gates de read publico que requieren
+   * scope explicito sin descargar PII.
+   * Audit project-wide 2026-05-19 — migracion de marketplace/loyalty.
+   */
+  async existsInTenant(tenantId: string, phone: string): Promise<boolean> {
+    if (!tenantId) throw new Error("CustomersDB.existsInTenant: tenantId requerido");
+    const normalized = normalizePhone(phone);
+    const row = await prisma.customer.findFirst({
+      where: { phone: normalized, tenantId },
+      select: { tenantId: true },
+    });
+    return !!row;
+  },
+
+  /**
+   * getPiiSummary: lee name + totalSpent del customer dentro del tenant.
+   * Devuelve null si no existe. Solo expone los campos PII estrictamente
+   * necesarios para el dashboard admin (no toda la entidad).
+   */
+  async getPiiSummary(
+    tenantId: string,
+    phone: string,
+  ): Promise<{ name: string; totalSpent: number } | null> {
+    if (!tenantId) throw new Error("CustomersDB.getPiiSummary: tenantId requerido");
+    const normalized = normalizePhone(phone);
+    const row = await prisma.customer.findFirst({
+      where: { phone: normalized, tenantId },
+      select: { name: true, totalSpent: true },
+    });
+    if (!row) return null;
+    return { name: row.name, totalSpent: Number(row.totalSpent) };
+  },
   async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId: string): Promise<DbCustomer> {
     const locs = (data.locations ?? []).map((l) => ({ id: l.id, location: l.location, reference: l.reference }));
     const row = await prisma.customer.upsert({

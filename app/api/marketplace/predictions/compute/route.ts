@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace/stores.db";
 import { StockoutPredictionsDB } from "@/lib/db";
 import { logger } from "@/lib/logger";
 
@@ -27,10 +27,11 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const store = await prisma.store.findFirst({
-      where: { tenantId: auth.tenantId, slug: parsed.data.storeSlug },
-      select: { id: true },
-    });
+    // Audit project-wide 2026-05-19: migrado a MarketplaceStoresDB.
+    const store = await MarketplaceStoresDB.getIdBySlugAndTenant(
+      auth.tenantId,
+      parsed.data.storeSlug,
+    );
     if (!store) {
       return NextResponse.json({ error: "Store no encontrado" }, { status: 404 });
     }

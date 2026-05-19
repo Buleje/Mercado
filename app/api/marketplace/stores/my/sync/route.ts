@@ -7,9 +7,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
+import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
-import { prisma } from "@/lib/prisma";
 
 /**
  * Resolve tenantId → ensure the Tenant record exists.
@@ -23,11 +23,9 @@ import { prisma } from "@/lib/prisma";
  * de write podria crear tenants implícitamente).
  */
 async function resolveTenantId(tenantId: string): Promise<{ id: string; slug: string; possibleIds: string[] } | null> {
-  // Perf DB-H5 audit 2026-05-19: 2 findUnique secuenciales colapsados en 1 findFirst con OR.
-  const tenant = await prisma.tenant.findFirst({
-    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-    select: { id: true, slug: true },
-  });
+  // Audit project-wide 2026-05-19: migrado a findTenantByIdOrSlug (cacheado
+  // por request via React.cache — dedupe entre callers en el mismo render).
+  const tenant = await findTenantByIdOrSlug(tenantId);
   if (!tenant) return null;
   return { id: tenant.id, slug: tenant.slug, possibleIds: [tenant.id, tenant.slug] };
 }

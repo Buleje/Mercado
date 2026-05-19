@@ -9,7 +9,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload, newTraceId, ApiError } from "@/lib/api-error";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
-import { prisma } from "@/lib/prisma";
+import { CustomersDB } from "@/lib/db/customers.db";
 import { logger } from "@/lib/logger";
 import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant";
 
@@ -114,12 +114,10 @@ export async function GET(req: NextRequest) {
     if (!adminMode) {
       // SECURITY (2026-04-29): solo lookupeamos customer dentro del
       // tenant del request — antes era findUnique({phone}) cross-tenant.
-      const customerInDb = await prisma.customer.findFirst({
-        where: { phone, tenantId },
-        select: { tenantId: true },
-      });
-      if (!customerInDb) {
-        // Sin customer en este tenant → balance público vacío.
+      // Audit project-wide 2026-05-19: migrado a CustomersDB.existsInTenant.
+      const exists = await CustomersDB.existsInTenant(tenantId, phone);
+      if (!exists) {
+        // Sin customer en este tenant → balance publico vacio.
         return NextResponse.json({
           data: {
             phone,
@@ -147,10 +145,11 @@ export async function GET(req: NextRequest) {
         return { transactions: [], balance: 0, total: 0 };
       }),
       // PII (name, totalSpent) solo dentro del tenant correcto.
-      prisma.customer.findFirst({
-        where: { phone, tenantId },
-        select: { name: true, totalSpent: true },
-      }).catch((err) => { logger.warn("[marketplace/loyalty] customer lookup failed", { tenantId, error: String(err) }); return null; }),
+      // Audit project-wide 2026-05-19: migrado a CustomersDB.getPiiSummary.
+      CustomersDB.getPiiSummary(tenantId, phone).catch((err) => {
+        logger.warn("[marketplace/loyalty] customer lookup failed", { tenantId, error: String(err) });
+        return null;
+      }),
     ]);
 
     const page = pageResult;

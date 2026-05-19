@@ -183,4 +183,38 @@ export const MarketplaceProductsDB = {
     );
   },
 
+  /**
+   * Bulk-edit de productos con scope de tenant (admin). Usa $transaction
+   * para atomicidad. Devuelve count actualizados y failures con id+motivo.
+   * Audit project-wide 2026-05-19 — migracion de marketplace/products/bulk-edit.
+   */
+  async bulkEdit(
+    tenantId: string,
+    updates: Array<{
+      id: number;
+      price?: number;
+      active?: boolean;
+      category?: string;
+      stock?: number;
+    }>,
+  ): Promise<{ updated: number; failed: Array<{ id: number; error: string }> }> {
+    const failed: Array<{ id: number; error: string }> = [];
+    let updated = 0;
+    await prisma.$transaction(async (tx) => {
+      for (const item of updates) {
+        const { id, ...data } = item;
+        try {
+          await tx.product.update({
+            where: { id, tenantId, deletedAt: null },
+            data,
+          });
+          updated++;
+        } catch (err) {
+          failed.push({ id, error: err instanceof Error ? err.message : "Error desconocido" });
+        }
+      }
+    });
+    return { updated, failed };
+  },
+
 };

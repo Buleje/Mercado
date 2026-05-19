@@ -770,6 +770,36 @@ export const MarketplaceOrdersDB = {
   },
 
   /**
+   * Lee una orden del marketplace por id + tenant. Solo retorna ordenes
+   * con source="marketplace" y deletedAt=null. Util para pre-checks
+   * (validacion de status transitions) sin tener que cargar items.
+   *
+   * Audit project-wide 2026-05-19 — migracion del pre-check directo
+   * en /api/marketplace/orders/[id]/PATCH.
+   */
+  async getMarketplaceById(
+    tenantId: string,
+    orderId: string,
+  ): Promise<{
+    id: string;
+    status: string;
+    customerPhone: string | null;
+    total: number;
+  } | null> {
+    const row = await prisma.order.findFirst({
+      where: { id: orderId, source: "marketplace", tenantId, deletedAt: null },
+      select: { id: true, status: true, customerPhone: true, total: true },
+    });
+    if (!row) return null;
+    return {
+      id: row.id,
+      status: row.status,
+      customerPhone: row.customerPhone,
+      total: Number(row.total),
+    };
+  },
+
+  /**
    * Cambia el estado de una orden del marketplace con validación de transición,
    * historial de estado y reversión de comisiones si aplica.
    *
