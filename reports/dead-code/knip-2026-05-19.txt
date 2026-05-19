@@ -1,0 +1,1656 @@
+Unused files (1106)
+.claude/agents-dashboard/game.js: .claude/agents-dashboard/game.js
+.claude/agents-dashboard/server.mjs: .claude/agents-dashboard/server.mjs
+.claude/hooks/agent-evolve.mjs: .claude/hooks/agent-evolve.mjs
+.claude/hooks/auto-learn.mjs: .claude/hooks/auto-learn.mjs
+.claude/hooks/bash-danger-zone.mjs: .claude/hooks/bash-danger-zone.mjs
+.claude/hooks/danger-zone.mjs: .claude/hooks/danger-zone.mjs
+.claude/hooks/dashboard-gen.mjs: .claude/hooks/dashboard-gen.mjs
+.claude/hooks/hex-code-guard.mjs: .claude/hooks/hex-code-guard.mjs
+.claude/hooks/hub-gate.mjs: .claude/hooks/hub-gate.mjs
+.claude/hooks/hub-metrics-persist.mjs: .claude/hooks/hub-metrics-persist.mjs
+.claude/hooks/post-commit-auto-pr.mjs: .claude/hooks/post-commit-auto-pr.mjs
+.claude/hooks/post-commit-review.mjs: .claude/hooks/post-commit-review.mjs
+.claude/hooks/post-deploy-sentinel.mjs: .claude/hooks/post-deploy-sentinel.mjs
+.claude/hooks/post-edit-typography-lint.mjs: .claude/hooks/post-edit-typography-lint.mjs
+.claude/hooks/post-edit-ui-screenshot.mjs: .claude/hooks/post-edit-ui-screenshot.mjs
+.claude/hooks/post-tool-lint.mjs: .claude/hooks/post-tool-lint.mjs
+.claude/hooks/post-tool-tsc.mjs: .claude/hooks/post-tool-tsc.mjs
+.claude/hooks/pre-bash-guard.mjs: .claude/hooks/pre-bash-guard.mjs
+.claude/hooks/pre-compact-handoff.mjs: .claude/hooks/pre-compact-handoff.mjs
+.claude/hooks/pre-deploy-db-snapshot.mjs: .claude/hooks/pre-deploy-db-snapshot.mjs
+.claude/hooks/pre-deploy-enterprise-gate.mjs: .claude/hooks/pre-deploy-enterprise-gate.mjs
+.claude/hooks/pre-deploy-slo-gate.mjs: .claude/hooks/pre-deploy-slo-gate.mjs
+.claude/hooks/pre-tool-mem-guard.mjs: .claude/hooks/pre-tool-mem-guard.mjs
+.claude/hooks/regression-check.mjs: .claude/hooks/regression-check.mjs
+.claude/hooks/session-start-autonomy.mjs: .claude/hooks/session-start-autonomy.mjs
+.claude/hooks/session-start-context.mjs: .claude/hooks/session-start-context.mjs
+.claude/hooks/stop-alert-sound.mjs: .claude/hooks/stop-alert-sound.mjs
+.claude/hooks/stop-checkpoint.mjs: .claude/hooks/stop-checkpoint.mjs
+.claude/hooks/stop-skill-suggester.mjs: .claude/hooks/stop-skill-suggester.mjs
+.claude/hooks/subagent-cost-log.mjs: .claude/hooks/subagent-cost-log.mjs
+.claude/hooks/user-prompt-adr-injector.mjs: .claude/hooks/user-prompt-adr-injector.mjs
+.claude/skills/notify/send.mjs: .claude/skills/notify/send.mjs
+.claude/skills/screen-stream/stream.mjs: .claude/skills/screen-stream/stream.mjs
+.claude/skills/voice/say.mjs: .claude/skills/voice/say.mjs
+.clone/worktrees/agent-a1a676fc8ea99fd97/__tests__/delivery-partners-tenant-isolation.test.ts: .clone/worktrees/agent-a1a676fc8ea99fd97/__tests__/delivery-partners-tenant-isolation.test.ts
+.storybook/mocks/next-font.ts: .storybook/mocks/next-font.ts
+.storybook/mocks/next-image.tsx: .storybook/mocks/next-image.tsx
+.storybook/mocks/next-link.tsx: .storybook/mocks/next-link.tsx
+.storybook/mocks/next-navigation.ts: .storybook/mocks/next-navigation.ts
+.storybook/mocks/server-only.ts: .storybook/mocks/server-only.ts
+__tests__/test-utils/auth-request.ts: __tests__/test-utils/auth-request.ts
+__tests__/test-utils/prisma-mock.ts: __tests__/test-utils/prisma-mock.ts
+app/admin/_components/TabMultiplexer.tsx: app/admin/_components/TabMultiplexer.tsx
+app/admin/admin-types.ts: app/admin/admin-types.ts
+app/admin/store-page/_components/CombosTab.tsx: app/admin/store-page/_components/CombosTab.tsx
+app/admin/store-page/_components/DiscountsTab.tsx: app/admin/store-page/_components/DiscountsTab.tsx
+app/admin/store-page/_components/EngagementTab.tsx: app/admin/store-page/_components/EngagementTab.tsx
+app/admin/store-page/_components/ProductsTab.tsx: app/admin/store-page/_components/ProductsTab.tsx
+app/admin/store-page/_components/VariationsTab.tsx: app/admin/store-page/_components/VariationsTab.tsx
+app/marketplace/[slug]/producto/[productId]/ProductDetailPage.tsx: app/marketplace/[slug]/producto/[productId]/ProductDetailPage.tsx
+app/superadmin/sitemap/SitemapClient.tsx: app/superadmin/sitemap/SitemapClient.tsx
+app/t/[slug]/tienda/_components/TenantCatalog.tsx: app/t/[slug]/tienda/_components/TenantCatalog.tsx
+check-stores.mjs: check-stores.mjs
+components/AbandonedCartRecovery.tsx: components/AbandonedCartRecovery.tsx
+components/About.tsx: components/About.tsx
+components/AccessibilityBar.tsx: components/AccessibilityBar.tsx
+components/Benefits.tsx: components/Benefits.tsx
+components/BetaFeedbackWidget.tsx: components/BetaFeedbackWidget.tsx
+components/BrandStory.tsx: components/BrandStory.tsx
+components/BulejeLandingClient.tsx: components/BulejeLandingClient.tsx
+components/BulejeLandingClientLoader.tsx: components/BulejeLandingClientLoader.tsx
+components/CTABanner.tsx: components/CTABanner.tsx
+components/CartRecoveryToast.tsx: components/CartRecoveryToast.tsx
+components/ChangeCalculator.tsx: components/ChangeCalculator.tsx
+components/ClientSections.tsx: components/ClientSections.tsx
+components/Contact.tsx: components/Contact.tsx
+components/CursorFix.tsx: components/CursorFix.tsx
+components/DailyDeal.tsx: components/DailyDeal.tsx
+components/DeliveryEstimation.tsx: components/DeliveryEstimation.tsx
+components/DeliveryZoneMap.tsx: components/DeliveryZoneMap.tsx
+components/ExitIntentModal.tsx: components/ExitIntentModal.tsx
+components/FAQ.tsx: components/FAQ.tsx
+components/FloatingStoreCTA.tsx: components/FloatingStoreCTA.tsx
+components/Hero.tsx: components/Hero.tsx
+components/HomeClientShell.tsx: components/HomeClientShell.tsx
+components/HowItWorks.tsx: components/HowItWorks.tsx
+components/KeyboardShortcuts.tsx: components/KeyboardShortcuts.tsx
+components/LastOrderBanner.tsx: components/LastOrderBanner.tsx
+components/LocaleToggleButton.tsx: components/LocaleToggleButton.tsx
+components/NewsletterWhatsApp.tsx: components/NewsletterWhatsApp.tsx
+components/OrderProgress.tsx: components/OrderProgress.tsx
+components/PWAInstallBanner.tsx: components/PWAInstallBanner.tsx
+components/PageHeroBanner.tsx: components/PageHeroBanner.tsx
+components/PaymentMethods.tsx: components/PaymentMethods.tsx
+components/PopularCategories.tsx: components/PopularCategories.tsx
+components/PreferencesPanel.tsx: components/PreferencesPanel.tsx
+components/ProductSchema.tsx: components/ProductSchema.tsx
+components/Products.tsx: components/Products.tsx
+components/ProductsPreview.tsx: components/ProductsPreview.tsx
+components/QuickReorderButton.tsx: components/QuickReorderButton.tsx
+components/RecentlyViewed.tsx: components/RecentlyViewed.tsx
+components/RecommendedProducts.tsx: components/RecommendedProducts.tsx
+components/ReferralBanner.tsx: components/ReferralBanner.tsx
+components/ScarcityBadge.tsx: components/ScarcityBadge.tsx
+components/ScrollToTop.tsx: components/ScrollToTop.tsx
+components/SimpleCharts.tsx: components/SimpleCharts.tsx
+components/SocialProofToast.tsx: components/SocialProofToast.tsx
+components/StatsCounter.tsx: components/StatsCounter.tsx
+components/StoreHours.tsx: components/StoreHours.tsx
+components/StoreProductsHydrator.tsx: components/StoreProductsHydrator.tsx
+components/StoreStats.tsx: components/StoreStats.tsx
+components/Testimonials.tsx: components/Testimonials.tsx
+components/ThemeToggleButton.tsx: components/ThemeToggleButton.tsx
+components/TrustBar.tsx: components/TrustBar.tsx
+components/WelcomeSurveyModal.tsx: components/WelcomeSurveyModal.tsx
+components/WishlistButton.tsx: components/WishlistButton.tsx
+components/accessibility/SeniorModeToggle.tsx: components/accessibility/SeniorModeToggle.tsx
+components/admin/ABTestsTab.tsx: components/admin/ABTestsTab.tsx
+components/admin/AIAssistant.tsx: components/admin/AIAssistant.tsx
+components/admin/AIFloatingButton.tsx: components/admin/AIFloatingButton.tsx
+components/admin/AIHealthPanel.tsx: components/admin/AIHealthPanel.tsx
+components/admin/AIProductDescriptionGenerator.tsx: components/admin/AIProductDescriptionGenerator.tsx
+components/admin/AIReviewResponder.tsx: components/admin/AIReviewResponder.tsx
+components/admin/AccountsReceivableTab.tsx: components/admin/AccountsReceivableTab.tsx
+components/admin/AchievementBadges.tsx: components/admin/AchievementBadges.tsx
+components/admin/ActivityFeed.tsx: components/admin/ActivityFeed.tsx
+components/admin/ActivityLogTab.tsx: components/admin/ActivityLogTab.tsx
+components/admin/ActivityTracker.tsx: components/admin/ActivityTracker.tsx
+components/admin/AdminBottomNav.tsx: components/admin/AdminBottomNav.tsx
+components/admin/AdminChatTab.tsx: components/admin/AdminChatTab.tsx
+components/admin/AdminInvitationsTab.tsx: components/admin/AdminInvitationsTab.tsx
+components/admin/AdminKPIBanner.tsx: components/admin/AdminKPIBanner.tsx
+components/admin/AdminSidebar.tsx: components/admin/AdminSidebar.tsx
+components/admin/AdminStats.tsx: components/admin/AdminStats.tsx
+components/admin/AdminUsersTab.tsx: components/admin/AdminUsersTab.tsx
+components/admin/AdvancedReturnsTab.tsx: components/admin/AdvancedReturnsTab.tsx
+components/admin/AgentsDashboardTab.tsx: components/admin/AgentsDashboardTab.tsx
+components/admin/AlertCenter.tsx: components/admin/AlertCenter.tsx
+components/admin/AlertsCenterTab.tsx: components/admin/AlertsCenterTab.tsx
+components/admin/AnomalyDetectionTab.tsx: components/admin/AnomalyDetectionTab.tsx
+components/admin/ApprovalWorkflow.tsx: components/admin/ApprovalWorkflow.tsx
+components/admin/AssetManagerTab.tsx: components/admin/AssetManagerTab.tsx
+components/admin/AuditLogTab.tsx: components/admin/AuditLogTab.tsx
+components/admin/AutoAlertEngineTab.tsx: components/admin/AutoAlertEngineTab.tsx
+components/admin/AutoCategorizer.tsx: components/admin/AutoCategorizer.tsx
+components/admin/AutoReorderTab.tsx: components/admin/AutoReorderTab.tsx
+components/admin/AutoReportsTab.tsx: components/admin/AutoReportsTab.tsx
+components/admin/AutoSegmentsTab.tsx: components/admin/AutoSegmentsTab.tsx
+components/admin/BackupExportButton.tsx: components/admin/BackupExportButton.tsx
+components/admin/BackupRestoreTab.tsx: components/admin/BackupRestoreTab.tsx
+components/admin/BalanceSheetTab.tsx: components/admin/BalanceSheetTab.tsx
+components/admin/BankReconciliationTab.tsx: components/admin/BankReconciliationTab.tsx
+components/admin/BannerEditor.tsx: components/admin/BannerEditor.tsx
+components/admin/BarcodeGenerator.tsx: components/admin/BarcodeGenerator.tsx
+components/admin/BatchesTab.tsx: components/admin/BatchesTab.tsx
+components/admin/BranchesTab.tsx: components/admin/BranchesTab.tsx
+components/admin/Breadcrumbs.tsx: components/admin/Breadcrumbs.tsx
+components/admin/BreakEvenTab.tsx: components/admin/BreakEvenTab.tsx
+components/admin/BudgetTab.tsx: components/admin/BudgetTab.tsx
+components/admin/BulkImportModal.tsx: components/admin/BulkImportModal.tsx
+components/admin/BulkInvoiceGenerator.tsx: components/admin/BulkInvoiceGenerator.tsx
+components/admin/BulkPriceUpdater.tsx: components/admin/BulkPriceUpdater.tsx
+components/admin/BulkWeightCalculator.tsx: components/admin/BulkWeightCalculator.tsx
+components/admin/BundlesTab.tsx: components/admin/BundlesTab.tsx
+components/admin/BusinessRuleBuilder.tsx: components/admin/BusinessRuleBuilder.tsx
+components/admin/BusinessRulesTab.tsx: components/admin/BusinessRulesTab.tsx
+components/admin/CLVAnalyticsTab.tsx: components/admin/CLVAnalyticsTab.tsx
+components/admin/CampañasTab.tsx: components/admin/CampañasTab.tsx
+components/admin/CashFlowRolling.tsx: components/admin/CashFlowRolling.tsx
+components/admin/CashFlowTab.tsx: components/admin/CashFlowTab.tsx
+components/admin/CashierRanking.tsx: components/admin/CashierRanking.tsx
+components/admin/CatalogPDFGenerator.tsx: components/admin/CatalogPDFGenerator.tsx
+components/admin/ChangelogModule.tsx: components/admin/ChangelogModule.tsx
+components/admin/ChangelogPanel.tsx: components/admin/ChangelogPanel.tsx
+components/admin/CheckManagementTab.tsx: components/admin/CheckManagementTab.tsx
+components/admin/ChurnPrediction.tsx: components/admin/ChurnPrediction.tsx
+components/admin/CollectionCenterTab.tsx: components/admin/CollectionCenterTab.tsx
+components/admin/ComboSuggestionCard.tsx: components/admin/ComboSuggestionCard.tsx
+components/admin/CombosEditorTab.tsx: components/admin/CombosEditorTab.tsx
+components/admin/ComisionesTab.tsx: components/admin/ComisionesTab.tsx
+components/admin/CommunicationHubTab.tsx: components/admin/CommunicationHubTab.tsx
+components/admin/ComplianceTab.tsx: components/admin/ComplianceTab.tsx
+components/admin/ConfigurableKPIDashboard.tsx: components/admin/ConfigurableKPIDashboard.tsx
+components/admin/ContentCalendar.tsx: components/admin/ContentCalendar.tsx
+components/admin/ContratosChart.tsx: components/admin/ContratosChart.tsx
+components/admin/ConversionFunnel.tsx: components/admin/ConversionFunnel.tsx
+components/admin/ConversionMetricsTab.tsx: components/admin/ConversionMetricsTab.tsx
+components/admin/CostCenterTab.tsx: components/admin/CostCenterTab.tsx
+components/admin/CreditScoreCard.tsx: components/admin/CreditScoreCard.tsx
+components/admin/CrossSellSuggestion.tsx: components/admin/CrossSellSuggestion.tsx
+components/admin/CustomerHeatmap.tsx: components/admin/CustomerHeatmap.tsx
+components/admin/CustomerImporter.tsx: components/admin/CustomerImporter.tsx
+components/admin/CustomerRetentionChart.tsx: components/admin/CustomerRetentionChart.tsx
+components/admin/CustomerSegmentationTab.tsx: components/admin/CustomerSegmentationTab.tsx
+components/admin/CustomerTimeline.tsx: components/admin/CustomerTimeline.tsx
+components/admin/CustomizableDashboard.tsx: components/admin/CustomizableDashboard.tsx
+components/admin/DailyReportExport.tsx: components/admin/DailyReportExport.tsx
+components/admin/DailyReportWACard.tsx: components/admin/DailyReportWACard.tsx
+components/admin/DailyReportWhatsApp.tsx: components/admin/DailyReportWhatsApp.tsx
+components/admin/DailySummaryPanel.tsx: components/admin/DailySummaryPanel.tsx
+components/admin/DashboardIATab.tsx: components/admin/DashboardIATab.tsx
+components/admin/DashboardKpis.tsx: components/admin/DashboardKpis.tsx
+components/admin/DashboardTab.tsx: components/admin/DashboardTab.tsx
+components/admin/DataExportImport.tsx: components/admin/DataExportImport.tsx
+components/admin/DeliveryCalendarTab.tsx: components/admin/DeliveryCalendarTab.tsx
+components/admin/DeliveryNotificationSettings.tsx: components/admin/DeliveryNotificationSettings.tsx
+components/admin/DeliveryRoutesTab.tsx: components/admin/DeliveryRoutesTab.tsx
+components/admin/DeliveryScheduleTab.tsx: components/admin/DeliveryScheduleTab.tsx
+components/admin/DeliveryTimeSlots.tsx: components/admin/DeliveryTimeSlots.tsx
+components/admin/DeliveryZoneGrouper.tsx: components/admin/DeliveryZoneGrouper.tsx
+components/admin/DeliveryZoneManager.tsx: components/admin/DeliveryZoneManager.tsx
+components/admin/DemandPredictionTab.tsx: components/admin/DemandPredictionTab.tsx
+components/admin/DevolucionesChart.tsx: components/admin/DevolucionesChart.tsx
+components/admin/DocumentManagerTab.tsx: components/admin/DocumentManagerTab.tsx
+components/admin/DocumentosEmitidosTab.tsx: components/admin/DocumentosEmitidosTab.tsx
+components/admin/DynamicPricingSuggestionsCard.tsx: components/admin/DynamicPricingSuggestionsCard.tsx
+components/admin/DynamicReorderTab.tsx: components/admin/DynamicReorderTab.tsx
+components/admin/EmployeePerformanceChart.tsx: components/admin/EmployeePerformanceChart.tsx
+components/admin/EmptyStateAction.tsx: components/admin/EmptyStateAction.tsx
+components/admin/EtiquetasTab.tsx: components/admin/EtiquetasTab.tsx
+components/admin/ExcelProductImporter.tsx: components/admin/ExcelProductImporter.tsx
+components/admin/ExecutiveDashboardTab.tsx: components/admin/ExecutiveDashboardTab.tsx
+components/admin/ExpiryAlertWidget.tsx: components/admin/ExpiryAlertWidget.tsx
+components/admin/ExpiryAlertsDashboard.tsx: components/admin/ExpiryAlertsDashboard.tsx
+components/admin/ExpiryDashboardTab.tsx: components/admin/ExpiryDashboardTab.tsx
+components/admin/FlashSaleCreator.tsx: components/admin/FlashSaleCreator.tsx
+components/admin/FleetManagementTab.tsx: components/admin/FleetManagementTab.tsx
+components/admin/ForecastCard.tsx: components/admin/ForecastCard.tsx
+components/admin/FullExporter.tsx: components/admin/FullExporter.tsx
+components/admin/GiftCardManager.tsx: components/admin/GiftCardManager.tsx
+components/admin/GoalTrackerTab.tsx: components/admin/GoalTrackerTab.tsx
+components/admin/HRTab.tsx: components/admin/HRTab.tsx
+components/admin/HapticFeedback.tsx: components/admin/HapticFeedback.tsx
+components/admin/HeatMapTab.tsx: components/admin/HeatMapTab.tsx
+components/admin/HomepageEditorTab.tsx: components/admin/HomepageEditorTab.tsx
+components/admin/ImportCSVTab.tsx: components/admin/ImportCSVTab.tsx
+components/admin/InactivityLock.tsx: components/admin/InactivityLock.tsx
+components/admin/InsuranceTab.tsx: components/admin/InsuranceTab.tsx
+components/admin/InventoryMetricsTab.tsx: components/admin/InventoryMetricsTab.tsx
+components/admin/InvoiceEmitter.tsx: components/admin/InvoiceEmitter.tsx
+components/admin/InvoiceHistory.tsx: components/admin/InvoiceHistory.tsx
+components/admin/KanbanBoardTab.tsx: components/admin/KanbanBoardTab.tsx
+components/admin/KardexTab.tsx: components/admin/KardexTab.tsx
+components/admin/KioskMode.tsx: components/admin/KioskMode.tsx
+components/admin/KitManagerTab.tsx: components/admin/KitManagerTab.tsx
+components/admin/LiquidityForecastTab.tsx: components/admin/LiquidityForecastTab.tsx
+components/admin/LiveMarginDisplay.tsx: components/admin/LiveMarginDisplay.tsx
+components/admin/LiveNotificationBell.tsx: components/admin/LiveNotificationBell.tsx
+components/admin/LiveSalesWidget.tsx: components/admin/LiveSalesWidget.tsx
+components/admin/LoanCalculator.tsx: components/admin/LoanCalculator.tsx
+components/admin/LoyaltyMetricsTab.tsx: components/admin/LoyaltyMetricsTab.tsx
+components/admin/LoyaltyRedeemTab.tsx: components/admin/LoyaltyRedeemTab.tsx
+components/admin/LoyaltyTab.tsx: components/admin/LoyaltyTab.tsx
+components/admin/MarginDashboardTab.tsx: components/admin/MarginDashboardTab.tsx
+components/admin/MarketingAutomationTab.tsx: components/admin/MarketingAutomationTab.tsx
+components/admin/MessageTemplatesTab.tsx: components/admin/MessageTemplatesTab.tsx
+components/admin/MiNegocioHoyCard.tsx: components/admin/MiNegocioHoyCard.tsx
+components/admin/MiNegocioInsightCard.tsx: components/admin/MiNegocioInsightCard.tsx
+components/admin/ModuleTooltip.tsx: components/admin/ModuleTooltip.tsx
+components/admin/MultiBranchDashboard.tsx: components/admin/MultiBranchDashboard.tsx
+components/admin/MultiCashierMode.tsx: components/admin/MultiCashierMode.tsx
+components/admin/MultiStoreDashboard.tsx: components/admin/MultiStoreDashboard.tsx
+components/admin/NightModeToggle.tsx: components/admin/NightModeToggle.tsx
+components/admin/NotificationsTab.tsx: components/admin/NotificationsTab.tsx
+components/admin/OfflineSalesQueue.tsx: components/admin/OfflineSalesQueue.tsx
+components/admin/OpeningChecklist.tsx: components/admin/OpeningChecklist.tsx
+components/admin/OrderEmailTemplates.tsx: components/admin/OrderEmailTemplates.tsx
+components/admin/OrderTemplatesTab.tsx: components/admin/OrderTemplatesTab.tsx
+components/admin/OrdersTab/OrdersList.tsx: components/admin/OrdersTab/OrdersList.tsx
+components/admin/OrdersTab/ShipmentOrderCard.tsx: components/admin/OrdersTab/ShipmentOrderCard.tsx
+components/admin/PWAShortcuts.tsx: components/admin/PWAShortcuts.tsx
+components/admin/ParetoAnalysisTab.tsx: components/admin/ParetoAnalysisTab.tsx
+components/admin/PaymentCalendar.tsx: components/admin/PaymentCalendar.tsx
+components/admin/PaymentCalendarView.tsx: components/admin/PaymentCalendarView.tsx
+components/admin/PayrollTab.tsx: components/admin/PayrollTab.tsx
+components/admin/PeriodComparatorTab.tsx: components/admin/PeriodComparatorTab.tsx
+components/admin/PhysicalInventoryTab.tsx: components/admin/PhysicalInventoryTab.tsx
+components/admin/PickListGenerator.tsx: components/admin/PickListGenerator.tsx
+components/admin/PinLoginModal.tsx: components/admin/PinLoginModal.tsx
+components/admin/PointsProgramTab.tsx: components/admin/PointsProgramTab.tsx
+components/admin/PriceBenchmarkTab.tsx: components/admin/PriceBenchmarkTab.tsx
+components/admin/PriceRadarCard.tsx: components/admin/PriceRadarCard.tsx
+components/admin/PriceScheduler.tsx: components/admin/PriceScheduler.tsx
+components/admin/PriceSuggestionBadge.tsx: components/admin/PriceSuggestionBadge.tsx
+components/admin/PriceTagGenerator.tsx: components/admin/PriceTagGenerator.tsx
+components/admin/ProductPhotoCapture.tsx: components/admin/ProductPhotoCapture.tsx
+components/admin/ProductQRGenerator.tsx: components/admin/ProductQRGenerator.tsx
+components/admin/ProductsAdminTab.tsx: components/admin/ProductsAdminTab.tsx
+components/admin/ProfitabilityCalculator.tsx: components/admin/ProfitabilityCalculator.tsx
+components/admin/ProjectsTab.tsx: components/admin/ProjectsTab.tsx
+components/admin/PurchaseApprovalTab.tsx: components/admin/PurchaseApprovalTab.tsx
+components/admin/PurchaseContractsTab.tsx: components/admin/PurchaseContractsTab.tsx
+components/admin/PurchasePlanningTab.tsx: components/admin/PurchasePlanningTab.tsx
+components/admin/PushNotificationManager.tsx: components/admin/PushNotificationManager.tsx
+components/admin/QualityControlTab.tsx: components/admin/QualityControlTab.tsx
+components/admin/QuickActionsBar.tsx: components/admin/QuickActionsBar.tsx
+components/admin/QuickChargeMode.tsx: components/admin/QuickChargeMode.tsx
+components/admin/QuickFlashPromoCard.tsx: components/admin/QuickFlashPromoCard.tsx
+components/admin/QuickNotesTab.tsx: components/admin/QuickNotesTab.tsx
+components/admin/RFQTab.tsx: components/admin/RFQTab.tsx
+components/admin/ReferidosTiendasTab.tsx: components/admin/ReferidosTiendasTab.tsx
+components/admin/ReferralProgramTab.tsx: components/admin/ReferralProgramTab.tsx
+components/admin/ReferralTab.tsx: components/admin/ReferralTab.tsx
+components/admin/ResumenGlobal.tsx: components/admin/ResumenGlobal.tsx
+components/admin/ReturnLogisticsTab.tsx: components/admin/ReturnLogisticsTab.tsx
+components/admin/ReturnsTab.tsx: components/admin/ReturnsTab.tsx
+components/admin/RevenuePerSquareMeter.tsx: components/admin/RevenuePerSquareMeter.tsx
+components/admin/RolePermissionsTab.tsx: components/admin/RolePermissionsTab.tsx
+components/admin/SalesForecastTab.tsx: components/admin/SalesForecastTab.tsx
+components/admin/SalesHeatmap.tsx: components/admin/SalesHeatmap.tsx
+components/admin/SalesOrdersTab.tsx: components/admin/SalesOrdersTab.tsx
+components/admin/SalesWidgetPreview.tsx: components/admin/SalesWidgetPreview.tsx
+components/admin/SavedFiltersTab.tsx: components/admin/SavedFiltersTab.tsx
+components/admin/ScenarioSimulatorTab.tsx: components/admin/ScenarioSimulatorTab.tsx
+components/admin/ScheduledPriceChange.tsx: components/admin/ScheduledPriceChange.tsx
+components/admin/SeasonalityInsights.tsx: components/admin/SeasonalityInsights.tsx
+components/admin/SeasonalityTab.tsx: components/admin/SeasonalityTab.tsx
+components/admin/SecurityLogsTab.tsx: components/admin/SecurityLogsTab.tsx
+components/admin/SharedCalendarTab.tsx: components/admin/SharedCalendarTab.tsx
+components/admin/ShiftClockWidget.tsx: components/admin/ShiftClockWidget.tsx
+components/admin/ShiftControlTab.tsx: components/admin/ShiftControlTab.tsx
+components/admin/ShiftHandover.tsx: components/admin/ShiftHandover.tsx
+components/admin/ShiftNotes.tsx: components/admin/ShiftNotes.tsx
+components/admin/ShipmentTrackingTab.tsx: components/admin/ShipmentTrackingTab.tsx
+components/admin/ShippingCostsTab.tsx: components/admin/ShippingCostsTab.tsx
+components/admin/ShrinkageTab.tsx: components/admin/ShrinkageTab.tsx
+components/admin/SmartDashboardTab.tsx: components/admin/SmartDashboardTab.tsx
+components/admin/SmartPurchaseAdvisor.tsx: components/admin/SmartPurchaseAdvisor.tsx
+components/admin/SmartRemindersTab.tsx: components/admin/SmartRemindersTab.tsx
+components/admin/SmartReorderCard.tsx: components/admin/SmartReorderCard.tsx
+components/admin/SmartSuggestionsPanel.tsx: components/admin/SmartSuggestionsPanel.tsx
+components/admin/SocialPostGenerator.tsx: components/admin/SocialPostGenerator.tsx
+components/admin/StaleProductAlert.tsx: components/admin/StaleProductAlert.tsx
+components/admin/StockPrediction.tsx: components/admin/StockPrediction.tsx
+components/admin/StockPredictionWidget.tsx: components/admin/StockPredictionWidget.tsx
+components/admin/SupplierEvaluationsTab.tsx: components/admin/SupplierEvaluationsTab.tsx
+components/admin/SupplierPaymentsTab.tsx: components/admin/SupplierPaymentsTab.tsx
+components/admin/SupplierPortalLink.tsx: components/admin/SupplierPortalLink.tsx
+components/admin/SupplierPortalTab.tsx: components/admin/SupplierPortalTab.tsx
+components/admin/SupplierPriceComparator.tsx: components/admin/SupplierPriceComparator.tsx
+components/admin/SupplierQualityTab.tsx: components/admin/SupplierQualityTab.tsx
+components/admin/SupportTicketsTab.tsx: components/admin/SupportTicketsTab.tsx
+components/admin/SupportWidget.tsx: components/admin/SupportWidget.tsx
+components/admin/SurveysTab.tsx: components/admin/SurveysTab.tsx
+components/admin/SuspiciousActivityAlert.tsx: components/admin/SuspiciousActivityAlert.tsx
+components/admin/TVDashboard.tsx: components/admin/TVDashboard.tsx
+components/admin/TagBadge.tsx: components/admin/TagBadge.tsx
+components/admin/TagManager.tsx: components/admin/TagManager.tsx
+components/admin/TaskKanban.tsx: components/admin/TaskKanban.tsx
+components/admin/TasksTab.tsx: components/admin/TasksTab.tsx
+components/admin/TesoreriaChart.tsx: components/admin/TesoreriaChart.tsx
+components/admin/TesoreriaModule.tsx: components/admin/TesoreriaModule.tsx
+components/admin/ThemeCustomizer.tsx: components/admin/ThemeCustomizer.tsx
+components/admin/TicketPreview.tsx: components/admin/TicketPreview.tsx
+components/admin/TicketPrinter.tsx: components/admin/TicketPrinter.tsx
+components/admin/TierSelector.tsx: components/admin/TierSelector.tsx
+components/admin/TouchGestures.tsx: components/admin/TouchGestures.tsx
+components/admin/TrainingCenter.tsx: components/admin/TrainingCenter.tsx
+components/admin/TreasuryTab.tsx: components/admin/TreasuryTab.tsx
+components/admin/UpgradeBanner.tsx: components/admin/UpgradeBanner.tsx
+components/admin/VisitantesTab.tsx: components/admin/VisitantesTab.tsx
+components/admin/VoiceCommandPOS.tsx: components/admin/VoiceCommandPOS.tsx
+components/admin/VolumeDiscountManager.tsx: components/admin/VolumeDiscountManager.tsx
+components/admin/WarehouseLayoutEditor.tsx: components/admin/WarehouseLayoutEditor.tsx
+components/admin/WarehouseLocationTab.tsx: components/admin/WarehouseLocationTab.tsx
+components/admin/WarehouseTab.tsx: components/admin/WarehouseTab.tsx
+components/admin/WarehouseTransferTab.tsx: components/admin/WarehouseTransferTab.tsx
+components/admin/WeatherDemandPredictor.tsx: components/admin/WeatherDemandPredictor.tsx
+components/admin/WebhooksConfigTab.tsx: components/admin/WebhooksConfigTab.tsx
+components/admin/WebhooksTab.tsx: components/admin/WebhooksTab.tsx
+components/admin/WeeklyPurchasePlanner.tsx: components/admin/WeeklyPurchasePlanner.tsx
+components/admin/WhatsAppAlertManager.tsx: components/admin/WhatsAppAlertManager.tsx
+components/admin/WhatsAppInbox.tsx: components/admin/WhatsAppInbox.tsx
+components/admin/WhatsAppTemplates.tsx: components/admin/WhatsAppTemplates.tsx
+components/admin/WishListAdminTab.tsx: components/admin/WishListAdminTab.tsx
+components/admin/WorkflowTemplatesTab.tsx: components/admin/WorkflowTemplatesTab.tsx
+components/admin/admin-types.ts: components/admin/admin-types.ts
+components/admin/ai-center/AIModuleSkeleton.tsx: components/admin/ai-center/AIModuleSkeleton.tsx
+components/admin/analytics/AnalyticsProDashboard.tsx: components/admin/analytics/AnalyticsProDashboard.tsx
+components/admin/analytics/CashFlowChart.tsx: components/admin/analytics/CashFlowChart.tsx
+components/admin/analytics/CashFlowWaterfall.tsx: components/admin/analytics/CashFlowWaterfall.tsx
+components/admin/analytics/ChartRenderer.tsx: components/admin/analytics/ChartRenderer.tsx
+components/admin/analytics/CustomReportBuilder.tsx: components/admin/analytics/CustomReportBuilder.tsx
+components/admin/analytics/CustomerLifetimeValue.tsx: components/admin/analytics/CustomerLifetimeValue.tsx
+components/admin/analytics/ProductPerformanceMatrix.tsx: components/admin/analytics/ProductPerformanceMatrix.tsx
+components/admin/analytics/ProfitMarginAnalyzer.tsx: components/admin/analytics/ProfitMarginAnalyzer.tsx
+components/admin/analytics/RevenueBreakdownChart.tsx: components/admin/analytics/RevenueBreakdownChart.tsx
+components/admin/analytics/TrendForecaster.tsx: components/admin/analytics/TrendForecaster.tsx
+components/admin/compras/CxPCalendar.tsx: components/admin/compras/CxPCalendar.tsx
+components/admin/compras/PuntoDeCompraTab.tsx: components/admin/compras/PuntoDeCompraTab.tsx
+components/admin/dashboard/BatchStatsWidget.tsx: components/admin/dashboard/BatchStatsWidget.tsx
+components/admin/dashboard/DashboardClientesSection.tsx: components/admin/dashboard/DashboardClientesSection.tsx
+components/admin/dashboard/DashboardComprasCajaSection.tsx: components/admin/dashboard/DashboardComprasCajaSection.tsx
+components/admin/dashboard/DashboardInventarioSection.tsx: components/admin/dashboard/DashboardInventarioSection.tsx
+components/admin/dashboard/DashboardOverviewCharts.tsx: components/admin/dashboard/DashboardOverviewCharts.tsx
+components/admin/dashboard/DashboardProductosSection.tsx: components/admin/dashboard/DashboardProductosSection.tsx
+components/admin/dashboard/DashboardUI.tsx: components/admin/dashboard/DashboardUI.tsx
+components/admin/dashboard/DashboardVentasSection.tsx: components/admin/dashboard/DashboardVentasSection.tsx
+components/admin/dashboard/ExpiredBatchesWidget.tsx: components/admin/dashboard/ExpiredBatchesWidget.tsx
+components/admin/dashboard/ExpiringBatchesAlert.tsx: components/admin/dashboard/ExpiringBatchesAlert.tsx
+components/admin/dashboard/PushNotificationBanner.tsx: components/admin/dashboard/PushNotificationBanner.tsx
+components/admin/dashboard/types.ts: components/admin/dashboard/types.ts
+components/admin/delivery/ManualAssignModal.tsx: components/admin/delivery/ManualAssignModal.tsx
+components/admin/fiados/CobranzaInteligente.tsx: components/admin/fiados/CobranzaInteligente.tsx
+components/admin/inicio/AnalisisDashboard.tsx: components/admin/inicio/AnalisisDashboard.tsx
+components/admin/inicio/InicioCharts.tsx: components/admin/inicio/InicioCharts.tsx
+components/admin/inicio/InicioDashboard.tsx: components/admin/inicio/InicioDashboard.tsx
+components/admin/inicio/ProductosAdvancedCharts.tsx: components/admin/inicio/ProductosAdvancedCharts.tsx
+components/admin/inicio/ProductosCharts.tsx: components/admin/inicio/ProductosCharts.tsx
+components/admin/inicio/ProductosDashboard.tsx: components/admin/inicio/ProductosDashboard.tsx
+components/admin/inventario/BulkPriceEditor.tsx: components/admin/inventario/BulkPriceEditor.tsx
+components/admin/inventario/CatalogBrowser.tsx: components/admin/inventario/CatalogBrowser.tsx
+components/admin/inventario/StockAlertsDashboard.tsx: components/admin/inventario/StockAlertsDashboard.tsx
+components/admin/inventario/hooks/useInventoryData.ts: components/admin/inventario/hooks/useInventoryData.ts
+components/admin/inventario/hooks/useReorderAlerts.ts: components/admin/inventario/hooks/useReorderAlerts.ts
+components/admin/inventario/hooks/useStockMin.ts: components/admin/inventario/hooks/useStockMin.ts
+components/admin/inventario/hooks/useStockMovements.ts: components/admin/inventario/hooks/useStockMovements.ts
+components/admin/layout/AdminSubSidebar.tsx: components/admin/layout/AdminSubSidebar.tsx
+components/admin/logistics/OrderTrackingTimeline.tsx: components/admin/logistics/OrderTrackingTimeline.tsx
+components/admin/marketplace/BannerEditorTab.tsx: components/admin/marketplace/BannerEditorTab.tsx
+components/admin/marketplace/MarketplaceDashboardCharts.tsx: components/admin/marketplace/MarketplaceDashboardCharts.tsx
+components/admin/marketplace/ProductAnalyticsPanel.tsx: components/admin/marketplace/ProductAnalyticsPanel.tsx
+components/admin/marketplace/SeoEditorModal.tsx: components/admin/marketplace/SeoEditorModal.tsx
+components/admin/pedidos/OrderTimeline.tsx: components/admin/pedidos/OrderTimeline.tsx
+components/admin/pos/POSGlobalDiscount.tsx: components/admin/pos/POSGlobalDiscount.tsx
+components/admin/prestamos/PrestamosDashboard.tsx: components/admin/prestamos/PrestamosDashboard.tsx
+components/admin/shared/ActionableEmptyState.tsx: components/admin/shared/ActionableEmptyState.tsx
+components/admin/shared/AdminBreadcrumb.tsx: components/admin/shared/AdminBreadcrumb.tsx
+components/admin/shared/AdminDateFilter.tsx: components/admin/shared/AdminDateFilter.tsx
+components/admin/shared/AdminDrawer.tsx: components/admin/shared/AdminDrawer.tsx
+components/admin/shared/AdminKPI.tsx: components/admin/shared/AdminKPI.tsx
+components/admin/shared/AdminSectionHeader.tsx: components/admin/shared/AdminSectionHeader.tsx
+components/admin/shared/AdminSelect.tsx: components/admin/shared/AdminSelect.tsx
+components/admin/shared/AdminTable.tsx: components/admin/shared/AdminTable.tsx
+components/admin/shared/AdminTabs.tsx: components/admin/shared/AdminTabs.tsx
+components/admin/shared/AdminWizard.tsx: components/admin/shared/AdminWizard.tsx
+components/admin/shared/AutoSaveIndicator.tsx: components/admin/shared/AutoSaveIndicator.tsx
+components/admin/shared/BusinessOverviewHero.tsx: components/admin/shared/BusinessOverviewHero.tsx
+components/admin/shared/ContextMenu.tsx: components/admin/shared/ContextMenu.tsx
+components/admin/shared/CountUpNumber.tsx: components/admin/shared/CountUpNumber.tsx
+components/admin/shared/DashboardWidgets.tsx: components/admin/shared/DashboardWidgets.tsx
+components/admin/shared/DensityToggle.tsx: components/admin/shared/DensityToggle.tsx
+components/admin/shared/DraggableWidgetGrid.tsx: components/admin/shared/DraggableWidgetGrid.tsx
+components/admin/shared/FilterChip.tsx: components/admin/shared/FilterChip.tsx
+components/admin/shared/FinancialDashboard.tsx: components/admin/shared/FinancialDashboard.tsx
+components/admin/shared/HoldedKPI.tsx: components/admin/shared/HoldedKPI.tsx
+components/admin/shared/HoverCardPreview.tsx: components/admin/shared/HoverCardPreview.tsx
+components/admin/shared/InlineEditField.tsx: components/admin/shared/InlineEditField.tsx
+components/admin/shared/ModuleEmptyState.tsx: components/admin/shared/ModuleEmptyState.tsx
+components/admin/shared/ModuleLayout.tsx: components/admin/shared/ModuleLayout.tsx
+components/admin/shared/ModuleSkeleton.tsx: components/admin/shared/ModuleSkeleton.tsx
+components/admin/shared/ModuleToolbar.tsx: components/admin/shared/ModuleToolbar.tsx
+components/admin/shared/MultiMetricCard.tsx: components/admin/shared/MultiMetricCard.tsx
+components/admin/shared/NotificationCenter.tsx: components/admin/shared/NotificationCenter.tsx
+components/admin/shared/QuickActionFAB.tsx: components/admin/shared/QuickActionFAB.tsx
+components/admin/shared/RevenueChart.tsx: components/admin/shared/RevenueChart.tsx
+components/admin/shared/StaggerContainer.tsx: components/admin/shared/StaggerContainer.tsx
+components/admin/shared/StaggerList.tsx: components/admin/shared/StaggerList.tsx
+components/admin/shared/StockAlertsBanner.tsx: components/admin/shared/StockAlertsBanner.tsx
+components/admin/shared/TabSkeleton.tsx: components/admin/shared/TabSkeleton.tsx
+components/admin/shared/UnifiedKPITile.tsx: components/admin/shared/UnifiedKPITile.tsx
+components/admin/shared/UnifiedSectionTitle.tsx: components/admin/shared/UnifiedSectionTitle.tsx
+components/admin/shared/index.ts: components/admin/shared/index.ts
+components/admin/shared/typography.ts: components/admin/shared/typography.ts
+components/admin/smart-dashboard/BirthdayCard.tsx: components/admin/smart-dashboard/BirthdayCard.tsx
+components/admin/smart-dashboard/BusinessOverviewChart.tsx: components/admin/smart-dashboard/BusinessOverviewChart.tsx
+components/admin/smart-dashboard/CategoryDonutChart.tsx: components/admin/smart-dashboard/CategoryDonutChart.tsx
+components/admin/smart-dashboard/ClientesSubTab.tsx: components/admin/smart-dashboard/ClientesSubTab.tsx
+components/admin/smart-dashboard/DashboardCharts.tsx: components/admin/smart-dashboard/DashboardCharts.tsx
+components/admin/smart-dashboard/DeliveryZonesConfig.tsx: components/admin/smart-dashboard/DeliveryZonesConfig.tsx
+components/admin/smart-dashboard/FinanzasSubTab.tsx: components/admin/smart-dashboard/FinanzasSubTab.tsx
+components/admin/smart-dashboard/InactiveCustomersCard.tsx: components/admin/smart-dashboard/InactiveCustomersCard.tsx
+components/admin/smart-dashboard/InventarioSubTab.tsx: components/admin/smart-dashboard/InventarioSubTab.tsx
+components/admin/smart-dashboard/MonthlySalesAreaChart.tsx: components/admin/smart-dashboard/MonthlySalesAreaChart.tsx
+components/admin/smart-dashboard/RecentDocumentsFeed.tsx: components/admin/smart-dashboard/RecentDocumentsFeed.tsx
+components/admin/smart-dashboard/ResumenSubTab.tsx: components/admin/smart-dashboard/ResumenSubTab.tsx
+components/admin/smart-dashboard/VentasSubTab.tsx: components/admin/smart-dashboard/VentasSubTab.tsx
+components/admin/smart-dashboard/types.ts: components/admin/smart-dashboard/types.ts
+components/admin/unified/AsistenteIAModule.tsx: components/admin/unified/AsistenteIAModule.tsx
+components/admin/unified/DocumentosModule.tsx: components/admin/unified/DocumentosModule.tsx
+components/admin/unified/MeteringCard/MeteringCard.tsx: components/admin/unified/MeteringCard/MeteringCard.tsx
+components/admin/unified/MeteringCard/index.ts: components/admin/unified/MeteringCard/index.ts
+components/admin/unified/marketplace/OrderDetailDrawer.tsx: components/admin/unified/marketplace/OrderDetailDrawer.tsx
+components/admin/unified/marketplace/OrderMiniMap.tsx: components/admin/unified/marketplace/OrderMiniMap.tsx
+components/admin/unified/marketplace/tabs/ComisionesTab.tsx: components/admin/unified/marketplace/tabs/ComisionesTab.tsx
+components/admin/unified/marketplace/tabs/CuponesTab.tsx: components/admin/unified/marketplace/tabs/CuponesTab.tsx
+components/admin/unified/marketplace/tabs/DashboardTab.tsx: components/admin/unified/marketplace/tabs/DashboardTab.tsx
+components/admin/unified/marketplace/tabs/FidelidadTab.tsx: components/admin/unified/marketplace/tabs/FidelidadTab.tsx
+components/admin/unified/marketplace/tabs/OrdenTab.tsx: components/admin/unified/marketplace/tabs/OrdenTab.tsx
+components/admin/unified/marketplace/tabs/OrdenesTab.tsx: components/admin/unified/marketplace/tabs/OrdenesTab.tsx
+components/admin/unified/marketplace/tabs/ProductosTab.tsx: components/admin/unified/marketplace/tabs/ProductosTab.tsx
+components/admin/unified/marketplace/tabs/ResenasTab.tsx: components/admin/unified/marketplace/tabs/ResenasTab.tsx
+components/admin/unified/marketplace/tabs/TiendaTab.tsx: components/admin/unified/marketplace/tabs/TiendaTab.tsx
+components/admin/unified/marketplace/types.tsx: components/admin/unified/marketplace/types.tsx
+components/admin/vendor-identity/AcknowledgeAlertButton.tsx: components/admin/vendor-identity/AcknowledgeAlertButton.tsx
+components/admin/wholesale/VolumePricingEditor.tsx: components/admin/wholesale/VolumePricingEditor.tsx
+components/auth/OAuthButton.tsx: components/auth/OAuthButton.tsx
+components/customer/cuenta-dashboard/ActivityFeed.tsx: components/customer/cuenta-dashboard/ActivityFeed.tsx
+components/customer/cuenta-dashboard/CuentaFooter.tsx: components/customer/cuenta-dashboard/CuentaFooter.tsx
+components/customer/cuenta-dashboard/PersonalizedRecommendations.tsx: components/customer/cuenta-dashboard/PersonalizedRecommendations.tsx
+components/customer/cuenta-dashboard/QuickActionsGrid.tsx: components/customer/cuenta-dashboard/QuickActionsGrid.tsx
+components/customer/cuenta-dashboard/SectionCard.tsx: components/customer/cuenta-dashboard/SectionCard.tsx
+components/customer/cuenta-dashboard/SectionsGrid.tsx: components/customer/cuenta-dashboard/SectionsGrid.tsx
+components/customer/cuenta-dashboard/WelcomeHero.tsx: components/customer/cuenta-dashboard/WelcomeHero.tsx
+components/customer/pedidos/ReorderModal.tsx: components/customer/pedidos/ReorderModal.tsx
+components/customer/pedidos/ReorderOneClickButton.tsx: components/customer/pedidos/ReorderOneClickButton.tsx
+components/customer/socio-buleje/SocioTierBadge.tsx: components/customer/socio-buleje/SocioTierBadge.tsx
+components/delivery/DeliveryAppDashboard.tsx: components/delivery/DeliveryAppDashboard.tsx
+components/delivery/DeliveryMap.tsx: components/delivery/DeliveryMap.tsx
+components/delivery/DeliveryOrderDetail.tsx: components/delivery/DeliveryOrderDetail.tsx
+components/delivery/SignatureCanvas.tsx: components/delivery/SignatureCanvas.tsx
+components/landing/AnimatedCounter.tsx: components/landing/AnimatedCounter.tsx
+components/landing/FeaturedStoresCarousel.tsx: components/landing/FeaturedStoresCarousel.tsx
+components/landing/HeroParallax.tsx: components/landing/HeroParallax.tsx
+components/landing/ScrollyHowItWorks.tsx: components/landing/ScrollyHowItWorks.tsx
+components/landing/StatsMarquee.tsx: components/landing/StatsMarquee.tsx
+components/landing/abrir-tienda/RoiCalculator.tsx: components/landing/abrir-tienda/RoiCalculator.tsx
+components/landing/recommendations/CustomersLikeYou.tsx: components/landing/recommendations/CustomersLikeYou.tsx
+components/landing/recommendations/FlashDealsOfTheDay.tsx: components/landing/recommendations/FlashDealsOfTheDay.tsx
+components/landing/recommendations/InspiredByHistory.tsx: components/landing/recommendations/InspiredByHistory.tsx
+components/landing/recommendations/NewInYourArea.tsx: components/landing/recommendations/NewInYourArea.tsx
+components/landing/recommendations/RecommendationsEngine.tsx: components/landing/recommendations/RecommendationsEngine.tsx
+components/landing/recommendations/TopSellersToday.tsx: components/landing/recommendations/TopSellersToday.tsx
+components/loyalty/LoyaltyDashboard.tsx: components/loyalty/LoyaltyDashboard.tsx
+components/loyalty/LoyaltyLevelBadge.tsx: components/loyalty/LoyaltyLevelBadge.tsx
+components/marketing/LiveSocialProofBanner.tsx: components/marketing/LiveSocialProofBanner.tsx
+components/marketplace/ActiveDeliveryWidget.tsx: components/marketplace/ActiveDeliveryWidget.tsx
+components/marketplace/CatalogInfiniteScroll.tsx: components/marketplace/CatalogInfiniteScroll.tsx
+components/marketplace/CookieConsentBanner.tsx: components/marketplace/CookieConsentBanner.tsx
+components/marketplace/CouponInput.tsx: components/marketplace/CouponInput.tsx
+components/marketplace/FamilyCartBanner.tsx: components/marketplace/FamilyCartBanner.tsx
+components/marketplace/GiftCartBanner.tsx: components/marketplace/GiftCartBanner.tsx
+components/marketplace/GroupBuyCard.tsx: components/marketplace/GroupBuyCard.tsx
+components/marketplace/LivesStrip.tsx: components/marketplace/LivesStrip.tsx
+components/marketplace/MarketplaceCheckoutModal.tsx: components/marketplace/MarketplaceCheckoutModal.tsx
+components/marketplace/MarketplaceCrossStoreCombos.tsx: components/marketplace/MarketplaceCrossStoreCombos.tsx
+components/marketplace/MarketplaceEmptyState.tsx: components/marketplace/MarketplaceEmptyState.tsx
+components/marketplace/MarketplaceHeroBanner.tsx: components/marketplace/MarketplaceHeroBanner.tsx
+components/marketplace/MarketplaceJungleProducts.tsx: components/marketplace/MarketplaceJungleProducts.tsx
+components/marketplace/MarketplaceQuickReorder.tsx: components/marketplace/MarketplaceQuickReorder.tsx
+components/marketplace/MarketplaceStories.tsx: components/marketplace/MarketplaceStories.tsx
+components/marketplace/MarketplaceTopToday.tsx: components/marketplace/MarketplaceTopToday.tsx
+components/marketplace/MiListaDelMes.tsx: components/marketplace/MiListaDelMes.tsx
+components/marketplace/NotificationsEnableCard.tsx: components/marketplace/NotificationsEnableCard.tsx
+components/marketplace/PriceCompare.tsx: components/marketplace/PriceCompare.tsx
+components/marketplace/ProductAttributeBadge.tsx: components/marketplace/ProductAttributeBadge.tsx
+components/marketplace/ProductQuickView.tsx: components/marketplace/ProductQuickView.tsx
+components/marketplace/PushNotificationPrompt.tsx: components/marketplace/PushNotificationPrompt.tsx
+components/marketplace/RecommendationsWidget.tsx: components/marketplace/RecommendationsWidget.tsx
+components/marketplace/StoriesViewer.tsx: components/marketplace/StoriesViewer.tsx
+components/marketplace/TiendaCategoriesNav.tsx: components/marketplace/TiendaCategoriesNav.tsx
+components/marketplace/TiendasMainCategoriesGrid.tsx: components/marketplace/TiendasMainCategoriesGrid.tsx
+components/marketplace/TiendasMap.tsx: components/marketplace/TiendasMap.tsx
+components/marketplace/TiendasMarcasStrip.tsx: components/marketplace/TiendasMarcasStrip.tsx
+components/marketplace/TrendingTodayWidget.tsx: components/marketplace/TrendingTodayWidget.tsx
+components/marketplace/WishlistButton.tsx: components/marketplace/WishlistButton.tsx
+components/marketplace/buleje-assistant/BulejeAssistantChat.tsx: components/marketplace/buleje-assistant/BulejeAssistantChat.tsx
+components/marketplace/buscar/SearchAutocompleteInput.tsx: components/marketplace/buscar/SearchAutocompleteInput.tsx
+components/marketplace/cart/CashCalculator.tsx: components/marketplace/cart/CashCalculator.tsx
+components/marketplace/cart/PaymentMethodSelector.tsx: components/marketplace/cart/PaymentMethodSelector.tsx
+components/marketplace/cart/StepBar.tsx: components/marketplace/cart/StepBar.tsx
+components/marketplace/cart/YapeInstructions.tsx: components/marketplace/cart/YapeInstructions.tsx
+components/marketplace/cart/index.ts: components/marketplace/cart/index.ts
+components/marketplace/checkout/CheckoutHero.tsx: components/marketplace/checkout/CheckoutHero.tsx
+components/marketplace/chef-ia/ChefIACard.tsx: components/marketplace/chef-ia/ChefIACard.tsx
+components/marketplace/comparar/CompareFloatingBadge.tsx: components/marketplace/comparar/CompareFloatingBadge.tsx
+components/marketplace/en-vivo/LiveNowWidget.tsx: components/marketplace/en-vivo/LiveNowWidget.tsx
+components/marketplace/explorar/BuyAgainStrip.tsx: components/marketplace/explorar/BuyAgainStrip.tsx
+components/marketplace/explorar/EditorialFeature.tsx: components/marketplace/explorar/EditorialFeature.tsx
+components/marketplace/explorar/ExplorarAmazonBoxes.tsx: components/marketplace/explorar/ExplorarAmazonBoxes.tsx
+components/marketplace/explorar/ExplorarHero.tsx: components/marketplace/explorar/ExplorarHero.tsx
+components/marketplace/explorar/ExplorarPorOcasion.tsx: components/marketplace/explorar/ExplorarPorOcasion.tsx
+components/marketplace/explorar/ExplorarPorSector.tsx: components/marketplace/explorar/ExplorarPorSector.tsx
+components/marketplace/explorar/ExplorarRelacionados.tsx: components/marketplace/explorar/ExplorarRelacionados.tsx
+components/marketplace/explorar/ExplorarSectionCard.tsx: components/marketplace/explorar/ExplorarSectionCard.tsx
+components/marketplace/explorar/ExplorarTileGrid.tsx: components/marketplace/explorar/ExplorarTileGrid.tsx
+components/marketplace/explorar/GuiasTips.tsx: components/marketplace/explorar/GuiasTips.tsx
+components/marketplace/explorar/NeighborsBoughtStrip.tsx: components/marketplace/explorar/NeighborsBoughtStrip.tsx
+components/marketplace/explorar/NewArrivalsRow.tsx: components/marketplace/explorar/NewArrivalsRow.tsx
+components/marketplace/explorar/OfertasFlash.tsx: components/marketplace/explorar/OfertasFlash.tsx
+components/marketplace/explorar/QuickAccessGrid.tsx: components/marketplace/explorar/QuickAccessGrid.tsx
+components/marketplace/explorar/RecentlyViewedStrip.tsx: components/marketplace/explorar/RecentlyViewedStrip.tsx
+components/marketplace/explorar/RecommendationsStrip.tsx: components/marketplace/explorar/RecommendationsStrip.tsx
+components/marketplace/explorar/TopRatedBento.tsx: components/marketplace/explorar/TopRatedBento.tsx
+components/marketplace/explorar/primitives/PriceDropBadge.tsx: components/marketplace/explorar/primitives/PriceDropBadge.tsx
+components/marketplace/explorar/primitives/QuickAddBtn.tsx: components/marketplace/explorar/primitives/QuickAddBtn.tsx
+components/marketplace/fridge-scan/FridgeScanCard.tsx: components/marketplace/fridge-scan/FridgeScanCard.tsx
+components/marketplace/home/AhorraMasMegaSection.tsx: components/marketplace/home/AhorraMasMegaSection.tsx
+components/marketplace/home/BentoHero.tsx: components/marketplace/home/BentoHero.tsx
+components/marketplace/home/CategoriasQuickAccess.tsx: components/marketplace/home/CategoriasQuickAccess.tsx
+components/marketplace/home/CategoriasShowcase.tsx: components/marketplace/home/CategoriasShowcase.tsx
+components/marketplace/home/ContextualHintBar.tsx: components/marketplace/home/ContextualHintBar.tsx
+components/marketplace/home/LiveActivityFeed.tsx: components/marketplace/home/LiveActivityFeed.tsx
+components/marketplace/home/LiveActivityStrip.tsx: components/marketplace/home/LiveActivityStrip.tsx
+components/marketplace/home/LiveStats.tsx: components/marketplace/home/LiveStats.tsx
+components/marketplace/home/MarketplaceBrandsStrip.tsx: components/marketplace/home/MarketplaceBrandsStrip.tsx
+components/marketplace/home/MarketplaceCategoriesNav.tsx: components/marketplace/home/MarketplaceCategoriesNav.tsx
+components/marketplace/home/MarketplacePriceRangesStrip.tsx: components/marketplace/home/MarketplacePriceRangesStrip.tsx
+components/marketplace/home/OfertasEditorial.tsx: components/marketplace/home/OfertasEditorial.tsx
+components/marketplace/home/ParaVosSection.tsx: components/marketplace/home/ParaVosSection.tsx
+components/marketplace/home/StickyPromoBar.tsx: components/marketplace/home/StickyPromoBar.tsx
+components/marketplace/home/Testimonials.tsx: components/marketplace/home/Testimonials.tsx
+components/marketplace/home/VenderMiniCTA.tsx: components/marketplace/home/VenderMiniCTA.tsx
+components/marketplace/home/_StripSkeleton.tsx: components/marketplace/home/_StripSkeleton.tsx
+components/marketplace/ofertas/OfertasHero.tsx: components/marketplace/ofertas/OfertasHero.tsx
+components/marketplace/product-detail/AskQuestionModal.tsx: components/marketplace/product-detail/AskQuestionModal.tsx
+components/marketplace/product-detail/BulejeAssistant.tsx: components/marketplace/product-detail/BulejeAssistant.tsx
+components/marketplace/product-detail/ProductFaq.tsx: components/marketplace/product-detail/ProductFaq.tsx
+components/marketplace/product-detail/ProductQA.tsx: components/marketplace/product-detail/ProductQA.tsx
+components/marketplace/product-detail/QuestionCard.tsx: components/marketplace/product-detail/QuestionCard.tsx
+components/marketplace/product-detail/SubscribeAndSaveWidget.tsx: components/marketplace/product-detail/SubscribeAndSaveWidget.tsx
+components/marketplace/product-detail/mock-reviews.ts: components/marketplace/product-detail/mock-reviews.ts
+components/marketplace/store-detail/StoreAboutBlock.tsx: components/marketplace/store-detail/StoreAboutBlock.tsx
+components/marketplace/store-detail/StoreInfoCard.tsx: components/marketplace/store-detail/StoreInfoCard.tsx
+components/marketplace/trust/LiveViewersChip.tsx: components/marketplace/trust/LiveViewersChip.tsx
+components/marketplace/trust/OfferCountdown.tsx: components/marketplace/trust/OfferCountdown.tsx
+components/marketplace/trust/RecentPurchaseToast.tsx: components/marketplace/trust/RecentPurchaseToast.tsx
+components/marketplace/voice-order/VoiceOrderButton.tsx: components/marketplace/voice-order/VoiceOrderButton.tsx
+components/providers/PostHogProvider.tsx: components/providers/PostHogProvider.tsx
+components/saas/SaasCaracteristicas.tsx: components/saas/SaasCaracteristicas.tsx
+components/saas/SaasComoFunciona.tsx: components/saas/SaasComoFunciona.tsx
+components/saas/SaasComparativa.tsx: components/saas/SaasComparativa.tsx
+components/saas/SaasComparison.tsx: components/saas/SaasComparison.tsx
+components/saas/SaasFeatures.tsx: components/saas/SaasFeatures.tsx
+components/saas/SaasHowItWorks.tsx: components/saas/SaasHowItWorks.tsx
+components/saas/SaasScreenshots.tsx: components/saas/SaasScreenshots.tsx
+components/socio-buleje/SocioPromoBanner.tsx: components/socio-buleje/SocioPromoBanner.tsx
+components/store/BrandShowcase.tsx: components/store/BrandShowcase.tsx
+components/store/CatalogModeToggle.tsx: components/store/CatalogModeToggle.tsx
+components/store/CustomerMetricsPanel.tsx: components/store/CustomerMetricsPanel.tsx
+components/store/DeliveryTimeWidget.tsx: components/store/DeliveryTimeWidget.tsx
+components/store/DigitalMenuQR.tsx: components/store/DigitalMenuQR.tsx
+components/store/FlashSaleBanner.tsx: components/store/FlashSaleBanner.tsx
+components/store/FrequencyRewardCard.tsx: components/store/FrequencyRewardCard.tsx
+components/store/LanguageSelector.tsx: components/store/LanguageSelector.tsx
+components/store/LoyaltyBanner.tsx: components/store/LoyaltyBanner.tsx
+components/store/LoyaltyWidget.tsx: components/store/LoyaltyWidget.tsx
+components/store/MarketListMode.tsx: components/store/MarketListMode.tsx
+components/store/ProductPriceHistory.tsx: components/store/ProductPriceHistory.tsx
+components/store/ProductRecommendations.tsx: components/store/ProductRecommendations.tsx
+components/store/ProductReviews.tsx: components/store/ProductReviews.tsx
+components/store/PromoBannerRotator.tsx: components/store/PromoBannerRotator.tsx
+components/store/QuickReorder.tsx: components/store/QuickReorder.tsx
+components/store/RecentlyViewed.tsx: components/store/RecentlyViewed.tsx
+components/store/RecipeOfTheWeek.tsx: components/store/RecipeOfTheWeek.tsx
+components/store/RecipeSuggestions.tsx: components/store/RecipeSuggestions.tsx
+components/store/ReferralProgram.tsx: components/store/ReferralProgram.tsx
+components/store/SatisfactionWidget.tsx: components/store/SatisfactionWidget.tsx
+components/store/SavedShoppingList.tsx: components/store/SavedShoppingList.tsx
+components/store/SavingsCounter.tsx: components/store/SavingsCounter.tsx
+components/store/SeasonalProducts.tsx: components/store/SeasonalProducts.tsx
+components/store/ShareProductButton.tsx: components/store/ShareProductButton.tsx
+components/store/SmartSearchBar.tsx: components/store/SmartSearchBar.tsx
+components/store/SuggestionBox.tsx: components/store/SuggestionBox.tsx
+components/store/TenantIndicatorBar.tsx: components/store/TenantIndicatorBar.tsx
+components/superadmin/SupportInbox.tsx: components/superadmin/SupportInbox.tsx
+components/superadmin/TenantFunnel.tsx: components/superadmin/TenantFunnel.tsx
+components/superadmin/TenantLifecycleKanban.tsx: components/superadmin/TenantLifecycleKanban.tsx
+components/superadmin/setup/ScoreDashboard.tsx: components/superadmin/setup/ScoreDashboard.tsx
+components/superadmin/setup/SetupItemCard.tsx: components/superadmin/setup/SetupItemCard.tsx
+components/superadmin/setup/SetupStatsCard.tsx: components/superadmin/setup/SetupStatsCard.tsx
+components/superadmin/sitemap/CategoryTabs.tsx: components/superadmin/sitemap/CategoryTabs.tsx
+components/superadmin/sitemap/IllustrationsGallery.tsx: components/superadmin/sitemap/IllustrationsGallery.tsx
+components/superadmin/sitemap/RouteCard.tsx: components/superadmin/sitemap/RouteCard.tsx
+components/superadmin/sitemap/RoutesList.tsx: components/superadmin/sitemap/RoutesList.tsx
+components/superadmin/sitemap/SitemapHero.tsx: components/superadmin/sitemap/SitemapHero.tsx
+components/superadmin/sitemap/SitemapStats.tsx: components/superadmin/sitemap/SitemapStats.tsx
+components/superadmin/sitemap/icon-map.ts: components/superadmin/sitemap/icon-map.ts
+components/superadmin/stores/OrdersTab.tsx: components/superadmin/stores/OrdersTab.tsx
+components/superadmin/stores/PersonalizarTab.tsx: components/superadmin/stores/PersonalizarTab.tsx
+components/superadmin/stores/useStoreActions.ts: components/superadmin/stores/useStoreActions.ts
+components/ui-system/CurrencySwitcher.tsx: components/ui-system/CurrencySwitcher.tsx
+components/ui-system/EmptyStatePresets.tsx: components/ui-system/EmptyStatePresets.tsx
+components/ui-system/ErrorPageLayout.tsx: components/ui-system/ErrorPageLayout.tsx
+components/ui-system/ImageZoomViewer.tsx: components/ui-system/ImageZoomViewer.tsx
+components/ui-system/LazyImage.tsx: components/ui-system/LazyImage.tsx
+components/ui-system/LazyMount.tsx: components/ui-system/LazyMount.tsx
+components/ui-system/LocaleSwitcher.tsx: components/ui-system/LocaleSwitcher.tsx
+components/ui-system/OnboardingCarousel.tsx: components/ui-system/OnboardingCarousel.tsx
+components/ui-system/PageTransition.tsx: components/ui-system/PageTransition.tsx
+components/ui-system/PrefetchLink.tsx: components/ui-system/PrefetchLink.tsx
+components/ui-system/PullToRefreshIndicator.tsx: components/ui-system/PullToRefreshIndicator.tsx
+components/ui-system/ShortcutHelpModal.tsx: components/ui-system/ShortcutHelpModal.tsx
+components/ui-system/StickyMobileCTA.tsx: components/ui-system/StickyMobileCTA.tsx
+components/ui-system/VirtualList.tsx: components/ui-system/VirtualList.tsx
+components/ui-system/animations/CheckmarkDraw.tsx: components/ui-system/animations/CheckmarkDraw.tsx
+components/ui-system/animations/ConfettiBurst.tsx: components/ui-system/animations/ConfettiBurst.tsx
+components/ui-system/animations/CountUpNumber.tsx: components/ui-system/animations/CountUpNumber.tsx
+components/ui-system/animations/HeartBeat.tsx: components/ui-system/animations/HeartBeat.tsx
+components/ui-system/animations/ShakeError.tsx: components/ui-system/animations/ShakeError.tsx
+components/ui-system/animations/index.ts: components/ui-system/animations/index.ts
+components/ui/AnimatedCounter.tsx: components/ui/AnimatedCounter.tsx
+components/ui/CustomCursor.tsx: components/ui/CustomCursor.tsx
+components/ui/FloatingParticles.tsx: components/ui/FloatingParticles.tsx
+components/ui/HeroIllustration.tsx: components/ui/HeroIllustration.tsx
+components/ui/LazyCommandPalette.tsx: components/ui/LazyCommandPalette.tsx
+components/ui/LiveActivityTicker.tsx: components/ui/LiveActivityTicker.tsx
+components/ui/MorphingBlob.tsx: components/ui/MorphingBlob.tsx
+components/ui/OfflineToast.tsx: components/ui/OfflineToast.tsx
+components/ui/ScrollProgress.tsx: components/ui/ScrollProgress.tsx
+components/ui/TopLoadingBar.tsx: components/ui/TopLoadingBar.tsx
+components/ui/error-boundary.tsx: components/ui/error-boundary.tsx
+contexts/assistant-context.tsx: contexts/assistant-context.tsx
+dark-mode-screenshot.mjs: dark-mode-screenshot.mjs
+domain/product/product-repository.ts: domain/product/product-repository.ts
+domain/product/product.ts: domain/product/product.ts
+e2e/helpers/test-data.ts: e2e/helpers/test-data.ts
+evals/dr/restore-validation.ts: evals/dr/restore-validation.ts
+evals/runner.ts: evals/runner.ts
+hooks/use-ab-test.ts: hooks/use-ab-test.ts
+hooks/use-admin-fetch.ts: hooks/use-admin-fetch.ts
+hooks/use-admin-shortcuts.ts: hooks/use-admin-shortcuts.ts
+hooks/use-admin-sse.ts: hooks/use-admin-sse.ts
+hooks/use-celebrate.ts: hooks/use-celebrate.ts
+hooks/use-customer-safe.ts: hooks/use-customer-safe.ts
+hooks/use-dont-ask-again.ts: hooks/use-dont-ask-again.ts
+hooks/use-fetch-json.ts: hooks/use-fetch-json.ts
+hooks/use-filters-url-state.ts: hooks/use-filters-url-state.ts
+hooks/use-fly-to-cart.ts: hooks/use-fly-to-cart.ts
+hooks/use-live-stats.ts: hooks/use-live-stats.ts
+hooks/use-magnetic.ts: hooks/use-magnetic.ts
+hooks/use-media-query.ts: hooks/use-media-query.ts
+hooks/use-metering.ts: hooks/use-metering.ts
+hooks/use-optimistic-update.ts: hooks/use-optimistic-update.ts
+hooks/use-prefetch-on-hover.ts: hooks/use-prefetch-on-hover.ts
+hooks/use-pull-to-refresh.ts: hooks/use-pull-to-refresh.ts
+hooks/use-push-notifications.ts: hooks/use-push-notifications.ts
+hooks/use-ripple.ts: hooks/use-ripple.ts
+hooks/use-safe-area.ts: hooks/use-safe-area.ts
+hooks/use-shopping-list.ts: hooks/use-shopping-list.ts
+hooks/use-smart-defaults.ts: hooks/use-smart-defaults.ts
+hooks/use-table-export.ts: hooks/use-table-export.ts
+hooks/use-tilt.ts: hooks/use-tilt.ts
+k6/checkout-load.js: k6/checkout-load.js
+k6/storefront-multitenant.js: k6/storefront-multitenant.js
+k6/superadmin.js: k6/superadmin.js
+lib/ab-test.ts: lib/ab-test.ts
+lib/accessibility/senior-mode.ts: lib/accessibility/senior-mode.ts
+lib/ai/circuit-breaker.ts: lib/ai/circuit-breaker.ts
+lib/ai/recommender.ts: lib/ai/recommender.ts
+lib/analytics/assistant-events.ts: lib/analytics/assistant-events.ts
+lib/auth/sync-supabase-to-customer.ts: lib/auth/sync-supabase-to-customer.ts
+lib/billing/wire-up/index.ts: lib/billing/wire-up/index.ts
+lib/captcha-turnstile.ts: lib/captcha-turnstile.ts
+lib/catalog/catalog-categories.ts: lib/catalog/catalog-categories.ts
+lib/catalog/peru-abarrotes-catalog.ts: lib/catalog/peru-abarrotes-catalog.ts
+lib/chart-theme.ts: lib/chart-theme.ts
+lib/circuit-breaker/demo/integrations.ts: lib/circuit-breaker/demo/integrations.ts
+lib/claude-router.ts: lib/claude-router.ts
+lib/cms/block-registry.ts: lib/cms/block-registry.ts
+lib/cms/render-engine.tsx: lib/cms/render-engine.tsx
+lib/cors.ts: lib/cors.ts
+lib/credit/reniec-client.ts: lib/credit/reniec-client.ts
+lib/critical-alerts.ts: lib/critical-alerts.ts
+lib/csv/parse-products.ts: lib/csv/parse-products.ts
+lib/customer-dashboard.mock.ts: lib/customer-dashboard.mock.ts
+lib/db/adapters/prisma-product-repository.ts: lib/db/adapters/prisma-product-repository.ts
+lib/db/base-repository.ts: lib/db/base-repository.ts
+lib/db/cierre-diario.db.ts: lib/db/cierre-diario.db.ts
+lib/db/page-heroes-repo.ts: lib/db/page-heroes-repo.ts
+lib/db/store-banners-repo.ts: lib/db/store-banners-repo.ts
+lib/db/vendor-registrations.db.ts: lib/db/vendor-registrations.db.ts
+lib/delivery/schedule-slots.ts: lib/delivery/schedule-slots.ts
+lib/digest/weekly-founder.ts: lib/digest/weekly-founder.ts
+lib/disputes/dispute-workflow.ts: lib/disputes/dispute-workflow.ts
+lib/email-templates/verify-email.ts: lib/email-templates/verify-email.ts
+lib/event-sourcing/SCHEMA-PROPOSAL.prisma: lib/event-sourcing/SCHEMA-PROPOSAL.prisma
+lib/event-sourcing/prisma-store.ts: lib/event-sourcing/prisma-store.ts
+lib/events/dlq/SCHEMA-PROPOSAL.prisma: lib/events/dlq/SCHEMA-PROPOSAL.prisma
+lib/events/index.ts: lib/events/index.ts
+lib/finance/bank-reconciliation.ts: lib/finance/bank-reconciliation.ts
+lib/flags/index.ts: lib/flags/index.ts
+lib/flags/tenant-flags.ts: lib/flags/tenant-flags.ts
+lib/flags/v2/growthbook-adapter.ts: lib/flags/v2/growthbook-adapter.ts
+lib/forecasting.ts: lib/forecasting.ts
+lib/growth/weather-predictor.ts: lib/growth/weather-predictor.ts
+lib/i18n.ts: lib/i18n.ts
+lib/i18n/quechua-checkout.ts: lib/i18n/quechua-checkout.ts
+lib/indexeddb-cart.ts: lib/indexeddb-cart.ts
+lib/integrations/whatsapp-chat-templates.ts: lib/integrations/whatsapp-chat-templates.ts
+lib/integrations/whatsapp-delivery-templates.ts: lib/integrations/whatsapp-delivery-templates.ts
+lib/marketplace/last-order.ts: lib/marketplace/last-order.ts
+lib/module-descriptions.ts: lib/module-descriptions.ts
+lib/notifications/order-tracking-events.ts: lib/notifications/order-tracking-events.ts
+lib/notifications/web-push.ts: lib/notifications/web-push.ts
+lib/ocr/invoice-ocr.ts: lib/ocr/invoice-ocr.ts
+lib/order-status.ts: lib/order-status.ts
+lib/payments/index.ts: lib/payments/index.ts
+lib/pricing/yape-rounding.ts: lib/pricing/yape-rounding.ts
+lib/products/recently-viewed.ts: lib/products/recently-viewed.ts
+lib/promos/flash-sales.ts: lib/promos/flash-sales.ts
+lib/push/send-notification.ts: lib/push/send-notification.ts
+lib/queue/chat-notifications-worker.ts: lib/queue/chat-notifications-worker.ts
+lib/queue/delivery-notifications-worker.ts: lib/queue/delivery-notifications-worker.ts
+lib/recommendations/combo-builder.ts: lib/recommendations/combo-builder.ts
+lib/recommendations/mock.ts: lib/recommendations/mock.ts
+lib/reviews/photo-filters.ts: lib/reviews/photo-filters.ts
+lib/safe-fetch.ts: lib/safe-fetch.ts
+lib/sagas/demo/checkout-saga.ts: lib/sagas/demo/checkout-saga.ts
+lib/sagas/index.ts: lib/sagas/index.ts
+lib/security/csp.ts: lib/security/csp.ts
+lib/security/csrf.ts: lib/security/csrf.ts
+lib/security/ip-allowlist.ts: lib/security/ip-allowlist.ts
+lib/site-map.ts: lib/site-map.ts
+lib/slo/__tests__/budget-calculator.test.ts: lib/slo/__tests__/budget-calculator.test.ts
+lib/smart-reorder.ts: lib/smart-reorder.ts
+lib/subscriptions/recurring-orders.ts: lib/subscriptions/recurring-orders.ts
+lib/sunat/index.ts: lib/sunat/index.ts
+lib/superadmin/setup-data.tsx: lib/superadmin/setup-data.tsx
+lib/superadmin/setup-types.ts: lib/superadmin/setup-types.ts
+lib/supplier/scorecard.ts: lib/supplier/scorecard.ts
+lib/telemetry/demo/traced-handlers.ts: lib/telemetry/demo/traced-handlers.ts
+lib/telemetry/integration-notes.ts: lib/telemetry/integration-notes.ts
+lib/trial.ts: lib/trial.ts
+lib/webhook-dispatcher.ts: lib/webhook-dispatcher.ts
+packages/design-system/src/hooks/index.ts: packages/design-system/src/hooks/index.ts
+prisma/seed-fruteria.ts: prisma/seed-fruteria.ts
+public/back-nav-refresh.js: public/back-nav-refresh.js
+public/perf-measure-patch.js: public/perf-measure-patch.js
+public/sw.js: public/sw.js
+scripts/_check-settings.mjs: scripts/_check-settings.mjs
+scripts/_debug-mi-pollo-login.mjs: scripts/_debug-mi-pollo-login.mjs
+scripts/_optimize-buleje-logo.mjs: scripts/_optimize-buleje-logo.mjs
+scripts/_probe-admin.mjs: scripts/_probe-admin.mjs
+scripts/_probe-login.mjs: scripts/_probe-login.mjs
+scripts/_reset-mi-pollo-pass.mjs: scripts/_reset-mi-pollo-pass.mjs
+scripts/_tmp-verify-tables.mjs: scripts/_tmp-verify-tables.mjs
+scripts/activate-test-partner.ts: scripts/activate-test-partner.ts
+scripts/add-employee-invitations.ts: scripts/add-employee-invitations.ts
+scripts/add-store-lat-lng.mjs: scripts/add-store-lat-lng.mjs
+scripts/add-tip-column.ts: scripts/add-tip-column.ts
+scripts/apply-delivery-proof-migration.mjs: scripts/apply-delivery-proof-migration.mjs
+scripts/apply-migration.mjs: scripts/apply-migration.mjs
+scripts/apply-misc-schema-drift.mjs: scripts/apply-misc-schema-drift.mjs
+scripts/apply-ola1-indices.ts: scripts/apply-ola1-indices.ts
+scripts/apply-ondelete-policies.mjs: scripts/apply-ondelete-policies.mjs
+scripts/apply-pending-migrations.mjs: scripts/apply-pending-migrations.mjs
+scripts/apply-platform-settings.ts: scripts/apply-platform-settings.ts
+scripts/apply-product-modifiers-migration.mjs: scripts/apply-product-modifiers-migration.mjs
+scripts/apply-roadmap-sprint-2026-04-10.ts: scripts/apply-roadmap-sprint-2026-04-10.ts
+scripts/apply-roadmap-status.ts: scripts/apply-roadmap-status.ts
+scripts/apply-settings-loyalty-cols.mjs: scripts/apply-settings-loyalty-cols.mjs
+scripts/apply-td018-alters.ts: scripts/apply-td018-alters.ts
+scripts/apply-td030-loyalty-transaction.ts: scripts/apply-td030-loyalty-transaction.ts
+scripts/apply-td031-review-imageurls.ts: scripts/apply-td031-review-imageurls.ts
+scripts/apply-td032-coupon-storeid.ts: scripts/apply-td032-coupon-storeid.ts
+scripts/apply-third-party-delivery-migration.mjs: scripts/apply-third-party-delivery-migration.mjs
+scripts/apply-totp-replay-col.mjs: scripts/apply-totp-replay-col.mjs
+scripts/apply-wave-1-indexes.mjs: scripts/apply-wave-1-indexes.mjs
+scripts/approve-pizza-pucallpa.ts: scripts/approve-pizza-pucallpa.ts
+scripts/audit-admin-modules.mjs: scripts/audit-admin-modules.mjs
+scripts/audit-billing-coverage.mjs: scripts/audit-billing-coverage.mjs
+scripts/audit-cart-modal.mjs: scripts/audit-cart-modal.mjs
+scripts/audit-dark-wcag.mjs: scripts/audit-dark-wcag.mjs
+scripts/audit-final.mjs: scripts/audit-final.mjs
+scripts/audit-i18n.mjs: scripts/audit-i18n.mjs
+scripts/audit-marketplace-hub.mjs: scripts/audit-marketplace-hub.mjs
+scripts/audit-marketplace-visibility.ts: scripts/audit-marketplace-visibility.ts
+scripts/audit-modifiers.mjs: scripts/audit-modifiers.mjs
+scripts/audit-mods2.mjs: scripts/audit-mods2.mjs
+scripts/audit-mods3.mjs: scripts/audit-mods3.mjs
+scripts/audit-prod-perf.mjs: scripts/audit-prod-perf.mjs
+scripts/audit-product-images.mjs: scripts/audit-product-images.mjs
+scripts/audit-security-sweep.mjs: scripts/audit-security-sweep.mjs
+scripts/audit-superadmin-deep.mjs: scripts/audit-superadmin-deep.mjs
+scripts/audit-superadmin.mjs: scripts/audit-superadmin.mjs
+scripts/auto-screenshot.mjs: scripts/auto-screenshot.mjs
+scripts/backfill-gift-cards.ts: scripts/backfill-gift-cards.ts
+scripts/backfill-l29733-chain.mjs: scripts/backfill-l29733-chain.mjs
+scripts/backfill-socio.ts: scripts/backfill-socio.ts
+scripts/backfill-subscriptions.ts: scripts/backfill-subscriptions.ts
+scripts/backfill-vendor-applications.ts: scripts/backfill-vendor-applications.ts
+scripts/backup-fetch.ts: scripts/backup-fetch.ts
+scripts/check-admin-users-leak.mjs: scripts/check-admin-users-leak.mjs
+scripts/check-admin-users-leak.ts: scripts/check-admin-users-leak.ts
+scripts/check-bundle.mjs: scripts/check-bundle.mjs
+scripts/check-coupon-cols.ts: scripts/check-coupon-cols.ts
+scripts/check-coupons.ts: scripts/check-coupons.ts
+scripts/check-db-state.mjs: scripts/check-db-state.mjs
+scripts/check-delivery-partner.ts: scripts/check-delivery-partner.ts
+scripts/check-marketplace-prisma-direct.mjs: scripts/check-marketplace-prisma-direct.mjs
+scripts/check-migration-applied.mjs: scripts/check-migration-applied.mjs
+scripts/check-modifiers.ts: scripts/check-modifiers.ts
+scripts/check-orders.ts: scripts/check-orders.ts
+scripts/check-products.mjs: scripts/check-products.mjs
+scripts/check-redirect.mjs: scripts/check-redirect.mjs
+scripts/check-rsc-perf-error.mjs: scripts/check-rsc-perf-error.mjs
+scripts/check-tenant.ts: scripts/check-tenant.ts
+scripts/check-tenants.cjs: scripts/check-tenants.cjs
+scripts/check-tenants.mjs: scripts/check-tenants.mjs
+scripts/cleanup-test-tenant.ts: scripts/cleanup-test-tenant.ts
+scripts/cleanup-worktrees.mjs: scripts/cleanup-worktrees.mjs
+scripts/console-check-repartidor.mjs: scripts/console-check-repartidor.mjs
+scripts/create-mi-pollo-admin.mjs: scripts/create-mi-pollo-admin.mjs
+scripts/create-platform-tables.mjs: scripts/create-platform-tables.mjs
+scripts/create-qa-admin-raw.mjs: scripts/create-qa-admin-raw.mjs
+scripts/create-qa-admin.ts: scripts/create-qa-admin.ts
+scripts/create-superadmin-qa.mjs: scripts/create-superadmin-qa.mjs
+scripts/debug-assignments.mjs: scripts/debug-assignments.mjs
+scripts/debug-purge.ts: scripts/debug-purge.ts
+scripts/dev-helpers/admin-auth.mjs: scripts/dev-helpers/admin-auth.mjs
+scripts/dev-helpers/audit-a11y.mjs: scripts/dev-helpers/audit-a11y.mjs
+scripts/dev-helpers/audit-full-flow.mjs: scripts/dev-helpers/audit-full-flow.mjs
+scripts/dev-helpers/audit-yape-modal.mjs: scripts/dev-helpers/audit-yape-modal.mjs
+scripts/dev-helpers/browse.mjs: scripts/dev-helpers/browse.mjs
+scripts/dev-helpers/capture-abrir-tienda.mjs: scripts/dev-helpers/capture-abrir-tienda.mjs
+scripts/dev-helpers/capture-cliente-modal.mjs: scripts/dev-helpers/capture-cliente-modal.mjs
+scripts/dev-helpers/capture-landing.mjs: scripts/dev-helpers/capture-landing.mjs
+scripts/dev-helpers/capture-onboarding-page.mjs: scripts/dev-helpers/capture-onboarding-page.mjs
+scripts/dev-helpers/capture-onboarding.mjs: scripts/dev-helpers/capture-onboarding.mjs
+scripts/dev-helpers/health.mjs: scripts/dev-helpers/health.mjs
+scripts/dev-helpers/seed-and-ss-gastos.mjs: scripts/dev-helpers/seed-and-ss-gastos.mjs
+scripts/dev-helpers/seed-orders.mjs: scripts/dev-helpers/seed-orders.mjs
+scripts/dev-helpers/seed-sugerencias.mjs: scripts/dev-helpers/seed-sugerencias.mjs
+scripts/dev-helpers/ss-audit-mp.mjs: scripts/dev-helpers/ss-audit-mp.mjs
+scripts/dev-helpers/ss-carrito.mjs: scripts/dev-helpers/ss-carrito.mjs
+scripts/dev-helpers/ss-checkout-datos.mjs: scripts/dev-helpers/ss-checkout-datos.mjs
+scripts/dev-helpers/ss-cropper-and-linker.mjs: scripts/dev-helpers/ss-cropper-and-linker.mjs
+scripts/dev-helpers/ss-dark-debug.mjs: scripts/dev-helpers/ss-dark-debug.mjs
+scripts/dev-helpers/ss-dark-storefront.mjs: scripts/dev-helpers/ss-dark-storefront.mjs
+scripts/dev-helpers/ss-debug-chips.mjs: scripts/dev-helpers/ss-debug-chips.mjs
+scripts/dev-helpers/ss-footer-fix.mjs: scripts/dev-helpers/ss-footer-fix.mjs
+scripts/dev-helpers/ss-home-mobile.mjs: scripts/dev-helpers/ss-home-mobile.mjs
+scripts/dev-helpers/ss-modal-gasto.mjs: scripts/dev-helpers/ss-modal-gasto.mjs
+scripts/dev-helpers/ss-modal-oc.mjs: scripts/dev-helpers/ss-modal-oc.mjs
+scripts/dev-helpers/ss-mp-storefront.mjs: scripts/dev-helpers/ss-mp-storefront.mjs
+scripts/dev-helpers/ss-nav-drawer.mjs: scripts/dev-helpers/ss-nav-drawer.mjs
+scripts/dev-helpers/ss-punto-compra.mjs: scripts/dev-helpers/ss-punto-compra.mjs
+scripts/dev-helpers/ss-sticky-cart-redesign.mjs: scripts/dev-helpers/ss-sticky-cart-redesign.mjs
+scripts/dev-helpers/ss-storefront-nav.mjs: scripts/dev-helpers/ss-storefront-nav.mjs
+scripts/dev-helpers/ss-sugerencias.mjs: scripts/dev-helpers/ss-sugerencias.mjs
+scripts/dev-helpers/ss-super-marketplace-hero.mjs: scripts/dev-helpers/ss-super-marketplace-hero.mjs
+scripts/dev-helpers/ss-super-marketplace.mjs: scripts/dev-helpers/ss-super-marketplace.mjs
+scripts/dev-helpers/ss-super-stores-categories.mjs: scripts/dev-helpers/ss-super-stores-categories.mjs
+scripts/dev-helpers/ss-super-stores-with-subs.mjs: scripts/dev-helpers/ss-super-stores-with-subs.mjs
+scripts/dev-helpers/ss-tiendas-audit-2026-05-18.mjs: scripts/dev-helpers/ss-tiendas-audit-2026-05-18.mjs
+scripts/dev-helpers/ss-tiendas-check-transform.mjs: scripts/dev-helpers/ss-tiendas-check-transform.mjs
+scripts/dev-helpers/ss-tiendas-debug.mjs: scripts/dev-helpers/ss-tiendas-debug.mjs
+scripts/dev-helpers/ss-tiendas-mobile-full.mjs: scripts/dev-helpers/ss-tiendas-mobile-full.mjs
+scripts/dev-helpers/ss-tiendas-mobile-modal.mjs: scripts/dev-helpers/ss-tiendas-mobile-modal.mjs
+scripts/dev-helpers/ss-tiendas-mobile.mjs: scripts/dev-helpers/ss-tiendas-mobile.mjs
+scripts/dev-helpers/ss-tiendas-scroll-anim.mjs: scripts/dev-helpers/ss-tiendas-scroll-anim.mjs
+scripts/diagnose-docs.mjs: scripts/diagnose-docs.mjs
+scripts/diagnose-mi-pollo.ts: scripts/diagnose-mi-pollo.ts
+scripts/diagnose-store-columns.mjs: scripts/diagnose-store-columns.mjs
+scripts/diagnose-tiendas-back.mjs: scripts/diagnose-tiendas-back.mjs
+scripts/dr-drill.mjs: scripts/dr-drill.mjs
+scripts/e2e/seed-e2e.mjs: scripts/e2e/seed-e2e.mjs
+scripts/embed-products.ts: scripts/embed-products.ts
+scripts/extract-types.js: scripts/extract-types.js
+scripts/find-rgba-source.mjs: scripts/find-rgba-source.mjs
+scripts/fix-csrf-import-bug.mjs: scripts/fix-csrf-import-bug.mjs
+scripts/fix-html-entities.mjs: scripts/fix-html-entities.mjs
+scripts/fix-marketplace-data.mjs: scripts/fix-marketplace-data.mjs
+scripts/fix-mi-pollo-trial.ts: scripts/fix-mi-pollo-trial.ts
+scripts/fix-migration-artifacts.ts: scripts/fix-migration-artifacts.ts
+scripts/fix-recharts-minwidth.mjs: scripts/fix-recharts-minwidth.mjs
+scripts/fix-tenant-ids.mjs: scripts/fix-tenant-ids.mjs
+scripts/fix-tenant-ids.ts: scripts/fix-tenant-ids.ts
+scripts/fix-tenant-main-branding.mjs: scripts/fix-tenant-main-branding.mjs
+scripts/fix-unused-vars.mjs: scripts/fix-unused-vars.mjs
+scripts/fix-use-client-position.mjs: scripts/fix-use-client-position.mjs
+scripts/force-apply-critical-migrations.mjs: scripts/force-apply-critical-migrations.mjs
+scripts/generate-unified-modules.mjs: scripts/generate-unified-modules.mjs
+scripts/hash-admin-passwords.mjs: scripts/hash-admin-passwords.mjs
+scripts/inspect-html.mjs: scripts/inspect-html.mjs
+scripts/inspect-pendiente-header.mjs: scripts/inspect-pendiente-header.mjs
+scripts/inspect-tiendas-buttons.mjs: scripts/inspect-tiendas-buttons.mjs
+scripts/inventory-check.mjs: scripts/inventory-check.mjs
+scripts/k6-load-test.js: scripts/k6-load-test.js
+scripts/list-and-publish-stores.mjs: scripts/list-and-publish-stores.mjs
+scripts/live-browser.mjs: scripts/live-browser.mjs
+scripts/live-confirm-fixed.mjs: scripts/live-confirm-fixed.mjs
+scripts/live-purchase-flow.mjs: scripts/live-purchase-flow.mjs
+scripts/live-real-purchase.mjs: scripts/live-real-purchase.mjs
+scripts/live-real-shopping.mjs: scripts/live-real-shopping.mjs
+scripts/mark-roadmap-done.ts: scripts/mark-roadmap-done.ts
+scripts/merge-env.mjs: scripts/merge-env.mjs
+scripts/migrate-activity-log-tenant.ts: scripts/migrate-activity-log-tenant.ts
+scripts/migrate-admin-colors.mjs: scripts/migrate-admin-colors.mjs
+scripts/migrate-admin-csrf.mjs: scripts/migrate-admin-csrf.mjs
+scripts/migrate-bg-white-admin.mjs: scripts/migrate-bg-white-admin.mjs
+scripts/migrate-loader-to-ds.mjs: scripts/migrate-loader-to-ds.mjs
+scripts/migrate-lucide-to-ds.mjs: scripts/migrate-lucide-to-ds.mjs
+scripts/migrate-modal-backdrops-v2.mjs: scripts/migrate-modal-backdrops-v2.mjs
+scripts/migrate-modal-backdrops.mjs: scripts/migrate-modal-backdrops.mjs
+scripts/migrate-text-sizes-to-tokens.mjs: scripts/migrate-text-sizes-to-tokens.mjs
+scripts/migrate-to-ds-v2.mjs: scripts/migrate-to-ds-v2.mjs
+scripts/migrate-to-ds-v3.mjs: scripts/migrate-to-ds-v3.mjs
+scripts/migrate-to-ds.mjs: scripts/migrate-to-ds.mjs
+scripts/migrate-unified-kpi-to-statcard.mjs: scripts/migrate-unified-kpi-to-statcard.mjs
+scripts/normalize-tenants.mjs: scripts/normalize-tenants.mjs
+scripts/nuke-products.mjs: scripts/nuke-products.mjs
+scripts/patch-cart-hydration.mjs: scripts/patch-cart-hydration.mjs
+scripts/patch-dashboard-hide-header.mjs: scripts/patch-dashboard-hide-header.mjs
+scripts/patch-marketplace-section.mjs: scripts/patch-marketplace-section.mjs
+scripts/patch-resumen-hide-header.mjs: scripts/patch-resumen-hide-header.mjs
+scripts/patch-section-spans.mjs: scripts/patch-section-spans.mjs
+scripts/playwright-demo.mjs: scripts/playwright-demo.mjs
+scripts/publish-mi-pollo.ts: scripts/publish-mi-pollo.ts
+scripts/publish-stores.ts: scripts/publish-stores.ts
+scripts/push-delivery-schema.ts: scripts/push-delivery-schema.ts
+scripts/rebrand-bsm-to-buleje.mjs: scripts/rebrand-bsm-to-buleje.mjs
+scripts/register-migration.mjs: scripts/register-migration.mjs
+scripts/register-store-migration.mjs: scripts/register-store-migration.mjs
+scripts/remove-force-dynamic.ts: scripts/remove-force-dynamic.ts
+scripts/remove-italic-from-display.mjs: scripts/remove-italic-from-display.mjs
+scripts/rename-bodega-san-martin.mjs: scripts/rename-bodega-san-martin.mjs
+scripts/render-plan-fundador-pdf.mjs: scripts/render-plan-fundador-pdf.mjs
+scripts/reset-test-partner-pwd.mjs: scripts/reset-test-partner-pwd.mjs
+scripts/resolve-drift-migrations.mjs: scripts/resolve-drift-migrations.mjs
+scripts/restore-admin.ts: scripts/restore-admin.ts
+scripts/screenshot-logros.mjs: scripts/screenshot-logros.mjs
+scripts/screenshot-metas-hoy.mjs: scripts/screenshot-metas-hoy.mjs
+scripts/screenshot-p0-fixes.mjs: scripts/screenshot-p0-fixes.mjs
+scripts/screenshot-semana-mes.mjs: scripts/screenshot-semana-mes.mjs
+scripts/screenshot-storefront.mjs: scripts/screenshot-storefront.mjs
+scripts/seed-admin-users.ts: scripts/seed-admin-users.ts
+scripts/seed-chat-demo.ts: scripts/seed-chat-demo.ts
+scripts/seed-delivery-demo.ts: scripts/seed-delivery-demo.ts
+scripts/seed-marketplace.mjs: scripts/seed-marketplace.mjs
+scripts/seed-mi-pollo-modifiers.ts: scripts/seed-mi-pollo-modifiers.ts
+scripts/seed-mi-pollo.mjs: scripts/seed-mi-pollo.mjs
+scripts/seed-mi-pollo.ts: scripts/seed-mi-pollo.ts
+scripts/seed-modifier-demo.mjs: scripts/seed-modifier-demo.mjs
+scripts/seed-partner-online.mjs: scripts/seed-partner-online.mjs
+scripts/seed-pizza-pucallpa.ts: scripts/seed-pizza-pucallpa.ts
+scripts/seed-product-images-demo.mjs: scripts/seed-product-images-demo.mjs
+scripts/seed-test-data.ts: scripts/seed-test-data.ts
+scripts/seed-variant-catalog.ts: scripts/seed-variant-catalog.ts
+scripts/setup-stripe-plans.mjs: scripts/setup-stripe-plans.mjs
+scripts/smoke-sprint-13.mjs: scripts/smoke-sprint-13.mjs
+scripts/smoke-test-ola3-4.mjs: scripts/smoke-test-ola3-4.mjs
+scripts/snap-admin-buleje.mjs: scripts/snap-admin-buleje.mjs
+scripts/snap-admin-debug.mjs: scripts/snap-admin-debug.mjs
+scripts/snap-checkout.mjs: scripts/snap-checkout.mjs
+scripts/snap-delivery.mjs: scripts/snap-delivery.mjs
+scripts/snap-design-system-coverage.mjs: scripts/snap-design-system-coverage.mjs
+scripts/snap-design-system-v2.mjs: scripts/snap-design-system-v2.mjs
+scripts/snap-design-system.mjs: scripts/snap-design-system.mjs
+scripts/snap-flyout-buleje.mjs: scripts/snap-flyout-buleje.mjs
+scripts/snap-forecasting.mjs: scripts/snap-forecasting.mjs
+scripts/snap-home-redesign.mjs: scripts/snap-home-redesign.mjs
+scripts/snap-modules-batch.mjs: scripts/snap-modules-batch.mjs
+scripts/snap-multi-routes.mjs: scripts/snap-multi-routes.mjs
+scripts/snap-orders-live-demo.mjs: scripts/snap-orders-live-demo.mjs
+scripts/snap-orders-tab.mjs: scripts/snap-orders-tab.mjs
+scripts/snap-pedidos-current.mjs: scripts/snap-pedidos-current.mjs
+scripts/snap-quick-admin.mjs: scripts/snap-quick-admin.mjs
+scripts/snap-repartidor.mjs: scripts/snap-repartidor.mjs
+scripts/snap-sidebar-presets.mjs: scripts/snap-sidebar-presets.mjs
+scripts/snap-superadmin-rep-v2.mjs: scripts/snap-superadmin-rep-v2.mjs
+scripts/snap-superadmin-rep.mjs: scripts/snap-superadmin-rep.mjs
+scripts/snap-tenant-card-badge.mjs: scripts/snap-tenant-card-badge.mjs
+scripts/snap-tiendas-deep.mjs: scripts/snap-tiendas-deep.mjs
+scripts/snap-tiendas-hover-buttons.mjs: scripts/snap-tiendas-hover-buttons.mjs
+scripts/snap-tiendas-hovers.mjs: scripts/snap-tiendas-hovers.mjs
+scripts/snap-tiendas.mjs: scripts/snap-tiendas.mjs
+scripts/sweep-greens-phase3.mjs: scripts/sweep-greens-phase3.mjs
+scripts/sweep-hex-phase3.mjs: scripts/sweep-hex-phase3.mjs
+scripts/td018-baseline.ts: scripts/td018-baseline.ts
+scripts/td018-update-schema.ts: scripts/td018-update-schema.ts
+scripts/tenant-snapshot-backup.ts: scripts/tenant-snapshot-backup.ts
+scripts/test-back-deep.mjs: scripts/test-back-deep.mjs
+scripts/test-cart-cross-flow.mjs: scripts/test-cart-cross-flow.mjs
+scripts/test-cart-cross-tenant.mjs: scripts/test-cart-cross-tenant.mjs
+scripts/test-cart-defense.mjs: scripts/test-cart-defense.mjs
+scripts/test-cart-restore.mjs: scripts/test-cart-restore.mjs
+scripts/test-checkout-e2e.mjs: scripts/test-checkout-e2e.mjs
+scripts/test-checkout-flow.mjs: scripts/test-checkout-flow.mjs
+scripts/test-confirm-bug.mjs: scripts/test-confirm-bug.mjs
+scripts/test-delivery-flow.ts: scripts/test-delivery-flow.ts
+scripts/test-full-checkout.mjs: scripts/test-full-checkout.mjs
+scripts/test-marketplace-back.mjs: scripts/test-marketplace-back.mjs
+scripts/test-order-creates-offer.mjs: scripts/test-order-creates-offer.mjs
+scripts/test-order-modal-flow.mjs: scripts/test-order-modal-flow.mjs
+scripts/test-products-fetch.mjs: scripts/test-products-fetch.mjs
+scripts/test-real-flow.mjs: scripts/test-real-flow.mjs
+scripts/test-tenant-redirect.mjs: scripts/test-tenant-redirect.mjs
+scripts/test-tiendas-back.mjs: scripts/test-tiendas-back.mjs
+scripts/test-trial-warning.ts: scripts/test-trial-warning.ts
+scripts/test-whatsapp-concierge.mjs: scripts/test-whatsapp-concierge.mjs
+scripts/toggle-trial-state.ts: scripts/toggle-trial-state.ts
+scripts/tour-superadmin-visible.mjs: scripts/tour-superadmin-visible.mjs
+scripts/verify-dark-orden.mjs: scripts/verify-dark-orden.mjs
+scripts/verify-ola1-migrations.ts: scripts/verify-ola1-migrations.ts
+scripts/verify-pg-indexes-ola1.ts: scripts/verify-pg-indexes-ola1.ts
+scripts/verify-redis.ts: scripts/verify-redis.ts
+scripts/verify-wave-1-indexes.mjs: scripts/verify-wave-1-indexes.mjs
+scripts/verify-wave-2-indexes.mjs: scripts/verify-wave-2-indexes.mjs
+scripts/visual-diff.mjs: scripts/visual-diff.mjs
+scripts/visual-verify-admin-focused.mjs: scripts/visual-verify-admin-focused.mjs
+scripts/visual-verify-admin-phase5.mjs: scripts/visual-verify-admin-phase5.mjs
+scripts/visual-verify-admin.mjs: scripts/visual-verify-admin.mjs
+scripts/visual-verify-categoria.mjs: scripts/visual-verify-categoria.mjs
+scripts/visual-verify-explorar.mjs: scripts/visual-verify-explorar.mjs
+scripts/visual-verify-phase4-post.mjs: scripts/visual-verify-phase4-post.mjs
+scripts/visual-verify-public-pages.mjs: scripts/visual-verify-public-pages.mjs
+scripts/visual-verify-superadmin-ola1-post.mjs: scripts/visual-verify-superadmin-ola1-post.mjs
+scripts/visual-verify-superadmin-ola2-post.mjs: scripts/visual-verify-superadmin-ola2-post.mjs
+scripts/visual-verify-superadmin-ola3-post.mjs: scripts/visual-verify-superadmin-ola3-post.mjs
+scripts/visual-verify-superadmin.mjs: scripts/visual-verify-superadmin.mjs
+scripts/visual-verify-tienda-ola1-post.mjs: scripts/visual-verify-tienda-ola1-post.mjs
+scripts/visual-verify-tienda-ola2-post.mjs: scripts/visual-verify-tienda-ola2-post.mjs
+scripts/visual-verify-tienda-ola3-post.mjs: scripts/visual-verify-tienda-ola3-post.mjs
+scripts/visual-verify-tienda.mjs: scripts/visual-verify-tienda.mjs
+scripts/visual-verify-ux-fixes.mjs: scripts/visual-verify-ux-fixes.mjs
+scripts/visual-verify.mjs: scripts/visual-verify.mjs
+tools/mcp-bodega/src/db.ts: tools/mcp-bodega/src/db.ts
+tools/mcp-bodega/src/index.ts: tools/mcp-bodega/src/index.ts
+tools/mcp-bodega/src/tools/fiado.ts: tools/mcp-bodega/src/tools/fiado.ts
+tools/mcp-bodega/src/tools/inventario.ts: tools/mcp-bodega/src/tools/inventario.ts
+tools/mcp-bodega/src/tools/sunat.ts: tools/mcp-bodega/src/tools/sunat.ts
+tools/mcp-bodega/src/tools/ventas.ts: tools/mcp-bodega/src/tools/ventas.ts
+tools/mcp-bodega/src/tools/whatsapp.ts: tools/mcp-bodega/src/tools/whatsapp.ts
+tools/mcp-bodega/src/types.ts: tools/mcp-bodega/src/types.ts
+Unused dependencies (1)
+package.json: @capacitor/core, @capacitor/geolocation, @prisma/client, @radix-ui/react-hover-card, @radix-ui/react-select, embla-carousel-react, gsap, posthog-js, vaul
+Unused devDependencies (1)
+package.json: @babel/core, @babel/preset-env, @babel/preset-react, @babel/preset-typescript, @playwright/mcp, @storybook/nextjs, @types/bcryptjs, babel-loader, critters, css-loader, pixelmatch, pngjs, postcss-loader, react-docgen-typescript, style-loader
+Unlisted dependencies (2)
+components/admin/shared/AdminModal.tsx: @radix-ui/react-visually-hidden
+scripts/check-prod-health.mjs: @sentry/node
+Unlisted binaries (1)
+package.json: del, k6, cap
+Unused exports (296)
+app/(store)/cuenta/CuentaDashboardClient.tsx: CuentaDashboardClient
+app/(store)/cuenta/CuentaLayoutShell.tsx: CuentaLayoutShell
+app/admin/_components/_shared/AdminField.tsx: AdminField
+app/admin/_hooks/index.ts: useTabFrequency, useAdminMode
+app/admin/_hooks/useAdminMode.ts: useAdminMode
+app/admin/_lib/tab-categories.ts: BASIC_MODULES, TIENDA_MODULE, CONFIG_MODULE, EASY_MODE_TABS
+app/superadmin/_components/_shared/index.ts: AdminField, AdminInput, AdminTextarea, AdminSelect
+components/JsonLd.tsx: JsonLd
+components/LoadingSkeleton.tsx: Skeleton, ProductListSkeleton, ProductDetailSkeleton, CategorySectionSkeleton, TextBlockSkeleton, CardSkeleton, HeroSkeleton, StatsSkeleton, TestimonialSkeleton, FAQSkeleton, PageLoadingSkeleton
+components/admin/ChatTab/types.ts: SENDER_LABELS
+components/admin/DeliveryTab/types.ts: TRACKING_STATUS_EMOJI
+components/admin/OrdersTab/OrdersKanban.tsx: STATUS_LABELS
+components/admin/OrdersTab/types.ts: ORD_PER_PAGE
+components/admin/PurchaseOrderPDF.tsx: default
+components/admin/billing/QuotaAlertBanner.tsx: default
+components/admin/billing/QuotaAlertModal.tsx: default
+components/admin/inicio/_shared/BulejeLoader.tsx: BulejeSkeleton
+components/admin/inicio/_shared/DashboardSectionHeader.tsx: DashboardSectionHeader, default
+components/admin/inicio/_shared/index.ts: DashboardSectionHeader, BulejeSkeleton, ChartPresentationModal
+components/admin/shared/AdminTooltip.tsx: default
+components/admin/shared/ImageValidationPanel.tsx: ImageRequirementsGuide
+components/admin/shared/KeyboardShortcutsHelp.tsx: default
+components/admin/shared/ModuleActionMenu.tsx: default
+components/admin/tabs/TabSkeleton.tsx: TabSpinner
+components/admin/unified/MeteringCard/MeteringCard.client.tsx: PlanBadge
+components/auth/AuthModal.tsx: default
+components/blocks/AboutBlock.tsx: AboutBlockSchema, AboutBlockMetadata
+components/blocks/BenefitsBlock.tsx: BenefitsBlockSchema, BenefitsBlockMetadata
+components/blocks/CTABlock.tsx: CTABlockSchema, CTABlockMetadata
+components/blocks/ContactBlock.tsx: ContactBlockSchema, ContactBlockMetadata
+components/blocks/FAQBlock.tsx: FAQBlockSchema, FAQBlockMetadata
+components/blocks/HeroBlock.tsx: HeroBlockSchema, HeroBlockMetadata
+components/blocks/ProductsBlock.tsx: ProductsBlockSchema, ProductsBlockMetadata
+components/charts/LazyChart.tsx: ChartSkeleton
+components/charts/index.ts: ChartSkeleton
+components/checkout/FreeDeliveryBanner.tsx: FreeDeliveryBanner
+components/checkout/PlinPaymentPanel.tsx: PlinPaymentPanel
+components/checkout/StepBar.tsx: STEPS
+components/checkout/index.ts: STEPS, YapePaymentPanel, CashChangeCalculator, FreeDeliveryBanner, PlinPaymentPanel
+components/customer/cuenta-layout/CuentaMobileTabs.tsx: CuentaMobileTabs
+components/customer/cuenta-layout/CuentaSidebar.tsx: CuentaSidebar
+components/customer/journey/YapeQRCheckout.tsx: YapeQRCheckout
+components/customer/journey/index.ts: YapeQRCheckout
+components/customer/socio-buleje/SocioUsoBeneficios.tsx: default
+components/customer/suscripciones/SubscriptionCard.tsx: STATUS_ACCENT
+components/descubri/DescubriCTAFinal.tsx: default
+components/descubri/DescubriFAQ.tsx: default
+components/descubri/DescubriHero.tsx: default
+components/descubri/FeaturesGrid9.tsx: default
+components/descubri/IntegrationDiagram.tsx: default
+components/descubri/PathsByProfile.tsx: default
+components/descubri/TestimoniosEditorial.tsx: default
+components/landing/LandingClientSections.tsx: GeolocationPrompt, AnimatedSearchBar, CategoriesGridClient, DiscountBanner
+components/marketplace/ClienteFrecuenteBadge.tsx: getOrderCount, getTier
+components/marketplace/MainWithBackKey.tsx: triggerMainKeyBump
+components/marketplace/MarketplaceCart.tsx: default
+components/marketplace/MarketplaceFreeShippingBar.tsx: FREE_SHIPPING_THRESHOLD, useFreeShippingStatus, default
+components/marketplace/MarketplaceStoresView.tsx: CATEGORIES, ZONES, deriveActiveZones
+components/marketplace/MisPedidosFavoritosStrip.tsx: toggleFavOrder, isOrderFav
+components/marketplace/RecipeIllustrations.tsx: JuaneIllustration, TacachoIllustration, InchicapiIllustration, CevicheIllustration
+components/marketplace/RepetirUltimoPedido.tsx: clearLastOrder
+components/marketplace/_category-icons.ts: PRODUCT_CATEGORY_ICONS, STORE_CATEGORY_ICONS, getStoreCategoryIcon
+components/marketplace/buscar/SearchSuggestions.tsx: loadHistory, pushSearchHistory
+components/marketplace/explorar/MarketplaceCardPrimitive.tsx: MarketplaceCardBody, MarketplaceCardKicker, MarketplaceCardPrice, MarketplaceCardMeta
+components/marketplace/mi-cuenta/LastOrderBanner.tsx: default
+components/marketplace/store-detail/StoreCategories.tsx: default
+components/marketplace/useMarketplaceGeo.ts: ZONE_COORDS, haversineKm
+components/superadmin/_shared/SABadge.tsx: SAPlanBadge, SAStatusBadge
+components/superadmin/_shared/SASkeleton.tsx: SASkeleton, CardGridSkeleton, ChartSkeleton, SATableSkeleton, SAStatCardSkeleton
+components/superadmin/_shared/SAStatCard.tsx: SAStatCard
+components/superadmin/_shared/chart-theme.ts: SA_COLORS, PLAN_COLORS, CHART_DARK, CHART_LIGHT, SA_CHART_COLORS, SA_CHART_THEME
+components/superadmin/_shared/index.ts: SAStatCard, SAPlanBadge, SAStatusBadge, SADataTable, SASkeleton, SAStatCardSkeleton, SATableSkeleton, CardGridSkeleton, TableSkeleton, ChartSkeleton, SAHealthScore, SA_COLORS, PLAN_COLORS, CHART_DARK, CHART_LIGHT, SA_CHART_COLORS, SA_CHART_THEME
+components/superadmin/dashboard/DateRangeSelector.tsx: DATE_RANGE_LABELS
+components/ui-system/AnimatedPrice.tsx: AnimatedNumber
+components/ui-system/Breadcrumbs.tsx: Breadcrumbs
+components/ui-system/BulejeIcons.tsx: Icon, BULEJE_ICONS
+components/ui-system/BulejeLoader.tsx: default
+components/ui-system/Button.tsx: Button
+components/ui-system/Card.tsx: Card, CardHeader, CardBody, CardFooter
+components/ui-system/Chip.tsx: Chip
+components/ui-system/ConfirmModal.tsx: ConfirmModal, default
+components/ui-system/DataRow.tsx: DataRow
+components/ui-system/Divider.tsx: Divider
+components/ui-system/FeatureSpotlight.tsx: resetSpotlight
+components/ui-system/GuidedTour.tsx: resetTour
+components/ui-system/IconBadge.tsx: IconBadge
+components/ui-system/NumberStat.tsx: NumberStat
+components/ui-system/RuledTitle.tsx: RuledTitle
+components/ui-system/SectionHeader.tsx: SectionHeader
+components/ui-system/Shimmer.tsx: ShimmerCircle
+components/ui-system/SkeletonEditorial.tsx: SkeletonTableRow
+components/ui-system/SkipLink.tsx: default
+components/ui-system/Stat.tsx: Stat
+components/ui-system/StatusDot.tsx: StatusDot
+components/ui-system/UnifiedHero.tsx: default
+components/ui-system/charts/index.ts: ChartTooltip
+components/ui-system/charts/palette.ts: CHART_LABEL_COLOR
+components/ui-system/illustrations/BulejeLogo.tsx: BulejeLogo, default
+components/ui-system/illustrations/PaicheLoading.tsx: default
+components/ui-system/illustrations/PaicheMascot.tsx: default
+components/ui-system/illustrations/TucanMascot.tsx: default
+components/ui-system/illustrations/feature-identity.tsx: VideoEnVivo, RepartidorMoto, AsistenteBuleje
+components/ui-system/illustrations/index.ts: BulejeLogo, TucanMascot, EMPTY_ILLUSTRATIONS, SUCCESS_ILLUSTRATIONS, CONTEXTUAL_ILLUSTRATIONS, CATEGORY_ILLUSTRATIONS, FEATURE_IDENTITY_ILLUSTRATIONS, BULEJE_ILLUSTRATIONS
+components/ui-system/index.ts: Button, Card, CardHeader, CardBody, CardFooter, Chip, Eyebrow, Kicker, SectionHeader, RuledTitle, NumberStat, Stat, EmptyState, SkeletonTableRow, IconBadge, StatusDot, DataRow, Divider, Breadcrumbs, RelatedFeatures, SkipLink, Icon, BULEJE_ICONS, fadeUp, fadeUpLarge, fadeIn, slideInRight, slideInLeft, scaleIn, staggerContainer, staggerContainerSlow, staggerChild, listStagger, drawerVariants, pageEnter, hoverSoft, hoverLift, numberBeat, revealOnView, revealStaggered, scrollRevealPresets
+components/ui-system/micro/DiaDelBodeguero.tsx: DiaDelBodeguero
+components/ui-system/micro/index.ts: DiaDelBodeguero
+components/ui-system/motion.ts: fadeUp, fadeUpLarge, fadeIn, slideInRight, slideInLeft, scaleIn, staggerContainer, staggerContainerSlow, staggerChild, hoverLift, scrollRevealPresets, pageEnter, drawerVariants, hoverSoft, numberBeat, listStagger, revealOnView, revealStaggered
+components/ui/ResponsiveTable.tsx: default
+components/ui/skeletons.tsx: ListSkeleton, KPISkeleton
+contexts/subscription-context.tsx: FREQUENCY_SHORT
+contexts/vocabulary-context.tsx: useVocabulary
+data/districts.ts: districtsByCity
+data/zones.ts: zoneSlugs
+hooks/perf/index.ts: usePrefetchOnHover
+hooks/perf/use-prefetch-on-hover.ts: usePrefetchOnHover
+hooks/use-debounce.ts: useDebouncedCallback, useThrottledCallback
+hooks/use-focus-trap.ts: useRestoreFocus
+hooks/use-intersection-observer.ts: useIntersectionObserver
+hooks/use-is-authenticated.ts: useIsAuthenticated
+hooks/use-keyboard-shortcuts.ts: useRegisteredShortcuts
+hooks/use-local-storage.ts: useSessionStorage, useLocalStorageGroup
+hooks/use-marketplace-cart.ts: sameCartLine
+hooks/use-optimized-image.ts: usePreloadImages, usePrefersReducedMotion
+hooks/use-personalized-greeting.ts: getTimeOfDayContext
+hooks/use-store-products.ts: invalidateStoreProductsCache
+hooks/useModuleTiers.ts: TIER_LABELS
+hooks/useProductAnalyticsTracking.ts: useProductAnalyticsTracking
+lib/admin-helpers.tsx: Stars, avatarColor, mdToHtml
+lib/admin-template.ts: writeAdminTemplate, resetAdminTemplate, resolveAdminModules
+lib/admin/charts-visibility.tsx: useChartsVisibilityManager
+lib/agents/hooks.ts: teardownAgentHooks
+lib/agents/index.ts: PRIORITY_RANK, createAgentContext, scopedLogger, scopedCache, ALL_AGENT_TOOLS, resolveToolCall, getToolsByDomain
+lib/agents/tool-definitions.ts: getToolsByDomain
+lib/agents/types.ts: PRIORITY_RANK
+lib/ai-config.ts: getActiveProviderName
+lib/ai/provider.ts: openaiProvider, groqProvider, xaiProvider, fallbackChatModel
+lib/ai/track-usage.ts: trackAiStream
+lib/analytics.ts: trackPageView, trackConversion, trackProductView, trackRemoveFromCart, trackBeginCheckout, trackCTAClick, trackWhatsAppClick, trackSearch, trackCategoryView, trackExitIntentShown, trackExitIntentAction
+lib/analytics/posthog.ts: identifyUser, trackPageView, posthogClient
+lib/api-keys.ts: validateApiKey
+lib/auth/csrf.ts: generateCsrfToken, CSRF_COOKIE_OPTIONS
+lib/auth/driver-session.ts: signDriverToken, verifyDriverToken, extractDriverToken
+lib/auth/post-login-redirect.ts: LANDING_PATHS, DEFAULT_REDIRECT_AFTER_LOGIN
+lib/billing/plan-mapping.ts: TIER_TO_PLAN_ID, PLAN_ID_TO_TIER
+lib/billing/plan-tiers.ts: STRIPE_PRICE_IDS, PLAN_BASICO, PLAN_PRO, PLAN_ENTERPRISE, PLAN_MAX, STORAGE_KEY, minTierForTab, minTierForFeature, formatPEN, annualPrice
+lib/billing/trial-status.ts: getTrialStatus, isHiddenFromPublic
+lib/billing/wire-up/ai-metering-middleware.ts: withAIMetering
+lib/cache/index.ts: invalidateProductRatingsCache, invalidateMarketplaceCatalogCache
+lib/catalog/catalog-icons.tsx: CATALOG_CATEGORY_ICONS
+lib/category-icons.tsx: hasCategoryIllustration
+lib/churn/customer-churn.ts: calculateCustomerChurnScore
+lib/churn/health-scorer.ts: classifyRisk
+lib/client-fetch.ts: clientFetch, clearClientFetchCache
+lib/cms-db/media.ts: getMediaById, updateMedia, deleteMedia, incrementMediaUsage
+lib/cms-db/pages.ts: draftPage, archivePage, getPageVersions, restorePageVersion
+lib/cms/types.ts: VALID_BLOCK_TYPES, ThemeSchema, NavigationSchema
+lib/cms/url-validators.ts: HOSTNAME_ALLOWLIST
+lib/copy/buttons.ts: BTN_VARIANTS
+lib/copy/empty-states.ts: EMPTY
+lib/copy/errors.ts: ERROR, errorFromUnknown
+lib/copy/heroes.ts: HERO, renderSocialProof
+lib/copy/toasts.ts: TOAST
+lib/copy/trust-signals.ts: TRUST, TRUST_CHIPS
+lib/cost-tracking.ts: estimateTenantCost
+lib/crypto/totp-cipher.ts: isEncryptedTotpSecret
+lib/csrf-client.ts: getCsrfToken
+lib/csrf.ts: generateCsrfToken
+lib/customer-orders.mock.ts: MOCK_ORDERS, MOCK_STATS
+lib/daily-report.ts: generateDailyReportText
+lib/db/credit.db.ts: CreditDB
+lib/db/customer-coupons.db.ts: CustomerCouponsDB
+lib/db/favorites.db.ts: FavoritesDB
+lib/db/loyalty.db.ts: LoyaltyInvalidAmountError
+lib/db/marketplace-catalog.db.ts: CATEGORIAS
+lib/db/marketplace-public.db.ts: _marketplacePublicDbLogger
+lib/db/marketplace/reviews.db.ts: MarketplaceReviewsDB
+lib/db/orders-paginated.db.ts: OrdersDB
+lib/db/roadmap-status.db.ts: isValidStatus
+lib/db/socio-buleje.db.ts: SocioMembershipNotFoundError, SOCIO_CASHBACK_PCT, SOCIO_PLAN_PRICES, SOCIO_TRIAL_DAYS, SOCIO_GRACE_PERIOD_DAYS, getPlanPrice
+lib/db/subscriptions.db.ts: SubscriptionCrossTenantError, SubscriptionInvalidStatusError
+lib/db/supplier-signup.db.ts: PLATFORM_TENANT_ID
+lib/db/vendor-applications.db.ts: canTransition, resolveTransition
+lib/delivery/partner-session.ts: PARTNER_COOKIE, verifyPartnerToken, getPartnerSession, clearPartnerCookie
+lib/delivery/rating-token.ts: generateRatingToken
+lib/design-presets.ts: mergeTokens
+lib/documents/ai-categorize.ts: heuristicCategorize
+lib/documents/storage.ts: BUCKET, ALLOWED_MIME_PREFIXES
+lib/domain-events/index.ts: emitDomainEvent
+lib/email-verification.ts: generateVerificationToken
+lib/email/send.ts: sendWelcomeEmail, sendOrderConfirmationEmail, sendPaymentReceiptEmail, sendFiadoReminderEmail, sendDeliveryUpdateEmail, sendWeeklyReportEmail
+lib/env.ts: requireEnv
+lib/event-sourcing/types.ts: AGGREGATE_TYPES, EventLogEntrySchema
+lib/events.ts: onceAppEvent, CATEGORY_IDS, EVENT_SOURCES
+lib/events/adapter.ts: VercelQueuesTransport
+lib/events/dlq/dlq.ts: DeadLetterEntrySchema, RetryResultSchema
+lib/events/types.ts: OrderCreatedPayloadSchema, PaymentSettledPayloadSchema, StockLowPayloadSchema, OrderCreatedSchema, PaymentSettledSchema, StockLowSchema
+lib/expense-categories.ts: getAllCategories
+lib/expense-meta.ts: FREQUENCY_LABELS_SHORT, formatPaymentDay
+lib/export-utils.ts: exportToCSV, exportToJSON
+lib/feature-flags/fiado-digital.ts: FIADO_DIGITAL_V2_PHASE1, FIADO_DIGITAL_V2_PHASE2, FIADO_DIGITAL_V2_PHASE3, isFiadoDigitalPhase3Enabled, getFiadoDigitalFlags
+lib/finance/cashflow-rolling.ts: calculateRollingCashflow
+lib/flags/v2/hooks.ts: getStore, evaluateFlag
+lib/geo-utils.ts: getCurrentPosition
+lib/gift-cards/code-utils.ts: compareHashes, maskCode
+lib/image-placeholders.ts: generateGradientPlaceholder, ASPECT_RATIOS, getOptimizedPlaceholder
+lib/image-validator.ts: PRODUCT_IMAGE_REQUIREMENTS
+lib/image-validators.ts: validateImageAlphaAsync
+lib/integrations/sunat.ts: emitirFactura, consultarEstado, anularBoleta
+lib/integrations/whatsapp.ts: sendOrderConfirmation, sendFiadoReminder, sendWelcome
+lib/invite.ts: listPendingInvites
+lib/lives/client.ts: fetchLiveById, resolveLive
+lib/llm-router.ts: resolveLLMRoute
+lib/logger-pii.ts: redactEmail, redactDni
+lib/loyalty/auto-earn.ts: getTierFromPoints
+lib/loyalty/category-multiplier.ts: getMultiplier
+lib/loyalty/referral.ts: generateReferralCode
+lib/mailer-digest.ts: buildDailyDigestWhatsAppMessage
+lib/marketplace-store-hours.ts: DAY_FULL
+lib/marketplace-zones.ts: MARKETPLACE_CITIES, normalizeZoneId, getZoneLabel, getZoneOptionsByCity
+lib/marketplace/product-adapter.ts: formatPEN
+lib/marketplace/store-hours.ts: DEFAULT_OPEN_HOURS
+lib/mercadopago.ts: PLANS
+lib/middleware/auth-guards.ts: safeSuperadminNext
+lib/mock-deals.ts: MOCK_DEALS, MOCK_DEAL_STORES, DEALS_SUMMARY
+lib/mock-faq.ts: FAQ_ITEMS, groupFaqByCategory
+lib/mock-notifications.ts: getUnreadCount, filterByType
+lib/mock-wishlist.ts: MOCK_WISHLIST_PRODUCTS, MOCK_SUGGESTIONS
+lib/mocks/gift-cards.mock.ts: MOCK_GIFT_CARDS, MOCK_GIFT_CARD_USAGE
+lib/mocks/lives.mock.ts: getLivesNow
+lib/mocks/order-tracking.mock.ts: makeMockTracking, MOCK_TRACKING
+lib/mocks/product-reviews.mock.ts: MOCK_REVIEWS_LIBRARY, getMockReviewsForProduct
+lib/mocks/socio-buleje.mock.ts: MOCK_SOCIO_MEMBERSHIP, MOCK_CASHBACK_HISTORY
+lib/mocks/subscriptions.mock.ts: MOCK_SUBSCRIPTIONS, getMockSubscriptionsByStatus, MOCK_SUBSCRIPTIONS_CUSTOMER_SEED, MOCK_SUBSCRIBABLE_PRODUCTS, MOCK_CHURN_RATE, computeFrequencyDays
+lib/mocks/superadmin-dashboard.mock.ts: buildRevenueSeries, buildOrdersSeries, TOP_STORES_MOCK, FUNNEL_MOCK, LATEST_ACTIVE_TENANTS
+lib/module-permissions.ts: filterModulesByRole
+lib/narrative/kpi-story.ts: ventasStory, pedidosStory, clientesStory, projectionStory
+lib/nav-visibility.ts: isLinkVisible
+lib/navigation/feature-registry.ts: FEATURES, featuresByIds
+lib/onboarding/validators.ts: CheckSlugSchema
+lib/openapi/common.ts: AuthHeaderSchema, PaginationSchema
+lib/openapi/registry.ts: registerSchema, registry
+lib/order-utils.ts: generateReceiptBlob
+lib/payments/provider.ts: PaymentProviderIdSchema, CurrencySchema, PaymentMethodSchema, ChargeInputSchema, ChargeResultSucceededSchema, ChargeResultPendingSchema, ChargeResultFailedSchema, ChargeResultSchema, RefundInputSchema, RefundResultSchema, WebhookRequestSchema, WebhookVerificationSchema, PaymentStatusSchema
+lib/peru-ubigeo.ts: findDepartamentoByName, findProvinciaByName, findDistritoByName
+lib/plans.ts: getPlanPrice
+lib/platform-brand.ts: BRAND_PATH
+lib/pos-offline-queue.ts: getAll, remove, incrementRetry
+lib/promo-banners.ts: DEFAULT_IMAGE_ADJUST, getAllBanners
+lib/queue.ts: JOB_SCHEMAS, enqueuePdf, enqueueStockSync, QUEUE_NAMES
+lib/queue/index.ts: enqueuePdf, enqueueStockSync, QUEUE_NAMES
+lib/rate-limit.ts: createRateLimitHeaders
+lib/rate-limit/index.ts: InMemoryStore, UpstashStore, TokenBucket, rateLimitWithCost
+lib/recipe-gradients.ts: DEFAULT_GRADIENT
+lib/recipes/cost-calculator.ts: calculateRecipeCost, calculateRecipeMargin
+lib/recommender/hybrid.ts: cosineSimilarity
+lib/reniec.ts: ReniecConfigError
+lib/roadmap/items.ts: getRoadmapItem, getCriticalBugs, getRoadmapByTier
+lib/safe-html.ts: safeMdToHtml
+lib/schemas/driver-apply.ts: VehicleType, Availability, LicenseCategory, TERMS_VERSION, PRIVACY_VERSION
+lib/sentry-alerts.ts: reportPerformanceAnomaly, setupAlertRules
+lib/seo/json-ld.ts: generateZoneProductLD, generateBreadcrumbLD
+lib/slo/budget-calculator.ts: loadSLOs, getStatusFromBurnRate, calculateBudgetBurn, getAllBudgetStatuses
+lib/slo/sentry-provider.ts: getCheckoutSuccessRate, getApiLatencyP99
+lib/stock-alerts.ts: calculateDaysUntilStockout, generateReorderSuggestion
+lib/store-category-order.ts: applyCategoryOrder
+lib/store-product-order.ts: getProductOrderForCategory
+lib/store-sections-types.ts: serializeSections, deserializeSections
+lib/store-templates.ts: STORE_TEMPLATES
+lib/stripe-connect.ts: createSplitPayment, createPayout
+lib/stripe.ts: PLANS
+lib/sunat-invoice.ts: buildSunatDocument, generateInvoicePdf, calculateIGV, generateCorrelativo
+lib/sunat/invoice-worker.ts: initSunatWorkerSubscription
+lib/sunat/nubefact-client.ts: sendCreditNote
+lib/supabase.ts: getSupabase
+lib/supabase/server.ts: isSupabaseAuthConfiguredServer
+lib/superadmin-2fa.ts: generateSecret, getTOTPUri
+lib/superadmin-auth.ts: DEFAULT_SETTINGS, PLAN_LABELS
+lib/superadmin-session.ts: hashUA
+lib/superadmin-types.ts: PLAN_LABELS
+lib/tenant.ts: DEFAULT_TENANT_SLUG
+lib/tienda-config.ts: TIENDA_DEFAULT_ORDER, TIENDA_DEFAULT_DISABLED
+lib/types/documents.ts: DOC_ACTIONS, SHARE_TOKEN_DEFAULT_TTL_DAYS
+lib/usage.ts: usagePct, usageStatus
+lib/utils.ts: formatDate, formatDateTime, calcularVuelto, numeroAPalabras, safeNumber, safeJsonParse, safeDateMs, STORE_TIMEZONE, formatLimaDate, startOfLimaDay, startOfLimaDayDaysAgo
+lib/validations/marketplace-product.schema.ts: MarketplaceProductImageSchema, MarketplaceProductVariantSchema, MarketplaceProductStoreSchema, MarketplaceProductResponseSchema
+lib/validations/shopping-list.schema.ts: UpdateShoppingListSchema
+lib/validators/order-tracking.ts: TrackingStatusEnum, TenantTokenParamSchema
+lib/validators/socio-buleje.ts: SocioPlanSchema, ResumeBodySchema, EarnCashbackBodySchema, RedeemCashbackBodySchema, FREE_SHIPPING_THRESHOLD, CASHBACK_PERCENT
+lib/validators/vendor-registration.ts: DIAS_SEMANA, PLANES_VENDOR
+lib/verticals/registry.ts: VERTICAL_REGISTRY, SUPPORTED_INDUSTRIES
+lib/vocabulary.ts: getAllVocabulary
+lib/whatsapp-bot.ts: sendInteractiveButtons, formatCatalog, formatOrderDetail, formatWelcome, formatPaymentInstructions
+lib/whatsapp/ai-intent.ts: WhatsappIntent
+lib/whatsapp/concierge/conversation-store.ts: deleteConversation
+lib/whatsapp/concierge/response-formatter.ts: formatError, formatWelcomeMenu
+packages/design-system/src/product-card/shared.ts: formatPEN
+Unused exported types (205)
+app/(store)/cuenta/CuentaLayoutShell.tsx: CuentaLayoutShellProps
+app/admin/_components/AdminNavigation.tsx: AdminNavigationShared, AdminNavigationDrawer, AdminNavigationSidebar
+app/admin/_hooks/index.ts: AdminMode
+app/admin/_hooks/useAdminMode.ts: UseAdminModeResult
+app/admin/_hooks/useDemoCleanup.ts: DemoModuleMeta
+app/admin/_hooks/useImpersonation.ts: TenantType
+app/admin/_hooks/useSidebarShortcuts.ts: ShortcutItem
+app/admin/_lib/tab-data.ts: TabItem
+components/admin/AdminModuleManagerModal.tsx: ModulePriority, ModuleInfo, AllTabsItem, VisibleCategory, DemoModuleMeta
+components/admin/ChatTab/types.ts: SenderType, MessageType
+components/admin/EmptyState.tsx: EmptyStateAction
+components/admin/OrdersTab/hooks/useDeliveryPartnersLive.ts: DeliveryPartnersSummary
+components/admin/inicio/_shared/ChartPresentationModal.tsx: ChartPresentationItem
+components/admin/inicio/_shared/DashboardSection.tsx: SectionKPI
+components/admin/inicio/_shared/MicroDonut.tsx: MicroDonutDatum
+components/admin/inicio/_shared/MicroList.tsx: MicroListItem
+components/admin/inicio/_shared/index.ts: MicroDonutDatum, MicroListItem, SectionKPI, ChartPresentationItem
+components/admin/inventario/CatalogOptionPicker.tsx: PickedOption
+components/admin/marketplace/hooks/use-marketplace-orders.ts: MarketplaceOrderDetailItem
+components/admin/marketplace/hooks/use-marketplace-products.ts: MarketplaceProductBoost
+components/admin/marketplace/hooks/use-marketplace-tienda.ts: CustomSubcategoryEntry, CustomCategoryEntry
+components/admin/pos/POSPaymentModal.tsx: PaymentResult
+components/admin/shared/ModuleActionMenu.tsx: ModuleActionItem
+components/admin/shared/PeriodSelector.tsx: PeriodId
+components/admin/shared/SidebarConfigurator.tsx: SidebarExtendedConfig
+components/admin/shared/SidebarFlyout.tsx: FlyoutTheme
+components/admin/shared/StatusBadge.tsx: StatusBadgeProps
+components/admin/unified/MeteringCard/types.ts: MeteringPeriod, QuotaThreshold, QuotaThresholds, MeteringCardProps
+components/admin/unified/marketplace/CategoryZonePicker.tsx: CatalogSubcategory, CustomSubcategory, CategoryZoneValue
+components/admin/ux/OnboardingChecklist.tsx: OnboardingItem
+components/admin/ux/index.ts: Crumb, OnboardingItem
+components/admin/vendor-dashboard/vendor-dashboard.types.ts: VendorOrderItem
+components/charts/index.ts: ChartDataItem, TooltipFormatter
+components/charts/types.ts: TooltipProps, LegendProps, CartesianGridProps, XAxisProps, YAxisProps, ChartDataItem, TooltipFormatter
+components/checkout/hooks/usePhoneSearch.ts: PhoneSearchState
+components/checkout/index.ts: Step, CheckoutAccountStepProps, CheckoutSuccessStepProps, CheckoutDeliveryScheduleProps, CheckoutOrderReviewProps, CheckoutPaymentSectionProps, CheckoutNotesFieldProps
+components/checkout/parts/CustomerFormFields.tsx: PhoneValidation
+components/checkout/types.ts: PaymentMethod, DniLookupStatus
+components/cierre-diario/useCierreDiario.ts: CierreState
+components/customer/MiniHero.tsx: MiniHeroStat
+components/customer/cuenta-layout/CuentaMobileTabs.tsx: CuentaMobileTabsProps
+components/customer/cuenta-layout/CuentaSidebar.tsx: CuentaSidebarProps
+components/customer/journey/OrderTrackingTimeline.tsx: OrderStatus, TimelineEvent
+components/customer/journey/QuickViewModal.tsx: QuickViewProduct
+components/customer/journey/index.ts: QuickViewProduct, OrderStatus, TimelineEvent
+components/customer/post-purchase/PostPurchaseCrossSell.tsx: CrossSellProduct
+components/marketplace/MarketplaceSection.tsx: MarketplaceSectionTone
+components/marketplace/PromoBannerRenderer.tsx: BannerType, ImageAdjust, PromoItemSource, Anchor, PromoItem, PromoEmbed
+components/marketplace/RecipePreviewModal.tsx: RecipeForPreview
+components/marketplace/RepetirUltimoPedido.tsx: LastOrderItem
+components/marketplace/UnifiedProductCard.tsx: UnifiedProductCardVariant
+components/marketplace/ofertas/types.ts: DealsSummary
+components/marketplace/product-detail/ProductDetailClient.tsx: PDPProduct, PDPStore, PDPImages
+components/marketplace/product-detail/ProductGalleryDS.tsx: GalleryImage
+components/store/Breadcrumbs.tsx: BreadcrumbItem
+components/superadmin/SidebarConfigPanel.tsx: SidebarTheme, AccentColor, Density, IconStyle
+components/superadmin/_shared/index.ts: SAColumn
+components/superadmin/control-center/CredentialRow.tsx: CredentialActionKind
+components/superadmin/control-center/SystemInfoCard.tsx: SystemInfoItem
+components/superadmin/dashboard/KPIHeroCard.tsx: KPITone
+components/superadmin/stores/StoreLinkerModal.tsx: StoreLinkerOption
+components/superadmin/tenants/types.ts: GrowthMonth
+components/ui-system/Breadcrumbs.tsx: BreadcrumbItem, BreadcrumbsProps
+components/ui-system/Button.tsx: ButtonProps
+components/ui-system/Card.tsx: CardProps
+components/ui-system/Chip.tsx: ChipProps
+components/ui-system/ConfirmModal.tsx: ConfirmIntent
+components/ui-system/CouponInput.tsx: AvailableCoupon
+components/ui-system/IconBadge.tsx: IconBadgeProps
+components/ui-system/OrderSummaryCard.tsx: OrderLine
+components/ui-system/StoreCard.tsx: StoreCardData
+components/ui-system/UnifiedHero.tsx: UnifiedHeroVariant, UnifiedHeroTheme, UnifiedHeroCTA
+components/ui-system/charts/BulejeCohortTable.tsx: CohortRow
+components/ui-system/charts/BulejeFunnelChart.tsx: FunnelStage
+components/ui-system/charts/index.ts: FunnelStage, CohortRow
+components/ui-system/illustrations/index.ts: BulejeIllustrationKey
+components/ui-system/index.ts: ButtonProps, BreadcrumbItem, BreadcrumbsProps
+components/ui/ResponsiveTable.tsx: Column
+contexts/checkout-data-context.tsx: CheckoutPaymentMethod
+contexts/last-order-context.tsx: LastOrderItem
+data/catalog-peru.ts: CatalogCategory
+domain/shared/errors.ts: DomainErrorKind, DomainError, InvalidOrderStateError, NegativeQuantityError, MissingItemsError, InvalidProductError, ProductError
+hooks/use-checkout-data.ts: CheckoutCustomer, CheckoutAddress, CheckoutPayment, CheckoutPaymentMethod, CheckoutCouponEntry, CheckoutCoupons, CheckoutLoyalty, CheckoutStoreProof, CheckoutPaymentProofs
+hooks/use-toast.ts: ToastType, ToastAction
+lib/activity-logger.ts: ActivityLogEntry
+lib/admin-template.ts: ModuleOverride, AdminTemplateOverrides
+lib/agents/bus.ts: AgentEventMap, AgentEventName
+lib/agents/index.ts: AgentDomain, TaskPriority, TaskStatus, AgentTask, AgentResult, AgentContext, DomainAgent, AgentEventMap, AgentEventName, ScopedLogger, ScopedCache, SubmitTaskInput, HistoryOptions, ToolDefinition, ToolMapping
+lib/agents/pending-approvals.ts: ApprovalResolution
+lib/agents/types.ts: TaskStatus
+lib/ai-business-snapshot.ts: Feriado
+lib/ai-config.ts: AIProvider
+lib/ai-temperatures.ts: AiTemperatureRole
+lib/audit-logger.ts: AuditAction
+lib/billing/plan-tiers.ts: PlanLimits
+lib/billing/trial-status.ts: TrialStatus
+lib/billing/wire-up/ai-metering-middleware.ts: AICallResult
+lib/catalog/catalog-types.ts: CatalogProduct, CatalogCategoryMeta, CatalogCartItem
+lib/category-icons.tsx: CategoryIconProps
+lib/churn/health-scorer.ts: RiskLevel
+lib/cms/types.ts: PageStatus, BlockType, BlockDefinition, BlockCategory, ThemeColors, ThemeFonts, ThemeSpacing, ThemeInput, NavItem, NavigationInput
+lib/copy/empty-states.ts: EmptyStateCopy
+lib/coupons/auto-coupon-triggers.ts: CouponTriggerType, CouponTrigger
+lib/customer-orders.mock.ts: MockOrder
+lib/db/commissions.db.ts: CommissionStatus
+lib/db/cotizaciones.db.ts: DbCotizacionItem
+lib/db/credit.db.ts: DbCreditProfile, DbCreditInstallment
+lib/db/cupones.db.ts: AppliedCupon
+lib/db/customers.db.ts: DbShoppingListItem
+lib/db/delivery-sos.db.ts: DeliverySOSStatus
+lib/db/delivery-streaks.db.ts: StreakData, WeeklyGoal, Bonus
+lib/db/fiados.db.ts: DbFiadoCuota
+lib/db/guias-remision.db.ts: DbGuiaRemisionItem
+lib/db/interfaces/ISocioBulejeDB.ts: SocioPlanInput, CashbackEntryType
+lib/db/inventory.db.ts: InventoryMovementType
+lib/db/live-sessions.db.ts: LiveStatus, ModerationState, LiveViewerEventType, LiveSessionWithRelations
+lib/db/marketplace-catalog.db.ts: CategoriaDef
+lib/db/marketplace-public.db.ts: DbCustomerTierCount, DbOrderAggregate
+lib/db/marketplace/types.ts: DbStoreProductModifierOption
+lib/db/mermas.db.ts: MermaLossType
+lib/db/misc.db.ts: DbSavedLocation, DbOrderCustomer, DbPurchaseItem, DbSaleItem
+lib/db/notification-center.db.ts: Severity
+lib/db/payment-proofs.db.ts: PaymentStatus
+lib/db/prestamos.db.ts: PrestamoTipo, PrestamoDireccion, PrestamoEntidadTipo, DbPrestamoCuota
+lib/db/product-reviews.db.ts: ReviewSort, ReviewFilter
+lib/db/product-variants.db.ts: DbProductVariantFilters
+lib/db/products.db.ts: DbBundleItem
+lib/db/recetas.db.ts: DbRecetaIngrediente
+lib/db/roadmap-status.db.ts: RoadmapStatusValue
+lib/db/sales.db.ts: CashRegisterStatus
+lib/db/socio-buleje.db.ts: SocioCashbackEntryRow, SocioMembershipRow, SocioMembershipWithBalance, SocioExclusiveOffer, SocioAdminStats
+lib/db/subscriptions.db.ts: SubscriptionsDBType
+lib/db/transactions.db.ts: TransactionSource, TransactionItem
+lib/db/treasury.db.ts: CuentaTipo, MovimientoTipo, MovimientoOrigen
+lib/db/vendor-applications.db.ts: VendorCategory, VendorDistrict, VendorPlan
+lib/design-tokens.ts: DesignTokens, ChartColors
+lib/domain-events/index.ts: DomainEventPayload, FacturaEmitidaEvent
+lib/email/send.ts: WelcomeProps, OrderConfirmationProps, PaymentReceiptProps, FiadoReminderProps, DeliveryUpdateProps, WeeklyReportProps
+lib/email/templates/order-confirmation.tsx: OrderItem, DeliveryAddress
+lib/email/templates/vendor-identity-alert.tsx: AlertKind
+lib/email/templates/weekly-report.tsx: TopProduct, LowStockItem, PendingFiado
+lib/event-sourcing/reducers/order-reducer.ts: OrderStatus, OrderItem
+lib/event-sourcing/types.ts: AggregateType
+lib/events.ts: CategoryId
+lib/events/dlq/retry-cron.ts: PublishableBus
+lib/events/types.ts: OrderCreatedPayload, PaymentSettledPayload, StockLowPayload
+lib/finance/cashflow-rolling.ts: WeekRow, CashflowWeek, CashflowResult
+lib/groq-fetch.ts: GroqUsage
+lib/i18n/translations.ts: TranslationKey
+lib/image-validator.ts: ImageValidationIssue
+lib/integrations/sunat.ts: FacturaInput, AnulacionInput, SunatBoleta
+lib/inventory/fefo-deduct.ts: FEFODeductionDetail
+lib/invite.ts: InviteStatus
+lib/llm-providers/index.ts: ChatMessage, ToolCallResult
+lib/loyalty/auto-earn.ts: LoyaltyTier
+lib/marketplace-store-hours.ts: DayKey, DayHours
+lib/marketplace-zones.ts: MarketplaceCity
+lib/mock-faq.ts: FaqCategory, FaqItem
+lib/mocks/cupones.mock.ts: CuponDiscountType
+lib/mocks/gift-cards.mock.ts: PublicGiftCard, PublicGiftCardUsage
+lib/mocks/lives.mock.ts: LiveStatus
+lib/mocks/order-tracking.mock.ts: TrackingAddress
+lib/mocks/socio-buleje.mock.ts: MockSocioMembership, MockCashbackTransaction
+lib/mocks/subscriptions.mock.ts: MockSubscriptionWithCustomer
+lib/navigation/feature-registry.ts: FeatureCategory
+lib/notifications/vendor-identity-alert.ts: AlertKind
+lib/payments/provider.ts: PaymentMethod
+lib/platform-config.ts: PlatformConfigKey, PublicPlatformConfig
+lib/promo-banners.ts: BannerType, PromoItemSource, PromoEmbed, CarouselTransition
+lib/queue.ts: EmailPayload, PdfPayload, WhatsappPayload, PushPayload, ActivityPayload, JobResult, EmailJobData, PdfJobData, NotificationJobData, ActivityLogJobData, StockSyncJobData
+lib/queue/index.ts: EmailJobData, PdfJobData, NotificationJobData, ActivityLogJobData, StockSyncJobData
+lib/rate-limit/index.ts: RateLimitStore
+lib/recipes/cost-calculator.ts: IngredientCostDetail
+lib/reports/weekly-report.ts: TopProduct
+lib/roadmap/items.ts: RoadmapTier, RoadmapScope, RoadmapType, RoadmapEffort, RoadmapPriority
+lib/slo/budget-calculator.ts: BudgetStatusLevel, AlertThreshold, SLO
+lib/store-extras.ts: CustomSubcategory, CustomCategory
+lib/store-sections-types.ts: SectionBase
+lib/stripe-connect.ts: SplitPaymentResult
+lib/sunat-invoice.ts: InvoiceOrderItem
+lib/sunat/invoice-builder.ts: BuilderOrderItem
+lib/sunat/sale-events.ts: SunatInvoiceUpdatedEvent, SunatEventMap
+lib/superadmin-auth.ts: PlanId, TenantRow, CommissionRow, PlatformSettings
+lib/superadmin-types.ts: TenantStoreInfo
+lib/superadmin/platform-health.ts: PlatformHealthEntry
+lib/telemetry/semantic-attrs.ts: AttrKey
+lib/thermal-printer.ts: ReceiptItem
+lib/types/documents.ts: DocCategory
+lib/validations/coupon-redeem.schema.ts: ValidateCouponInput, RedeemCouponInput
+lib/validations/favorite.schema.ts: AddFavoriteInput, CheckFavoritesInput
+lib/validations/marketplace-product.schema.ts: MarketplaceProduct, MarketplaceProductResponse
+lib/validations/recently-viewed.schema.ts: RecentlyViewedEntry
+lib/validations/shopping-list.schema.ts: CreateShoppingListInput, UpdateShoppingListInput, AddShoppingListItemInput, UpdateShoppingListItemInput
+lib/validators/guest-order.ts: GuestOrderInput
+lib/validators/order-tracking.ts: TrackingStatusZ, OrderIdParam, TenantTokenParam, ShareTokenRequest
+lib/validators/reorder.ts: ReorderInput
+lib/validators/socio-buleje.ts: SubscribeBody, CancelBody, ResumeBody, StatusQuery, CashbackHistoryQuery, EarnCashbackBody, RedeemCashbackBody
+lib/validators/vendor-registration.ts: CategoriaVendor, DistritoPucallpa, DiaSemana, PlanVendor
+lib/verticals/registry.ts: ModuleId, VerticalModulesConfig, VerticalBranding
+lib/vocabulary.ts: VocabEntry
+lib/voice/order-extractor.ts: ResolvedItem
+lib/whatsapp/concierge/multi-vendor-checkout.ts: VendorOrderResult
+lib/whatsapp/concierge/types.ts: SelectedModifier, HandlerFn
+lib/whatsapp/conversation-engine.ts: ConversationState
+types/erp.ts: PurchaseItem, Purchase, Supplier
+Duplicate exports (36)
+app/(store)/cuenta/CuentaDashboardClient.tsx: CuentaDashboardClient, default
+app/(store)/cuenta/CuentaLayoutShell.tsx: CuentaLayoutShell, default
+app/admin/_components/_shared/AdminField.tsx: AdminField, default
+components/ApiDocsPage.tsx: ApiDocsPage, default
+components/JsonLd.tsx: JsonLd, default
+components/admin/billing/QuotaAlertBanner.tsx: QuotaAlertBanner, default
+components/admin/billing/QuotaAlertModal.tsx: QuotaAlertModal, default
+components/admin/inicio/_shared/DashboardSectionHeader.tsx: DashboardSectionHeader, default
+components/admin/shared/AdminTooltip.tsx: AdminTooltip, default
+components/admin/shared/KeyboardShortcutsHelp.tsx: KeyboardShortcutsHelp, default
+components/admin/shared/ModuleActionMenu.tsx: ModuleActionMenu, default
+components/auth/AuthModal.tsx: AuthModal, default
+components/customer/cuenta-layout/CuentaMobileTabs.tsx: CuentaMobileTabs, default
+components/customer/cuenta-layout/CuentaSidebar.tsx: CuentaSidebar, default
+components/customer/socio-buleje/SocioUsoBeneficios.tsx: SocioUsoBeneficios, default
+components/descubri/DescubriCTAFinal.tsx: DescubriCTAFinal, default
+components/descubri/DescubriFAQ.tsx: DescubriFAQ, default
+components/descubri/DescubriHero.tsx: DescubriHero, default
+components/descubri/FeaturesGrid9.tsx: FeaturesGrid9, default
+components/descubri/IntegrationDiagram.tsx: IntegrationDiagram, default
+components/descubri/PathsByProfile.tsx: PathsByProfile, default
+components/descubri/TestimoniosEditorial.tsx: TestimoniosEditorial, default
+components/marketplace/mi-cuenta/LastOrderBanner.tsx: LastOrderBanner, default
+components/ui-system/Breadcrumbs.tsx: Breadcrumbs, default
+components/ui-system/BulejeLoader.tsx: BulejeLoader, default
+components/ui-system/ConfirmModal.tsx: ConfirmModal, default
+components/ui-system/SkipLink.tsx: SkipLink, default
+components/ui-system/UnifiedHero.tsx: UnifiedHero, default
+components/ui-system/illustrations/BulejeLogo.tsx: BulejeLogo, default
+components/ui-system/illustrations/PaicheLoading.tsx: PaicheLoading, default
+components/ui-system/illustrations/PaicheMascot.tsx: PaicheMascot, default
+components/ui-system/illustrations/TucanMascot.tsx: TucanMascot, default
+components/ui/ResponsiveTable.tsx: ResponsiveTable, default
+hooks/useProductAnalyticsTracking.ts: useProductAnalyticsTracking, default
+lib/plans.ts: DEFAULT_PLAN_PRICES, PLAN_PRICES
+lib/rate-limit.ts: getClientIp, getClientId
