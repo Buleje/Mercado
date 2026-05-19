@@ -95,32 +95,34 @@ CREATE POLICY "tenant_isolation_sale" ON "Sale"
 
 
 -- ─────────────────────────────────────────────────────────────
--- 4. Tabla: Payment
---    Riesgo: transacciones Yape/Stripe/Mercado Pago
---            (montos, referencias, teléfono Yape = PII bancaria)
+-- 4. Tabla: Payment — EXCLUIDA (Brandon dry-run 2026-05-18)
+--    La tabla Payment NO tiene columna `tenantId` directa.
+--    Relación al tenant es indirecta: Payment.payableId → Order.id
+--    (o Sale.id). La policy en Order/Sale ya protege Payment vía JOIN
+--    en queries normales.
+--
+--    Opciones futuras (BACKLOG):
+--    A. Policy con EXISTS subquery (costoso en performance)
+--    B. Migrar schema para agregar tenantId a Payment (zona peligro)
+--
+--    Por ahora: Payment queda fuera de RLS. Documentado como TD-115.
 -- ─────────────────────────────────────────────────────────────
 
-ALTER TABLE "Payment" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "Payment" FORCE ROW LEVEL SECURITY;
-
-CREATE POLICY "tenant_isolation_payment" ON "Payment"
-  USING (
-    "tenantId" = current_setting('app.tenant_id', true)
-    OR current_setting('app.tenant_id', true) IN ('__system__', '__superadmin__')
-  );
-
 
 -- ─────────────────────────────────────────────────────────────
--- 5. Tabla: AuditLog
+-- 5. Tabla: ActivityLog (renamed from AuditLog tras dry-run 2026-05-18)
+--    La tabla real en producción se llama ActivityLog. Verificado vía
+--    Supabase MCP: information_schema.tables.
+--
 --    Riesgo: chain de auditoría Ley 29733, tamper evidence.
---            Un tenant NO debe leer el audit de otro tenant.
---            __system__ necesita acceso para audit-chain-integrity cron.
+--    Un tenant NO debe leer el audit de otro tenant.
+--    __system__ necesita acceso para audit-chain-integrity cron.
 -- ─────────────────────────────────────────────────────────────
 
-ALTER TABLE "AuditLog" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "AuditLog" FORCE ROW LEVEL SECURITY;
+ALTER TABLE "ActivityLog" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ActivityLog" FORCE ROW LEVEL SECURITY;
 
-CREATE POLICY "tenant_isolation_auditlog" ON "AuditLog"
+CREATE POLICY "tenant_isolation_activitylog" ON "ActivityLog"
   USING (
     "tenantId" = current_setting('app.tenant_id', true)
     OR current_setting('app.tenant_id', true) IN ('__system__', '__superadmin__')
@@ -132,11 +134,11 @@ CREATE POLICY "tenant_isolation_auditlog" ON "AuditLog"
 --
 --   SELECT schemaname, tablename, rowsecurity, forcerowsecurity
 --   FROM pg_tables
---   WHERE tablename IN ('Order','Customer','Sale','Payment','AuditLog');
+--   WHERE tablename IN ('Order','Customer','Sale','ActivityLog');
 --
 --   SELECT schemaname, tablename, policyname, cmd, qual
 --   FROM pg_policies
---   WHERE tablename IN ('Order','Customer','Sale','Payment','AuditLog');
+--   WHERE tablename IN ('Order','Customer','Sale','ActivityLog');
 --
 -- Resultado esperado: rowsecurity=t, forcerowsecurity=t, 1 policy por tabla.
 -- ─────────────────────────────────────────────────────────────

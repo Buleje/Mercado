@@ -49,19 +49,16 @@ ALTER TABLE "Sale" DISABLE ROW LEVEL SECURITY;
 
 
 -- ─────────────────────────────────────────────────────────────
--- 4. Revertir: Payment
+-- 4. Payment — EXCLUIDA (no tiene tenantId, ver migration.sql)
 -- ─────────────────────────────────────────────────────────────
-
-DROP POLICY IF EXISTS "tenant_isolation_payment" ON "Payment";
-ALTER TABLE "Payment" DISABLE ROW LEVEL SECURITY;
 
 
 -- ─────────────────────────────────────────────────────────────
--- 5. Revertir: AuditLog
+-- 5. Revertir: ActivityLog (renamed from AuditLog)
 -- ─────────────────────────────────────────────────────────────
 
-DROP POLICY IF EXISTS "tenant_isolation_auditlog" ON "AuditLog";
-ALTER TABLE "AuditLog" DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "tenant_isolation_activitylog" ON "ActivityLog";
+ALTER TABLE "ActivityLog" DISABLE ROW LEVEL SECURITY;
 
 
 -- ─────────────────────────────────────────────────────────────
@@ -69,7 +66,7 @@ ALTER TABLE "AuditLog" DISABLE ROW LEVEL SECURITY;
 --
 --   SELECT schemaname, tablename, rowsecurity, forcerowsecurity
 --   FROM pg_tables
---   WHERE tablename IN ('Order','Customer','Sale','Payment','AuditLog');
+--   WHERE tablename IN ('Order','Customer','Sale','ActivityLog');
 --
 -- Resultado esperado: rowsecurity=f (false) en todas las tablas.
 -- Si alguna sigue en true, correr el DROP POLICY + DISABLE de esa tabla.
