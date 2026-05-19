@@ -5,6 +5,15 @@ import prettierConfig from "eslint-config-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
 import { PRISMA_DIRECT_LEGACY } from "./eslint.legacy-allowlist.mjs";
 
+// CI 2026-05-19: 53 de 328 entries del allowlist contienen `[brackets]` o
+// `(parens)` de Next.js route groups (dynamic segments + route groups).
+// micromatch/minimatch los interpretan como char-class/grupos en lugar de
+// literales → el ignore nunca matcheaba esos archivos y CI fallaba con
+// "prisma.* restricted" en cart/[phone]/route.ts y similares.
+// Escapar los chars especiales del glob garantiza match literal del path.
+const escapeGlobChars = (s) => s.replace(/[[\]()]/g, (m) => `\\${m}`);
+const PRISMA_DIRECT_LEGACY_ESCAPED = PRISMA_DIRECT_LEGACY.map(escapeGlobChars);
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -181,7 +190,9 @@ const eslintConfig = defineConfig([
       "**/__tests__/**",
       "prisma/**",
       // Allowlist legacy — 318 archivos snapshot 2026-04-29.
-      ...PRISMA_DIRECT_LEGACY,
+      // Escapado para que dynamic routes [param] y route groups (group)
+      // matcheen literal en micromatch (ver escapeGlobChars arriba).
+      ...PRISMA_DIRECT_LEGACY_ESCAPED,
     ],
     rules: {
       "no-restricted-properties": [

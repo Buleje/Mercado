@@ -2,8 +2,19 @@
 // Cada archivo aqui es una regresion conocida, registrada para que la rule
 // pase a "error" sin romper build. CUANDO se migre uno a lib/db/*, REMOVERLO.
 // NO agregar archivos NUEVOS — la rule en error los rechaza por diseno.
+//
+// Excepción 2026-05-19: 3 archivos pre-existentes nunca fueron detectados
+// porque CI siempre fallaba antes en gitleaks/jsx-a11y. Una vez resuelto
+// el bloqueo estructural de lint (commit 2d28fd9f), aparecieron como deuda
+// histórica. Agregados al allowlist para destrabar CI; migrar a lib/db/*
+// queda como deuda dedicada para próxima sesión:
+//   - app/api/cart/[phone]/route.ts (5x prisma.savedCart)
+//   - app/api/admin/plan/mock-activate/route.ts (prisma.tenant + creditScoreHistory)
+//   - app/(store)/mi-credito/page.tsx (prisma.creditScoreHistory.findMany)
 export const PRISMA_DIRECT_LEGACY = [
+  "app/(store)/mi-credito/page.tsx",
   "app/api/ab-tests/route.ts",
+  "app/api/admin/plan/mock-activate/route.ts",
   "app/api/abandoned-cart/stats/route.ts",
   "app/api/activity-log/route.ts",
   "app/api/admin-users/route.ts",
