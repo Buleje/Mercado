@@ -244,7 +244,7 @@ export default function ProductModifierModal({
                     pedido" genérico (queda el eyebrow del progreso abajo).
                     Pricing más prominente. */}
                 <div className="absolute bottom-3 left-4 right-16 lg:hidden">
-                  <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-lg leading-[1.1] line-clamp-2">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-white drop-shadow-lg leading-[1.15] line-clamp-2">
                     {product.name}
                   </h2>
                   <p className="mt-1.5 text-sm font-extrabold text-white tabular-nums">
@@ -259,7 +259,7 @@ export default function ProductModifierModal({
                 <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                   Armá tu pedido
                 </p>
-                <h2 className="mt-1 font-display text-[26px] font-black tracking-tight text-[var(--text-primary)] leading-[1.1]">
+                <h2 className="mt-1 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-[1.15]">
                   {product.name}
                 </h2>
                 {product.description && (
@@ -329,7 +329,7 @@ export default function ProductModifierModal({
                     <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
                       Total
                     </span>
-                    <span className="font-display text-2xl font-black tabular-nums text-[var(--text-primary)]">
+                    <span className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)] tracking-tight">
                       {fmt(totalPrice)}
                     </span>
                   </div>
@@ -411,7 +411,7 @@ export default function ProductModifierModal({
                           <div className="flex items-center gap-2 flex-wrap min-w-0">
                             <h3
                               id={`group-${g.id}`}
-                              className="font-display text-[length:var(--ts-lg)] font-black text-[var(--text-primary)] tracking-tight"
+                              className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tracking-[-0.015em]"
                             >
                               {g.name}
                             </h3>

@@ -190,7 +190,11 @@ export default function UnifiedProductCard({
   hideStore = false,
 }: UnifiedProductCardProps) {
   const { addItemWithUndo } = useCartWithUndo();
-  const { items: cartItems } = useMarketplaceCart();
+  // Brandon 2026-05-18 v6: importamos `addItem` directo (sin drawer) para
+  // el flow de modifiers — cuando el cliente confirma desde el modal de
+  // adicionales NO queremos abrir el AddedToCartDrawer encima (sería un
+  // modal sobre otro modal). El producto se agrega al cart y se cierra.
+  const { items: cartItems, addItem } = useMarketplaceCart();
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
   const [justAdded, setJustAdded] = useState(false);
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
@@ -716,7 +720,12 @@ export default function UnifiedProductCard({
           }}
           groups={product.modifierGroups ?? []}
           onConfirm={({ quantity, modifiers, finalUnitPrice }) => {
-            addItemWithUndo({
+            // Brandon 2026-05-18 v6: usar `addItem` directo (NO
+            // addItemWithUndo) para evitar abrir el AddedToCartDrawer
+            // encima del modal de modifiers. El producto + adicionales
+            // se agregan al cart (y se persisten al checkout/admin igual)
+            // y el cliente vuelve al storefront sin un segundo modal.
+            addItem({
               storeId: product.storeId ?? "",
               storeName: product.storeName ?? "",
               storeSlug: product.storeSlug ?? "",
@@ -727,7 +736,6 @@ export default function UnifiedProductCard({
               basePrice: product.price,
               image: product.image ?? null,
               unit: product.unit ?? null,
-              description: product.description ?? null,
               modifiers,
               modifierHash: modifierHashOf(modifiers),
               quantity,
