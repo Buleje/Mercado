@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import {
   ImageIcon,
   Truck,
@@ -141,6 +142,9 @@ const PESOS = new Intl.NumberFormat("es-PE", {
 const NUM = new Intl.NumberFormat("es-PE");
 
 export default async function SuperadminMarketplaceHubPage() {
+  // Next 16 cacheComponents: leer Request data ANTES de cualquier new Date()
+  // dentro de las funciones del DB layer evita el prerender error.
+  await cookies();
   const m = await loadMetrics();
   const live = SECTIONS.filter((s) => s.status === "live");
   const soon = SECTIONS.filter((s) => s.status === "soon");
